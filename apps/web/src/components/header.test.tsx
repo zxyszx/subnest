@@ -55,12 +55,13 @@ vi.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
-        "app.tagline": "订阅管理助手",
+        "app.tagline": "订阅与合租管理",
         "header.logout": "退出登录",
         "header.toggleTheme": "切换主题",
         "nav.calendar": "日历",
         "nav.dashboard": "仪表盘",
         "nav.settings": "设置",
+        "nav.sharing": "合租",
         "nav.statistics": "统计",
         "nav.subscriptions": "订阅",
         "system.badgeUpdate": "可更新到 v{version}",
@@ -199,7 +200,7 @@ describe("Header system version entry", () => {
     const updateButton = screen.getByRole("button", { name: "打开系统更新" });
     expect(screen.getAllByRole("button", { name: "打开系统更新" })).toHaveLength(1);
     expect(updateButton.closest("a")).toBeNull();
-    expect(screen.queryByText("订阅管理助手")).not.toBeInTheDocument();
+    expect(screen.queryByText("订阅与合租管理")).not.toBeInTheDocument();
 
     await user.click(updateButton);
 

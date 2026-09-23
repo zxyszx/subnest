@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -27,6 +27,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import type { MessageKey } from '@/i18n/messages';
 import { RouteProgress } from '@/components/route-progress';
 import { cn } from '@/lib/utils';
+import { PRODUCT_NAME } from '@/lib/product-brand';
 
 interface HeaderProps {
   /** 新增订阅回调（传入订阅主体数据，不包含 id）。不传则隐藏“新增订阅”按钮。 */
@@ -37,12 +38,13 @@ interface HeaderProps {
   subscriptionActions?: ReactNode;
 }
 
-type NavIconKey = "dashboard" | "subscriptions" | "calendar" | "statistics" | "settings";
+type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "calendar" | "statistics" | "settings";
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
 const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey }> = [
   { path: '/', labelKey: 'nav.dashboard', icon: "dashboard" },
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
+  { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
   { path: '/calendar', labelKey: 'nav.calendar', icon: "calendar" },
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
@@ -54,6 +56,8 @@ function renderNavIcon(icon: NavIconKey, className: string) {
       return <LayoutDashboard className={className} />;
     case "subscriptions":
       return <List className={className} />;
+    case "sharing":
+      return <UsersRound className={className} />;
     case "calendar":
       return <CalendarDays className={className} />;
     case "statistics":
@@ -103,7 +107,7 @@ export function Header({ onAddSubscription, availableTags, subscriptionActions }
                 href="/"
                 className={headerLayout.brandTitleLink}
               >
-                <h1 className={headerLayout.brandTitle}>Renewlet</h1>
+                <h1 className={headerLayout.brandTitle}>{PRODUCT_NAME}</h1>
               </Link>
               {isAuthenticated ? (
                 <SystemUpdateDialog

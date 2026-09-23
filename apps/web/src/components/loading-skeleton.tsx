@@ -32,7 +32,7 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
             </div>
           </div>
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav-skeleton">
-            {range(5).map((index) => (
+            {range(6).map((index) => (
               <div key={index} className={getHeaderDesktopNavSkeletonItemClass()}>
                 <SkeletonBox className="h-4 w-4 rounded" />
                 <SkeletonBox className={headerLayout.desktopNavSkeletonLabel} />
@@ -47,7 +47,7 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
         </div>
       </div>
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav-skeleton">
-        {range(5).map((index) => (
+        {range(6).map((index) => (
           <div key={index} className="flex flex-1 flex-col items-center gap-1 py-3">
             <SkeletonBox className="h-5 w-5 rounded" />
             <SkeletonBox className="h-3 w-10" />

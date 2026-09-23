@@ -32,6 +32,7 @@ import { useTheme } from "@/lib/theme-provider";
 import { usePasswordResetAvailability } from '@/hooks/use-password-reset-availability';
 import { useSetupStatus } from '@/hooks/use-setup-status';
 import { useRouteReady } from '@/components/route-progress';
+import { PRODUCT_NAME } from '@/lib/product-brand';
 import { useI18n } from '@/i18n/I18nProvider';
 import { LoginMfaDialog, type LoginMfaErrors, type LoginMfaState } from "@/pages/login-mfa-dialog";
 import type { AuthenticatorMfaMethod } from "@renewlet/shared/schemas/auth";
@@ -405,7 +406,7 @@ const Login = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-primary/20 via-primary/10 to-background items-center justify-center p-12">
         <div className="max-w-md grid gap-8">
           <RenewletBrandLockup
-            title="Renewlet"
+            title={PRODUCT_NAME}
             subtitle={t("app.tagline")}
             markSize="lg"
             titleClassName="text-3xl font-extrabold tracking-tight"
@@ -437,7 +438,7 @@ const Login = () => {
       <div className="auth-form-panel flex-1 flex items-center justify-center">
         <div className="w-full max-w-md grid gap-8">
           <RenewletBrandLockup
-            title="Renewlet"
+            title={PRODUCT_NAME}
             subtitle={t("app.tagline")}
             className="justify-center lg:hidden"
             titleClassName="text-2xl font-extrabold tracking-tight"

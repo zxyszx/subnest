@@ -18,6 +18,7 @@ const catalogEntryKey = (locale) => `src/i18n/catalog-loaders/${locale}.ts`;
 const privateRouteKeys = new Set([
   "src/pages/dashboard.tsx",
   "src/pages/subscriptions.tsx",
+  "src/pages/sharing.tsx",
   "src/pages/calendar.tsx",
   "src/pages/statistics.tsx",
   "src/pages/settings.tsx",
@@ -26,7 +27,8 @@ const privateRouteKeys = new Set([
 const budgets = {
   // 相比 510 KB gzip / 431 KB Brotli 基线分别下降 21.6% / 20.2%。
   startup: { gzip: 400000, brotli: 344000 },
-  route: { gzip: 400000, brotli: 344000 },
+  // SubNest 的合租域新增一组全局双语文案；完整路由 Brotli 预算仅增加约 0.6%。
+  route: { gzip: 400000, brotli: 346000 },
 };
 const forbiddenStartupModules = [
   ["Recharts", (id) => id.includes("node_modules/recharts/")],

@@ -28,6 +28,7 @@ describe("Lingui compiled catalogs", () => {
     expect(translate("zh-CN", "subscriptions.count", { count: 3 })).toBe("共 3 个订阅");
     expect(translate("zh-CN", "dashboard.realTimeRates", { currency: "CNY" })).toBe("实时汇率换算 (CNY)");
     expect(translate("zh-CN", "subscription.reminderInherit", { days: 5 })).toBe("默认值从设置中获取（提前 5 天）");
+    expect(translate("zh-CN", "sharing.title")).toBe("合租");
   });
 
   it("formats date-only values through the provider helper", () => {

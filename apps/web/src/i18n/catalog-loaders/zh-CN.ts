@@ -10,6 +10,7 @@ import { messages as notification } from "../catalogs/zh-CN/notification.po";
 import { messages as publicStatus } from "../catalogs/zh-CN/public-status.po";
 import { messages as settingsAccessSecurity } from "../catalogs/zh-CN/settings-access-security.po";
 import { messages as settings } from "../catalogs/zh-CN/settings.po";
+import { messages as sharing } from "../catalogs/zh-CN/sharing.po";
 import { messages as subscription } from "../catalogs/zh-CN/subscription.po";
 
 export const messages = {
@@ -24,5 +25,6 @@ export const messages = {
   ...publicStatus,
   ...settingsAccessSecurity,
   ...settings,
+  ...sharing,
   ...subscription,
 } satisfies Messages;

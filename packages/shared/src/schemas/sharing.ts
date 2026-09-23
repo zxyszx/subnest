@@ -1,0 +1,69 @@
+import { z } from "zod";
+import { apiSuccessResponseSchema } from "./api";
+import { dateInputSchema } from "./subscriptions";
+import { moneyStringSchema } from "../money";
+
+export const SHARING_ACCOUNT_STATUSES = ["active", "paused", "archived"] as const;
+
+export const sharingSubscriptionSummarySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  logo: z.string().nullable(),
+}).strict();
+
+export const sharingAccountSchema = z.object({
+  id: z.string().min(1),
+  subscription: sharingSubscriptionSummarySchema,
+  name: z.string().min(1),
+  accountNumber: z.number().int().positive(),
+  loginAccount: z.string().min(1),
+  hasPassword: z.boolean(),
+  verificationLink: z.url().nullable(),
+  monthlyCost: moneyStringSchema,
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  nextBillingDate: dateInputSchema,
+  paymentMethod: z.string().nullable(),
+  cardLast4: z.string().nullable(),
+  capacity: z.number().int().min(1).max(100),
+  occupiedSeats: z.number().int().nonnegative(),
+  status: z.enum(SHARING_ACCOUNT_STATUSES),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+}).strict();
+
+export const sharingAccountsPayloadSchema = z.object({
+  accounts: z.array(sharingAccountSchema),
+  total: z.number().int().nonnegative(),
+}).strict();
+
+export const sharingAccountPayloadSchema = z.object({
+  account: sharingAccountSchema,
+}).strict();
+
+export const sharingCredentialsPayloadSchema = z.object({
+  password: z.string(),
+}).strict();
+
+export const sharingAccountsResponseSchema = apiSuccessResponseSchema(sharingAccountsPayloadSchema);
+export const sharingAccountResponseSchema = apiSuccessResponseSchema(sharingAccountPayloadSchema);
+export const sharingCredentialsResponseSchema = apiSuccessResponseSchema(sharingCredentialsPayloadSchema);
+
+export const sharingAccountCreateSchema = z.object({
+  subscriptionId: z.string().min(1),
+  name: z.string().trim().min(1).max(120),
+  accountNumber: z.number().int().positive(),
+  loginAccount: z.string().trim().min(1).max(320),
+  password: z.string().min(1).max(1024),
+  verificationLink: z.union([z.literal(""), z.url()]),
+  monthlyCost: moneyStringSchema,
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  nextBillingDate: dateInputSchema,
+  paymentMethod: z.string().max(80),
+  cardLast4: z.string().max(32),
+  capacity: z.number().int().min(1).max(100),
+  status: z.enum(SHARING_ACCOUNT_STATUSES),
+  notes: z.string().max(5000),
+}).strict();
+
+export type SharingAccount = z.infer<typeof sharingAccountSchema>;
+export type SharingAccountCreate = z.infer<typeof sharingAccountCreateSchema>;

@@ -1,0 +1,226 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 00:40+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh-CN\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:40
+msgid "sharing.copyAll"
+msgstr "一键复制全部"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:23
+msgid "sharing.nextBillingDate"
+msgstr "下次续费"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:11
+msgid "sharing.emptyDescription"
+msgstr "先在订阅列表创建平台订阅，再从这里添加该订阅下的合租账号。"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:30
+msgid "sharing.creating"
+msgstr "创建中…"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:32
+msgid "sharing.createFailed"
+msgstr "创建失败，请检查填写内容"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:29
+msgid "sharing.create"
+msgstr "创建账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:12
+msgid "sharing.goToSubscriptions"
+msgstr "前往订阅列表"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:26
+msgid "sharing.cardLast4"
+msgstr "卡尾号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:28
+msgid "sharing.cancel"
+msgstr "取消"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:4
+msgid "sharing.title"
+msgstr "合租"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:6
+msgid "sharing.accounts"
+msgstr "合租账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:31
+msgid "sharing.createSuccess"
+msgstr "合租账号已创建"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:27
+msgid "sharing.notes"
+msgstr "备注"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:42
+msgid "sharing.copyFailed"
+msgstr "复制失败"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:38
+msgid "sharing.copyPassword"
+msgstr "复制密码"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:37
+msgid "sharing.copyAccount"
+msgstr "复制账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:39
+msgid "sharing.copyLink"
+msgstr "复制验证码链接"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:19
+msgid "sharing.password"
+msgstr "密码"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:44
+msgid "sharing.passwordUnavailable"
+msgstr "密码不可用"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:14
+msgid "sharing.addAccountDescription"
+msgstr "将一个平台订阅绑定为合租账号，并自动创建对应数量的空车位。"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:7
+msgid "sharing.occupiedSeats"
+msgstr "已占用车位"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:41
+msgid "sharing.copySuccess"
+msgstr "已复制"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:22
+msgid "sharing.currency"
+msgstr "币种"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:15
+msgid "sharing.subscription"
+msgstr "平台订阅"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:9
+msgid "sharing.outstanding"
+msgstr "待收金额"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:36
+msgid "sharing.actions"
+msgstr "快捷操作"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:35
+msgid "sharing.costAndRenewal"
+msgstr "成本与续费"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:25
+msgid "sharing.paymentMethod"
+msgstr "支付方式"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:13
+msgid "sharing.addAccount"
+msgstr "新增合租账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:33
+msgid "sharing.loadFailed"
+msgstr "无法加载合租账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:43
+msgid "sharing.noVerificationLink"
+msgstr "未设置验证码链接"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:21
+msgid "sharing.monthlyCost"
+msgstr "每月成本"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:18
+msgid "sharing.loginAccount"
+msgstr "登录账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:8
+msgid "sharing.availableSeats"
+msgstr "空闲车位"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:5
+msgid "sharing.subtitle"
+msgstr "管理合租账号、车位、车友、应收与收款"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:45
+msgid "sharing.accountCopyTemplate"
+msgstr "账号：{account}\n"
+"密码：{password}\n"
+"验证码：{link}"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:16
+msgid "sharing.accountName"
+msgstr "账号名称"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:17
+msgid "sharing.accountNumber"
+msgstr "账号编号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:34
+msgid "sharing.seats"
+msgstr "车位"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:24
+msgid "sharing.capacity"
+msgstr "车位数"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:10
+msgid "sharing.emptyTitle"
+msgstr "还没有合租账号"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:20
+msgid "sharing.verificationLink"
+msgstr "验证码链接"

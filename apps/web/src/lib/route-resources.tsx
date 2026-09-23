@@ -34,6 +34,7 @@ interface RouteResource {
 const loadPrivateAppShell = () => import("@/components/private-app-shell");
 const loadDashboard = () => import("@/pages/dashboard");
 const loadSubscriptions = () => import("@/pages/subscriptions");
+const loadSharing = () => import("@/pages/sharing");
 const loadCalendar = () => import("@/pages/calendar");
 const loadStatistics = () => import("@/pages/statistics");
 const loadSettings = () => import("@/pages/settings");
@@ -97,6 +98,12 @@ export const routeResources = {
     load: loadSubscriptions,
     fallback: SubscriptionsRouteFallback,
     loadData: loadSubscriptionsData,
+    usesPrivateShell: true,
+  },
+  sharing: {
+    path: "/sharing",
+    load: loadSharing,
+    fallback: SubscriptionsRouteFallback,
     usesPrivateShell: true,
   },
   calendar: {

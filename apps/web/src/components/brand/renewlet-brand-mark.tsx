@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { RenewletLogo } from "@/components/icons/renewlet-logo";
 import Link from "@/components/router-link";
 import { cn } from "@/lib/utils";
+import { PRODUCT_NAME } from "@/lib/product-brand";
 
 export type RenewletBrandMarkSize = "sm" | "md" | "lg";
 
@@ -32,7 +33,7 @@ type RenewletBrandMarkProps = {
 export function RenewletBrandMark({
   size = "md",
   href,
-  ariaLabel = "Renewlet",
+  ariaLabel = PRODUCT_NAME,
   interactive = Boolean(href),
   className,
   "aria-label": nonInteractiveLabel,

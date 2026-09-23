@@ -31,6 +31,10 @@ const (
 
 var schemaAutodateCollections = []string{
 	"subscriptions",
+	"sharing_accounts",
+	"sharing_seats",
+	"sharing_receivables",
+	"sharing_expenses",
 	"subscription_scheduler_states",
 	"settings",
 	"custom_configs",
@@ -77,6 +81,9 @@ func ensureCollectionsSchema(app core.App) error {
 		return err
 	}
 	if err := ensureSubscriptionsCollection(app, users); err != nil {
+		return err
+	}
+	if err := ensureSharingCollections(app, users); err != nil {
 		return err
 	}
 	if err := ensureSubscriptionSchedulerStatesCollection(app, users); err != nil {

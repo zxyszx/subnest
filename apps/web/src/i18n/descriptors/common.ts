@@ -2,7 +2,7 @@
 import { msg } from "@lingui/core/macro";
 
 export const messages = [
-  msg({ id: "app.tagline", message: "订阅管理助手" }),
+  msg({ id: "app.tagline", message: "订阅与合租管理" }),
   msg({ id: "exchangeRates.refreshing", message: "刷新中..." }),
   msg({ id: "exchangeRates.updated", message: "最新汇率数据已获取" }),
   msg({ id: "exchangeRates.failedWithFallback", message: "汇率获取失败，当前使用备用汇率。{error}" }),
@@ -50,6 +50,7 @@ export const messages = [
   msg({ id: "common.backToTop", message: "回到顶部" }),
   msg({ id: "nav.dashboard", message: "仪表盘" }),
   msg({ id: "nav.subscriptions", message: "订阅列表" }),
+  msg({ id: "nav.sharing", message: "合租" }),
   msg({ id: "nav.calendar", message: "日历" }),
   msg({ id: "nav.statistics", message: "统计" }),
   msg({ id: "nav.settings", message: "设置" }),

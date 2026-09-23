@@ -19,6 +19,7 @@ import {
 const PrivateAppShell = lazy(lazyPrivateAppShellLoader);
 const Dashboard = lazy(lazyRouteLoader("dashboard"));
 const Subscriptions = lazy(lazyRouteLoader("subscriptions"));
+const Sharing = lazy(lazyRouteLoader("sharing"));
 const Calendar = lazy(lazyRouteLoader("calendar"));
 const Statistics = lazy(lazyRouteLoader("statistics"));
 const Settings = lazy(lazyRouteLoader("settings"));
@@ -48,6 +49,7 @@ export default function App() {
           <Route element={<ProtectedRoute><PrivateAppShell /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="subscriptions" element={<Subscriptions />} />
+            <Route path="sharing" element={<Sharing />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="settings" element={<Settings />} />

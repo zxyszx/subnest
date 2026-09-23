@@ -1,0 +1,226 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 00:40+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en-US\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:40
+msgid "sharing.copyAll"
+msgstr "Copy all"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:23
+msgid "sharing.nextBillingDate"
+msgstr "Next renewal"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:11
+msgid "sharing.emptyDescription"
+msgstr "Create a platform subscription first, then add its shared accounts here."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:30
+msgid "sharing.creating"
+msgstr "Creating…"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:32
+msgid "sharing.createFailed"
+msgstr "Could not create the account. Check the entered values."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:29
+msgid "sharing.create"
+msgstr "Create account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:12
+msgid "sharing.goToSubscriptions"
+msgstr "Go to subscriptions"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:26
+msgid "sharing.cardLast4"
+msgstr "Card ending"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:28
+msgid "sharing.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:4
+msgid "sharing.title"
+msgstr "Sharing"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:6
+msgid "sharing.accounts"
+msgstr "Shared accounts"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:31
+msgid "sharing.createSuccess"
+msgstr "Shared account created"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:27
+msgid "sharing.notes"
+msgstr "Notes"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:42
+msgid "sharing.copyFailed"
+msgstr "Copy failed"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:38
+msgid "sharing.copyPassword"
+msgstr "Copy password"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:37
+msgid "sharing.copyAccount"
+msgstr "Copy account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:39
+msgid "sharing.copyLink"
+msgstr "Copy verification link"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:19
+msgid "sharing.password"
+msgstr "Password"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:44
+msgid "sharing.passwordUnavailable"
+msgstr "Password unavailable"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:14
+msgid "sharing.addAccountDescription"
+msgstr "Bind a platform subscription as a shared account and create its vacant seats automatically."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:7
+msgid "sharing.occupiedSeats"
+msgstr "Occupied seats"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:41
+msgid "sharing.copySuccess"
+msgstr "Copied"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:22
+msgid "sharing.currency"
+msgstr "Currency"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:15
+msgid "sharing.subscription"
+msgstr "Platform subscription"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:9
+msgid "sharing.outstanding"
+msgstr "Outstanding"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:36
+msgid "sharing.actions"
+msgstr "Quick actions"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:35
+msgid "sharing.costAndRenewal"
+msgstr "Cost and renewal"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:25
+msgid "sharing.paymentMethod"
+msgstr "Payment method"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:13
+msgid "sharing.addAccount"
+msgstr "Add shared account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:33
+msgid "sharing.loadFailed"
+msgstr "Could not load shared accounts"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:43
+msgid "sharing.noVerificationLink"
+msgstr "No verification link"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:21
+msgid "sharing.monthlyCost"
+msgstr "Monthly cost"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:18
+msgid "sharing.loginAccount"
+msgstr "Login account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:8
+msgid "sharing.availableSeats"
+msgstr "Available seats"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:5
+msgid "sharing.subtitle"
+msgstr "Manage shared accounts, seats, members, receivables, and payments"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:45
+msgid "sharing.accountCopyTemplate"
+msgstr "Account: {account}\n"
+"Password: {password}\n"
+"Verification: {link}"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:16
+msgid "sharing.accountName"
+msgstr "Account name"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:17
+msgid "sharing.accountNumber"
+msgstr "Account number"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:34
+msgid "sharing.seats"
+msgstr "Seats"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:24
+msgid "sharing.capacity"
+msgstr "Seat capacity"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:10
+msgid "sharing.emptyTitle"
+msgstr "No shared accounts yet"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:20
+msgid "sharing.verificationLink"
+msgstr "Verification link"

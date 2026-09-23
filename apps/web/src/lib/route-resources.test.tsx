@@ -27,6 +27,7 @@ vi.mock("@/pages/dashboard", () => {
   return { default: () => null };
 });
 vi.mock("@/pages/subscriptions", () => ({ default: () => null }));
+vi.mock("@/pages/sharing", () => ({ default: () => null }));
 vi.mock("@/pages/calendar", () => ({ default: () => null }));
 vi.mock("@/pages/statistics", () => ({ default: () => null }));
 vi.mock("@/pages/settings", () => ({ default: () => null }));

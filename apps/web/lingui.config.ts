@@ -7,6 +7,7 @@ const catalogDomains = [
   "legal",
   "custom-config",
   "subscription",
+  "sharing",
   "auth",
   "settings",
   "settings-access-security",

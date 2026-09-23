@@ -59,7 +59,15 @@ function parseWorkerRouteManifest(value: unknown): WorkerRouteManifestEntry[] {
 }
 
 const runtimeOnly = {
-  go: new Set(["GET /api/cron/notifications"]),
+  // Sharing credentials depend on PocketBase transactions and the server key ring.
+  // The initial SubNest release targets the Docker/1Panel runtime; Cloudflare/D1
+  // support will be added as a separate storage implementation.
+  go: new Set([
+    "GET /api/cron/notifications",
+    "GET /api/app/sharing/accounts",
+    "GET /api/app/sharing/accounts/{id}/credentials",
+    "POST /api/app/sharing/accounts",
+  ]),
   worker: new Set<string>(),
 };
 

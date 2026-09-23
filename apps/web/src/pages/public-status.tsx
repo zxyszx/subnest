@@ -76,7 +76,7 @@ const PUBLIC_STATUS_THEME_OPTIONS: PublicStatusThemeOption[] = [
 function useNoIndexMeta() {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = "Renewlet Status";
+    document.title = "SubNest Status";
 
     const existing = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     const previousContent = existing?.getAttribute("content") ?? null;

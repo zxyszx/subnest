@@ -27,7 +27,7 @@ describe("RenewletBrandMark", () => {
       </MemoryRouter>,
     );
 
-    const mark = screen.getByRole("link", { name: "Renewlet" });
+    const mark = screen.getByRole("link", { name: "SubNest" });
     expect(mark).toHaveClass(
       "bg-brand-mark",
       "text-brand-mark-foreground",

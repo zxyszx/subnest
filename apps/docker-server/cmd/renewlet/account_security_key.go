@@ -28,10 +28,11 @@ var (
 )
 
 type accountSecurityKeyRing struct {
-	totpSeed         []byte
-	recoveryCode     []byte
-	mfaTicket        []byte
-	passkeyChallenge []byte
+	totpSeed          []byte
+	sharingCredential []byte
+	recoveryCode      []byte
+	mfaTicket         []byte
+	passkeyChallenge  []byte
 }
 
 type accountSecurityKeyFile struct {
@@ -136,6 +137,10 @@ func deriveAccountSecurityKeyRing(master []byte) (*accountSecurityKeyRing, error
 	if err != nil {
 		return nil, err
 	}
+	sharingCredential, err := deriveAccountSecurityKey(prk, "sharing-credential-aes-gcm")
+	if err != nil {
+		return nil, err
+	}
 	recoveryCode, err := deriveAccountSecurityKey(prk, "recovery-code-hmac")
 	if err != nil {
 		return nil, err
@@ -149,10 +154,11 @@ func deriveAccountSecurityKeyRing(master []byte) (*accountSecurityKeyRing, error
 		return nil, err
 	}
 	return &accountSecurityKeyRing{
-		totpSeed:         totpSeed,
-		recoveryCode:     recoveryCode,
-		mfaTicket:        mfaTicket,
-		passkeyChallenge: passkeyChallenge,
+		totpSeed:          totpSeed,
+		sharingCredential: sharingCredential,
+		recoveryCode:      recoveryCode,
+		mfaTicket:         mfaTicket,
+		passkeyChallenge:  passkeyChallenge,
 	}, nil
 }
 
