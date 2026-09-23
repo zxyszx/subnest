@@ -68,6 +68,7 @@ const runtimeOnly = {
     "GET /api/app/sharing/accounts/{id}",
     "GET /api/app/sharing/accounts/{id}/credentials",
     "POST /api/app/sharing/accounts",
+    "PUT /api/app/sharing/accounts/{id}",
     "PUT /api/app/sharing/seats/{id}",
   ]),
   worker: new Set<string>(),

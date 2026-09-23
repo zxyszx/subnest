@@ -80,6 +80,21 @@ type sharingAccountCreateRequest struct {
 	Notes            string `json:"notes"`
 }
 
+type sharingAccountUpdateRequest struct {
+	Name             string `json:"name"`
+	AccountNumber    int    `json:"accountNumber"`
+	LoginAccount     string `json:"loginAccount"`
+	Password         string `json:"password"`
+	VerificationLink string `json:"verificationLink"`
+	MonthlyCost      string `json:"monthlyCost"`
+	Currency         string `json:"currency"`
+	NextBillingDate  string `json:"nextBillingDate"`
+	PaymentMethod    string `json:"paymentMethod"`
+	CardLast4        string `json:"cardLast4"`
+	Status           string `json:"status"`
+	Notes            string `json:"notes"`
+}
+
 func handleSharingAccountsList(app core.App, e *core.RequestEvent) error {
 	locale := requestLocale(e.Request)
 	rows, err := app.FindRecordsByFilter(
@@ -194,6 +209,49 @@ func handleSharingAccountCredentials(app core.App, e *core.RequestEvent) error {
 	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: password})
 }
 
+func handleSharingAccountUpdate(app core.App, e *core.RequestEvent) error {
+	locale := requestLocale(e.Request)
+	record, err := findOwnedSharingAccount(app, e.Auth.Id, e.Request.PathValue("id"))
+	if err != nil {
+		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
+	}
+	body, err := decodeStrictJSON[sharingAccountUpdateRequest](e.Request, locale)
+	if err != nil {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	if err := normalizeSharingAccountUpdateRequest(&body); err != nil {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	if body.Currency != record.GetString("currency") {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", errors.New("sharing account currency cannot change")), nil)
+	}
+	if body.Password != "" {
+		ciphertext, encryptErr := encryptSharingCredential(app, body.Password)
+		if encryptErr != nil {
+			return e.InternalServerError(serverText(locale, "common.internalError"), encryptErr)
+		}
+		record.Set("encryptedCredentials", ciphertext)
+	}
+	record.Set("name", body.Name)
+	record.Set("accountNumber", body.AccountNumber)
+	record.Set("loginAccount", body.LoginAccount)
+	record.Set("verificationLink", body.VerificationLink)
+	record.Set("monthlyCost", body.MonthlyCost)
+	record.Set("nextBillingDate", body.NextBillingDate)
+	record.Set("paymentMethod", body.PaymentMethod)
+	record.Set("cardLast4", body.CardLast4)
+	record.Set("status", body.Status)
+	record.Set("notes", body.Notes)
+	if err := app.Save(record); err != nil {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	payload, err := sharingAccountDetailAPI(app, record)
+	if err != nil {
+		return e.InternalServerError(serverText(locale, "common.internalError"), err)
+	}
+	return apiSuccessJSON(e, http.StatusOK, payload)
+}
+
 func normalizeSharingAccountCreateRequest(body *sharingAccountCreateRequest) error {
 	body.SubscriptionID = strings.TrimSpace(body.SubscriptionID)
 	body.Name = strings.TrimSpace(body.Name)
@@ -223,6 +281,38 @@ func normalizeSharingAccountCreateRequest(body *sharingAccountCreateRequest) err
 	}
 	if body.Status == "" {
 		body.Status = "active"
+	}
+	if body.Status != "active" && body.Status != "paused" && body.Status != "archived" {
+		return errors.New("invalid sharing account status")
+	}
+	if len(body.PaymentMethod) > 80 || len(body.CardLast4) > 32 || len(body.Notes) > sharingNotesMaxLength {
+		return errors.New("sharing account text is too long")
+	}
+	return nil
+}
+
+func normalizeSharingAccountUpdateRequest(body *sharingAccountUpdateRequest) error {
+	body.Name = strings.TrimSpace(body.Name)
+	body.LoginAccount = strings.TrimSpace(body.LoginAccount)
+	body.VerificationLink = strings.TrimSpace(body.VerificationLink)
+	body.MonthlyCost = strings.TrimSpace(body.MonthlyCost)
+	body.Currency = strings.ToUpper(strings.TrimSpace(body.Currency))
+	body.NextBillingDate = strings.TrimSpace(body.NextBillingDate)
+	body.PaymentMethod = strings.TrimSpace(body.PaymentMethod)
+	body.CardLast4 = strings.TrimSpace(body.CardLast4)
+	body.Status = strings.TrimSpace(body.Status)
+	body.Notes = strings.TrimSpace(body.Notes)
+	if body.Name == "" || len(body.Name) > 120 || body.AccountNumber < 1 || body.LoginAccount == "" || len(body.LoginAccount) > 320 || len(body.Password) > 1024 {
+		return errors.New("invalid sharing account identity")
+	}
+	if !validSharingMoney(body.MonthlyCost) || !sharingCurrencyPattern.MatchString(body.Currency) || !isValidDateOnly(body.NextBillingDate) {
+		return errors.New("invalid sharing account billing")
+	}
+	if body.VerificationLink != "" {
+		parsed, err := url.ParseRequestURI(body.VerificationLink)
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
+			return errors.New("invalid verification link")
+		}
 	}
 	if body.Status != "active" && body.Status != "paused" && body.Status != "archived" {
 		return errors.New("invalid sharing account status")

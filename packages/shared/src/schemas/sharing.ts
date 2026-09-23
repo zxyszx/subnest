@@ -114,6 +114,21 @@ export const sharingAccountCreateSchema = z.object({
   notes: z.string().max(5000),
 }).strict();
 
+export const sharingAccountUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  accountNumber: z.number().int().positive(),
+  loginAccount: z.string().trim().min(1).max(320),
+  password: z.string().max(1024),
+  verificationLink: z.union([z.literal(""), z.url()]),
+  monthlyCost: moneyStringSchema,
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  nextBillingDate: dateInputSchema,
+  paymentMethod: z.string().max(80),
+  cardLast4: z.string().max(32),
+  status: z.enum(SHARING_ACCOUNT_STATUSES),
+  notes: z.string().max(5000),
+}).strict();
+
 export const sharingSeatUpdateSchema = z.object({
   memberName: z.string().trim().max(120),
   contact: z.string().trim().max(320),
@@ -130,6 +145,7 @@ export const sharingSeatUpdateSchema = z.object({
 
 export type SharingAccount = z.infer<typeof sharingAccountSchema>;
 export type SharingAccountCreate = z.infer<typeof sharingAccountCreateSchema>;
+export type SharingAccountUpdate = z.infer<typeof sharingAccountUpdateSchema>;
 export type SharingAccountDetail = z.infer<typeof sharingAccountDetailPayloadSchema>;
 export type SharingSeat = z.infer<typeof sharingSeatSchema>;
 export type SharingSeatUpdate = z.infer<typeof sharingSeatUpdateSchema>;

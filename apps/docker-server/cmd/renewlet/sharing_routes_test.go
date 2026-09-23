@@ -119,9 +119,35 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	if list.Code != http.StatusOK || !json.Valid(list.Body.Bytes()) {
 		t.Fatalf("list status = %d body=%s", list.Code, list.Body.String())
 	}
+	accountUpdateBody := `{
+		"name":"Netflix Family #1","accountNumber":1,
+		"loginAccount":"netflix-family@example.com","password":"updated-password",
+		"verificationLink":"https://mail.example.com/new-code","monthlyCost":"48",
+		"currency":"CNY","nextBillingDate":"2026-11-01","paymentMethod":"Mastercard",
+		"cardLast4":"9988","status":"active","notes":"updated account"
+	}`
+	accountUpdate := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/accounts/"+accountID, accountUpdateBody, token)
+	if accountUpdate.Code != http.StatusOK || !containsJSONText(accountUpdate.Body.Bytes(), "netflix-family@example.com") || !containsJSONText(accountUpdate.Body.Bytes(), "https://mail.example.com/new-code") {
+		t.Fatalf("account update status = %d body=%s", accountUpdate.Code, accountUpdate.Body.String())
+	}
 	credentials := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts/"+accountID+"/credentials", "", token)
-	if credentials.Code != http.StatusOK || !containsJSONText(credentials.Body.Bytes(), "secret-password") {
+	if credentials.Code != http.StatusOK || !containsJSONText(credentials.Body.Bytes(), "updated-password") {
 		t.Fatalf("credentials status = %d body=%s", credentials.Code, credentials.Body.String())
+	}
+	keepPasswordBody := `{
+		"name":"Netflix Family #1","accountNumber":1,
+		"loginAccount":"netflix-family@example.com","password":"",
+		"verificationLink":"https://mail.example.com/new-code","monthlyCost":"48",
+		"currency":"CNY","nextBillingDate":"2026-11-01","paymentMethod":"Mastercard",
+		"cardLast4":"9988","status":"active","notes":"keep current password"
+	}`
+	keepPassword := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/accounts/"+accountID, keepPasswordBody, token)
+	if keepPassword.Code != http.StatusOK {
+		t.Fatalf("keep password update status = %d body=%s", keepPassword.Code, keepPassword.Body.String())
+	}
+	credentialsAfterKeep := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts/"+accountID+"/credentials", "", token)
+	if credentialsAfterKeep.Code != http.StatusOK || !containsJSONText(credentialsAfterKeep.Body.Bytes(), "updated-password") {
+		t.Fatalf("credentials after keep status = %d body=%s", credentialsAfterKeep.Code, credentialsAfterKeep.Body.String())
 	}
 	foreign := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts/"+accountID+"/credentials", "", foreignToken)
 	if foreign.Code != http.StatusNotFound {

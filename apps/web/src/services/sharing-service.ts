@@ -3,12 +3,14 @@ import {
   sharingAccountCreateSchema,
   sharingAccountDetailResponseSchema,
   sharingAccountResponseSchema,
+  sharingAccountUpdateSchema,
   sharingAccountsResponseSchema,
   sharingCredentialsResponseSchema,
   sharingSeatUpdateSchema,
   type SharingAccount,
   type SharingAccountCreate,
   type SharingAccountDetail,
+  type SharingAccountUpdate,
   type SharingSeatUpdate,
 } from "@renewlet/shared/schemas/sharing";
 
@@ -51,6 +53,15 @@ export const sharingService = {
     const payload = sharingSeatUpdateSchema.parse(input);
     return await apiFetch(
       `/api/app/sharing/seats/${encodeURIComponent(id)}`,
+      sharingAccountDetailResponseSchema,
+      { method: "PUT", body: JSON.stringify(payload) },
+    );
+  },
+
+  async updateAccount(id: string, input: SharingAccountUpdate): Promise<SharingAccountDetail> {
+    const payload = sharingAccountUpdateSchema.parse(input);
+    return await apiFetch(
+      `/api/app/sharing/accounts/${encodeURIComponent(id)}`,
       sharingAccountDetailResponseSchema,
       { method: "PUT", body: JSON.stringify(payload) },
     );
