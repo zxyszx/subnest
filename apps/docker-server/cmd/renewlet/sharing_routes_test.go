@@ -64,6 +64,56 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	if len(seats) != 5 {
 		t.Fatalf("seat count = %d, want 5", len(seats))
 	}
+	paidSeatBody := `{
+		"memberName":"Alice","contact":"alice@example.com","contactType":"email",
+		"monthlyPrice":"15","currency":"CNY","billingMonths":3,
+		"startDate":"2026-10-01","expiresAt":"2026-12-31","status":"active",
+		"paymentStatus":"paid","notes":"quarterly"
+	}`
+	paidSeat := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, paidSeatBody, token)
+	if paidSeat.Code != http.StatusOK {
+		t.Fatalf("paid seat update status = %d body=%s", paidSeat.Code, paidSeat.Body.String())
+	}
+	pendingSeatBody := `{
+		"memberName":"Bob","contact":"bob","contactType":"wechat",
+		"monthlyPrice":"15","currency":"CNY","billingMonths":3,
+		"startDate":"2026-10-01","expiresAt":"2026-12-31","status":"active",
+		"paymentStatus":"pending","notes":"quarterly"
+	}`
+	pendingSeat := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[1].Id, pendingSeatBody, token)
+	if pendingSeat.Code != http.StatusOK {
+		t.Fatalf("pending seat update status = %d body=%s", pendingSeat.Code, pendingSeat.Body.String())
+	}
+	detail := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts/"+accountID, "", token)
+	if detail.Code != http.StatusOK {
+		t.Fatalf("detail status = %d body=%s", detail.Code, detail.Body.String())
+	}
+	var detailEnvelope struct {
+		Data sharingAccountDetailPayload `json:"data"`
+	}
+	if err := json.Unmarshal(detail.Body.Bytes(), &detailEnvelope); err != nil {
+		t.Fatal(err)
+	}
+	if detailEnvelope.Data.Account.OccupiedSeats != 2 || detailEnvelope.Data.Totals.MonthlyRevenue != "30" || detailEnvelope.Data.Totals.ContractedRevenue != "90" || detailEnvelope.Data.Totals.CollectedRevenue != "45" || detailEnvelope.Data.Totals.OutstandingAmount != "45" || detailEnvelope.Data.Totals.MonthlyProfit != -15 {
+		t.Fatalf("unexpected sharing totals: %#v", detailEnvelope.Data)
+	}
+	if len(detailEnvelope.Data.Seats) != 5 || detailEnvelope.Data.Seats[0].CurrentReceivable == nil || detailEnvelope.Data.Seats[0].CurrentReceivable.Amount != "45" || detailEnvelope.Data.Seats[0].CurrentReceivable.Status != "paid" {
+		t.Fatalf("unexpected seat detail: %#v", detailEnvelope.Data.Seats)
+	}
+	foreignSeatUpdate := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, paidSeatBody, foreignToken)
+	if foreignSeatUpdate.Code != http.StatusNotFound {
+		t.Fatalf("foreign seat update status = %d, want 404", foreignSeatUpdate.Code)
+	}
+	mismatchedCurrencyBody := `{
+		"memberName":"Alice","contact":"alice@example.com","contactType":"email",
+		"monthlyPrice":"15","currency":"USD","billingMonths":3,
+		"startDate":"2026-10-01","expiresAt":"2026-12-31","status":"active",
+		"paymentStatus":"paid","notes":"quarterly"
+	}`
+	mismatchedCurrency := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, mismatchedCurrencyBody, token)
+	if mismatchedCurrency.Code != http.StatusBadRequest {
+		t.Fatalf("mismatched seat currency status = %d, want 400", mismatchedCurrency.Code)
+	}
 
 	list := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts", "", token)
 	if list.Code != http.StatusOK || !json.Valid(list.Body.Bytes()) {

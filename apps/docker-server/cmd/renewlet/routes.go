@@ -358,7 +358,9 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	auth.POST("/subscriptions", func(e *core.RequestEvent) error { return handleSubscriptionCreate(app, e) })
 	auth.GET("/sharing/accounts", func(e *core.RequestEvent) error { return handleSharingAccountsList(app, e) })
 	auth.POST("/sharing/accounts", func(e *core.RequestEvent) error { return handleSharingAccountCreate(app, e) })
+	auth.GET("/sharing/accounts/{id}", func(e *core.RequestEvent) error { return handleSharingAccountDetail(app, e) })
 	auth.GET("/sharing/accounts/{id}/credentials", func(e *core.RequestEvent) error { return handleSharingAccountCredentials(app, e) })
+	auth.PUT("/sharing/seats/{id}", func(e *core.RequestEvent) error { return handleSharingSeatUpdate(app, e) })
 	// 静态集合路由必须先于 {id} 详情路由注册，防止 index/analytics/calendar-feeds/facets/export 被解释成订阅 ID。
 	auth.GET("/subscriptions/index", func(e *core.RequestEvent) error { return handleSubscriptionsIndex(app, e) })
 	auth.GET("/subscriptions/analytics", func(e *core.RequestEvent) error { return handleSubscriptionsAnalytics(app, e) })

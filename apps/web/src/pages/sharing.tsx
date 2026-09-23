@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { CircleDollarSign, CircleParking, Copy, KeyRound, Link as LinkIcon, Plus, UsersRound, WalletCards } from "lucide-react";
+import { CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Plus, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
+import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
@@ -25,12 +26,15 @@ export default function Sharing() {
   const createAccount = useCreateSharingAccount();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subscriptionId, setSubscriptionId] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
   const subscriptionsQuery = useSubscriptionIndex(undefined, dialogOpen);
   useRouteReady();
 
   const accounts = accountsQuery.data?.accounts ?? [];
   const occupiedSeats = accounts.reduce((total, account) => total + account.occupiedSeats, 0);
   const capacity = accounts.reduce((total, account) => total + account.capacity, 0);
+  const outstanding = accounts.reduce((total, account) => total + Number(account.outstandingAmount), 0);
+  const monthlyProfit = accounts.reduce((total, account) => total + account.monthlyProfit, 0);
 
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -146,9 +150,9 @@ export default function Sharing() {
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={accounts.length} icon={<WalletCards className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.occupiedSeats")} value={occupiedSeats} icon={<UsersRound className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.availableSeats")} value={capacity - occupiedSeats} icon={<CircleParking className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.outstanding")} value={formatCurrency(0, "CNY")} icon={<CircleDollarSign className="h-6 w-6" />} density="compact" />
+          <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound className="h-6 w-6" />} density="compact" />
+          <StatCard title={t("sharing.outstanding")} value={formatCurrency(outstanding, "CNY")} icon={<CircleDollarSign className="h-6 w-6" />} density="compact" />
+          <StatCard title={t("sharing.monthlyProfit")} value={formatCurrency(monthlyProfit, "CNY")} icon={<TrendingUp className="h-6 w-6" />} density="compact" />
         </section>
 
         {accountsQuery.isError ? (
@@ -169,14 +173,15 @@ export default function Sharing() {
                 </tr></thead>
                 <tbody className="divide-y divide-border">{accounts.map((account) => (
                   <tr key={account.id} className="hover:bg-muted/20">
-                    <td className="px-4 py-3"><div className="font-medium text-foreground">{account.name}</div><div className="mt-0.5 text-xs text-muted-foreground">{account.subscription.name} #{account.accountNumber}</div></td>
+                    <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelectedAccount(account)}><span className="font-medium text-foreground hover:text-primary">{account.name}</span><span className="mt-0.5 block text-xs text-muted-foreground">{account.subscription.name} #{account.accountNumber}</span></button></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
                     <td className="px-4 py-3 tabular-nums">{account.occupiedSeats} / {account.capacity}</td>
-                    <td className="px-4 py-3"><div>{formatCurrency(Number(account.monthlyCost), account.currency)}</div><div className="mt-0.5 text-xs text-muted-foreground">{account.nextBillingDate}</div></td>
+                    <td className="px-4 py-3"><div>{formatCurrency(Number(account.monthlyCost), account.currency)}</div><div className="mt-0.5 text-xs text-muted-foreground">{account.nextBillingDate} · {t("sharing.monthlyProfit")} {formatCurrency(account.monthlyProfit, account.currency)}</div></td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1">
                       <Button type="button" size="icon" variant="ghost" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                       <Button type="button" size="icon" variant="ghost" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
                       <Button type="button" size="sm" variant="outline" title={t("sharing.copyAll")} onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
+                      <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
                   </tr>
                 ))}</tbody>
@@ -184,6 +189,7 @@ export default function Sharing() {
             </div>
           </section>
         )}
+        <SharingAccountDetailDialog account={selectedAccount} open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
       </main>
     </div>
   );

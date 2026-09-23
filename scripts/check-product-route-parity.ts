@@ -65,8 +65,10 @@ const runtimeOnly = {
   go: new Set([
     "GET /api/cron/notifications",
     "GET /api/app/sharing/accounts",
+    "GET /api/app/sharing/accounts/{id}",
     "GET /api/app/sharing/accounts/{id}/credentials",
     "POST /api/app/sharing/accounts",
+    "PUT /api/app/sharing/seats/{id}",
   ]),
   worker: new Set<string>(),
 };

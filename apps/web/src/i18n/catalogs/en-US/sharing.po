@@ -14,6 +14,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:80
+msgid "sharing.telegram"
+msgstr "Telegram"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:40
 msgid "sharing.copyAll"
 msgstr "Copy all"
@@ -24,9 +29,34 @@ msgid "sharing.nextBillingDate"
 msgstr "Next renewal"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:65
+msgid "sharing.active"
+msgstr "Active"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:70
+msgid "sharing.saving"
+msgstr "Saving…"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:72
+msgid "sharing.seatSaveFailed"
+msgstr "Could not save. Check the member and billing details."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:69
+msgid "sharing.saveSeat"
+msgstr "Save seat"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:11
 msgid "sharing.emptyDescription"
 msgstr "Create a platform subscription first, then add its shared accounts here."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:83
+msgid "sharing.other"
+msgstr "Other"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:30
@@ -57,6 +87,11 @@ msgstr "Card ending"
 #: src/i18n/descriptors/sharing.ts:28
 msgid "sharing.cancel"
 msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:50
+msgid "sharing.contractedRevenue"
+msgstr "Contracted revenue"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:4
@@ -124,6 +159,21 @@ msgid "sharing.copySuccess"
 msgstr "Copied"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:67
+msgid "sharing.archived"
+msgstr "Archived"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:62
+msgid "sharing.paid"
+msgstr "Paid"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:51
+msgid "sharing.collectedRevenue"
+msgstr "Collected"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:22
 msgid "sharing.currency"
 msgstr "Currency"
@@ -134,9 +184,29 @@ msgid "sharing.subscription"
 msgstr "Platform subscription"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:59
+msgid "sharing.startDate"
+msgstr "Start date"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:63
+msgid "sharing.pending"
+msgstr "Pending"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:52
+msgid "sharing.outstandingAmount"
+msgstr "Outstanding"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:9
 msgid "sharing.outstanding"
 msgstr "Outstanding"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:79
+msgid "sharing.wechat"
+msgstr "WeChat"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:36
@@ -154,6 +224,21 @@ msgid "sharing.paymentMethod"
 msgstr "Payment method"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:61
+msgid "sharing.paymentStatus"
+msgstr "Payment status"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:75
+msgid "sharing.billingDetails"
+msgstr "Billing and term"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:58
+msgid "sharing.billingMonths"
+msgstr "Billing months"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:13
 msgid "sharing.addAccount"
 msgstr "Add shared account"
@@ -164,9 +249,34 @@ msgid "sharing.loadFailed"
 msgstr "Could not load shared accounts"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:78
+msgid "sharing.loadDetailFailed"
+msgstr "Could not load account details"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:66
+msgid "sharing.paused"
+msgstr "Paused"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:49
+msgid "sharing.monthlyProfit"
+msgstr "Monthly net profit"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:48
+msgid "sharing.monthlyRevenue"
+msgstr "Monthly revenue"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:43
 msgid "sharing.noVerificationLink"
 msgstr "No verification link"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:76
+msgid "sharing.calculatedReceivable"
+msgstr "Receivable for this term"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:21
@@ -174,9 +284,24 @@ msgid "sharing.monthlyCost"
 msgstr "Monthly cost"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:57
+msgid "sharing.monthlyPrice"
+msgstr "Monthly charge"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:82
+msgid "sharing.phone"
+msgstr "Phone"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:18
 msgid "sharing.loginAccount"
 msgstr "Login account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:64
+msgid "sharing.vacant"
+msgstr "Vacant"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:8
@@ -184,9 +309,34 @@ msgid "sharing.availableSeats"
 msgstr "Available seats"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:77
+msgid "sharing.noMember"
+msgstr "Waiting for a member"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:5
 msgid "sharing.subtitle"
 msgstr "Manage shared accounts, seats, members, receivables, and payments"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:46
+msgid "sharing.manageAccount"
+msgstr "Manage account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:68
+msgid "sharing.editSeat"
+msgstr "Manage seat"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:56
+msgid "sharing.contact"
+msgstr "Contact"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:55
+msgid "sharing.contactType"
+msgstr "Contact type"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:45
@@ -201,9 +351,19 @@ msgid "sharing.accountName"
 msgstr "Account name"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:47
+msgid "sharing.accountSummary"
+msgstr "Account performance"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:17
 msgid "sharing.accountNumber"
 msgstr "Account number"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:53
+msgid "sharing.seatNumber"
+msgstr "Seat"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:34
@@ -211,14 +371,44 @@ msgid "sharing.seats"
 msgstr "Seats"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:71
+msgid "sharing.seatSaved"
+msgstr "Seat and receivable updated"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:24
 msgid "sharing.capacity"
 msgstr "Seat capacity"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:73
+msgid "sharing.status"
+msgstr "Seat status"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:60
+msgid "sharing.expiresAt"
+msgstr "Member expiry"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:54
+msgid "sharing.memberName"
+msgstr "Member name"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:74
+msgid "sharing.memberDetails"
+msgstr "Member details"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:10
 msgid "sharing.emptyTitle"
 msgstr "No shared accounts yet"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:81
+msgid "sharing.email"
+msgstr "Email"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:20

@@ -1,11 +1,15 @@
 import { apiFetch } from "@/lib/api-client";
 import {
   sharingAccountCreateSchema,
+  sharingAccountDetailResponseSchema,
   sharingAccountResponseSchema,
   sharingAccountsResponseSchema,
   sharingCredentialsResponseSchema,
+  sharingSeatUpdateSchema,
   type SharingAccount,
   type SharingAccountCreate,
+  type SharingAccountDetail,
+  type SharingSeatUpdate,
 } from "@renewlet/shared/schemas/sharing";
 
 function signalInit(signal?: AbortSignal): RequestInit | undefined {
@@ -33,5 +37,22 @@ export const sharingService = {
       { cache: "no-store" },
     );
     return data.password;
+  },
+
+  async detail(id: string, signal?: AbortSignal): Promise<SharingAccountDetail> {
+    return await apiFetch(
+      `/api/app/sharing/accounts/${encodeURIComponent(id)}`,
+      sharingAccountDetailResponseSchema,
+      signalInit(signal),
+    );
+  },
+
+  async updateSeat(id: string, input: SharingSeatUpdate): Promise<SharingAccountDetail> {
+    const payload = sharingSeatUpdateSchema.parse(input);
+    return await apiFetch(
+      `/api/app/sharing/seats/${encodeURIComponent(id)}`,
+      sharingAccountDetailResponseSchema,
+      { method: "PUT", body: JSON.stringify(payload) },
+    );
   },
 };
