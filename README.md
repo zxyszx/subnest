@@ -16,33 +16,34 @@
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square">
 </p>
 
-SubNest is a self-hosted subscription and sharing manager for subscription costs, account renewals, shared seats, member expiries, receivables, and profit.
+SubNest 是一个自托管的订阅与合租管理工具。它统一管理订阅成本、账号续费、合租车位、车友到期、应收款与利润。
 
-Run it in a single Docker container or deploy it to Cloudflare Workers.
+可以用 Docker 单容器运行，也可以部署到 Cloudflare Workers。
 
-## Demo
+## 在线演示
 
 <https://demo.renewlet.cc/>
 
-Sign in with `demo@renewlet.local` / `renewlet-demo`. Data resets regularly; do not enter real information or credentials.
+使用 `demo@renewlet.local` / `renewlet-demo` 登录。数据会定期重置，请勿填写真实信息或凭据。
 
 <p align="center">
-  <img src="./docs/screenshots/renewlet-dashboard-en.png" alt="Renewlet dashboard showing monthly spend, upcoming renewals, and spending distribution" width="100%">
+  <img src="./docs/screenshots/renewlet-dashboard-zh.png" alt="Renewlet 中文仪表盘，展示月度支出、近期续费和支出分布" width="100%">
 </p>
 
-## Features
+## 功能
 
-- Keep prices, billing cycles, renewal dates, payment methods, and notes in one place.
-- Review monthly or yearly spending, track a budget, and convert between currencies.
-- Send reminders in your timezone through Telegram, Notifyx, Webhook, WeCom, DingTalk, email, Bark, ServerChan, Discord, or PushPlus.
-- Turn screenshots, notes, or tables into editable drafts, then review them before import. You can also import or export Renewlet data, or migrate from Wallos.
-- Add all or individual subscriptions to a calendar, or share a public status page with prices hidden when needed.
-- Secure the account with an authenticator, recovery codes, or passkeys, and optionally protect password login with Cloudflare Turnstile.
-- Connect CLI tools, Shortcuts, and other automation through the read-only [Public API](docs/public-api.md).
+- 记录订阅：价格、扣费周期、续费日、付款方式和备注都放在一处。
+- 查看支出：按月或按年汇总费用，跟踪预算并换算不同币种。
+- 续费提醒：按你的时区提前发送，渠道包括 Telegram、Notifyx、Webhook、企业微信、钉钉、邮件、Bark、Server酱、Discord 和 PushPlus。
+- 录入和迁移：从截图、备忘录或表格生成可编辑草稿，确认后再导入；也可以导入导出 Renewlet 数据或迁入 Wallos 文件。
+- 合租管理：每条订阅可以启用家庭共享，管理账号、车位、车友续费、应收与多币种利润。
+- 日历和分享：把订阅续费和车友到期放进同一日历，或生成可隐藏金额的公开状态页。
+- 账号安全：使用身份验证器、恢复码或通行密钥，也可以为密码登录开启 Cloudflare Turnstile。
+- 自动化：通过只读 [Public API](docs/public-api.md) 接入 CLI、Shortcuts 和其他工具。
 
-## Docker Quick Start
+## 快速部署
 
-Requirements: Docker and Docker Compose v2.
+需要 Docker 和 Docker Compose v2。
 
 ```bash
 mkdir -p renewlet && cd renewlet
@@ -50,15 +51,15 @@ curl -fsSL https://raw.githubusercontent.com/zxyszx/subnest/main/deploy/docker-d
 docker compose up -d
 ```
 
-After it starts, open:
+启动后打开：
 
 ```text
 http://localhost:3000/setup
 ```
 
-Create the first administrator. The deploy script creates `docker-compose.yml`, `.env`, and `data/`, then writes `PB_ENCRYPTION_KEY` and `CRON_SECRET`.
+创建第一个管理员。部署脚本会生成 `docker-compose.yml`、`.env` 和 `data/`，并写入 `PB_ENCRYPTION_KEY` 与 `CRON_SECRET`。
 
-For production, pin a stable image tag:
+正式使用时建议固定版本：
 
 ```bash
 sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
@@ -66,25 +67,25 @@ docker compose pull
 docker compose up -d
 ```
 
-SubNest images are published only from this repository to GHCR; deployments never pull a Renewlet image.
+SubNest 镜像只从本仓库的 GHCR 发布，不会拉取 Renewlet 的镜像。
 
 ## Cloudflare Workers
 
 <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zxyszx/subnest"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
 
-Click the button to deploy. To manage the Cloudflare resources yourself, follow the [Cloudflare Workers deployment guide](docs/cloudflare-workers-deploy.md).
+点击上方按钮直接部署。需要自己管理 Cloudflare 资源时，请按 [Cloudflare Workers 部署](docs/cloudflare-workers-deploy.zh-CN.md) 操作。
 
-For upgrades, update the existing repository as described in the guide instead of clicking the deploy button again.
+升级已有实例时不要再次点击部署按钮，按部署文档同步现有仓库即可。
 
-## Upgrade
+## 升级
 
-Back up your data and configuration first:
+升级前先备份数据和配置：
 
 ```bash
 tar -czf renewlet-backup-$(date +%F).tgz .env docker-compose.yml data
 ```
 
-Update the Docker image:
+更新 Docker 镜像：
 
 ```bash
 sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
@@ -93,9 +94,9 @@ docker compose up -d
 docker compose logs -f
 ```
 
-You can also update in the app by clicking the version number at the top of Renewlet and opening System Update.
+也可以点击页面顶部的版本号，在“系统更新”中完成更新。
 
-## Common Commands
+## 常用命令
 
 ```bash
 docker compose ps
@@ -103,25 +104,25 @@ docker compose logs -f
 docker compose down
 ```
 
-Common `.env` values:
+常用 `.env` 配置：
 
-| Variable | Purpose |
+| 变量 | 用途 |
 | --- | --- |
-| `PORT` | Public port, `3000` by default. |
-| `RENEWLET_IMAGE` | Docker image, `ghcr.io/zxyszx/subnest:latest` by default. |
-| `TZ` | Time zone for logs; reminders use each user's time zone. |
-| `PB_ENCRYPTION_KEY` | Encryption key for sensitive settings. Do not change it after deployment. |
-| `CRON_SECRET` | Bearer secret for external Cron requests. |
-| `RENEWLET_DEMO_MODE` | Enables demo mode. `false` by default. |
-| `RENEWLET_CUSTOM_HEAD_HTML` | Optional custom `<head>` content. Empty by default. |
-| `NOTIFICATION_SCHEDULER_ENABLED` | Enables the built-in notification scheduler. `true` by default. |
-| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Recommended proxy variables for outbound HTTP(S) requests from the Docker server. |
+| `PORT` | 对外端口，默认 `3000`。 |
+| `RENEWLET_IMAGE` | Docker 镜像，默认 `ghcr.io/zxyszx/subnest:latest`。 |
+| `TZ` | 日志时区；提醒使用每个用户设置的时区。 |
+| `PB_ENCRYPTION_KEY` | 敏感设置加密密钥，部署后不要更换。 |
+| `CRON_SECRET` | 外部 Cron 请求使用的 Bearer 密钥。 |
+| `RENEWLET_DEMO_MODE` | 是否开启演示模式，默认 `false`。 |
+| `RENEWLET_CUSTOM_HEAD_HTML` | 可选的自定义 `<head>` 内容，默认留空。 |
+| `NOTIFICATION_SCHEDULER_ENABLED` | 是否启用内置通知调度器，默认 `true`。 |
+| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Docker 服务端发出 HTTP(S) 请求时推荐使用的代理变量。 |
 
-The full Docker environment template is in `.env.example`.
+完整 Docker 环境变量模板见 `.env.example`。
 
-### Upstream Proxy
+### 上游代理
 
-To proxy HTTP(S) requests made by the Docker server, set these values in `.env`:
+Docker 服务端发出的 HTTP(S) 请求需要代理时，在 `.env` 中配置：
 
 ```env
 HTTP_PROXY="http://host.docker.internal:7890"
@@ -129,76 +130,76 @@ HTTPS_PROXY="http://host.docker.internal:7890"
 NO_PROXY="localhost,127.0.0.1,.local"
 ```
 
-Use the uppercase names by default. The lowercase alternatives are `http_proxy`, `https_proxy`, and `no_proxy`. Do not set both forms; when both are present, Go uses the uppercase value.
+默认使用大写变量。小写备选名为 `http_proxy`、`https_proxy` 和 `no_proxy`。不要同时配置大小写两组变量；两组同时存在时，Go 优先读取大写值。
 
-If the proxy runs on the host, use an address the container can reach instead of `localhost` or `127.0.0.1`. Recreate the container after a change:
+代理运行在宿主机时，请填写容器可以访问的地址，不要使用 `localhost` 或 `127.0.0.1`。修改后重新创建容器：
 
 ```bash
 docker compose up -d --force-recreate
 ```
 
-### Custom Head HTML
+### 自定义 Head HTML
 
-To add a third-party service such as [Microsoft Clarity](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-setup), copy the provider's `<head>` code into `RENEWLET_CUSTOM_HEAD_HTML` unchanged. Wrap multiline values in single quotes when using a Docker `.env` file.
+需要接入 [Microsoft Clarity](https://learn.microsoft.com/zh-cn/clarity/setup-and-installation/clarity-setup) 等第三方服务时，把服务商提供的 `<head>` 代码原样填入 `RENEWLET_CUSTOM_HEAD_HTML`。Docker `.env` 中的多行代码用单引号包裹。
 
-Only add code you trust; it can access data on Renewlet pages. Restart the Docker container after a change, or rebuild and redeploy Cloudflare.
+只添加你信任的代码，它可以访问 Renewlet 页面中的数据。修改后，Docker 部署需重启容器，Cloudflare 部署需重新构建并部署。
 
-## Screenshots
-
-<table>
-  <tr>
-    <td width="50%">
-      <strong>AI recognition</strong><br>
-      <img src="./docs/screenshots/renewlet-ai-recognition-en.png" alt="Renewlet AI recognition dialog showing the input state before turning text content into editable subscription drafts">
-    </td>
-    <td width="50%">
-      <strong>Public subscription status page</strong><br>
-      <img src="./docs/screenshots/renewlet-public-status-en.png" alt="Renewlet public subscription status page showing public subscription totals, prices, and subscription cards">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <strong>Subscriptions</strong><br>
-      <img src="./docs/screenshots/renewlet-subscriptions-en.png" alt="Renewlet subscriptions view with filters, tags, statuses, and service logos">
-    </td>
-    <td width="50%">
-      <strong>Statistics</strong><br>
-      <img src="./docs/screenshots/renewlet-statistics-en.png" alt="Renewlet statistics view with budget usage, category spending, and payment method charts">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <strong>Renewal calendar</strong><br>
-      <img src="./docs/screenshots/renewlet-calendar-en.png" alt="Renewlet renewal calendar showing monthly renewal events and estimated spend">
-    </td>
-    <td width="50%">
-      <strong>Notifications</strong><br>
-      <img src="./docs/screenshots/renewlet-notifications-en.png" alt="Renewlet notification settings showing channels and email configuration">
-    </td>
-  </tr>
-</table>
-
-### Mobile
+## 截图
 
 <table>
   <tr>
     <td width="50%">
-      <strong>Mobile subscriptions</strong><br>
-      <img src="./docs/screenshots/renewlet-subscriptions-h5-en.png" alt="Renewlet mobile subscriptions view with filters, subscription cards, logos, prices, and tags">
+      <strong>AI 识别订阅</strong><br>
+      <img src="./docs/screenshots/renewlet-ai-recognition-zh.png" alt="Renewlet 中文 AI 识别订阅弹窗，展示从文本内容生成可编辑订阅草稿前的输入态">
     </td>
     <td width="50%">
-      <strong>Mobile notification methods</strong><br>
-      <img src="./docs/screenshots/renewlet-notifications-h5-en.png" alt="Renewlet mobile notification methods view showing the email channel and SMTP email configuration">
+      <strong>公开订阅状态页</strong><br>
+      <img src="./docs/screenshots/renewlet-public-status-zh.png" alt="Renewlet 中文公开订阅状态页，展示公开订阅汇总、价格和订阅卡片">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>订阅清单</strong><br>
+      <img src="./docs/screenshots/renewlet-subscriptions-zh.png" alt="Renewlet 中文订阅清单，展示筛选、标签、状态和服务 Logo">
+    </td>
+    <td width="50%">
+      <strong>统计分析</strong><br>
+      <img src="./docs/screenshots/renewlet-statistics-zh.png" alt="Renewlet 中文统计页面，展示预算、分类支出和付款方式图表">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>续费日历</strong><br>
+      <img src="./docs/screenshots/renewlet-calendar-zh.png" alt="Renewlet 中文续费日历，展示月度续费事件和预计支出">
+    </td>
+    <td width="50%">
+      <strong>通知设置</strong><br>
+      <img src="./docs/screenshots/renewlet-notifications-zh.png" alt="Renewlet 中文通知设置，展示通知渠道和邮件配置">
     </td>
   </tr>
 </table>
 
-## Contributing
+### 移动端
 
-Issues, documentation fixes, tests, and pull requests are welcome. For larger changes, open an issue first with the goal, use case, and rough approach.
+<table>
+  <tr>
+    <td width="50%">
+      <strong>移动端订阅列表</strong><br>
+      <img src="./docs/screenshots/renewlet-subscriptions-h5-zh.png" alt="Renewlet 中文 H5 订阅列表，展示移动端筛选区、订阅卡片、Logo、价格和标签">
+    </td>
+    <td width="50%">
+      <strong>移动端通知方式</strong><br>
+      <img src="./docs/screenshots/renewlet-notifications-h5-zh.png" alt="Renewlet 中文 H5 通知方式，展示邮件通知渠道和 SMTP 邮件配置">
+    </td>
+  </tr>
+</table>
 
-## Attribution and License
+## 贡献
 
-SubNest is based on [Renewlet](https://github.com/zhiyingzzhou/renewlet) and preserves the original authors' and contributors' MIT license and copyright notices. SubNest's sharing features, interface, and releases are maintained independently and never auto-install Renewlet releases.
+欢迎提交 issue、文档修正、测试或 pull request。较大的变更请先开 issue，说明目标、使用场景和大致方案。
 
-This project is open-sourced under the [MIT License](LICENSE).
+## 来源与许可证
+
+SubNest 基于 [Renewlet](https://github.com/zhiyingzzhou/renewlet) 开发，保留原项目作者与贡献者的 MIT 许可和版权声明。SubNest 的合租功能、界面与发布版本由本仓库独立维护，不自动同步或安装 Renewlet 的版本。
+
+本项目基于 [MIT License](LICENSE) 开源。
