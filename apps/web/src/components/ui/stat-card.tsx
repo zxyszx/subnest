@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: ReactNode;
   subtitle?: string;
   icon: ReactNode;
   variant?: 'default' | 'primary' | 'warning';
