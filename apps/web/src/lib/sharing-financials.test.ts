@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { assertDateOnly } from "@/lib/time/date-only";
-import { sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
+import { sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 import type { SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
 
 describe("sharingUpcomingRenewalCount", () => {
@@ -33,5 +33,24 @@ describe("sharingUpcomingSeatRenewals", () => {
       { seat: { id: "seat-today" }, daysUntilExpiry: 0 },
       { seat: { id: "seat-7" }, daysUntilExpiry: 7 },
     ]);
+  });
+});
+
+describe("sharingNearestSeatExpiry", () => {
+  it("finds the earliest assigned seat and counts members sharing that date", () => {
+    const detail = {
+      seats: [
+        { seatNumber: 3, memberName: "Later", expiresAt: "2026-10-02", status: "active" },
+        { seatNumber: 1, memberName: "First", expiresAt: "2026-10-01", status: "active" },
+        { seatNumber: 2, memberName: "Second", expiresAt: "2026-10-01", status: "paused" },
+        { seatNumber: 4, memberName: null, expiresAt: "2026-09-25", status: "vacant" },
+      ],
+    } as SharingAccountDetail;
+
+    expect(sharingNearestSeatExpiry(detail, assertDateOnly("2026-09-24"))).toEqual({
+      expiresAt: "2026-10-01",
+      daysUntilExpiry: 7,
+      memberCount: 2,
+    });
   });
 });

@@ -109,4 +109,5 @@ export const messages = [
   msg({ id: "sharing.upcomingDialogTitle", message: "7 天内即将续费" }),
   msg({ id: "sharing.upcomingDialogDescription", message: "按紧急程度排序，越接近到期越靠前。" }),
   msg({ id: "sharing.upcomingDialogEmpty", message: "未来 7 天内没有车友到期" }),
+  msg({ id: "sharing.nearestExpiry", message: "最近到期" }),
 ] as const;

@@ -1793,6 +1793,7 @@ export const MESSAGE_KEYS = [
   "sharing.monthlyProfit",
   "sharing.monthlyRevenue",
   "sharing.morePlatforms",
+  "sharing.nearestExpiry",
   "sharing.nextBillingDate",
   "sharing.nextSevenDays",
   "sharing.noMember",

@@ -99,6 +99,11 @@ msgid "sharing.other"
 msgstr "其他"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:112
+msgid "sharing.nearestExpiry"
+msgstr "最近到期"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:35
 msgid "sharing.creating"
 msgstr "创建中…"

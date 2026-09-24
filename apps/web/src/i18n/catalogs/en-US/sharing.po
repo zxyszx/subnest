@@ -99,6 +99,11 @@ msgid "sharing.other"
 msgstr "Other"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:112
+msgid "sharing.nearestExpiry"
+msgstr "Nearest expiry"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:35
 msgid "sharing.creating"
 msgstr "Creating…"

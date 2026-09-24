@@ -21,7 +21,7 @@ import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
-import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
+import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
@@ -73,6 +73,10 @@ export default function Sharing() {
     })
     .sort((left, right) => left.accountNumber - right.accountNumber || left.name.localeCompare(right.name));
   const accountDetailQueries = useSharingAccountDetails(visibleAccounts.map((account) => account.id));
+  const accountDetails = new Map(visibleAccounts.flatMap((account, index) => {
+    const detail = accountDetailQueries[index]?.data;
+    return detail ? [[account.id, detail] as const] : [];
+  }));
   const upcomingSeatRenewals = sharingUpcomingSeatRenewals(
     accountDetailQueries.flatMap((query) => query.data ? [query.data] : []),
     today,
@@ -157,6 +161,29 @@ export default function Sharing() {
     );
   };
 
+  const NearestExpiry = ({ accountId }: { accountId: string }) => {
+    const nearest = sharingNearestSeatExpiry(accountDetails.get(accountId), today);
+    if (!nearest) return <span className="text-muted-foreground">-</span>;
+    const status = nearest.daysUntilExpiry < 0
+      ? t("subscription.card.expiredDays", { days: Math.abs(nearest.daysUntilExpiry) })
+      : nearest.daysUntilExpiry === 0
+        ? t("common.today")
+        : t("upcoming.daysShort", { days: nearest.daysUntilExpiry });
+    return (
+      <div className="grid gap-1">
+        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-foreground">{formatDateOnly(nearest.expiresAt)}</span>
+        <span className={cn(
+          "w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums",
+          nearest.daysUntilExpiry < 0
+            ? "bg-destructive/10 text-destructive"
+            : nearest.daysUntilExpiry <= 7
+              ? "bg-warning/10 text-warning"
+              : "bg-primary/10 text-primary",
+        )}>{status}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="app-page bg-background">
       <Header />
@@ -221,22 +248,23 @@ export default function Sharing() {
               : "mt-6 rounded-lg",
           )}>
             <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full min-w-216 text-left text-sm">
+              <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-4 py-3 font-medium">{t("sharing.seats")}</th><th className="w-52 px-4 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
                 ) : visibleAccounts.map((account) => (
                   <tr key={account.id} className="hover:bg-muted/20">
                     <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
-                    <td className="px-4 py-3 tabular-nums">{account.occupiedSeats} / {account.capacity}</td>
-                    <td className="px-4 py-3">
-                      <dl className="grid min-w-48 gap-1 rounded-md border border-border/70 bg-muted/45 px-3 py-2 text-[11px] text-muted-foreground">
-                        <div className="flex items-center justify-between gap-3"><dt>{t("sharing.monthlyCost")}</dt><dd className="font-semibold tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
-                        <div className="flex items-center justify-between gap-3"><dt>{t("sharing.monthlyProfit")}</dt><dd className={cn("font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-amber-400" : "text-emerald-400")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>
-                        <div className="flex items-center justify-between gap-3"><dt>{t("sharing.nextBillingDate")}</dt><dd className="tabular-nums text-foreground/85">{account.nextBillingDate}</dd></div>
+                    <td className="px-3 py-3 tabular-nums">{account.occupiedSeats} / {account.capacity}</td>
+                    <td className="px-3 py-3"><NearestExpiry accountId={account.id} /></td>
+                    <td className="px-3 py-3">
+                      <dl className="grid min-w-44 gap-0.5 rounded-md border border-border/70 bg-muted/45 px-2.5 py-2 text-[11px] text-muted-foreground">
+                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyCost")}</dt><dd className="font-semibold tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
+                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd className={cn("font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-amber-400" : "text-emerald-400")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>
+                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.nextBillingDate")}</dt><dd className="tabular-nums text-foreground/85">{account.nextBillingDate}</dd></div>
                       </dl>
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1">
@@ -258,6 +286,7 @@ export default function Sharing() {
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                     <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{account.occupiedSeats} / {account.capacity}</dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{account.nextBillingDate}</dd></div>
                     <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>

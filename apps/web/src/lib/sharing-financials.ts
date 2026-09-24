@@ -40,6 +40,29 @@ export interface SharingUpcomingSeatRenewal {
   daysUntilExpiry: number;
 }
 
+export interface SharingNearestSeatExpiry {
+  expiresAt: string;
+  daysUntilExpiry: number;
+  memberCount: number;
+}
+
+export function sharingNearestSeatExpiry(
+  detail: SharingAccountDetail | undefined,
+  today: DateOnly,
+): SharingNearestSeatExpiry | null {
+  if (!detail) return null;
+  const assigned = detail.seats
+    .filter((seat) => seat.expiresAt && seat.memberName && seat.status !== "vacant" && seat.status !== "archived")
+    .sort((left, right) => left.expiresAt!.localeCompare(right.expiresAt!) || left.seatNumber - right.seatNumber);
+  const expiresAt = assigned[0]?.expiresAt;
+  if (!expiresAt) return null;
+  return {
+    expiresAt,
+    daysUntilExpiry: daysBetweenDateOnly(today, expiresAt),
+    memberCount: assigned.filter((seat) => seat.expiresAt === expiresAt).length,
+  };
+}
+
 export function sharingUpcomingSeatRenewals(
   details: readonly SharingAccountDetail[],
   today: DateOnly,
