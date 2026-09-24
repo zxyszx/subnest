@@ -57,12 +57,12 @@ describe("Cloudflare system update contract", () => {
     expect(body["releaseInfo"]).toMatchObject({
       tagName: "v1.2.3",
       version: "1.2.3",
-      htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.2.3",
+      htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v1.2.3",
       assets: [],
     });
     expect(body).not.toHaveProperty("runtime");
     const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toBe("https://github.com/zhiyingzzhou/renewlet/releases.atom");
+    expect(String(url)).toBe("https://github.com/zxyszx/subnest/releases.atom");
     const headers = new Headers((init as RequestInit | undefined)?.headers);
     expect(headers.get("accept")).toBe("application/atom+xml");
     expect(headers.get("authorization")).toBeNull();
@@ -210,7 +210,7 @@ describe("Cloudflare system update contract", () => {
       releaseInfo: {
         tagName: "v0.1.1",
         version: "0.1.1",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.1",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v0.1.1",
       },
     });
   });
@@ -234,7 +234,7 @@ describe("Cloudflare system update contract", () => {
       releaseInfo: {
         tagName: "v0.2.91",
         version: "0.2.91",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.2.91",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v0.2.91",
       },
     });
   });
@@ -256,7 +256,7 @@ describe("Cloudflare system update contract", () => {
       releaseInfo: {
         tagName: "v1.2.3",
         version: "1.2.3",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.2.3",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v1.2.3",
       },
     });
   });
@@ -392,7 +392,7 @@ function releaseAtomFixture(versions: string[]): string {
     const tag = version.startsWith("v") ? version : `v${version}`;
     return `  <entry>
     <updated>2026-06-02T00:00:00Z</updated>
-    <link rel="alternate" type="text/html" href="https://github.com/zhiyingzzhou/renewlet/releases/tag/${tag}"/>
+    <link rel="alternate" type="text/html" href="https://github.com/zxyszx/subnest/releases/tag/${tag}"/>
     <title>${tag}</title>
     <content type="html">&lt;p&gt;Release notes&lt;/p&gt;</content>
   </entry>`;

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	systemUpdateRepository    = "zhiyingzzhou/renewlet"
+	systemUpdateRepository    = "zxyszx/subnest"
 	systemUpdateChannelStable = "stable"
 	systemUpdateChannelRC     = "rc"
 	systemUpdateCacheTTL      = 20 * time.Minute

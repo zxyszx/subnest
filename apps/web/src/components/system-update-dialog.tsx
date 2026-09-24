@@ -30,8 +30,8 @@ const deploymentLabelKeys: Record<SystemDeployment, MessageKey> = {
 const RESTART_COUNTDOWN_SECONDS = 8;
 const HEALTH_RETRY_COUNT = 5;
 const HEALTH_RETRY_DELAY_MS = 1_000;
-const CLOUDFLARE_DEPLOY_GUIDE_URL = "https://github.com/zhiyingzzhou/renewlet/blob/main/docs/cloudflare-workers-deploy.md";
-const GITHUB_COMMIT_URL_PREFIX = "https://github.com/zhiyingzzhou/renewlet/commit/";
+const CLOUDFLARE_DEPLOY_GUIDE_URL = "https://github.com/zxyszx/subnest/blob/main/docs/cloudflare-workers-deploy.md";
+const GITHUB_COMMIT_URL_PREFIX = "https://github.com/zxyszx/subnest/commit/";
 const GITHUB_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
 
 export const systemRestartBrowser = {

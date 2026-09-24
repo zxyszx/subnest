@@ -96,7 +96,7 @@ function versionFixture(overrides: Record<string, unknown> = {}) {
       name: "Renewlet 1.1.0",
       body: "更新日志",
       publishedAt: "2026-05-26T00:00:00Z",
-      htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.1.0",
+      htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v1.1.0",
       assets: [],
     },
     cached: false,
@@ -395,7 +395,7 @@ describe("SystemUpdateDialog", () => {
         name: "Renewlet 1.1.0",
         body: "",
         publishedAt: "2026-05-26T00:00:00Z",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.1.0",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v1.1.0",
         assets: [],
       },
     });
@@ -407,7 +407,7 @@ describe("SystemUpdateDialog", () => {
 
     expect(await screen.findByText("页面内更新不可用")).toBeInTheDocument();
     expect(screen.getByText("目标 Release 暂缺页面内更新所需附件：renewlet_1.1.0_linux_amd64.tar.gz。")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.1.0");
+    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zxyszx/subnest/releases/tag/v1.1.0");
     expect(screen.queryByRole("button", { name: "立即更新" })).not.toBeInTheDocument();
   });
 
@@ -453,7 +453,7 @@ describe("SystemUpdateDialog", () => {
         name: "Renewlet 1.1.0",
         body: "",
         publishedAt: "2026-05-26T00:00:00Z",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.1.0",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v1.1.0",
         assets: [],
       },
       build: {
@@ -472,7 +472,7 @@ describe("SystemUpdateDialog", () => {
     expect(await screen.findByText("发现新版本")).toBeInTheDocument();
     expect(screen.getByText("可以更新到 v1.1.0。请通过部署流程升级。")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cloudflare 部署说明" })).toHaveAttribute("href", expect.stringContaining("docs/cloudflare-workers-deploy.md"));
-    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zhiyingzzhou/renewlet/releases/tag/v1.1.0");
+    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zxyszx/subnest/releases/tag/v1.1.0");
     expect(screen.queryByText("页面内更新不可用")).not.toBeInTheDocument();
     expect(screen.queryByText("源码构建")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "立即更新" })).not.toBeInTheDocument();
@@ -494,7 +494,7 @@ describe("SystemUpdateDialog", () => {
         name: "Renewlet 0.1.1",
         body: "",
         publishedAt: "2026-06-09T00:00:00Z",
-        htmlUrl: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.1",
+        htmlUrl: "https://github.com/zxyszx/subnest/releases/tag/v0.1.1",
         assets: [],
       },
       build: {
@@ -513,7 +513,7 @@ describe("SystemUpdateDialog", () => {
     expect(await screen.findByText("已是最新版本")).toBeInTheDocument();
     expect(screen.getAllByText("v0.1.1").length).toBeGreaterThan(0);
     expect(screen.queryByText("v0.1.1-dev")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.1");
+    expect(screen.getByRole("link", { name: "发布页" })).toHaveAttribute("href", "https://github.com/zxyszx/subnest/releases/tag/v0.1.1");
     expect(screen.queryByRole("button", { name: "立即更新" })).not.toBeInTheDocument();
   });
 
@@ -543,7 +543,7 @@ describe("SystemUpdateDialog", () => {
 
     expect(await screen.findByText("已是最新版本")).toBeInTheDocument();
     expect(screen.queryByText("无需操作。")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "提交" })).toHaveAttribute("href", "https://github.com/zhiyingzzhou/renewlet/commit/504c1681822ac60f0caafdb0b1ba731853c9169d");
+    expect(screen.getByRole("link", { name: "提交" })).toHaveAttribute("href", "https://github.com/zxyszx/subnest/commit/504c1681822ac60f0caafdb0b1ba731853c9169d");
     expect(screen.queryByText("页面内更新不可用")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cloudflare 部署说明" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "发布页" })).not.toBeInTheDocument();
@@ -576,7 +576,7 @@ describe("SystemUpdateDialog", () => {
     await user.click(await screen.findByRole("button", { name: "打开系统更新" }));
 
     expect(await screen.findByText("GitHub Release 暂时不可用")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "提交" })).toHaveAttribute("href", "https://github.com/zhiyingzzhou/renewlet/commit/504c1681822ac60f0caafdb0b1ba731853c9169d");
+    expect(screen.getByRole("link", { name: "提交" })).toHaveAttribute("href", "https://github.com/zxyszx/subnest/commit/504c1681822ac60f0caafdb0b1ba731853c9169d");
     expect(screen.queryByText("已是最新版本")).not.toBeInTheDocument();
     expect(screen.queryByText("页面内更新不可用")).not.toBeInTheDocument();
   });

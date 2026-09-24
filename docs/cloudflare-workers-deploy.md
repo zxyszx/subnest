@@ -2,7 +2,7 @@
 
 ## Recommended: One-Click Deploy
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zhiyingzzhou/renewlet"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zxyszx/subnest"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
 
 1. Click the button.
 2. Sign in to Cloudflare or authorize access.
@@ -23,34 +23,7 @@ If you are using a proxy/VPN node, a corporate or school network, or another sha
 
 ### Upgrade
 
-One-click deploy creates and connects a repository in your GitHub account. To upgrade Renewlet later, update that generated repository. Do not click the one-click deploy button again; that can create a new Worker/D1/R2 instead of updating your existing instance.
-
-Open the Renewlet Worker in the Cloudflare dashboard, go to `Settings` -> `Builds`, and find the generated repository connected by Cloudflare Builds. This generated repository is not a standard GitHub fork, so it will not have GitHub's native `Sync fork` button.
-
-Open the generated repository, then:
-
-1. Go to `Actions`.
-2. Select `Sync Renewlet Upstream`.
-3. Click `Run workflow`.
-4. Wait for the workflow to finish.
-
-This workflow runs only when you click it; it does not update on a schedule. It updates the generated repository to the latest Renewlet files while preserving the existing Cloudflare resource configuration and vars in `wrangler.jsonc`. After the workflow commits the update, Cloudflare Builds redeploys automatically.
-
-If GitHub says Actions are disabled, open the generated repository's `Settings` -> `Actions` -> `General`, enable Actions, and allow `Read and write permissions` under `Workflow permissions`.
-
-### Existing One-Click Deploy Users
-
-Older GitHub generated repositories might not have `Sync Renewlet Upstream`. Do not click the one-click deploy button again; keep using the original Worker, D1, R2, and generated repository.
-
-If you do not see this workflow in `Actions`, add this file once in the original generated repository:
-
-```text
-.github/workflows/sync-renewlet-upstream.yml
-```
-
-Copy the content from this workflow: [sync-renewlet-upstream.yml](https://raw.githubusercontent.com/zhiyingzzhou/renewlet/main/.github/workflows/sync-renewlet-upstream.yml).
-
-After committing it, future upgrades use the same path as new users: `Actions` -> `Sync Renewlet Upstream` -> `Run workflow`.
+SubNest releases only from `zxyszx/subnest` and no longer synchronizes Renewlet. A stable version tag runs `Release Publish`, creates a GitHub Release, and rebuilds the Cloudflare deployment after all release checks pass. Do not click the one-click deploy button again for an existing instance because it can create duplicate Worker, D1, or R2 resources.
 
 If you prefer to create D1/R2, the Cloudflare API Token, and GitHub Secrets yourself, use the manual deploy flow below.
 
@@ -231,9 +204,7 @@ Custom domain: after deployment, bind a Worker route or custom domain for the Wo
 
 ## Update Version
 
-One-click deploy users: follow the Upgrade steps above and run `Sync Renewlet Upstream` in the generated repository connected by Cloudflare Builds.
-
-Manual deploy users: update your fork to the latest Renewlet version with `Sync fork` / `Update branch`. If deployment does not start automatically, open `Actions` and run `Cloudflare Worker`.
+Production versions are published by this repository's `Release Publish` workflow. Manual deployments can run `Cloudflare Worker` from Actions. The in-app Cloudflare version panel is notification-only and cannot replace a remote Worker.
 
 ## D1 Upgrade and Recovery
 

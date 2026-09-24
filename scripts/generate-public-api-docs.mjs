@@ -173,7 +173,7 @@ function buildOpenApiDocument() {
       ].join(" "),
       license: {
         name: "MIT",
-        url: "https://github.com/zhiyingzzhou/renewlet/blob/main/LICENSE",
+        url: "https://github.com/zxyszx/subnest/blob/main/LICENSE",
       },
     },
     servers: [

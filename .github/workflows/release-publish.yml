@@ -52,7 +52,7 @@ jobs:
           fi
 
       - name: Validate stable tag source
-        if: ${{ github.repository == 'zhiyingzzhou/renewlet' && steps.version.outputs.is-stable == 'true' }}
+        if: ${{ github.repository == 'zxyszx/subnest' && steps.version.outputs.is-stable == 'true' }}
         run: |
           set -euo pipefail
           git fetch origin main:refs/remotes/origin/main
@@ -67,7 +67,7 @@ jobs:
 
   e2e-smoke:
     needs: metadata
-    if: ${{ github.repository == 'zhiyingzzhou/renewlet' }}
+    if: ${{ github.repository == 'zxyszx/subnest' }}
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -118,7 +118,7 @@ jobs:
     needs:
       - metadata
       - e2e-smoke
-    if: ${{ github.repository == 'zhiyingzzhou/renewlet' }}
+    if: ${{ github.repository == 'zxyszx/subnest' }}
     permissions:
       contents: read
       packages: write
@@ -173,12 +173,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4.6.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push
         uses: docker/build-push-action@v7.3.0
         with:
@@ -198,7 +192,7 @@ jobs:
     needs:
       - metadata
       - e2e-smoke
-    if: ${{ github.repository == 'zhiyingzzhou/renewlet' }}
+    if: ${{ github.repository == 'zxyszx/subnest' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -223,7 +217,7 @@ jobs:
         run: pnpm build:cloudflare
 
   github-release:
-    if: ${{ github.repository == 'zhiyingzzhou/renewlet' }}
+    if: ${{ github.repository == 'zxyszx/subnest' }}
     needs:
       - metadata
       - docker
@@ -309,7 +303,8 @@ jobs:
         with:
           tag_name: v${{ needs.metadata.outputs.version }}
           prerelease: ${{ needs.metadata.outputs.is-stable != 'true' }}
-          draft: ${{ needs.metadata.outputs.is-stable == 'true' }}
+          # 标签发布已经经过 smoke、Docker 与 Cloudflare 构建门；成功后直接进入版本 feed。
+          draft: false
           body_path: tmp-release-body.md
           fail_on_unmatched_files: true
           files: |
@@ -322,7 +317,7 @@ jobs:
     needs:
       - metadata
       - github-release
-    if: ${{ github.repository == 'zhiyingzzhou/renewlet' && needs.metadata.outputs.is-stable == 'true' }}
+    if: ${{ github.repository == 'zxyszx/subnest' && needs.metadata.outputs.is-stable == 'true' }}
     # 稳定版才进入生产审批；RC 只保留 Cloudflare check/build 作为发布前验证。
     permissions:
       contents: read
@@ -387,13 +382,3 @@ jobs:
 
       - name: Deploy Renewlet through the exclusive migration orchestrator
         run: pnpm deploy -- --config "$CI_WRANGLER_CONFIG" --maintenance-config "$CI_WRANGLER_MAINTENANCE_CONFIG"
-
-  fork-notice:
-    needs: metadata
-    if: ${{ github.repository != 'zhiyingzzhou/renewlet' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip official publishing on forks
-        run: |
-          echo "Release Publish is reserved for zhiyingzzhou/renewlet."
-          echo "Forks still get CI, Build Smoke, and Cloudflare Worker self-host deployment workflows."

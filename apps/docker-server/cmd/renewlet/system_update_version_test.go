@@ -28,7 +28,7 @@ func TestSystemVersionFailureIncludesOneShotUpstreamDetailsWithoutCachingRawBody
 		TagName:     "v0.1.0",
 		Name:        "Renewlet 0.1.0",
 		PublishedAt: "2026-06-04T00:00:00Z",
-		HTMLURL:     "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.0",
+		HTMLURL:     "https://github.com/zxyszx/subnest/releases/tag/v0.1.0",
 		Assets:      []systemReleaseAsset{},
 	}})
 	service.now = func() time.Time { return time.Unix(1_779_820_800, 0) }
@@ -270,7 +270,7 @@ func TestSystemVersionReleaseAssetsStayArrayWhenEmpty(t *testing.T) {
 			TagName:     "v0.1.0-rc.2",
 			Name:        "Renewlet 0.1.0-rc.2",
 			PublishedAt: "2026-06-04T00:00:00Z",
-			HTMLURL:     "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.0-rc.2",
+			HTMLURL:     "https://github.com/zxyszx/subnest/releases/tag/v0.1.0-rc.2",
 			Assets:      nil,
 		},
 	}})
@@ -342,7 +342,7 @@ func TestSystemVersionDisablesInAppUpdateWhenReleaseAssetsMissing(t *testing.T) 
 				{
 					TagName: "v0.1.0-rc.2",
 					Name:    "Renewlet 0.1.0-rc.2",
-					HTMLURL: "https://github.com/zhiyingzzhou/renewlet/releases/tag/v0.1.0-rc.2",
+					HTMLURL: "https://github.com/zxyszx/subnest/releases/tag/v0.1.0-rc.2",
 					Assets:  tc.assets,
 				},
 			}})

@@ -12,16 +12,14 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const repositoryOwner = "zhiyingzzhou";
-const repositoryName = "renewlet";
+const repositoryOwner = "zxyszx";
+const repositoryName = "subnest";
 const githubRepository = `${repositoryOwner}/${repositoryName}`;
 const githubBaseUrl = `https://github.com/${githubRepository}`;
-const dockerHubImage = `${repositoryOwner}/${repositoryName}`;
 const ghcrImage = `ghcr.io/${githubRepository}`;
 const firstStableVersion = "0.1.0";
 const latestTag = "latest";
 const rcTag = "rc";
-const defaultDockerHubImage = `${dockerHubImage}:${latestTag}`;
 const defaultGhcrImage = `${ghcrImage}:${latestTag}`;
 const versionPattern = /^v?(?<version>\d+\.\d+\.\d+(?:-rc\.(?<rc>\d+))?)$/;
 const stablePattern = /^v?\d+\.\d+\.\d+$/;
@@ -33,7 +31,7 @@ const packagePaths = [
   "packages/shared/package.json",
 ];
 const readmeDockerImagePaths = ["README.md", "README.zh-CN.md"];
-const readmeDockerImages = [dockerHubImage, ghcrImage];
+const readmeDockerImages = [ghcrImage];
 
 function usage() {
   console.log(`Usage:
@@ -315,15 +313,12 @@ function dockerTags(rawVersion) {
   if (isStableVersion(version)) {
     // latest 只随稳定版移动；RC 用户必须显式选择 rc 或具体候选标签。
     tags.push(
-      `${dockerHubImage}:${version}`,
-      `${dockerHubImage}:${majorMinor(version)}`,
-      `${dockerHubImage}:${latestTag}`,
       `${ghcrImage}:${version}`,
       `${ghcrImage}:${majorMinor(version)}`,
       `${ghcrImage}:${latestTag}`,
     );
   } else {
-    tags.push(`${dockerHubImage}:${version}`, `${dockerHubImage}:${rcTag}`, `${ghcrImage}:${version}`, `${ghcrImage}:${rcTag}`);
+    tags.push(`${ghcrImage}:${version}`, `${ghcrImage}:${rcTag}`);
   }
 
   return tags;
@@ -332,7 +327,6 @@ function dockerTags(rawVersion) {
 function releaseBody(rawVersion, previous) {
   const version = normalizeVersion(rawVersion);
   const tags = dockerTags(version);
-  const dockerHubTags = tags.filter((tag) => tag.startsWith(`${dockerHubImage}:`));
   const ghcrTags = tags.filter((tag) => tag.startsWith(`${ghcrImage}:`));
   const notes = markdownNotes(version, previous, { includeFullChangelog: false }).trimEnd();
 
@@ -341,8 +335,6 @@ function releaseBody(rawVersion, previous) {
     "",
     "## Docker 镜像",
     "",
-    "- Docker Hub",
-    ...dockerHubTags.map((tag) => `  - \`${tag}\``),
     "- GitHub Container Registry",
     ...ghcrTags.map((tag) => `  - \`${tag}\``),
     "",
@@ -356,7 +348,6 @@ function releaseBody(rawVersion, previous) {
 function patchDockerImage(content, version) {
   // Release 附件必须 pin 当前版本，避免用户下载旧 Release 后被 latest 带到未来版本。
   return content
-    .replace(new RegExp(escapedRegExp(defaultDockerHubImage), "g"), `${dockerHubImage}:${version}`)
     .replace(new RegExp(escapedRegExp(defaultGhcrImage), "g"), `${ghcrImage}:${version}`);
 }
 

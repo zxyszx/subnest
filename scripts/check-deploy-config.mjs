@@ -35,7 +35,6 @@ import { checkCloudflareMigrationSafety } from "./check-cloudflare-migration-saf
 import { checkCustomHeadHTMLDeployContract } from "./check-custom-head-html-deploy-contract.mjs";
 import { checkDockerBuildContract } from "./check-docker-build-contract.mjs";
 import { checkDockerProxyContract } from "./check-docker-proxy-contract.mjs";
-import { checkSyncRenewletUpstream } from "./check-deploy-sync-upstream.mjs";
 import { checkWorkflowContracts } from "./check-workflow-contracts.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -604,7 +603,7 @@ function checkCloudflareWorkflowBuildMetadata() {
   }
   // 官方 main 是稳定发布线；自管分支部署不能绕过 Release Publish 的 production-cloudflare 审批门。
   for (const snippet of [
-    "if: ${{ github.repository != 'zhiyingzzhou/renewlet' || github.ref == 'refs/heads/dev' }}",
+    "if: ${{ github.repository != 'zxyszx/subnest' || github.ref == 'refs/heads/dev' }}",
     "      - dev",
     "      - main",
     "workflow_dispatch:",
@@ -695,7 +694,6 @@ checkCloudflareDeployButtonVersionFallback();
 checkCloudflareWorkflowBuildMetadata();
 checkWorkflowContracts(repoRoot);
 checkRuntimeReleaseSecretPathRemoved();
-checkSyncRenewletUpstream(repoRoot);
 checkComposeConfig();
 
 console.log("Deployment configuration checks passed.");

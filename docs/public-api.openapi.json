@@ -7,7 +7,7 @@
     "description": "Read-only API for subscriptions, status summaries, and upcoming due items. All endpoints require an `Authorization: Bearer rlt_*` token created in Renewlet settings.",
     "license": {
       "name": "MIT",
-      "url": "https://github.com/zhiyingzzhou/renewlet/blob/main/LICENSE"
+      "url": "https://github.com/zxyszx/subnest/blob/main/LICENSE"
     }
   },
   "servers": [

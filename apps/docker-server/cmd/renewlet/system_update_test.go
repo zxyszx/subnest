@@ -70,8 +70,8 @@ func TestSystemRCVersionComparison(t *testing.T) {
 func TestSelectSystemUpdateAssets(t *testing.T) {
 	archiveName := systemArchiveName("1.2.3")
 	archive, checksum, err := selectSystemUpdateAssets([]systemReleaseAsset{
-		{Name: archiveName, BrowserDownloadURL: "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/" + archiveName},
-		{Name: "checksums.txt", BrowserDownloadURL: "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/checksums.txt"},
+		{Name: archiveName, BrowserDownloadURL: "https://github.com/zxyszx/subnest/releases/download/v1.2.3/" + archiveName},
+		{Name: "checksums.txt", BrowserDownloadURL: "https://github.com/zxyszx/subnest/releases/download/v1.2.3/checksums.txt"},
 	}, "1.2.3")
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestSystemReleaseAssetProbeUsesDeterministicReleaseURLs(t *testing.T) {
 	}
 	seenMu.Lock()
 	defer seenMu.Unlock()
-	if seen["/zhiyingzzhou/renewlet/releases/download/v1.2.3/"+archiveName] == nil || seen["/zhiyingzzhou/renewlet/releases/download/v1.2.3/checksums.txt"] == nil {
+	if seen["/zxyszx/subnest/releases/download/v1.2.3/"+archiveName] == nil || seen["/zxyszx/subnest/releases/download/v1.2.3/checksums.txt"] == nil {
 		t.Fatalf("unexpected probed paths: %#v", seen)
 	}
 }
@@ -178,7 +178,7 @@ func TestSystemReleaseDownloadComputesChecksumWhileWriting(t *testing.T) {
 		})}),
 	}
 	targetPath := filepath.Join(t.TempDir(), "archive.tar.gz")
-	actual, err := client.DownloadFile(context.Background(), "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/archive.tar.gz", targetPath, int64(len(content)), int64(len(content)))
+	actual, err := client.DownloadFile(context.Background(), "https://github.com/zxyszx/subnest/releases/download/v1.2.3/archive.tar.gz", targetPath, int64(len(content)), int64(len(content)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +194,7 @@ func TestSystemReleaseDownloadComputesChecksumWhileWriting(t *testing.T) {
 		t.Fatalf("downloaded content = %q", written)
 	}
 	oversizedPath := filepath.Join(t.TempDir(), "oversized.tar.gz")
-	if _, err := client.DownloadFile(context.Background(), "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/oversized.tar.gz", oversizedPath, int64(len(content)), int64(len(content)-1)); err == nil {
+	if _, err := client.DownloadFile(context.Background(), "https://github.com/zxyszx/subnest/releases/download/v1.2.3/oversized.tar.gz", oversizedPath, int64(len(content)), int64(len(content)-1)); err == nil {
 		t.Fatal("expected archive size limit to reject the download")
 	}
 }
@@ -244,7 +244,7 @@ func TestGitHubReleaseFeedRequestUsesAtomWithoutAuthorization(t *testing.T) {
 	if captured == nil {
 		t.Fatal("expected request to be captured")
 	}
-	if captured.URL.Host != "github.com" || captured.URL.Path != "/zhiyingzzhou/renewlet/releases.atom" {
+	if captured.URL.Host != "github.com" || captured.URL.Path != "/zxyszx/subnest/releases.atom" {
 		t.Fatalf("request URL = %s", captured.URL.String())
 	}
 	if got := captured.Header.Get("Accept"); got != "application/atom+xml" {

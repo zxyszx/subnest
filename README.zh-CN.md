@@ -1,7 +1,7 @@
-# Renewlet
+# SubNest
 
 <p align="center">
-  <img src="./apps/web/public/logo.svg" alt="Renewlet" width="320">
+  <img src="./apps/web/public/logo.svg" alt="SubNest" width="320">
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square">
 </p>
 
-Renewlet 是一个会在续费前提醒你的自托管订阅账本。把订阅和其他周期支出记进去，就能看到每月花多少、下一笔什么时候扣。
+SubNest 是一个自托管的订阅与合租管理工具。它统一管理订阅成本、账号续费、合租车位、车友到期、应收款与利润。
 
 可以用 Docker 单容器运行，也可以部署到 Cloudflare Workers。
 
@@ -36,7 +36,8 @@ Renewlet 是一个会在续费前提醒你的自托管订阅账本。把订阅�
 - 查看支出：按月或按年汇总费用，跟踪预算并换算不同币种。
 - 续费提醒：按你的时区提前发送，渠道包括 Telegram、Notifyx、Webhook、企业微信、钉钉、邮件、Bark、Server酱、Discord 和 PushPlus。
 - 录入和迁移：从截图、备忘录或表格生成可编辑草稿，确认后再导入；也可以导入导出 Renewlet 数据或迁入 Wallos 文件。
-- 日历和分享：把全部或单个订阅加入日历，或生成可隐藏金额的公开状态页。
+- 合租管理：每条订阅可以启用家庭共享，管理账号、车位、车友续费、应收与多币种利润。
+- 日历和分享：把订阅续费和车友到期放进同一日历，或生成可隐藏金额的公开状态页。
 - 账号安全：使用身份验证器、恢复码或通行密钥，也可以为密码登录开启 Cloudflare Turnstile。
 - 自动化：通过只读 [Public API](docs/public-api.md) 接入 CLI、Shortcuts 和其他工具。
 
@@ -46,7 +47,7 @@ Renewlet 是一个会在续费前提醒你的自托管订阅账本。把订阅�
 
 ```bash
 mkdir -p renewlet && cd renewlet
-curl -fsSL https://raw.githubusercontent.com/zhiyingzzhou/renewlet/main/deploy/docker-deploy.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zxyszx/subnest/main/deploy/docker-deploy.sh | bash
 docker compose up -d
 ```
 
@@ -61,20 +62,16 @@ http://localhost:3000/setup
 正式使用时建议固定版本：
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="zhiyingzzhou/renewlet:0.3.26"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
 docker compose pull
 docker compose up -d
 ```
 
-如果 Docker Hub 拉取不可用，改用 GHCR：
-
-```env
-RENEWLET_IMAGE="ghcr.io/zhiyingzzhou/renewlet:0.3.26"
-```
+SubNest 镜像只从本仓库的 GHCR 发布，不会拉取 Renewlet 的镜像。
 
 ## Cloudflare Workers
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zhiyingzzhou/renewlet"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zxyszx/subnest"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
 
 点击上方按钮直接部署。需要自己管理 Cloudflare 资源时，请按 [Cloudflare Workers 部署](docs/cloudflare-workers-deploy.zh-CN.md) 操作。
 
@@ -91,7 +88,7 @@ tar -czf renewlet-backup-$(date +%F).tgz .env docker-compose.yml data
 更新 Docker 镜像：
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="zhiyingzzhou/renewlet:0.3.26"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
 docker compose pull
 docker compose up -d
 docker compose logs -f
@@ -112,7 +109,7 @@ docker compose down
 | 变量 | 用途 |
 | --- | --- |
 | `PORT` | 对外端口，默认 `3000`。 |
-| `RENEWLET_IMAGE` | Docker 镜像，默认 `zhiyingzzhou/renewlet:latest`。 |
+| `RENEWLET_IMAGE` | Docker 镜像，默认 `ghcr.io/zxyszx/subnest:latest`。 |
 | `TZ` | 日志时区；提醒使用每个用户设置的时区。 |
 | `PB_ENCRYPTION_KEY` | 敏感设置加密密钥，部署后不要更换。 |
 | `CRON_SECRET` | 外部 Cron 请求使用的 Bearer 密钥。 |
@@ -201,6 +198,8 @@ docker compose up -d --force-recreate
 
 欢迎提交 issue、文档修正、测试或 pull request。较大的变更请先开 issue，说明目标、使用场景和大致方案。
 
-## 许可证
+## 来源与许可证
 
-Renewlet 基于 [MIT License](LICENSE) 开源。
+SubNest 基于 [Renewlet](https://github.com/zhiyingzzhou/renewlet) 开发，保留原项目作者与贡献者的 MIT 许可和版权声明。SubNest 的合租功能、界面与发布版本由本仓库独立维护，不自动同步或安装 Renewlet 的版本。
+
+本项目基于 [MIT License](LICENSE) 开源。

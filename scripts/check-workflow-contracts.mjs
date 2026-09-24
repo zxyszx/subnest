@@ -38,7 +38,7 @@ export function checkWorkflowContracts(repoRoot) {
   const releaseWorkflow = readFileSync(join(repoRoot, ".github/workflows/release-publish.yml"), "utf8");
   for (const snippet of [
     "Validate stable tag source",
-    "github.repository == 'zhiyingzzhou/renewlet' && steps.version.outputs.is-stable == 'true'",
+    "github.repository == 'zxyszx/subnest' && steps.version.outputs.is-stable == 'true'",
     "git fetch origin main:refs/remotes/origin/main",
     "git merge-base --is-ancestor \"$TAG_SHA\" \"$MAIN_SHA\"",
   ]) {

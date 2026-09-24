@@ -2,7 +2,7 @@
 
 ## 推荐：一键部署
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zhiyingzzhou/renewlet"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zxyszx/subnest"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
 
 1. 点击按钮。
 2. 登录或授权 Cloudflare。
@@ -23,34 +23,7 @@ https://<worker-name>.<workers-dev-subdomain>.workers.dev/setup
 
 ### 升级办法
 
-一键部署会在你的 GitHub 账号下生成并连接一个仓库。以后升级 Renewlet 时，请更新这个生成仓库；不要重新点一键部署按钮，否则可能创建新的 Worker/D1/R2，而不是升级现有实例。
-
-先在 Cloudflare Dashboard 打开 Renewlet Worker，进入 `Settings` -> `Builds`，找到 Cloudflare Builds 连接的生成仓库。这个生成仓库不是标准 GitHub fork，所以不会有 GitHub 原生的 `Sync fork` 按钮。
-
-打开生成仓库后：
-
-1. 进入 `Actions`。
-2. 选择 `Sync Renewlet Upstream`。
-3. 点击 `Run workflow`。
-4. 等待 workflow 完成。
-
-这个 workflow 只在你手动点击时运行，不会定时自动更新。运行后，它会把生成仓库更新到 Renewlet 最新文件，同时保留 `wrangler.jsonc` 里的已有 Cloudflare 资源配置和 vars。workflow 提交完成后，Cloudflare Builds 会按这个提交自动重新部署。
-
-如果 GitHub 提示 Actions 被禁用，先在生成仓库打开 `Settings` -> `Actions` -> `General`，启用 Actions，并在 `Workflow permissions` 里允许 `Read and write permissions`。
-
-### 旧一键部署用户
-
-旧 GitHub 生成仓库可能没有 `Sync Renewlet Upstream`。不要重新点一键部署；继续使用原来的 Worker、D1、R2 和生成仓库。
-
-如果在 `Actions` 里看不到这个 workflow，只需要在原生成仓库里一次性添加：
-
-```text
-.github/workflows/sync-renewlet-upstream.yml
-```
-
-从这个 workflow 复制文件内容：[sync-renewlet-upstream.yml](https://raw.githubusercontent.com/zhiyingzzhou/renewlet/main/.github/workflows/sync-renewlet-upstream.yml)。
-
-提交后，以后升级就和新用户一样，进入 `Actions` -> `Sync Renewlet Upstream` -> `Run workflow`。
+SubNest 只从 `zxyszx/subnest` 发布版本，不再同步 Renewlet。创建新的稳定版标签后，`Release Publish` 会生成 GitHub Release，并在发布检查通过后重新构建 Cloudflare 部署。已有实例不要重新点击一键部署按钮，以免创建重复的 Worker、D1 或 R2。
 
 如果你想自己创建 D1/R2、Cloudflare API Token 和 GitHub Secrets，可以继续使用下面的手动部署流程。
 
@@ -231,9 +204,7 @@ https://<WORKER_NAME>.<workers-dev-subdomain>.workers.dev/setup
 
 ## 更新版本
 
-一键部署用户：按上面的“升级办法”，在 Cloudflare Builds 连接的生成仓库里运行 `Sync Renewlet Upstream`。
-
-手动部署用户：在你的 fork 里点击 `Sync fork` / `Update branch`，把 fork 更新到 Renewlet 最新版本。如果没有自动部署，进入 `Actions` 手动运行 `Cloudflare Worker`。
+正式版本由本仓库的 `Release Publish` 工作流发布。手动部署用户可以在 `Actions` 运行 `Cloudflare Worker`。Cloudflare 页面内的版本面板只负责提示，不能直接替换远端 Worker。
 
 ## D1 升级与恢复
 

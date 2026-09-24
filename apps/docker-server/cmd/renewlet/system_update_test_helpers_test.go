@@ -166,10 +166,10 @@ func releaseFixture(tag string) systemRelease {
 		TagName:     tag,
 		Name:        "Renewlet " + version,
 		PublishedAt: "2026-06-04T00:00:00Z",
-		HTMLURL:     "https://github.com/zhiyingzzhou/renewlet/releases/tag/" + tag,
+		HTMLURL:     "https://github.com/zxyszx/subnest/releases/tag/" + tag,
 		Assets: []systemReleaseAsset{
-			{Name: systemArchiveName(version), BrowserDownloadURL: "https://github.com/zhiyingzzhou/renewlet/releases/download/" + tag + "/" + systemArchiveName(version)},
-			{Name: "checksums.txt", BrowserDownloadURL: "https://github.com/zhiyingzzhou/renewlet/releases/download/" + tag + "/checksums.txt"},
+			{Name: systemArchiveName(version), BrowserDownloadURL: "https://github.com/zxyszx/subnest/releases/download/" + tag + "/" + systemArchiveName(version)},
+			{Name: "checksums.txt", BrowserDownloadURL: "https://github.com/zxyszx/subnest/releases/download/" + tag + "/checksums.txt"},
 		},
 	}
 }
@@ -185,7 +185,7 @@ func systemReleaseAtomFixture(tag string, updated string) string {
 <feed xmlns="http://www.w3.org/2005/Atom">
   <entry>
     <updated>` + updated + `</updated>
-    <link rel="alternate" type="text/html" href="https://github.com/zhiyingzzhou/renewlet/releases/tag/` + tag + `"/>
+    <link rel="alternate" type="text/html" href="https://github.com/zxyszx/subnest/releases/tag/` + tag + `"/>
     <title>` + tag + `</title>
     <content type="html">&lt;p&gt;Release notes&lt;/p&gt;</content>
   </entry>

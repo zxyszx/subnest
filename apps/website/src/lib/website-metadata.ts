@@ -1,5 +1,5 @@
 const LOCAL_PREVIEW_BASE_URL = 'http://localhost:4173'
-const DEFAULT_REPOSITORY_URL = 'https://github.com/zhiyingzzhou/renewlet'
+const DEFAULT_REPOSITORY_URL = 'https://github.com/zxyszx/subnest'
 const REPOSITORY_DOCS_BRANCH = 'main'
 const SITEMAP_LASTMOD = '2026-06-19'
 const BOOLEAN_ANALYTICS_SCRIPT_ATTRIBUTES = new Set(['defer', 'async'])

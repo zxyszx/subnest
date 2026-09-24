@@ -35,7 +35,7 @@ test("rejects unsupported Docker Hub Overview integrations in every workflow", a
   const integrations = [
     "uses: peter-evans/dockerhub-description@v5",
     "run: node scripts/dockerhub-overview.mjs --ref main",
-    "run: curl -X PATCH https://hub.docker.com/v2/repositories/zhiyingzzhou/renewlet",
+    "run: curl -X PATCH https://hub.docker.com/v2/repositories/zxyszx/subnest",
   ];
 
   for (const integration of integrations) {

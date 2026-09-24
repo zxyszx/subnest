@@ -1,7 +1,7 @@
-# Renewlet
+# SubNest
 
 <p align="center">
-  <img src="./apps/web/public/logo.svg" alt="Renewlet" width="320">
+  <img src="./apps/web/public/logo.svg" alt="SubNest" width="320">
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square">
 </p>
 
-Renewlet is a self-hosted subscription ledger for recurring expenses. See what you spend, what is due next, and get a reminder before renewal.
+SubNest is a self-hosted subscription and sharing manager for subscription costs, account renewals, shared seats, member expiries, receivables, and profit.
 
 Run it in a single Docker container or deploy it to Cloudflare Workers.
 
@@ -46,7 +46,7 @@ Requirements: Docker and Docker Compose v2.
 
 ```bash
 mkdir -p renewlet && cd renewlet
-curl -fsSL https://raw.githubusercontent.com/zhiyingzzhou/renewlet/main/deploy/docker-deploy.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zxyszx/subnest/main/deploy/docker-deploy.sh | bash
 docker compose up -d
 ```
 
@@ -61,20 +61,16 @@ Create the first administrator. The deploy script creates `docker-compose.yml`, 
 For production, pin a stable image tag:
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="zhiyingzzhou/renewlet:0.3.26"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
 docker compose pull
 docker compose up -d
 ```
 
-If Docker Hub is unavailable, use GHCR:
-
-```env
-RENEWLET_IMAGE="ghcr.io/zhiyingzzhou/renewlet:0.3.26"
-```
+SubNest images are published only from this repository to GHCR; deployments never pull a Renewlet image.
 
 ## Cloudflare Workers
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zhiyingzzhou/renewlet"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/zxyszx/subnest"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
 
 Click the button to deploy. To manage the Cloudflare resources yourself, follow the [Cloudflare Workers deployment guide](docs/cloudflare-workers-deploy.md).
 
@@ -91,7 +87,7 @@ tar -czf renewlet-backup-$(date +%F).tgz .env docker-compose.yml data
 Update the Docker image:
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="zhiyingzzhou/renewlet:0.3.26"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
 docker compose pull
 docker compose up -d
 docker compose logs -f
@@ -112,7 +108,7 @@ Common `.env` values:
 | Variable | Purpose |
 | --- | --- |
 | `PORT` | Public port, `3000` by default. |
-| `RENEWLET_IMAGE` | Docker image, `zhiyingzzhou/renewlet:latest` by default. |
+| `RENEWLET_IMAGE` | Docker image, `ghcr.io/zxyszx/subnest:latest` by default. |
 | `TZ` | Time zone for logs; reminders use each user's time zone. |
 | `PB_ENCRYPTION_KEY` | Encryption key for sensitive settings. Do not change it after deployment. |
 | `CRON_SECRET` | Bearer secret for external Cron requests. |
@@ -201,6 +197,8 @@ Only add code you trust; it can access data on Renewlet pages. Restart the Docke
 
 Issues, documentation fixes, tests, and pull requests are welcome. For larger changes, open an issue first with the goal, use case, and rough approach.
 
-## License
+## Attribution and License
 
-Renewlet is open-sourced under the [MIT License](LICENSE).
+SubNest is based on [Renewlet](https://github.com/zhiyingzzhou/renewlet) and preserves the original authors' and contributors' MIT license and copyright notices. SubNest's sharing features, interface, and releases are maintained independently and never auto-install Renewlet releases.
+
+This project is open-sourced under the [MIT License](LICENSE).

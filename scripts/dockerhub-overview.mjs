@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const githubBaseUrl = "https://github.com/zhiyingzzhou/renewlet";
-const rawBaseUrl = "https://raw.githubusercontent.com/zhiyingzzhou/renewlet";
+const githubBaseUrl = "https://github.com/zxyszx/subnest";
+const rawBaseUrl = "https://raw.githubusercontent.com/zxyszx/subnest";
 const defaultRef = "main";
 
 function usage() {

@@ -75,8 +75,8 @@ describe('resolveWebsiteDeployment', () => {
   it('uses the default public repository URL for local builds', () => {
     const deployment = resolveWebsiteDeployment()
 
-    expect(deployment.repositoryUrl).toBe('https://github.com/zhiyingzzhou/renewlet')
-    expect(deployment.repositoryLinks.license).toBe('https://github.com/zhiyingzzhou/renewlet/blob/main/LICENSE')
+    expect(deployment.repositoryUrl).toBe('https://github.com/zxyszx/subnest')
+    expect(deployment.repositoryLinks.license).toBe('https://github.com/zxyszx/subnest/blob/main/LICENSE')
   })
 
   it('normalizes the configured repository URL and derives repository links from it', () => {
@@ -173,8 +173,8 @@ describe('website metadata rendering', () => {
         'https://renewlet.cc/assets/renewlet/images/dashboard-zh.png',
         'https://renewlet.cc/assets/renewlet/images/dashboard-en.png',
         '0.1.9',
-        'https://github.com/zhiyingzzhou/renewlet',
-        'https://github.com/zhiyingzzhou/renewlet/blob/main/LICENSE',
+        'https://github.com/zxyszx/subnest',
+        'https://github.com/zxyszx/subnest/blob/main/LICENSE',
       ].join('\n'),
     )
   })

@@ -283,7 +283,7 @@ func TestSystemReleaseDownloaderDoesNotRetryTargetFileFailures(t *testing.T) {
 		return systemReleaseDownloadResponse(request, http.StatusOK, io.NopCloser(strings.NewReader("archive")), 7, nil), nil
 	}))
 
-	_, err := downloader.Download(context.Background(), "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/archive.tar.gz", t.TempDir(), 7, 7)
+	_, err := downloader.Download(context.Background(), "https://github.com/zxyszx/subnest/releases/download/v1.2.3/archive.tar.gz", t.TempDir(), 7, 7)
 	if err == nil {
 		t.Fatal("expected target file creation failure")
 	}
@@ -483,7 +483,7 @@ func downloadSystemReleaseForTest(t *testing.T, downloader *systemReleaseDownloa
 func downloadSystemReleaseForTestContext(t *testing.T, ctx context.Context, downloader *systemReleaseDownloader, expectedSize int64, maxBytes int64) (string, string, error) {
 	t.Helper()
 	targetPath := filepath.Join(t.TempDir(), "archive.tar.gz")
-	checksum, err := downloader.Download(ctx, "https://github.com/zhiyingzzhou/renewlet/releases/download/v1.2.3/archive.tar.gz", targetPath, expectedSize, maxBytes)
+	checksum, err := downloader.Download(ctx, "https://github.com/zxyszx/subnest/releases/download/v1.2.3/archive.tar.gz", targetPath, expectedSize, maxBytes)
 	return targetPath, checksum, err
 }
 

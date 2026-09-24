@@ -22,7 +22,7 @@ import {
 import { sendUpstreamRequest } from "./upstream-http";
 
 const DEV_VERSION = "0.0.0-dev";
-const SYSTEM_RELEASE_FEED_URL = "https://github.com/zhiyingzzhou/renewlet/releases.atom";
+const SYSTEM_RELEASE_FEED_URL = "https://github.com/zxyszx/subnest/releases.atom";
 const SYSTEM_RELEASE_FEED_LIMIT_BYTES = 512 * 1024;
 const STABLE_BUILD_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const BRANCH_BUILD_VERSION_PATTERN = /^\d+\.\d+\.\d+-dev\+[0-9a-f]{7,40}$/i;
@@ -253,7 +253,7 @@ function releaseFromAtomEntry(entry: AtomEntryValue): SystemReleaseEntry | null 
     name: atomText(entry.title) || tagName,
     body: atomText(entry.content),
     publishedAt: atomText(entry.updated),
-    htmlUrl: href || `https://github.com/zhiyingzzhou/renewlet/releases/tag/${encodeURIComponent(tagName)}`,
+    htmlUrl: href || `https://github.com/zxyszx/subnest/releases/tag/${encodeURIComponent(tagName)}`,
   };
 }
 
