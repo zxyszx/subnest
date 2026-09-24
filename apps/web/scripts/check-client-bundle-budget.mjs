@@ -27,8 +27,8 @@ const privateRouteKeys = new Set([
 const budgets = {
   // 相比 510 KB gzip / 431 KB Brotli 基线分别下降 21.6% / 20.2%。
   startup: { gzip: 400000, brotli: 344000 },
-  // SubNest 的合租域新增一组全局双语文案；完整路由 Brotli 预算仅增加约 0.6%。
-  route: { gzip: 400000, brotli: 346000 },
+  // SubNest 的平台筛选与家庭共享进入订阅编辑流程；完整路由 Brotli 预算仍只比 344 KB 基线增加约 0.9%。
+  route: { gzip: 400000, brotli: 347000 },
 };
 const forbiddenStartupModules = [
   ["Recharts", (id) => id.includes("node_modules/recharts/")],

@@ -34,10 +34,11 @@ describe("DashboardPageSkeleton", () => {
     const monthlySpend = screen.getByTestId("dashboard-skeleton-stat-monthly-spend");
     const trials = screen.getByTestId("dashboard-skeleton-stat-trials");
 
-    expect(grid).toHaveClass("grid", "gap-3", "sm:gap-5", "sm:grid-cols-2", "lg:grid-cols-4");
-    expect(grid.className).toContain("grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))]");
-    expect(monthlySpend).toHaveClass("p-4", "lg:p-6", "col-span-full", "sm:col-span-1");
-    expect(trials).toHaveClass("p-4", "lg:p-6", "col-span-full", "sm:col-span-1");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "md:grid-cols-3", "xl:grid-cols-6");
+    expect(monthlySpend).toHaveClass("p-4", "col-span-1");
+    expect(trials).toHaveClass("p-4", "col-span-1");
+    expect(screen.getByTestId("dashboard-skeleton-stat-sharing-accounts")).toHaveClass("p-4");
+    expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-4");
   });
 });
 

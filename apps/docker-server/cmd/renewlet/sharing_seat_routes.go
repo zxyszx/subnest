@@ -96,9 +96,6 @@ func handleSharingSeatUpdate(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
 	}
-	if body.Status != "vacant" && body.Currency != account.GetString("currency") {
-		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", errors.New("sharing seat currency must match account currency")), nil)
-	}
 	if err := saveSharingSeatAndReceivable(app, e.Auth.Id, seat, body); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
@@ -250,11 +247,11 @@ func sharingAccountDetailAPI(app core.App, record *core.Record) (sharingAccountD
 	}
 	rows, err := app.FindRecordsByFilter(
 		"sharing_seats",
-		"user = {:user} && sharingAccount = {:account}",
+		"user = {:user} && sharingAccount = {:account} && seatNumber <= {:capacity}",
 		"seatNumber",
 		100,
 		0,
-		dbx.Params{"user": record.GetString("user"), "account": record.Id},
+		dbx.Params{"user": record.GetString("user"), "account": record.Id, "capacity": account.Capacity},
 	)
 	if err != nil {
 		return sharingAccountDetailPayload{}, err

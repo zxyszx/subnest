@@ -103,7 +103,7 @@ describe("subscription-form", () => {
     });
 
     expect(getSubscriptionFormValidationIssues(form).map(({ code, field }) => ({ code, field }))).toEqual([
-      { code: "nameRequired", field: "name" },
+      { code: "platformNameRequired", field: "platformName" },
       { code: "amountInvalid", field: "price" },
       { code: "nextBillingDateRequired", field: "dates" },
       { code: "reminderInvalid", field: "reminderDays" },

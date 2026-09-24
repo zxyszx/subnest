@@ -233,7 +233,7 @@ describe("SubscriptionDetailDialog", () => {
   });
 
   it("renders website, notes, payment method, tags, and inherited reminder in the read-only detail view", () => {
-    renderDetailDialog();
+    renderDetailDialog({ subscription: { ...baseSubscription, cardLast4: "6109" } });
 
     const dialog = screen.getByRole("dialog", { name: "Fastmail" });
     expect(dialog).toHaveAccessibleDescription("查看 Fastmail 的价格、周期、日期、标签、网站和备注。");
@@ -247,6 +247,7 @@ describe("SubscriptionDetailDialog", () => {
     );
     expect(within(dialog).getAllByText("开发工具")).toHaveLength(2);
     expect(within(dialog).getByText("信用卡")).toBeInTheDocument();
+    expect(within(dialog).getByText("•••• 6109")).toHaveClass("tabular-nums");
     expect(within(dialog).getByText("默认提醒：提前 5 天")).toBeInTheDocument();
     expect(within(dialog).getByText("team")).toBeInTheDocument();
     expect(within(dialog).getByText("mail")).toBeInTheDocument();

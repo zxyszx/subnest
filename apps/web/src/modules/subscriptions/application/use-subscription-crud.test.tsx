@@ -42,6 +42,8 @@ vi.mock("@/hooks/use-subscriptions", () => ({
 function formSubmission(): SubscriptionFormSubmission {
   return {
     name: "Codex Pro",
+    platformName: "Codex Pro",
+    accountNumber: 1,
     logo: undefined,
     price: "20",
     currency: "USD",
@@ -50,6 +52,7 @@ function formSubmission(): SubscriptionFormSubmission {
     status: "active",
     publicHidden: false,
     paymentMethod: undefined,
+    cardLast4: undefined,
     startDate: assertDateOnly("2026-01-01"),
     nextBillingDate: assertDateOnly("2026-02-01"),
     autoRenew: false,
@@ -61,12 +64,14 @@ function formSubmission(): SubscriptionFormSubmission {
     repeatReminderEnabled: false,
     repeatReminderInterval: "1h",
     repeatReminderWindow: "72h",
+    familySharing: null,
   };
 }
 
 function subscription(): Subscription {
   return {
     ...formSubmission(),
+    familySharing: null,
     id: "sub-1",
     pinned: false,
     trialEndDate: undefined,

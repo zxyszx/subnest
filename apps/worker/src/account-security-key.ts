@@ -8,6 +8,7 @@ const ACCOUNT_SECURITY_KEY_SALT = "renewlet:account-security:v1";
 
 export interface AccountSecurityKeyRing {
   totpSeed: CryptoKey;
+  sharingCredential: CryptoKey;
   recoveryCode: CryptoKey;
   mfaTicket: CryptoKey;
   passkeyChallenge: CryptoKey;
@@ -35,14 +36,16 @@ async function loadAccountSecurityKeyRing(env: Env): Promise<AccountSecurityKeyR
   const master = await readOrCreateAccountSecurityMasterKey(env);
   const hkdfKey = await crypto.subtle.importKey("raw", arrayBufferFromBytes(master), "HKDF", false, ["deriveBits"]);
   // 同一个 cold-start 里只导入一次 HKDF master，四个用途靠 info 分域；Promise 缓存后热路径不再读 R2 或重复派生。
-  const [totpSeedBytes, recoveryCodeBytes, mfaTicketBytes, passkeyChallengeBytes] = await Promise.all([
+  const [totpSeedBytes, sharingCredentialBytes, recoveryCodeBytes, mfaTicketBytes, passkeyChallengeBytes] = await Promise.all([
     deriveKeyBytes(hkdfKey, "totp-seed-aes-gcm"),
+    deriveKeyBytes(hkdfKey, "sharing-credential-aes-gcm"),
     deriveKeyBytes(hkdfKey, "recovery-code-hmac"),
     deriveKeyBytes(hkdfKey, "mfa-ticket-hmac"),
     deriveKeyBytes(hkdfKey, "passkey-challenge-hmac"),
   ]);
   return {
     totpSeed: await importAesGcmKey(totpSeedBytes),
+    sharingCredential: await importAesGcmKey(sharingCredentialBytes),
     recoveryCode: await importHmacKey(recoveryCodeBytes),
     mfaTicket: await importHmacKey(mfaTicketBytes),
     passkeyChallenge: await importHmacKey(passkeyChallengeBytes),

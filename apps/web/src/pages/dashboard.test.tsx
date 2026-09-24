@@ -152,6 +152,10 @@ vi.mock("@/hooks/use-settings", () => ({
   useSettings: mocks.useSettings,
 }));
 
+vi.mock("@/hooks/use-sharing", () => ({
+  useSharingAccounts: () => ({ data: { accounts: [], total: 0 }, isPending: false }),
+}));
+
 vi.mock("@/hooks/use-zoned-today", () => ({
   useZonedToday: () => "2026-06-15",
 }));
@@ -326,7 +330,7 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("0");
   });
 
-  it("uses compact mobile-first summary cards without changing the desktop columns", () => {
+  it("uses a compact responsive six-card dashboard summary", () => {
     renderDashboard();
 
     const grid = screen.getByTestId("dashboard-stat-grid");
@@ -334,13 +338,27 @@ describe("Dashboard page loading state", () => {
     const activeSubscriptions = screen.getByTestId("dashboard-stat-active-subscriptions");
     const trials = screen.getByTestId("dashboard-stat-trials");
 
-    expect(grid).toHaveClass("grid", "gap-3", "sm:gap-5", "sm:grid-cols-2", "lg:grid-cols-4");
-    expect(grid.className).toContain("grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))]");
-    expect(monthlySpend).toHaveClass("p-4", "lg:p-6", "col-span-full", "sm:col-span-1");
-    expect(activeSubscriptions).toHaveClass("p-4", "lg:p-6");
-    expect(trials).toHaveClass("p-4", "lg:p-6", "col-span-full", "sm:col-span-1");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "md:grid-cols-3", "xl:grid-cols-6");
+    expect(monthlySpend).toHaveClass("p-4", "col-span-1");
+    expect(activeSubscriptions).toHaveClass("p-4");
+    expect(trials).toHaveClass("p-4", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
+    expect(screen.getByTestId("dashboard-stat-sharing-accounts")).toHaveTextContent("合租");
+    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-4");
     expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
+  });
+
+  it("shows eight recent subscriptions before linking to the full list", () => {
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: Array.from({ length: 10 }, (_, index) => subscription({ id: `sub-${index + 1}`, name: `订阅 ${index + 1}` })),
+      isPending: false,
+    });
+
+    renderDashboard();
+
+    expect(screen.getAllByTestId("subscription-card")).toHaveLength(8);
+    expect(screen.getByText("订阅 8")).toBeInTheDocument();
+    expect(screen.queryByText("订阅 9")).not.toBeInTheDocument();
   });
 
   it("opens subscription details from a recent subscription card", async () => {

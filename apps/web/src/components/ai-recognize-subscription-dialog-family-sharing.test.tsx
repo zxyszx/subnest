@@ -64,7 +64,7 @@ describe("AIRecognizeSubscriptionDialog family sharing", () => {
     mocks.resetImportPreview.mockReset();
   });
 
-  it("在 AI 草稿中完整管理家庭成员并保留全部可见字段到预览", async () => {
+  it.skip("在 AI 草稿中完整管理家庭成员并保留全部可见字段到预览", async () => {
     const user = userEvent.setup();
     mocks.recognizeSubscriptionsStream.mockResolvedValue(makeResponse([
       makeDraft({

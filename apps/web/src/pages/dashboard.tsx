@@ -27,7 +27,7 @@ import { DashboardPageSkeleton } from "@/components/loading-skeleton";
 import { QueryErrorState } from "@/components/query-error-state";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
-import { CreditCard, TrendingUp, Clock, Plus, Sparkles } from "lucide-react";
+import { CreditCard, TrendingUp, Clock, Plus, Sparkles, CircleDollarSign, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
 import { useSubscriptionAnalytics, useSubscriptionFacets } from "@/hooks/use-subscriptions";
@@ -44,6 +44,8 @@ import { useZonedToday } from "@/hooks/use-zoned-today";
 import { formatCompactCurrencyAmount } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { useRouteReady } from "@/components/route-progress";
+import { useSharingAccounts } from "@/hooks/use-sharing";
+import { sharingMonthlyProfit, sharingMonthlyRevenue } from "@/lib/sharing-financials";
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
@@ -53,6 +55,7 @@ export default function Index() {
   const subscriptions = subscriptionsQuery.data ?? EMPTY_SUBSCRIPTIONS;
   const facetsQuery = useSubscriptionFacets();
   const settingsQuery = useSettings();
+  const sharingQuery = useSharingAccounts();
   useRouteReady(subscriptionsQuery.isPending || settingsQuery.isPending);
   const settings = settingsQuery.data;
   const { config } = useCustomConfigState();
@@ -61,6 +64,9 @@ export default function Index() {
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useReportExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const defaultCurrency = settings?.defaultCurrency ?? "CNY";
+  const sharingAccounts = sharingQuery.data?.accounts ?? [];
+  const sharingIncome = sharingAccounts.reduce((total, account) => total + sharingMonthlyRevenue(account, defaultCurrency, convert), 0);
+  const sharingProfit = sharingAccounts.reduce((total, account) => total + sharingMonthlyProfit(account, defaultCurrency, convert), 0);
   const priceReferenceCurrency = settings ? resolveSubscriptionPriceReferenceCurrency(settings) : null;
   const timeZone = settings?.timezone ?? "UTC";
   const inheritedReminderDays = settings?.notificationReminderDays ?? DEFAULT_NOTIFICATION_REMINDER_DAYS;
@@ -126,8 +132,8 @@ export default function Index() {
     );
   }
 
-  // 仪表盘只展示最近 6 个订阅（完整列表在 /subscriptions），保持首页扫描成本低。
-  const displayedSubscriptions = subscriptions.slice(0, 6);
+  // 两列四行与右侧分析栏形成完整首屏，同时仍将完整列表留在 /subscriptions。
+  const displayedSubscriptions = subscriptions.slice(0, 8);
 
   return (
     <div className="app-page bg-background">
@@ -146,7 +152,7 @@ export default function Index() {
             })}
             icon={<CreditCard className="h-6 w-6" />}
             variant="primary"
-            density="compact"
+            density="dashboard"
             className={cn("animate-fade-in", dashboardStatLayout.primaryCard)}
           />
           <StatCard
@@ -155,7 +161,7 @@ export default function Index() {
             value={activeSubscriptions.length}
             subtitle={t("dashboard.totalSubscriptions", { count: facetsQuery.data?.total ?? subscriptions.length })}
             icon={<TrendingUp className="h-6 w-6" />}
-            density="compact"
+            density="dashboard"
             className="animate-fade-in [animation-delay:100ms]"
           />
           <StatCard
@@ -165,7 +171,7 @@ export default function Index() {
             subtitle={t("dashboard.next7Days")}
             icon={<Clock className="h-6 w-6" />}
             variant={upcomingCount > 0 ? "warning" : "default"}
-            density="compact"
+            density="dashboard"
             className="animate-fade-in [animation-delay:200ms]"
           />
           <StatCard
@@ -175,8 +181,27 @@ export default function Index() {
             subtitle={t("dashboard.trialsNeedAttention")}
             icon={<Sparkles className="h-6 w-6" />}
             variant={trialCount > 0 ? "warning" : "default"}
-            density="compact"
+            density="dashboard"
             className={cn("animate-fade-in [animation-delay:300ms]", dashboardStatLayout.trialCard)}
+          />
+          <StatCard
+            data-testid="dashboard-stat-sharing-accounts"
+            title={t("sharing.title")}
+            value={sharingAccounts.length}
+            subtitle={t("sharing.accounts")}
+            icon={<UsersRound className="h-5 w-5" />}
+            density="dashboard"
+            className="animate-fade-in [animation-delay:400ms]"
+          />
+          <StatCard
+            data-testid="dashboard-stat-sharing-income"
+            title={t("dashboard.sharingIncome")}
+            value={formatCurrency(sharingIncome, defaultCurrency)}
+            subtitle={t("dashboard.sharingProfit", { amount: formatCurrency(sharingProfit, defaultCurrency) })}
+            icon={<CircleDollarSign className="h-6 w-6" />}
+            variant={sharingProfit >= 0 ? "primary" : "warning"}
+            density="dashboard"
+            className="animate-fade-in [animation-delay:500ms]"
           />
         </div>
 
@@ -231,7 +256,7 @@ export default function Index() {
                 ))}
               </div>
             )}
-            {subscriptions.length > 6 && (
+            {subscriptions.length > 8 && (
               <div className="mt-4 text-center">
                 <Link href="/subscriptions">
                   <Button variant="outline" className="border-border">

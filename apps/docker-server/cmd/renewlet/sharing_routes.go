@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,32 +23,34 @@ const sharingAccountsLimit = 500
 var sharingCurrencyPattern = regexp.MustCompile(`^[A-Z]{3}$`)
 
 type sharingSubscriptionSummary struct {
-	ID   string  `json:"id"`
-	Name string  `json:"name"`
-	Logo *string `json:"logo"`
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	PlatformName string  `json:"platformName"`
+	Logo         *string `json:"logo"`
 }
 
 type sharingAccountResponse struct {
-	ID                string                     `json:"id"`
-	Subscription      sharingSubscriptionSummary `json:"subscription"`
-	Name              string                     `json:"name"`
-	AccountNumber     int                        `json:"accountNumber"`
-	LoginAccount      string                     `json:"loginAccount"`
-	HasPassword       bool                       `json:"hasPassword"`
-	VerificationLink  *string                    `json:"verificationLink"`
-	MonthlyCost       string                     `json:"monthlyCost"`
-	Currency          string                     `json:"currency"`
-	NextBillingDate   string                     `json:"nextBillingDate"`
-	PaymentMethod     *string                    `json:"paymentMethod"`
-	CardLast4         *string                    `json:"cardLast4"`
-	Capacity          int                        `json:"capacity"`
-	OccupiedSeats     int                        `json:"occupiedSeats"`
-	MonthlyRevenue    string                     `json:"monthlyRevenue"`
-	OutstandingAmount string                     `json:"outstandingAmount"`
-	MonthlyProfit     float64                    `json:"monthlyProfit"`
-	Status            string                     `json:"status"`
-	Notes             *string                    `json:"notes"`
-	CreatedAt         string                     `json:"createdAt"`
+	ID                       string                     `json:"id"`
+	Subscription             sharingSubscriptionSummary `json:"subscription"`
+	Name                     string                     `json:"name"`
+	AccountNumber            int                        `json:"accountNumber"`
+	LoginAccount             string                     `json:"loginAccount"`
+	HasPassword              bool                       `json:"hasPassword"`
+	VerificationLink         *string                    `json:"verificationLink"`
+	MonthlyCost              string                     `json:"monthlyCost"`
+	Currency                 string                     `json:"currency"`
+	NextBillingDate          string                     `json:"nextBillingDate"`
+	PaymentMethod            *string                    `json:"paymentMethod"`
+	CardLast4                *string                    `json:"cardLast4"`
+	Capacity                 int                        `json:"capacity"`
+	OccupiedSeats            int                        `json:"occupiedSeats"`
+	MonthlyRevenue           string                     `json:"monthlyRevenue"`
+	MonthlyRevenueByCurrency map[string]string          `json:"monthlyRevenueByCurrency"`
+	OutstandingAmount        string                     `json:"outstandingAmount"`
+	MonthlyProfit            float64                    `json:"monthlyProfit"`
+	Status                   string                     `json:"status"`
+	Notes                    *string                    `json:"notes"`
+	CreatedAt                string                     `json:"createdAt"`
 }
 
 type sharingAccountsResponse struct {
@@ -99,7 +102,7 @@ func handleSharingAccountsList(app core.App, e *core.RequestEvent) error {
 	locale := requestLocale(e.Request)
 	rows, err := app.FindRecordsByFilter(
 		"sharing_accounts",
-		"user = {:user}",
+		"user = {:user} && status != 'archived'",
 		"subscription,accountNumber,created",
 		sharingAccountsLimit,
 		0,
@@ -116,7 +119,152 @@ func handleSharingAccountsList(app core.App, e *core.RequestEvent) error {
 		}
 		accounts = append(accounts, account)
 	}
+	nearestExpiryByAccount, err := sharingNearestSeatExpiries(app, e.Auth.Id)
+	if err != nil {
+		return e.InternalServerError(serverText(locale, "common.internalError"), err)
+	}
+	sort.SliceStable(accounts, func(i, j int) bool {
+		left, right := nearestExpiryByAccount[accounts[i].ID], nearestExpiryByAccount[accounts[j].ID]
+		if left == right {
+			if accounts[i].Subscription.PlatformName == accounts[j].Subscription.PlatformName {
+				return accounts[i].AccountNumber < accounts[j].AccountNumber
+			}
+			return accounts[i].Subscription.PlatformName < accounts[j].Subscription.PlatformName
+		}
+		if left == "" {
+			return false
+		}
+		if right == "" {
+			return true
+		}
+		return left < right
+	})
 	return apiSuccessJSON(e, http.StatusOK, sharingAccountsResponse{Accounts: accounts, Total: int64(len(accounts))})
+}
+
+func sharingNearestSeatExpiries(app core.App, userID string) (map[string]string, error) {
+	rows, err := app.FindRecordsByFilter(
+		"sharing_seats",
+		"user = {:user} && status = 'active' && expiresAt != ''",
+		"expiresAt,seatNumber",
+		sharingAccountsLimit*100,
+		0,
+		dbx.Params{"user": userID},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string, len(rows))
+	for _, row := range rows {
+		accountID := row.GetString("sharingAccount")
+		if accountID == "" || result[accountID] != "" {
+			continue
+		}
+		result[accountID] = row.GetString("expiresAt")
+	}
+	return result, nil
+}
+
+func syncSubscriptionSharingAccount(app core.App, subscription *core.Record) error {
+	userID := subscription.GetString("user")
+	account, _ := app.FindFirstRecordByFilter(
+		"sharing_accounts",
+		"user = {:user} && subscription = {:subscription}",
+		dbx.Params{"user": userID, "subscription": subscription.Id},
+	)
+	if !subscription.GetBool("familySharingEnabled") {
+		if account != nil && account.GetString("status") != "archived" {
+			account.Set("status", "archived")
+			return app.Save(account)
+		}
+		return nil
+	}
+
+	capacity := subscription.GetInt("sharingCapacity")
+	if capacity < 1 || capacity > 100 {
+		return errors.New("FAMILY_SHARING_CAPACITY_INVALID")
+	}
+	if account == nil {
+		collection, err := app.FindCollectionByNameOrId("sharing_accounts")
+		if err != nil {
+			return err
+		}
+		account = core.NewRecord(collection)
+		account.Set("user", userID)
+		account.Set("subscription", subscription.Id)
+		account.Set("notes", "")
+	}
+	accountNumber := sharingSubscriptionAccountNumber(subscription, account)
+	account.Set("name", fmt.Sprintf("编号 %d", accountNumber))
+	account.Set("accountNumber", accountNumber)
+	account.Set("loginAccount", subscription.GetString("sharingLoginAccount"))
+	account.Set("encryptedCredentials", subscription.GetString("sharingEncryptedCredentials"))
+	account.Set("verificationLink", subscription.GetString("sharingVerificationLink"))
+	account.Set("monthlyCost", moneyForRecord(subscription.Get("price")))
+	account.Set("currency", subscription.GetString("currency"))
+	account.Set("nextBillingDate", subscription.GetString("nextBillingDate"))
+	account.Set("paymentMethod", subscription.GetString("paymentMethod"))
+	account.Set("cardLast4", subscription.GetString("cardLast4"))
+	account.Set("capacity", capacity)
+	account.Set("status", "active")
+	if err := app.Save(account); err != nil {
+		return err
+	}
+	return syncSharingSeatsForCapacity(app, userID, account, capacity)
+}
+
+func syncSharingSeatsForCapacity(app core.App, userID string, account *core.Record, capacity int) error {
+	rows, err := app.FindRecordsByFilter(
+		"sharing_seats",
+		"user = {:user} && sharingAccount = {:account}",
+		"seatNumber",
+		100,
+		0,
+		dbx.Params{"user": userID, "account": account.Id},
+	)
+	if err != nil {
+		return err
+	}
+	byNumber := make(map[int]*core.Record, len(rows))
+	for _, seat := range rows {
+		seatNumber := seat.GetInt("seatNumber")
+		byNumber[seatNumber] = seat
+		if seatNumber > capacity && seat.GetString("status") != "vacant" && seat.GetString("status") != "archived" {
+			return errors.New("FAMILY_SHARING_CAPACITY_OCCUPIED")
+		}
+	}
+	collection, err := app.FindCollectionByNameOrId("sharing_seats")
+	if err != nil {
+		return err
+	}
+	for seatNumber := 1; seatNumber <= capacity; seatNumber++ {
+		if seat := byNumber[seatNumber]; seat != nil {
+			if seat.GetString("status") == "archived" {
+				seat.Set("status", "vacant")
+				if err := app.Save(seat); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		seat := core.NewRecord(collection)
+		seat.Set("user", userID)
+		seat.Set("sharingAccount", account.Id)
+		seat.Set("seatNumber", seatNumber)
+		seat.Set("status", "vacant")
+		if err := app.Save(seat); err != nil {
+			return err
+		}
+	}
+	for _, seat := range rows {
+		if seat.GetInt("seatNumber") > capacity && seat.GetString("status") == "vacant" {
+			seat.Set("status", "archived")
+			if err := app.Save(seat); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func handleSharingAccountCreate(app core.App, e *core.RequestEvent) error {
@@ -135,6 +283,14 @@ func handleSharingAccountCreate(app core.App, e *core.RequestEvent) error {
 	)
 	if err != nil || subscription == nil {
 		return e.NotFoundError("SUBSCRIPTION_NOT_FOUND", err)
+	}
+	existing, _ := app.FindFirstRecordByFilter(
+		"sharing_accounts",
+		"user = {:user} && subscription = {:subscription}",
+		dbx.Params{"user": e.Auth.Id, "subscription": subscription.Id},
+	)
+	if existing != nil {
+		return e.BadRequestError("SHARING_ACCOUNT_ALREADY_EXISTS", nil)
 	}
 	ciphertext, err := encryptSharingCredential(app, body.Password)
 	if err != nil {
@@ -201,7 +357,11 @@ func handleSharingAccountCredentials(app core.App, e *core.RequestEvent) error {
 	if err != nil || record == nil {
 		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
 	}
-	password, err := decryptSharingCredential(app, record.GetString("encryptedCredentials"))
+	encryptedCredentials := record.GetString("encryptedCredentials")
+	if subscription, findErr := app.FindRecordById("subscriptions", record.GetString("subscription")); findErr == nil && subscription.GetBool("familySharingEnabled") {
+		encryptedCredentials = subscription.GetString("sharingEncryptedCredentials")
+	}
+	password, err := decryptSharingCredential(app, encryptedCredentials)
 	if err != nil {
 		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
 	}
@@ -341,43 +501,123 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 	if err != nil {
 		return sharingAccountResponse{}, err
 	}
-	monthlyRevenueUnits, outstandingUnits, err := sharingAccountFinancialUnits(app, record)
+	monthlyRevenueUnits, monthlyRevenueByCurrency, outstandingUnits, err := sharingAccountFinancialUnits(app, record)
 	if err != nil {
 		return sharingAccountResponse{}, err
 	}
-	monthlyCostUnits, err := moneyUnits(moneyForRecord(record.GetString("monthlyCost")))
+	monthlyCostUnits, err := sharingSubscriptionMonthlyCostUnits(subscription)
 	if err != nil {
 		return sharingAccountResponse{}, err
+	}
+	loginAccount := subscription.GetString("sharingLoginAccount")
+	encryptedCredentials := subscription.GetString("sharingEncryptedCredentials")
+	verificationLink := subscription.GetString("sharingVerificationLink")
+	capacity := subscription.GetInt("sharingCapacity")
+	// Existing installations may contain manually-created accounts from before the
+	// subscription became the canonical source. Keep those rows readable during migration.
+	if !subscription.GetBool("familySharingEnabled") {
+		loginAccount = record.GetString("loginAccount")
+		encryptedCredentials = record.GetString("encryptedCredentials")
+		verificationLink = record.GetString("verificationLink")
+		capacity = record.GetInt("capacity")
 	}
 	return sharingAccountResponse{
 		ID: record.Id,
 		Subscription: sharingSubscriptionSummary{
-			ID:   subscription.Id,
-			Name: subscription.GetString("name"),
-			Logo: optionalSharingString(subscription.GetString("logo")),
+			ID:           subscription.Id,
+			Name:         subscription.GetString("name"),
+			PlatformName: sharingPlatformName(subscription),
+			Logo:         optionalSharingString(subscription.GetString("logo")),
 		},
-		Name:              record.GetString("name"),
-		AccountNumber:     record.GetInt("accountNumber"),
-		LoginAccount:      record.GetString("loginAccount"),
-		HasPassword:       record.GetString("encryptedCredentials") != "",
-		VerificationLink:  optionalSharingString(record.GetString("verificationLink")),
-		MonthlyCost:       record.GetString("monthlyCost"),
-		Currency:          record.GetString("currency"),
-		NextBillingDate:   record.GetString("nextBillingDate"),
-		PaymentMethod:     optionalSharingString(record.GetString("paymentMethod")),
-		CardLast4:         optionalSharingString(record.GetString("cardLast4")),
-		Capacity:          record.GetInt("capacity"),
-		OccupiedSeats:     int(occupied),
-		MonthlyRevenue:    moneyUnitsToString(monthlyRevenueUnits),
-		OutstandingAmount: moneyUnitsToString(outstandingUnits),
-		MonthlyProfit:     float64(monthlyRevenueUnits-monthlyCostUnits) / float64(moneyScaleFactor),
-		Status:            record.GetString("status"),
-		Notes:             optionalSharingString(record.GetString("notes")),
-		CreatedAt:         sharingCreatedAt(record),
+		Name:                     record.GetString("name"),
+		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),
+		LoginAccount:             loginAccount,
+		HasPassword:              encryptedCredentials != "",
+		VerificationLink:         optionalSharingString(verificationLink),
+		MonthlyCost:              moneyUnitsToString(monthlyCostUnits),
+		Currency:                 subscription.GetString("currency"),
+		NextBillingDate:          subscription.GetString("nextBillingDate"),
+		PaymentMethod:            optionalSharingString(subscription.GetString("paymentMethod")),
+		CardLast4:                optionalSharingString(subscription.GetString("cardLast4")),
+		Capacity:                 capacity,
+		OccupiedSeats:            int(occupied),
+		MonthlyRevenue:           moneyUnitsToString(monthlyRevenueUnits),
+		MonthlyRevenueByCurrency: monthlyRevenueByCurrency,
+		OutstandingAmount:        moneyUnitsToString(outstandingUnits),
+		MonthlyProfit:            float64(monthlyRevenueUnits-monthlyCostUnits) / float64(moneyScaleFactor),
+		Status:                   record.GetString("status"),
+		Notes:                    optionalSharingString(record.GetString("notes")),
+		CreatedAt:                sharingCreatedAt(record),
 	}, nil
 }
 
-func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, int64, error) {
+func sharingPlatformName(subscription *core.Record) string {
+	if platformName := strings.TrimSpace(subscription.GetString("platformName")); platformName != "" {
+		return platformName
+	}
+	return subscription.GetString("name")
+}
+
+func sharingSubscriptionAccountNumber(subscription, account *core.Record) int {
+	if accountNumber := subscription.GetInt("accountNumber"); accountNumber > 0 {
+		return accountNumber
+	}
+	return account.GetInt("accountNumber")
+}
+
+func sharingSubscriptionMonthlyCostUnits(subscription *core.Record) (int64, error) {
+	units, err := moneyUnits(moneyForRecord(subscription.Get("price")))
+	if err != nil {
+		return 0, err
+	}
+	divisor := int64(1)
+	switch subscription.GetString("billingCycle") {
+	case "weekly":
+		return (units*52 + 6) / 12, nil
+	case "quarterly":
+		divisor = 3
+	case "semi-annual":
+		divisor = 6
+	case "annual":
+		divisor = 12
+	case "custom":
+		count := int64(subscription.GetInt("customDays"))
+		switch subscription.GetString("customCycleUnit") {
+		case "day":
+			if count > 0 {
+				return (units*365 + count*6) / (count * 12), nil
+			}
+		case "week":
+			if count > 0 {
+				return (units*52 + count*6) / (count * 12), nil
+			}
+		case "month":
+			divisor = count
+		case "year":
+			divisor = count * 12
+		}
+	case "one-time":
+		count := int64(subscription.GetInt("oneTimeTermCount"))
+		if count > 0 {
+			switch subscription.GetString("oneTimeTermUnit") {
+			case "day":
+				return (units*365 + count*6) / (count * 12), nil
+			case "week":
+				return (units*52 + count*6) / (count * 12), nil
+			case "month":
+				divisor = count
+			case "year":
+				divisor = count * 12
+			}
+		}
+	}
+	if divisor <= 0 {
+		divisor = 1
+	}
+	return (units + divisor/2) / divisor, nil
+}
+
+func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map[string]string, int64, error) {
 	seats, err := app.FindRecordsByFilter(
 		"sharing_seats",
 		"user = {:user} && sharingAccount = {:account} && status = 'active'",
@@ -387,15 +627,21 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, int
 		dbx.Params{"user": record.GetString("user"), "account": record.Id},
 	)
 	if err != nil {
-		return 0, 0, err
+		return 0, nil, 0, err
 	}
 	var monthlyRevenue int64
+	monthlyRevenueByCurrencyUnits := map[string]int64{}
 	for _, seat := range seats {
 		units, parseErr := moneyUnits(moneyForRecord(seat.GetString("monthlyPrice")))
 		if parseErr != nil {
-			return 0, 0, parseErr
+			return 0, nil, 0, parseErr
 		}
 		monthlyRevenue += units
+		currency := strings.ToUpper(strings.TrimSpace(seat.GetString("currency")))
+		if currency == "" {
+			currency = strings.ToUpper(strings.TrimSpace(record.GetString("currency")))
+		}
+		monthlyRevenueByCurrencyUnits[currency] += units
 	}
 	receivables, err := app.FindRecordsByFilter(
 		"sharing_receivables",
@@ -406,7 +652,7 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, int
 		dbx.Params{"user": record.GetString("user"), "account": record.Id},
 	)
 	if err != nil {
-		return 0, 0, err
+		return 0, nil, 0, err
 	}
 	var outstanding int64
 	for _, receivable := range receivables {
@@ -415,14 +661,18 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, int
 		fee, feeErr := moneyUnits(moneyForRecord(receivable.GetString("feeAmount")))
 		refund, refundErr := moneyUnits(moneyForRecord(receivable.GetString("refundAmount")))
 		if amountErr != nil || paidErr != nil || feeErr != nil || refundErr != nil {
-			return 0, 0, errInvalidMoney
+			return 0, nil, 0, errInvalidMoney
 		}
 		remaining := amount + fee - paid - refund
 		if remaining > 0 {
 			outstanding += remaining
 		}
 	}
-	return monthlyRevenue, outstanding, nil
+	monthlyRevenueByCurrency := make(map[string]string, len(monthlyRevenueByCurrencyUnits))
+	for currency, units := range monthlyRevenueByCurrencyUnits {
+		monthlyRevenueByCurrency[currency] = moneyUnitsToString(units)
+	}
+	return monthlyRevenue, monthlyRevenueByCurrency, outstanding, nil
 }
 
 func sharingCreatedAt(record *core.Record) string {

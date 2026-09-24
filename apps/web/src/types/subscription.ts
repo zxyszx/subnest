@@ -31,7 +31,12 @@ import {
   type RepeatReminderWindow as SharedRepeatReminderWindow,
   type SubscriptionStatus as SharedSubscriptionStatus,
 } from "@renewlet/shared/runtime";
-import type { ApiSubscription, ApiSubscriptionCollectionItem } from "@renewlet/shared/schemas/subscriptions";
+import type {
+  ApiSubscription,
+  ApiSubscriptionCollectionItem,
+  SubscriptionFamilySharing,
+  SubscriptionFamilySharingWrite,
+} from "@renewlet/shared/schemas/subscriptions";
 
 export { DEFAULT_NOTIFICATION_REMINDER_DAYS, DISABLED_REMINDER_DAYS, INHERIT_REMINDER_DAYS, MAX_REMINDER_DAYS };
 export type { ApiSubscription, ApiSubscriptionCollectionItem };
@@ -152,9 +157,12 @@ export const WEBHOOK_PAYLOAD_PLACEHOLDER = '{"title": "{title}", "content": "{co
 export type { CostSharing, CostSharingMember, CostSharingSplitMode } from '@renewlet/shared/cost-sharing';
 
 type SubscriptionCollectionDomainFields = {
+  platformName?: string;
+  accountNumber?: number;
   logo: string | undefined;
   category: Category;
   paymentMethod: PaymentMethod | undefined;
+  cardLast4?: string | undefined;
   startDate: DateOnly | null;
   nextBillingDate: DateOnly;
   trialEndDate: DateOnly | undefined;
@@ -186,6 +194,7 @@ type SubscriptionDetailDomainFields = {
   notes: string | undefined;
   tags: string[];
   extra: Record<string, unknown>;
+  familySharing?: SubscriptionFamilySharing | null;
 };
 
 type SubscriptionFromApi<T extends ApiSubscription> = T extends ApiSubscription
@@ -210,7 +219,9 @@ export type OneTimeBuyoutSubscription = Exclude<OneTimeSubscription, OneTimeFixe
 export type FixedCycleSubscription = RecurringCycleSubscription | OneTimeSubscription;
 
 type SubscriptionFormSubmissionFrom<T extends Subscription> = T extends Subscription
-  ? Omit<T, "id" | "pinned" | "extra" | "trialEndDate">
+  ? Omit<T, "id" | "pinned" | "extra" | "trialEndDate" | "familySharing"> & {
+      familySharing?: SubscriptionFamilySharingWrite | null;
+    }
   : never;
 export type SubscriptionFormSubmission = SubscriptionFormSubmissionFrom<Subscription>;
 type SubscriptionDraftFrom<T extends SubscriptionFormSubmission> = T extends SubscriptionFormSubmission

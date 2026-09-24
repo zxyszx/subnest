@@ -696,7 +696,7 @@ describe("AIRecognizeSubscriptionDialog", () => {
     await user.click(screen.getByRole("button", { name: "缺核心字段" }));
     expect(screen.queryByText("Apple Music")).not.toBeInTheDocument();
 
-    const nameInput = await screen.findByDisplayValue("Netflix");
+    const nameInput = (await screen.findAllByLabelText("平台名称"))[0]!;
     await user.clear(nameInput);
     await user.type(nameInput, "Netflix Premium");
     const priceInput = screen.getByLabelText("价格");

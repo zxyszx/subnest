@@ -19,15 +19,25 @@ type subscriptionResponse struct {
 
 type subscriptionDetailResponse struct {
 	subscriptionCollectionItemResponse
-	Website                *string                `json:"website,omitempty"`
-	Notes                  *string                `json:"notes,omitempty"`
-	Tags                   []string               `json:"tags"`
-	RepeatReminderEnabled  bool                   `json:"repeatReminderEnabled"`
-	RepeatReminderInterval string                 `json:"repeatReminderInterval"`
-	RepeatReminderWindow   string                 `json:"repeatReminderWindow"`
-	Extra                  map[string]interface{} `json:"extra"`
-	CreatedAt              string                 `json:"createdAt,omitempty"`
-	UpdatedAt              string                 `json:"updatedAt,omitempty"`
+	Website                *string                            `json:"website,omitempty"`
+	Notes                  *string                            `json:"notes,omitempty"`
+	Tags                   []string                           `json:"tags"`
+	RepeatReminderEnabled  bool                               `json:"repeatReminderEnabled"`
+	RepeatReminderInterval string                             `json:"repeatReminderInterval"`
+	RepeatReminderWindow   string                             `json:"repeatReminderWindow"`
+	Extra                  map[string]interface{}             `json:"extra"`
+	FamilySharing          *subscriptionFamilySharingResponse `json:"familySharing"`
+	CreatedAt              string                             `json:"createdAt,omitempty"`
+	UpdatedAt              string                             `json:"updatedAt,omitempty"`
+}
+
+type subscriptionFamilySharingResponse struct {
+	Enabled          bool    `json:"enabled"`
+	LoginAccount     string  `json:"loginAccount"`
+	HasPassword      bool    `json:"hasPassword"`
+	PasswordMask     string  `json:"passwordMask"`
+	VerificationLink *string `json:"verificationLink"`
+	Capacity         int     `json:"capacity"`
 }
 
 // handleSubscriptionRenew 按用户选择延续或重开当前订阅；Renewlet 只更新账本状态，不生成付款流水。
@@ -90,6 +100,20 @@ func subscriptionAPIFromRecord(record *core.Record) subscriptionDetailResponse {
 		RepeatReminderInterval:             normalizeRepeatReminderInterval(record.GetString("repeatReminderInterval")),
 		RepeatReminderWindow:               normalizeRepeatReminderWindow(record.GetString("repeatReminderWindow")),
 		Extra:                              subscriptionRecordJSONMap(record, "extra"),
+	}
+	if record.GetBool("familySharingEnabled") {
+		capacity := record.GetInt("sharingCapacity")
+		if capacity < 1 {
+			capacity = 1
+		}
+		out.FamilySharing = &subscriptionFamilySharingResponse{
+			Enabled:          true,
+			LoginAccount:     record.GetString("sharingLoginAccount"),
+			HasPassword:      record.GetString("sharingEncryptedCredentials") != "",
+			PasswordMask:     record.GetString("sharingPasswordMask"),
+			VerificationLink: optionalSharingString(record.GetString("sharingVerificationLink")),
+			Capacity:         capacity,
+		}
 	}
 	if !record.GetDateTime("created").IsZero() {
 		out.CreatedAt = record.GetDateTime("created").Time().UTC().Format(time.RFC3339Nano)

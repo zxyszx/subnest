@@ -253,6 +253,8 @@ function toSubscriptionRow(
     id: record.id,
     user_id: "subscription-perf-owner",
     name: record.name,
+    platform_name: record.name,
+    account_number: 1,
     logo: null,
     price: record.price,
     currency: record.currency,
@@ -266,6 +268,7 @@ function toSubscriptionRow(
     pinned: Number(record.pinned),
     public_hidden: Number(record.publicHidden),
     payment_method: record.paymentMethod,
+    card_last4: null,
     start_date: record.startDate,
     next_billing_date: record.nextBillingDate,
     auto_renew: Number(record.autoRenew),
@@ -294,6 +297,8 @@ function openSubscriptionReadDatabase(): DatabaseSync {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       name TEXT NOT NULL,
+      platform_name TEXT NOT NULL DEFAULT '',
+      account_number INTEGER NOT NULL DEFAULT 1,
       logo TEXT,
       price TEXT NOT NULL,
       currency TEXT NOT NULL,
@@ -307,6 +312,7 @@ function openSubscriptionReadDatabase(): DatabaseSync {
       pinned INTEGER NOT NULL,
       public_hidden INTEGER NOT NULL,
       payment_method TEXT,
+      card_last4 TEXT,
       start_date TEXT,
       next_billing_date TEXT NOT NULL,
       auto_renew INTEGER NOT NULL,
@@ -354,11 +360,11 @@ function openSubscriptionReadDatabase(): DatabaseSync {
 
 function seedSubscriptionReadRows(db: DatabaseSync, records: SubscriptionPerformanceRecord[]): void {
   const insertFact = db.prepare(`INSERT INTO subscriptions (
-    id, user_id, name, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit,
+    id, user_id, name, platform_name, account_number, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit,
     one_time_term_count, one_time_term_unit, category, status, pinned, public_hidden, payment_method,
-    start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date, trial_end_date,
+    card_last4, start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date, trial_end_date,
     reminder_days, cost_sharing_json, created_at
-  ) VALUES (${Array.from({ length: 24 }, () => "?").join(", ")})`);
+  ) VALUES (${Array.from({ length: 27 }, () => "?").join(", ")})`);
   const insertIndex = db.prepare(`INSERT INTO subscription_list_index (
     subscription_id, user_id, status, billing_cycle, one_time_term_count, next_billing_date, pinned, created_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -367,9 +373,9 @@ function seedSubscriptionReadRows(db: DatabaseSync, records: SubscriptionPerform
     for (const record of records) {
       const row = toSubscriptionRow(record);
       insertFact.run(
-        row.id, row.user_id, row.name, row.logo, row.price, row.currency, row.billing_cycle,
+        row.id, row.user_id, row.name, row.platform_name ?? row.name, row.account_number ?? 1, row.logo, row.price, row.currency, row.billing_cycle,
         row.custom_days, row.custom_cycle_unit, row.one_time_term_count, row.one_time_term_unit,
-        row.category, row.status, row.pinned, row.public_hidden, row.payment_method, row.start_date,
+        row.category, row.status, row.pinned, row.public_hidden, row.payment_method, row.card_last4 ?? null, row.start_date,
         row.next_billing_date, row.auto_renew, row.auto_calculate_next_billing_date, row.trial_end_date,
         row.reminder_days, row.cost_sharing_json, row.created_at,
       );

@@ -187,6 +187,8 @@ function isCreateFormPristine(formData: SubscriptionFormState): boolean {
   const baseline = createSubscriptionFormState({ currency: formData.currency });
   return (
     formData.name === baseline.name &&
+    formData.platformName === baseline.platformName &&
+    formData.accountNumber === baseline.accountNumber &&
     formData.logo === baseline.logo &&
     formData.price === baseline.price &&
     formData.billingCycle === baseline.billingCycle &&
@@ -199,6 +201,7 @@ function isCreateFormPristine(formData: SubscriptionFormState): boolean {
     formData.status === baseline.status &&
     formData.publicHidden === baseline.publicHidden &&
     formData.paymentMethod === baseline.paymentMethod &&
+    formData.cardLast4 === baseline.cardLast4 &&
     formData.startDate === baseline.startDate &&
     formData.nextBillingDate === baseline.nextBillingDate &&
     formData.autoRenew === baseline.autoRenew &&
@@ -210,6 +213,11 @@ function isCreateFormPristine(formData: SubscriptionFormState): boolean {
     formData.repeatReminderInterval === baseline.repeatReminderInterval &&
     formData.repeatReminderWindow === baseline.repeatReminderWindow &&
     formData.costSharing === baseline.costSharing &&
+    formData.familySharing.enabled === baseline.familySharing.enabled &&
+    formData.familySharing.loginAccount === baseline.familySharing.loginAccount &&
+    formData.familySharing.password === baseline.familySharing.password &&
+    formData.familySharing.verificationLink === baseline.familySharing.verificationLink &&
+    formData.familySharing.capacity === baseline.familySharing.capacity &&
     formData.website === baseline.website &&
     formData.notes === baseline.notes &&
     formData.tags.length === 0
@@ -224,6 +232,8 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
 
   return {
     name: subscription.name,
+    platformName: subscription.platformName ?? subscription.name,
+    accountNumber: String(subscription.accountNumber ?? 1),
     logo: subscription.logo,
     price: subscription.price.toString(),
     currency: subscription.currency,
@@ -237,6 +247,7 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
     status: subscription.status,
     publicHidden: subscription.publicHidden,
     paymentMethod: subscription.paymentMethod || "",
+    cardLast4: subscription.cardLast4 || "",
     startDate: subscription.startDate ?? undefined,
     nextBillingDate: subscription.nextBillingDate,
     autoRenew: subscription.billingCycle === "one-time" ? false : subscription.autoRenew,
@@ -248,6 +259,15 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
     repeatReminderInterval: subscription.repeatReminderInterval,
     repeatReminderWindow: subscription.repeatReminderWindow,
     costSharing: subscription.costSharing,
+    familySharing: subscription.familySharing ? {
+      enabled: subscription.familySharing.enabled,
+      loginAccount: subscription.familySharing.loginAccount,
+      password: "",
+      hasPassword: subscription.familySharing.hasPassword,
+      passwordMask: subscription.familySharing.passwordMask,
+      verificationLink: subscription.familySharing.verificationLink ?? "",
+      capacity: String(subscription.familySharing.capacity),
+    } : createSubscriptionFormState().familySharing,
     website: subscription.website ?? "",
     notes: subscription.notes ?? "",
     tags: subscription.tags,

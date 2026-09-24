@@ -18,7 +18,7 @@ vi.mock("@/components/subscription-dialog-content", async () => {
   return {
     SubscriptionDialogContent: () => (
       <form data-testid="subscription-dialog-real-content">
-        <input aria-label="服务名称" autoFocus />
+        <input aria-label="平台名称" autoFocus />
       </form>
     ),
   };
@@ -73,7 +73,7 @@ describe("SubscriptionDialog loading shell", () => {
     expect(document.querySelector("[data-dialog-overlay]")).toBe(overlay);
     expect(screen.queryByTestId("dialog-module-pending")).not.toBeInTheDocument();
     expect(dialog).not.toHaveAttribute("aria-busy");
-    expect(screen.getByLabelText("服务名称")).toHaveFocus();
+    expect(screen.getByLabelText("平台名称")).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "关闭" }));
     await user.click(screen.getByRole("button", { name: "打开新增" }));

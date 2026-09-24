@@ -399,6 +399,9 @@ func applySubscriptionDerivedMutation(app core.App, mutation subscriptionDerived
 		if err := replaceSubscriptionRepeatSchedule(app, mutation.After, schedulerSettingsForUser(app, afterUser), now); err != nil {
 			return err
 		}
+		if err := syncSubscriptionSharingAccount(app, mutation.After); err != nil {
+			return err
+		}
 	}
 	for _, userID := range uniqueNonEmptyStrings(beforeUser, afterUser) {
 		if err := applySubscriptionStatsDelta(app, userID, mutation.Before, mutation.After, now); err != nil {

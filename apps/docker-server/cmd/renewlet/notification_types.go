@@ -140,8 +140,18 @@ type notificationSubscription struct {
 	RepeatReminderEnabled  bool   `json:"repeatReminderEnabled"`
 	RepeatReminderInterval string `json:"repeatReminderInterval"`
 	RepeatReminderWindow   string `json:"repeatReminderWindow"`
+	FamilySharingEnabled   bool   `json:"-"`
 	// 通知投影读取完整 costSharing JSON；索引镜像只负责把候选行带进 collector。
-	CostSharing costSharingPayload
+	CostSharing  costSharingPayload
+	SharingSeats []notificationSharingSeat `json:"-"`
+}
+
+type notificationSharingSeat struct {
+	MemberName    string
+	MonthlyPrice  string
+	Currency      string
+	BillingMonths int
+	ExpiresAt     string
 }
 
 type repeatReminderSnapshot struct {

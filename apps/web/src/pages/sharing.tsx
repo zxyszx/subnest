@@ -1,40 +1,78 @@
-import { useState, type FormEvent } from "react";
-import { CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Plus, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
+import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
+import { SubscriptionLogo } from "@/components/subscription-logo";
+import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { FormField, FormFieldRow } from "@/components/ui/form-field";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
-import { Textarea } from "@/components/ui/textarea";
-import { useSharingAccounts, useCreateSharingAccount } from "@/hooks/use-sharing";
-import { useSubscriptionIndex } from "@/hooks/use-subscriptions";
+import { PlatformFilterBar } from "@/components/platform-filter-bar";
+import { sharingQueryKeys, useSharingAccounts } from "@/hooks/use-sharing";
+import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscriptions";
+import { useExchangeRates } from "@/hooks/use-exchange-rates";
+import { useSettingsEnvelope } from "@/hooks/use-settings";
+import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cn } from "@/lib/utils";
+import { sharingMonthlyProfit, sharingUpcomingRenewalCount } from "@/lib/sharing-financials";
+import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
-import type { SharingAccount, SharingAccountCreate } from "@renewlet/shared/schemas/sharing";
+import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 
 export default function Sharing() {
   const { t, formatCurrency } = useI18n();
   const accountsQuery = useSharingAccounts();
-  const createAccount = useCreateSharingAccount();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [subscriptionId, setSubscriptionId] = useState("");
+  const settingsQuery = useSettingsEnvelope();
+  const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
+  const today = useZonedToday(settingsQuery.data?.settings.timezone ?? "UTC");
+  const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
-  const subscriptionsQuery = useSubscriptionIndex(undefined, dialogOpen);
+  const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
+  const updateSubscription = useUpdateSubscription();
+  const queryClient = useQueryClient();
   useRouteReady();
 
   const accounts = accountsQuery.data?.accounts ?? [];
-  const occupiedSeats = accounts.reduce((total, account) => total + account.occupiedSeats, 0);
-  const capacity = accounts.reduce((total, account) => total + account.capacity, 0);
-  const outstanding = accounts.reduce((total, account) => total + Number(account.outstandingAmount), 0);
-  const monthlyProfit = accounts.reduce((total, account) => total + account.monthlyProfit, 0);
+  const platformOptions = Array.from(accounts.reduce((platforms, account) => {
+    const platformName = subscriptionPlatformName(account.subscription);
+    const platform = platforms.get(platformName) ?? {
+      name: platformName,
+      logo: account.subscription.logo,
+      accounts: [] as { id: string; accountNumber: number }[],
+    };
+    platform.accounts.push({ id: account.subscription.id, accountNumber: account.accountNumber });
+    platforms.set(platformName, platform);
+    return platforms;
+  }, new Map<string, {
+    name: string;
+    logo: string | null;
+    accounts: { id: string; accountNumber: number }[];
+  }>()).values());
+  const visibleAccounts = selectedPlatform
+    ? accounts
+        .filter((account) => subscriptionPlatformName(account.subscription) === selectedPlatform)
+        .sort((left, right) => left.accountNumber - right.accountNumber || left.name.localeCompare(right.name))
+    : accounts;
+  const occupiedSeats = visibleAccounts.reduce((total, account) => total + account.occupiedSeats, 0);
+  const capacity = visibleAccounts.reduce((total, account) => total + account.capacity, 0);
+  const outstanding = visibleAccounts.reduce(
+    (total, account) => total + convert(Number(account.outstandingAmount), account.currency, defaultCurrency),
+    0,
+  );
+  const monthlyProfit = visibleAccounts.reduce(
+    (total, account) => total + sharingMonthlyProfit(account, defaultCurrency, convert),
+    0,
+  );
+  const upcomingRenewals = sharingUpcomingRenewalCount(visibleAccounts, today);
 
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -63,97 +101,65 @@ export default function Sharing() {
     }
   };
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const input: SharingAccountCreate = {
-      subscriptionId,
-      name: String(form.get("name") ?? ""),
-      accountNumber: Number(form.get("accountNumber")),
-      loginAccount: String(form.get("loginAccount") ?? ""),
-      password: String(form.get("password") ?? ""),
-      verificationLink: String(form.get("verificationLink") ?? ""),
-      monthlyCost: String(form.get("monthlyCost") ?? ""),
-      currency: String(form.get("currency") ?? "CNY").toUpperCase(),
-      nextBillingDate: String(form.get("nextBillingDate") ?? ""),
-      paymentMethod: String(form.get("paymentMethod") ?? ""),
-      cardLast4: String(form.get("cardLast4") ?? ""),
-      capacity: Number(form.get("capacity")),
-      status: "active",
-      notes: String(form.get("notes") ?? ""),
-    };
-    try {
-      await createAccount.mutateAsync(input);
-      toast.success(t("sharing.createSuccess"));
-      setDialogOpen(false);
-      setSubscriptionId("");
-    } catch {
-      toast.error(t("sharing.createFailed"));
-    }
+  const saveSubscription = (changes: Parameters<typeof updateSubscription.mutate>[0]["changes"]) => {
+    if (!editingSubscriptionId) return;
+    updateSubscription.mutate(
+      { id: editingSubscriptionId, changes },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all });
+          setEditingSubscriptionId(null);
+        },
+      },
+    );
+  };
+
+  const AccountIdentity = ({ account }: { account: SharingAccount }) => {
+    const platformName = subscriptionPlatformName(account.subscription);
+    return (
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={t("sharing.editAccount")}
+          title={t("sharing.editAccount")}
+          onClick={() => setEditingSubscriptionId(account.subscription.id)}
+        >
+          <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
+            {account.accountNumber}
+          </span>
+        </button>
+        <button type="button" className="min-w-0 text-left" onClick={() => setSelectedAccount(account)}>
+          <span className="block truncate font-medium text-foreground hover:text-primary">{platformName}</span>
+        </button>
+      </div>
+    );
   };
 
   return (
     <div className="app-page bg-background">
       <Header />
       <main className="app-main mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">{t("sharing.title")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("sharing.subtitle")}</p>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild><Button><Plus />{t("sharing.addAccount")}</Button></DialogTrigger>
-            <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
-              <form onSubmit={submit} className="grid gap-5">
-                <DialogHeader>
-                  <DialogTitle>{t("sharing.addAccount")}</DialogTitle>
-                  <DialogDescription>{t("sharing.addAccountDescription")}</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4">
-                  <FormField id="sharing-subscription" label={t("sharing.subscription")}>
-                    {(field) => (
-                    <Select value={subscriptionId} onValueChange={setSubscriptionId}>
-                      <SelectTrigger id={field.id} aria-describedby={field.describedBy}><SelectValue placeholder={t("sharing.subscription")} /></SelectTrigger>
-                      <SelectContent>{(subscriptionsQuery.data?.subscriptions ?? []).map((subscription) => <SelectItem key={subscription.id} value={subscription.id}>{subscription.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                    )}
-                  </FormField>
-                  <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-                    <FormField id="sharing-account-name" label={t("sharing.accountName")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="name" required maxLength={120} />}</FormField>
-                    <FormField id="sharing-account-number" label={t("sharing.accountNumber")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="accountNumber" type="number" min={1} defaultValue={1} required />}</FormField>
-                  </FormFieldRow>
-                  <FormField id="sharing-login-account" label={t("sharing.loginAccount")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="loginAccount" required maxLength={320} autoComplete="username" />}</FormField>
-                  <FormField id="sharing-password" label={t("sharing.password")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="password" type="password" required maxLength={1024} autoComplete="new-password" />}</FormField>
-                  <FormField id="sharing-verification-link" label={t("sharing.verificationLink")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="verificationLink" type="url" />}</FormField>
-                  <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-                    <FormField id="sharing-monthly-cost" label={t("sharing.monthlyCost")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="monthlyCost" type="number" min="0" step="0.01" required />}</FormField>
-                    <FormField id="sharing-currency" label={t("sharing.currency")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="currency" defaultValue="CNY" maxLength={3} required />}</FormField>
-                  </FormFieldRow>
-                  <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-                    <FormField id="sharing-next-billing" label={t("sharing.nextBillingDate")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="nextBillingDate" type="date" required />}</FormField>
-                    <FormField id="sharing-capacity" label={t("sharing.capacity")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="capacity" type="number" min={1} max={100} defaultValue={5} required />}</FormField>
-                  </FormFieldRow>
-                  <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-                    <FormField id="sharing-payment-method" label={t("sharing.paymentMethod")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="paymentMethod" maxLength={80} />}</FormField>
-                    <FormField id="sharing-card-last4" label={t("sharing.cardLast4")}>{(field) => <Input id={field.id} aria-describedby={field.describedBy} name="cardLast4" maxLength={32} />}</FormField>
-                  </FormFieldRow>
-                  <FormField id="sharing-notes" label={t("sharing.notes")}>{(field) => <Textarea id={field.id} aria-describedby={field.describedBy} name="notes" maxLength={5000} />}</FormField>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild><Button type="button" variant="outline">{t("sharing.cancel")}</Button></DialogClose>
-                  <Button type="submit" disabled={createAccount.isPending || !subscriptionId}>{createAccount.isPending ? t("sharing.creating") : t("sharing.create")}</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={t("sharing.title")}>
-          <StatCard title={t("sharing.accounts")} value={accounts.length} icon={<WalletCards className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.outstanding")} value={formatCurrency(outstanding, "CNY")} icon={<CircleDollarSign className="h-6 w-6" />} density="compact" />
-          <StatCard title={t("sharing.monthlyProfit")} value={formatCurrency(monthlyProfit, "CNY")} icon={<TrendingUp className="h-6 w-6" />} density="compact" />
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" aria-label={t("sharing.title")}>
+          <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" />
+          <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" />
+          <StatCard title={t("sharing.outstanding")} value={formatCurrency(outstanding, defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" />
+          <StatCard title={t("sharing.monthlyProfit")} value={formatCurrency(monthlyProfit, defaultCurrency)} icon={<TrendingUp />} density="dashboard" variant={monthlyProfit < 0 ? "warning" : "primary"} />
+          <StatCard title={t("sharing.upcomingRenewals")} value={upcomingRenewals} subtitle={t("sharing.nextSevenDays")} icon={<CalendarClock />} density="dashboard" variant={upcomingRenewals > 0 ? "warning" : "default"} />
         </section>
+
+        {platformOptions.length > 0 ? (
+          <PlatformFilterBar
+            platforms={platformOptions}
+            value={selectedPlatform}
+            onValueChange={setSelectedPlatform}
+            allLabel={t("sharing.allPlatforms")}
+            moreLabel={t("sharing.morePlatforms")}
+            ariaLabel={t("sharing.platformFilter")}
+            className="mt-6 rounded-t-lg border border-b-0 bg-card px-2"
+          />
+        ) : null}
 
         {accountsQuery.isError ? (
           <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadFailed")}</div>
@@ -165,18 +171,30 @@ export default function Sharing() {
             <Button asChild variant="outline" className="mt-5"><Link href="/subscriptions">{t("sharing.goToSubscriptions")}</Link></Button>
           </section>
         ) : (
-          <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
-            <div className="overflow-x-auto">
+          <section className={cn(
+            "overflow-hidden border border-border bg-card",
+            platformOptions.length > 0
+              ? "rounded-b-lg rounded-t-none border-t-0"
+              : "mt-6 rounded-lg",
+          )}>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-4 py-3 font-medium">{t("sharing.seats")}</th><th className="px-4 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-4 py-3 font-medium">{t("sharing.seats")}</th><th className="w-64 px-4 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
-                <tbody className="divide-y divide-border">{accounts.map((account) => (
+                <tbody className="divide-y divide-border">{visibleAccounts.map((account) => (
                   <tr key={account.id} className="hover:bg-muted/20">
-                    <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelectedAccount(account)}><span className="font-medium text-foreground hover:text-primary">{account.name}</span><span className="mt-0.5 block text-xs text-muted-foreground">{account.subscription.name} #{account.accountNumber}</span></button></td>
+                    <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
                     <td className="px-4 py-3 tabular-nums">{account.occupiedSeats} / {account.capacity}</td>
-                    <td className="px-4 py-3"><div>{formatCurrency(Number(account.monthlyCost), account.currency)}</div><div className="mt-0.5 text-xs text-muted-foreground">{account.nextBillingDate} · {t("sharing.monthlyProfit")} {formatCurrency(account.monthlyProfit, account.currency)}</div></td>
+                    <td className="px-4 py-3">
+                      <div className="grid min-w-52 gap-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{t("sharing.monthlyCost")}</span><strong className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</strong></div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground"><CalendarClock className="h-3.5 w-3.5 shrink-0" /><span>{t("sharing.nextBillingDate")}</span><span className="ml-auto tabular-nums text-foreground">{account.nextBillingDate}</span></div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground"><TrendingUp className="h-3.5 w-3.5 shrink-0" /><span>{t("sharing.monthlyProfit")}</span><span className={cn("ml-auto font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</span></div>
+                        <SharingPaymentSummary paymentMethod={account.paymentMethod} cardLast4={account.cardLast4} className="text-muted-foreground" />
+                      </div>
+                    </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1">
                       <Button type="button" size="icon" variant="ghost" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                       <Button type="button" size="icon" variant="ghost" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
@@ -187,9 +205,38 @@ export default function Sharing() {
                 ))}</tbody>
               </table>
             </div>
+            <div className="divide-y divide-border sm:hidden">
+              {visibleAccounts.map((account) => (
+                <article key={account.id} className="space-y-4 p-4">
+                  <AccountIdentity account={account} />
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{account.occupiedSeats} / {account.capacity}</dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.costAndRenewal")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
+                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)} · {account.nextBillingDate}</dd></div>
+                    {account.paymentMethod || account.cardLast4 ? <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.paymentMethod")}</dt><dd className="mt-1 font-medium text-foreground"><SharingPaymentSummary paymentMethod={account.paymentMethod} cardLast4={account.cardLast4} /></dd></div> : null}
+                  </dl>
+                  <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
+                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
+                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
+                    <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
+                  </div>
+                  <Button type="button" className="w-full" variant="outline" onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
+                </article>
+              ))}
+            </div>
           </section>
         )}
         <SharingAccountDetailDialog account={selectedAccount} open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
+        <EditSubscriptionDialog
+          subscription={editingSubscriptionQuery.data ?? null}
+          loadingPreview={null}
+          open={Boolean(editingSubscriptionId)}
+          onOpenChange={(open) => !open && setEditingSubscriptionId(null)}
+          onSave={saveSubscription}
+          platformSuggestions={platformOptions}
+          loading={editingSubscriptionQuery.isPending}
+        />
       </main>
     </div>
   );

@@ -55,6 +55,10 @@ vi.mock("@/hooks/use-subscriptions", () => ({
   useSubscriptionFacets: () => ({ data: { tags: [] } }),
 }));
 
+vi.mock("@/hooks/use-sharing", () => ({
+  useSharingAccounts: () => ({ data: { accounts: [], total: 0 }, isPending: false }),
+}));
+
 vi.mock("@/contexts/CustomConfigContext", () => ({
   useCustomConfigState: () => ({ config: {} }),
 }));

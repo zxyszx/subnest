@@ -42,6 +42,13 @@ func TestImportApplyCreatesAndSkipsByImportKey(t *testing.T) {
 	if count := subscriptionCountForUser(t, app, user.Id); count != 1 {
 		t.Fatalf("subscription count = %d, want 1", count)
 	}
+	row, err := app.FindFirstRecordByFilter("subscriptions", "user = {:user}", dbx.Params{"user": user.Id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row.GetString("platformName") != "GitHub" || row.GetInt("accountNumber") != 1 || row.GetString("cardLast4") != "4242" {
+		t.Fatalf("platform identity was not restored: platform=%q number=%d card=%q", row.GetString("platformName"), row.GetInt("accountNumber"), row.GetString("cardLast4"))
+	}
 
 	res = serveTestRequest(t, app, http.MethodPost, "/api/app/import/apply", body, token)
 	if res.Code != http.StatusOK || !strings.Contains(res.Body.String(), `"skips":1`) {
@@ -587,6 +594,8 @@ func importRequestBodyWithGeneratedSourceIds(conflictMode string, source string,
 func importSubscriptionBody(source string, sourceID string, confidence string, price int) map[string]interface{} {
 	return map[string]interface{}{
 		"name":                         "GitHub",
+		"platformName":                 "GitHub",
+		"accountNumber":                1,
 		"logo":                         nil,
 		"price":                        fmt.Sprintf("%d", price),
 		"currency":                     "USD",
@@ -598,6 +607,7 @@ func importSubscriptionBody(source string, sourceID string, confidence string, p
 		"pinned":                       false,
 		"publicHidden":                 false,
 		"paymentMethod":                nil,
+		"cardLast4":                    "4242",
 		"startDate":                    "2026-01-01",
 		"nextBillingDate":              "2026-02-01",
 		"autoCalculateNextBillingDate": true,

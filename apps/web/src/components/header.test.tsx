@@ -289,7 +289,7 @@ describe("Header system version entry", () => {
     const desktopNav = screen.getByTestId("app-header-desktop-nav");
     const mobileNav = screen.getByTestId("app-header-mobile-nav");
     expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex");
-    expect(mobileNav).toHaveClass("flex", "border-t", "lg:hidden");
+    expect(mobileNav).toHaveClass("flex", "overflow-x-auto", "overscroll-x-contain", "border-t", "lg:hidden");
 
     const subscriptionLink = within(desktopNav).getByRole("link", { name: "订阅" });
     expect(subscriptionLink).toHaveAttribute("title", "订阅");

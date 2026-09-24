@@ -28,6 +28,16 @@ import type { DateOnly } from "@/lib/time/date-only";
 export type SubscriptionFormReminderType = "disabled" | "inherit" | "preset" | "custom";
 export type OneTimePurchaseMode = "term" | "buyout";
 
+export type FamilySharingFormState = {
+  enabled: boolean;
+  loginAccount: string;
+  password: string;
+  hasPassword: boolean;
+  passwordMask: string;
+  verificationLink: string;
+  capacity: string;
+};
+
 /**
  * 订阅表单的本地状态（UI 输入专用）。
  *
@@ -37,6 +47,8 @@ export type OneTimePurchaseMode = "term" | "buyout";
  */
 export type SubscriptionFormState = {
   name: string;
+  platformName: string;
+  accountNumber: string;
   /** Logo 的表单值必须已经是可持久化 URL，裁剪上传的 data URL 只能停留在组件内部预览态。 */
   logo: string | undefined;
   price: string;
@@ -51,6 +63,7 @@ export type SubscriptionFormState = {
   status: SubscriptionStatus;
   publicHidden: boolean;
   paymentMethod: PaymentMethod | "";
+  cardLast4: string;
   /** date-only 在表单内保持字符串，只有日历控件边界才临时转 Date。 */
   startDate: DateOnly | undefined;
   nextBillingDate: DateOnly | undefined;
@@ -64,6 +77,7 @@ export type SubscriptionFormState = {
   repeatReminderInterval: RepeatReminderInterval;
   repeatReminderWindow: RepeatReminderWindow;
   costSharing: CostSharing | undefined;
+  familySharing: FamilySharingFormState;
   website: string;
   notes: string;
   tags: string[];
@@ -74,6 +88,8 @@ export function createSubscriptionFormState(
 ): SubscriptionFormState {
   return {
     name: "",
+    platformName: overrides.platformName ?? overrides.name ?? "",
+    accountNumber: "1",
     logo: undefined,
     price: "",
     currency: "CNY",
@@ -87,6 +103,7 @@ export function createSubscriptionFormState(
     status: "active",
     publicHidden: false,
     paymentMethod: "",
+    cardLast4: "",
     startDate: undefined,
     nextBillingDate: undefined,
     autoRenew: false,
@@ -98,6 +115,15 @@ export function createSubscriptionFormState(
     repeatReminderInterval: "1h",
     repeatReminderWindow: "72h",
     costSharing: undefined,
+    familySharing: {
+      enabled: false,
+      loginAccount: "",
+      password: "",
+      hasPassword: false,
+      passwordMask: "",
+      verificationLink: "",
+      capacity: "5",
+    },
     website: "",
     notes: "",
     tags: [],

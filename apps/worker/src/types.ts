@@ -156,6 +156,8 @@ export interface SubscriptionRow {
   id: string;
   user_id: string;
   name: string;
+  platform_name?: string;
+  account_number?: number;
   logo: string | null;
   price: string;
   currency: string;
@@ -169,6 +171,7 @@ export interface SubscriptionRow {
   pinned: number;
   public_hidden: number;
   payment_method: string | null;
+  card_last4?: string | null;
   start_date: string | null;
   next_billing_date: string;
   auto_renew: number;
@@ -185,6 +188,12 @@ export interface SubscriptionRow {
   // 内部镜像列只给 D1 通知候选索引使用；API 出站必须继续从 cost_sharing_json 解析。
   cost_sharing_collection_reminder_enabled: number;
   cost_sharing_next_collection_reminder_date: string | null;
+  family_sharing_enabled?: number;
+  sharing_login_account?: string;
+  sharing_encrypted_credentials?: string;
+  sharing_password_mask?: string;
+  sharing_verification_link?: string | null;
+  sharing_capacity?: number;
   extra_json: string;
   created_at: string;
   updated_at: string;
@@ -194,6 +203,8 @@ export interface SubscriptionRow {
 export type SubscriptionCollectionRow = Pick<SubscriptionRow,
   | "id"
   | "name"
+  | "platform_name"
+  | "account_number"
   | "logo"
   | "price"
   | "currency"
@@ -207,6 +218,7 @@ export type SubscriptionCollectionRow = Pick<SubscriptionRow,
   | "pinned"
   | "public_hidden"
   | "payment_method"
+  | "card_last4"
   | "start_date"
   | "next_billing_date"
   | "auto_renew"

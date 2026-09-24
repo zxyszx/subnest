@@ -35,6 +35,8 @@ type SubscriptionFormSubmissionBase = Omit<
 
 export type SubscriptionFormErrorField =
   | "name"
+  | "platformName"
+  | "accountNumber"
   | "price"
   | "currency"
   | "billingCycle"
@@ -43,11 +45,14 @@ export type SubscriptionFormErrorField =
   | "oneTimeTerm"
   | "reminderDays"
   | "costSharing"
+  | "familySharing"
   | "website"
   | "tags";
 
 export type SubscriptionFormValidationIssueCode =
   | "nameRequired"
+  | "platformNameRequired"
+  | "accountNumberInvalid"
   | "amountInvalid"
   | SubscriptionDateValidationKind
   | "reminderInvalid"
@@ -58,6 +63,7 @@ export type SubscriptionFormValidationIssueCode =
   | "costSharingCollectionReminderAnchorRequired"
   | "costSharingMemberJoinedDateRangeInvalid"
   | "costSharingInvalid"
+  | "familySharingInvalid"
   | "websiteInvalid"
   | "tagsTooMany"
   | "tagTooLong";
@@ -278,8 +284,12 @@ export function subscriptionDateValidationMessageKey(kind: SubscriptionDateValid
 export function getSubscriptionFormValidationIssues(formData: SubscriptionFormState): SubscriptionFormValidationIssue[] {
   // 顺序化 issue 列表是普通提交、draft 转换和 AI preflight 的共同事实源；新增规则时必须保持“首错可直接操作”的顺序。
   const issues: SubscriptionFormValidationIssue[] = [];
-  if (!formData.name.trim()) {
-    issues.push({ code: "nameRequired", field: "name", messageKey: "subscription.validation.nameRequired" });
+
+  if (!formData.platformName.trim() && !formData.name.trim()) {
+    issues.push({ code: "platformNameRequired", field: "platformName", messageKey: "subscription.validation.platformNameRequired" });
+  }
+  if (parsePositiveIntegerInput(formData.accountNumber, 100000) === null) {
+    issues.push({ code: "accountNumberInvalid", field: "accountNumber", messageKey: "subscription.validation.accountNumberInvalid" });
   }
   if (parseMoneyInput(formData.price) === null) {
     issues.push({ code: "amountInvalid", field: "price", messageKey: "subscription.validation.amountInvalid" });
@@ -354,6 +364,17 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
       issues.push({ code: "costSharingInvalid", field: "costSharing", messageKey: "subscription.validation.costSharingInvalid" });
     }
   }
+  if (formData.familySharing.enabled) {
+    const family = formData.familySharing;
+    if (
+      !family.loginAccount.trim() ||
+      (!family.hasPassword && !family.password) ||
+      !isOptionalHttpUrl(family.verificationLink) ||
+      parsePositiveIntegerInput(family.capacity, 100) === null
+    ) {
+      issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
+    }
+  }
   if (!isOptionalHttpUrl(formData.website)) {
     issues.push({ code: "websiteInvalid", field: "website", messageKey: "subscription.validation.websiteInvalid" });
   }
@@ -410,8 +431,11 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
   }
 
   const repeatReminderEnabled = reminderDays === DISABLED_REMINDER_DAYS ? false : formData.repeatReminderEnabled;
+  const platformName = formData.platformName.trim() || formData.name.trim();
   const base = {
-    name: formData.name,
+    name: platformName,
+    platformName,
+    accountNumber: parsePositiveIntegerInput(formData.accountNumber, 100000) ?? 1,
     logo: formData.logo,
     price,
     currency: formData.currency,
@@ -419,6 +443,7 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
     status: formData.status,
     publicHidden: formData.publicHidden,
     paymentMethod: formData.paymentMethod || undefined,
+    cardLast4: formData.cardLast4.trim() || undefined,
     startDate,
     nextBillingDate,
     autoRenew: formData.billingCycle === "one-time" ? false : formData.autoRenew,
@@ -428,6 +453,13 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
     repeatReminderInterval: formData.repeatReminderInterval,
     repeatReminderWindow: formData.repeatReminderWindow,
     costSharing: formData.costSharing?.enabled ? formData.costSharing : undefined,
+    familySharing: formData.familySharing.enabled ? {
+      enabled: true,
+      loginAccount: formData.familySharing.loginAccount.trim(),
+      password: formData.familySharing.password,
+      verificationLink: formData.familySharing.verificationLink.trim(),
+      capacity: parsePositiveIntegerInput(formData.familySharing.capacity, 100) ?? 1,
+    } : null,
     website: formData.website || undefined,
     notes: formData.notes || undefined,
     tags: normalizeTagsArray(formData.tags),

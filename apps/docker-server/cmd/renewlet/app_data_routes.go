@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -75,34 +76,46 @@ type assetInUseDetails struct {
 }
 
 type subscriptionWriteRequest struct {
-	Name                         optionalJSONField[string]                 `json:"name"`
-	Logo                         optionalJSONField[string]                 `json:"logo"`
-	Price                        optionalJSONField[string]                 `json:"price"`
-	Currency                     optionalJSONField[string]                 `json:"currency"`
-	BillingCycle                 optionalJSONField[string]                 `json:"billingCycle"`
-	CustomDays                   optionalJSONField[int]                    `json:"customDays"`
-	CustomCycleUnit              optionalJSONField[string]                 `json:"customCycleUnit"`
-	OneTimeTermCount             optionalJSONField[int]                    `json:"oneTimeTermCount"`
-	OneTimeTermUnit              optionalJSONField[string]                 `json:"oneTimeTermUnit"`
-	Category                     optionalJSONField[string]                 `json:"category"`
-	Status                       optionalJSONField[string]                 `json:"status"`
-	Pinned                       optionalJSONField[bool]                   `json:"pinned"`
-	PublicHidden                 optionalJSONField[bool]                   `json:"publicHidden"`
-	PaymentMethod                optionalJSONField[string]                 `json:"paymentMethod"`
-	StartDate                    optionalJSONField[string]                 `json:"startDate"`
-	NextBillingDate              optionalJSONField[string]                 `json:"nextBillingDate"`
-	AutoRenew                    optionalJSONField[bool]                   `json:"autoRenew"`
-	AutoCalculateNextBillingDate optionalJSONField[bool]                   `json:"autoCalculateNextBillingDate"`
-	TrialEndDate                 optionalJSONField[string]                 `json:"trialEndDate"`
-	Website                      optionalJSONField[string]                 `json:"website"`
-	Notes                        optionalJSONField[string]                 `json:"notes"`
-	Tags                         optionalJSONField[[]string]               `json:"tags"`
-	ReminderDays                 optionalJSONField[int]                    `json:"reminderDays"`
-	RepeatReminderEnabled        optionalJSONField[bool]                   `json:"repeatReminderEnabled"`
-	RepeatReminderInterval       optionalJSONField[string]                 `json:"repeatReminderInterval"`
-	RepeatReminderWindow         optionalJSONField[string]                 `json:"repeatReminderWindow"`
-	CostSharing                  optionalJSONField[map[string]interface{}] `json:"costSharing"`
-	Extra                        optionalJSONField[map[string]interface{}] `json:"extra"`
+	Name                         optionalJSONField[string]                                `json:"name"`
+	PlatformName                 optionalJSONField[string]                                `json:"platformName"`
+	AccountNumber                optionalJSONField[int]                                   `json:"accountNumber"`
+	Logo                         optionalJSONField[string]                                `json:"logo"`
+	Price                        optionalJSONField[string]                                `json:"price"`
+	Currency                     optionalJSONField[string]                                `json:"currency"`
+	BillingCycle                 optionalJSONField[string]                                `json:"billingCycle"`
+	CustomDays                   optionalJSONField[int]                                   `json:"customDays"`
+	CustomCycleUnit              optionalJSONField[string]                                `json:"customCycleUnit"`
+	OneTimeTermCount             optionalJSONField[int]                                   `json:"oneTimeTermCount"`
+	OneTimeTermUnit              optionalJSONField[string]                                `json:"oneTimeTermUnit"`
+	Category                     optionalJSONField[string]                                `json:"category"`
+	Status                       optionalJSONField[string]                                `json:"status"`
+	Pinned                       optionalJSONField[bool]                                  `json:"pinned"`
+	PublicHidden                 optionalJSONField[bool]                                  `json:"publicHidden"`
+	PaymentMethod                optionalJSONField[string]                                `json:"paymentMethod"`
+	CardLast4                    optionalJSONField[string]                                `json:"cardLast4"`
+	StartDate                    optionalJSONField[string]                                `json:"startDate"`
+	NextBillingDate              optionalJSONField[string]                                `json:"nextBillingDate"`
+	AutoRenew                    optionalJSONField[bool]                                  `json:"autoRenew"`
+	AutoCalculateNextBillingDate optionalJSONField[bool]                                  `json:"autoCalculateNextBillingDate"`
+	TrialEndDate                 optionalJSONField[string]                                `json:"trialEndDate"`
+	Website                      optionalJSONField[string]                                `json:"website"`
+	Notes                        optionalJSONField[string]                                `json:"notes"`
+	Tags                         optionalJSONField[[]string]                              `json:"tags"`
+	ReminderDays                 optionalJSONField[int]                                   `json:"reminderDays"`
+	RepeatReminderEnabled        optionalJSONField[bool]                                  `json:"repeatReminderEnabled"`
+	RepeatReminderInterval       optionalJSONField[string]                                `json:"repeatReminderInterval"`
+	RepeatReminderWindow         optionalJSONField[string]                                `json:"repeatReminderWindow"`
+	CostSharing                  optionalJSONField[map[string]interface{}]                `json:"costSharing"`
+	FamilySharing                optionalJSONField[subscriptionFamilySharingWriteRequest] `json:"familySharing"`
+	Extra                        optionalJSONField[map[string]interface{}]                `json:"extra"`
+}
+
+type subscriptionFamilySharingWriteRequest struct {
+	Enabled          bool   `json:"enabled"`
+	LoginAccount     string `json:"loginAccount"`
+	Password         string `json:"password"`
+	VerificationLink string `json:"verificationLink"`
+	Capacity         int    `json:"capacity"`
 }
 
 type optionalJSONField[T any] struct {
@@ -268,7 +281,10 @@ func handleSubscriptionCreate(app core.App, e *core.RequestEvent) error {
 	}
 	record := core.NewRecord(collection)
 	record.Set("user", e.Auth.Id)
-	if err := applySubscriptionWriteRequest(record, body, true); err != nil {
+	if err := applySubscriptionWriteRequest(app, record, body, true); err != nil {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	if err := validateUniqueSubscriptionPlatformAccount(app, record); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	if err := app.Save(record); err != nil {
@@ -290,7 +306,10 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError(serverText(locale, "subscription.notFound"), err)
 	}
-	if err := applySubscriptionWriteRequest(record, body, false); err != nil {
+	if err := applySubscriptionWriteRequest(app, record, body, false); err != nil {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	if err := validateUniqueSubscriptionPlatformAccount(app, record); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	if err := app.Save(record); err != nil {
@@ -299,15 +318,105 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	return apiSuccessJSON(e, http.StatusOK, subscriptionResponse{Subscription: subscriptionAPIFromRecord(record)})
 }
 
+func validateUniqueSubscriptionPlatformAccount(app core.App, record *core.Record) error {
+	platformName := strings.TrimSpace(record.GetString("platformName"))
+	if platformName == "" {
+		platformName = strings.TrimSpace(record.GetString("name"))
+	}
+	accountNumber := record.GetInt("accountNumber")
+	if accountNumber <= 0 {
+		accountNumber = 1
+	}
+	duplicate, _ := app.FindFirstRecordByFilter(
+		"subscriptions",
+		"user = {:user} && platformName = {:platformName} && accountNumber = {:accountNumber} && id != {:id}",
+		dbx.Params{
+			"user":          record.GetString("user"),
+			"platformName":  platformName,
+			"accountNumber": accountNumber,
+			"id":            record.Id,
+		},
+	)
+	if duplicate != nil {
+		return errors.New("SUBSCRIPTION_PLATFORM_ACCOUNT_NUMBER_CONFLICT")
+	}
+	return nil
+}
+
 func handleSubscriptionDelete(app core.App, e *core.RequestEvent) error {
 	record, err := findOwnedSubscription(app, e)
 	if err != nil {
 		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
 	}
-	if err := app.Delete(record); err != nil {
+	if err := app.RunInTransaction(func(txApp core.App) error {
+		txRecord, err := txApp.FindRecordById("subscriptions", record.Id)
+		if err != nil {
+			return err
+		}
+		if err := deleteSharingProjectionForSubscription(txApp, txRecord); err != nil {
+			return err
+		}
+		return txApp.Delete(txRecord)
+	}); err != nil {
 		return e.BadRequestError(serverText(requestLocale(e.Request), "common.invalidRequestParameters"), err)
 	}
 	return apiEmptySuccessJSON(e, http.StatusOK)
+}
+
+func handleSubscriptionFamilyCredentials(app core.App, e *core.RequestEvent) error {
+	record, err := findOwnedSubscription(app, e)
+	if err != nil || !record.GetBool("familySharingEnabled") {
+		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
+	}
+	password, err := decryptSharingCredential(app, record.GetString("sharingEncryptedCredentials"))
+	if err != nil || password == "" {
+		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
+	}
+	e.Response.Header().Set("Cache-Control", "no-store")
+	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: password})
+}
+
+// Sharing records intentionally do not use native cascade deletes so that a
+// relation cannot remove financial history unexpectedly. A subscription delete
+// is the one explicit exception: its derived sharing projection must be removed
+// in the same transaction, otherwise the sharing page would expose an orphan.
+func deleteSharingProjectionForSubscription(app core.App, subscription *core.Record) error {
+	accounts, err := app.FindRecordsByFilter(
+		"sharing_accounts",
+		"user = {:user} && subscription = {:subscription}",
+		"",
+		500,
+		0,
+		dbx.Params{"user": subscription.GetString("user"), "subscription": subscription.Id},
+	)
+	if err != nil {
+		return err
+	}
+	for _, account := range accounts {
+		accountID := account.Id
+		for _, collection := range []string{"sharing_receivables", "sharing_expenses", "sharing_seats"} {
+			rows, err := app.FindRecordsByFilter(
+				collection,
+				"user = {:user} && sharingAccount = {:account}",
+				"",
+				5000,
+				0,
+				dbx.Params{"user": subscription.GetString("user"), "account": accountID},
+			)
+			if err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := app.Delete(row); err != nil {
+					return err
+				}
+			}
+		}
+		if err := app.Delete(account); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func handleAssetUpload(app core.App, e *core.RequestEvent) error {
@@ -478,11 +587,18 @@ func (r subscriptionWriteRequest) HasChanges() bool {
 		r.Pinned.Set || r.PublicHidden.Set || r.PaymentMethod.Set || r.StartDate.Set || r.NextBillingDate.Set ||
 		r.AutoRenew.Set || r.AutoCalculateNextBillingDate.Set || r.TrialEndDate.Set || r.Website.Set || r.Notes.Set ||
 		r.Tags.Set || r.ReminderDays.Set || r.RepeatReminderEnabled.Set || r.RepeatReminderInterval.Set ||
-		r.RepeatReminderWindow.Set || r.CostSharing.Set || r.Extra.Set
+		r.RepeatReminderWindow.Set || r.CostSharing.Set || r.Extra.Set || r.PlatformName.Set ||
+		r.AccountNumber.Set || r.CardLast4.Set || r.FamilySharing.Set
 }
 
-func applySubscriptionWriteRequest(record *core.Record, body subscriptionWriteRequest, create bool) error {
+func applySubscriptionWriteRequest(app core.App, record *core.Record, body subscriptionWriteRequest, create bool) error {
 	if err := setStringRecordField(record, "name", body.Name, create, false, true); err != nil {
+		return err
+	}
+	if err := setStringRecordField(record, "platformName", body.PlatformName, false, true, true); err != nil {
+		return err
+	}
+	if err := setIntRecordField(record, "accountNumber", body.AccountNumber, false, true); err != nil {
 		return err
 	}
 	if err := setStringRecordField(record, "logo", body.Logo, false, true, true); err != nil {
@@ -524,6 +640,9 @@ func applySubscriptionWriteRequest(record *core.Record, body subscriptionWriteRe
 	if err := setStringRecordField(record, "paymentMethod", body.PaymentMethod, false, true, true); err != nil {
 		return err
 	}
+	if err := setStringRecordField(record, "cardLast4", body.CardLast4, false, true, true); err != nil {
+		return err
+	}
 	if err := setStringRecordField(record, "startDate", body.StartDate, false, true, true); err != nil {
 		return err
 	}
@@ -563,6 +682,9 @@ func applySubscriptionWriteRequest(record *core.Record, body subscriptionWriteRe
 	if err := setNullableMapRecordField(record, "costSharing", body.CostSharing, false); err != nil {
 		return err
 	}
+	if err := applySubscriptionFamilySharing(app, record, body.FamilySharing, create); err != nil {
+		return err
+	}
 	if err := setMapRecordField(record, "extra", body.Extra, false); err != nil {
 		return err
 	}
@@ -578,6 +700,61 @@ func applySubscriptionWriteRequest(record *core.Record, body subscriptionWriteRe
 		}
 	}
 	return nil
+}
+
+func applySubscriptionFamilySharing(app core.App, record *core.Record, field optionalJSONField[subscriptionFamilySharingWriteRequest], create bool) error {
+	if !field.Set {
+		if create {
+			record.Set("familySharingEnabled", false)
+			record.Set("sharingCapacity", 5)
+		}
+		return nil
+	}
+	if field.Null || !field.Value.Enabled {
+		record.Set("familySharingEnabled", false)
+		return nil
+	}
+	value := field.Value
+	value.LoginAccount = strings.TrimSpace(value.LoginAccount)
+	value.VerificationLink = strings.TrimSpace(value.VerificationLink)
+	if value.LoginAccount == "" || len(value.LoginAccount) > 320 || value.Capacity < 1 || value.Capacity > 100 || len(value.Password) > 1024 {
+		return errors.New("FAMILY_SHARING_INVALID")
+	}
+	if value.VerificationLink != "" {
+		parsed, err := url.ParseRequestURI(value.VerificationLink)
+		if err != nil || parsed.Host == "" || parsed.User != nil || parsed.Scheme != "http" && parsed.Scheme != "https" {
+			return errors.New("FAMILY_SHARING_LINK_INVALID")
+		}
+	}
+	if value.Password != "" {
+		ciphertext, err := encryptSharingCredential(app, value.Password)
+		if err != nil {
+			return err
+		}
+		record.Set("sharingEncryptedCredentials", ciphertext)
+		record.Set("sharingPasswordMask", maskSharingPassword(value.Password))
+	} else if strings.TrimSpace(record.GetString("sharingEncryptedCredentials")) == "" {
+		return errors.New("FAMILY_SHARING_PASSWORD_REQUIRED")
+	}
+	record.Set("familySharingEnabled", true)
+	record.Set("sharingLoginAccount", value.LoginAccount)
+	record.Set("sharingVerificationLink", value.VerificationLink)
+	record.Set("sharingCapacity", value.Capacity)
+	return nil
+}
+
+func maskSharingPassword(value string) string {
+	runes := []rune(value)
+	if len(runes) == 0 {
+		return ""
+	}
+	if len(runes) == 1 {
+		return "*"
+	}
+	if len(runes) == 2 {
+		return string(runes)
+	}
+	return string(runes[0]) + strings.Repeat("*", len(runes)-2) + string(runes[len(runes)-1])
 }
 
 func setStringRecordField(record *core.Record, name string, field optionalJSONField[string], required bool, nullable bool, trim bool) error {

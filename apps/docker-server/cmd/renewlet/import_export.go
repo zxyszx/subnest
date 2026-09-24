@@ -51,6 +51,8 @@ type importPayload struct {
 
 type importSubscription struct {
 	Name                         string                 `json:"name"`
+	PlatformName                 *string                `json:"platformName,omitempty"`
+	AccountNumber                *int                   `json:"accountNumber,omitempty"`
 	Logo                         *string                `json:"logo,omitempty"`
 	Price                        string                 `json:"price"`
 	Currency                     string                 `json:"currency"`
@@ -64,6 +66,7 @@ type importSubscription struct {
 	Pinned                       bool                   `json:"pinned"`
 	PublicHidden                 bool                   `json:"publicHidden"`
 	PaymentMethod                *string                `json:"paymentMethod,omitempty"`
+	CardLast4                    *string                `json:"cardLast4,omitempty"`
 	StartDate                    *string                `json:"startDate"`
 	NextBillingDate              string                 `json:"nextBillingDate"`
 	AutoRenew                    bool                   `json:"autoRenew"`
@@ -409,6 +412,16 @@ func validateImportSubscription(app core.App, user *core.Record, subscription im
 func setImportSubscriptionRecord(record *core.Record, userID string, subscription importSubscription) {
 	record.Set("user", userID)
 	record.Set("name", subscription.Name)
+	if subscription.PlatformName != nil {
+		record.Set("platformName", strings.TrimSpace(*subscription.PlatformName))
+	} else {
+		record.Set("platformName", subscription.Name)
+	}
+	if subscription.AccountNumber != nil {
+		record.Set("accountNumber", *subscription.AccountNumber)
+	} else {
+		record.Set("accountNumber", 1)
+	}
 	record.Set("logo", optionalString(subscription.Logo))
 	record.Set("price", subscription.Price)
 	record.Set("currency", subscription.Currency)
@@ -438,6 +451,7 @@ func setImportSubscriptionRecord(record *core.Record, userID string, subscriptio
 	record.Set("pinned", subscription.Pinned)
 	record.Set("publicHidden", subscription.PublicHidden)
 	record.Set("paymentMethod", optionalString(subscription.PaymentMethod))
+	record.Set("cardLast4", optionalString(subscription.CardLast4))
 	record.Set("startDate", optionalString(subscription.StartDate))
 	record.Set("nextBillingDate", subscription.NextBillingDate)
 	record.Set("autoRenew", subscription.BillingCycle != "one-time" && subscription.AutoRenew)

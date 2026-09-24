@@ -70,7 +70,7 @@ describe("AIDraftEditorPanel", () => {
     const user = userEvent.setup();
     render(<TooltipProvider delayDuration={0}><EditorHarness /></TooltipProvider>);
 
-    const nameInput = screen.getByLabelText("服务名称");
+    const nameInput = screen.getByLabelText("平台名称");
     await user.clear(nameInput);
     await user.type(nameInput, "Apple One Family");
     await user.click(screen.getByRole("switch", { name: "自动续订" }));

@@ -102,7 +102,11 @@ func ensureSharingAccountsCollection(app core.App, users, subscriptions *core.Co
 		if err := ensureAutodates(c); err != nil {
 			return err
 		}
-		c.AddIndex("idx_sharing_accounts_user_subscription_number", true, "user, subscription, accountNumber", "")
+		removeIndex(c, "idx_sharing_accounts_user_subscription_number")
+		// Legacy releases allowed multiple sharing accounts for one subscription. Keep
+		// the upgrade non-destructive; product routes reject new duplicates while old
+		// rows remain available for an explicit migration review.
+		c.AddIndex("idx_sharing_accounts_user_subscription", false, "user, subscription", "")
 		c.AddIndex("idx_sharing_accounts_user_next_billing", false, "user, nextBillingDate, id", "")
 		return nil
 	})

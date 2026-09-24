@@ -251,6 +251,11 @@ function SubscriptionDetailContent({
               <span className="wrap-break-word">{paymentMethodLabel ?? subscription.paymentMethod}</span>
             </DetailRow>
           ) : null}
+          {subscription.cardLast4 ? (
+            <DetailRow label={t("subscription.field.cardLast4")}>
+              <span className="tabular-nums">•••• {subscription.cardLast4}</span>
+            </DetailRow>
+          ) : null}
           {isBuyout ? (
             subscription.startDate ? (
               <DetailRow label={nextBillingLabel}>
@@ -544,5 +549,7 @@ export function SubscriptionDetailDialog({
     </>
   );
 }
+
+export default SubscriptionDetailDialog;
 
 export type { SubscriptionDetailDialogProps };

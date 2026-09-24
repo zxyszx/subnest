@@ -26,20 +26,28 @@ import {
   type SubscriptionRenewBody,
   type SubscriptionsListQuery,
 } from "@renewlet/shared/schemas/subscriptions";
+import { apiSuccessResponseSchema } from "@renewlet/shared/schemas/api";
+import { z } from "zod";
 
 const SUBSCRIPTION_PAGE_SIZE = 50;
+const subscriptionFamilyCredentialsResponseSchema = apiSuccessResponseSchema(
+  z.object({ password: z.string() }).strict(),
+);
 export type SubscriptionListFilters = Omit<SubscriptionsListQuery, "limit" | "cursor">;
 
 type SubscriptionCollectionBaseForService = Pick<
   SubscriptionCollectionItem,
   | "id"
   | "name"
+  | "platformName"
+  | "accountNumber"
   | "logo"
   | "price"
   | "currency"
   | "category"
   | "status"
   | "paymentMethod"
+  | "cardLast4"
   | "startDate"
   | "nextBillingDate"
   | "autoRenew"
@@ -60,6 +68,7 @@ type SubscriptionDetailFieldsForService = Pick<
   | "repeatReminderInterval"
   | "repeatReminderWindow"
   | "extra"
+  | "familySharing"
 >;
 
 export interface SubscriptionPage {
@@ -105,12 +114,15 @@ function fromApiSubscriptionCollectionBase(
   return {
     id: parsedRow.id,
     name: parsedRow.name,
+    platformName: parsedRow.platformName ?? parsedRow.name,
+    accountNumber: parsedRow.accountNumber ?? 1,
     logo: parsedRow.logo,
     price: parsedRow.price,
     currency: parsedRow.currency,
     category: parsedRow.category,
     status: parsedRow.status,
     paymentMethod: parsedRow.paymentMethod,
+    cardLast4: parsedRow.cardLast4,
     startDate: parsedRow.startDate === null ? null : assertDateOnly(parsedRow.startDate),
     nextBillingDate: assertDateOnly(parsedRow.nextBillingDate),
     autoRenew: parsedRow.billingCycle === "one-time" ? false : parsedRow.autoRenew,
@@ -134,6 +146,7 @@ function fromApiSubscriptionDetailFields(parsedRow: ApiSubscription): Subscripti
     repeatReminderInterval: parsedRow.repeatReminderInterval,
     repeatReminderWindow: parsedRow.repeatReminderWindow,
     extra: parsedRow.extra,
+    familySharing: parsedRow.familySharing ?? null,
   };
 }
 
@@ -198,6 +211,8 @@ export function fromApiSubscription(row: unknown): Subscription {
 function toSubscriptionFormPayload(submission: SubscriptionFormSubmission) {
   return {
     name: submission.name,
+    platformName: submission.platformName,
+    accountNumber: submission.accountNumber,
     logo: submission.logo ?? null,
     price: submission.price,
     currency: submission.currency,
@@ -209,6 +224,7 @@ function toSubscriptionFormPayload(submission: SubscriptionFormSubmission) {
     category: submission.category,
     status: submission.status,
     paymentMethod: submission.paymentMethod ?? null,
+    cardLast4: submission.cardLast4 ?? null,
     startDate: submission.startDate,
     nextBillingDate: submission.nextBillingDate,
     autoRenew: submission.billingCycle === "one-time" ? false : submission.autoRenew,
@@ -222,6 +238,7 @@ function toSubscriptionFormPayload(submission: SubscriptionFormSubmission) {
     repeatReminderInterval: submission.repeatReminderInterval,
     repeatReminderWindow: submission.repeatReminderWindow,
     costSharing: submission.costSharing ?? null,
+    familySharing: submission.familySharing,
   };
 }
 
@@ -310,6 +327,15 @@ export const subscriptionService = {
   async detail(id: string, signal?: AbortSignal): Promise<Subscription> {
     const data = await apiFetch(`/api/app/subscriptions/${id}`, subscriptionResponseSchema, signalInit(signal));
     return fromParsedApiSubscription(data.subscription);
+  },
+
+  async familyPassword(id: string): Promise<string> {
+    const data = await apiFetch(
+      `/api/app/subscriptions/${encodeURIComponent(id)}/family-credentials`,
+      subscriptionFamilyCredentialsResponseSchema,
+      { cache: "no-store" },
+    );
+    return data.password;
   },
 
   async exportAll(signal?: AbortSignal): Promise<Subscription[]> {

@@ -44,6 +44,8 @@
     {
       "id": "sub_collection_recurring",
       "name": "Collection Recurring Plan",
+      "platformName": "Collection Recurring Plan",
+      "accountNumber": 1,
       "price": "12",
       "currency": "USD",
       "billingCycle": "monthly",
@@ -60,6 +62,8 @@
     {
       "id": "sub_collection_custom",
       "name": "Collection Custom Plan",
+      "platformName": "Collection Custom Plan",
+      "accountNumber": 1,
       "price": "24",
       "currency": "USD",
       "billingCycle": "custom",
@@ -78,6 +82,8 @@
     {
       "id": "sub_collection_buyout",
       "name": "Collection Buyout Plan",
+      "platformName": "Collection Buyout Plan",
+      "accountNumber": 1,
       "price": "199",
       "currency": "USD",
       "billingCycle": "one-time",
@@ -94,6 +100,8 @@
     {
       "id": "sub_collection_fixed_term",
       "name": "Collection Fixed Term Plan",
+      "platformName": "Collection Fixed Term Plan",
+      "accountNumber": 1,
       "price": "120",
       "currency": "USD",
       "billingCycle": "one-time",
@@ -113,6 +121,8 @@
   "completeSubscription": {
     "id": "sub_collection",
     "name": "Collection Plan",
+    "platformName": "Collection Plan",
+    "accountNumber": 1,
     "price": "12",
     "currency": "USD",
     "billingCycle": "monthly",

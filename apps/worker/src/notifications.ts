@@ -14,7 +14,7 @@ import {
 import { effectiveReminderDays, isDisabledReminderDays } from "@renewlet/shared/runtime";
 import { appSettingsSchema, applySettingsSecretUpdates, settingsUpdateBodySchema, type ApiAppSettings } from "@renewlet/shared/schemas/settings";
 import type { ApiSubscription } from "@renewlet/shared/schemas/subscriptions";
-import { divideMoney, type MoneyString } from "@renewlet/shared/money";
+import { divideMoney, moneyStringSchema, multiplyMoney, type MoneyString } from "@renewlet/shared/money";
 import { costSharingCollectionReminderOccurrencesForDate } from "@renewlet/shared/cost-sharing";
 import { isOneTimeBuyout } from "@renewlet/shared/subscription-billing";
 import { cleanBuiltInIconSourceSettingsPatch, mergeBuiltInIconSourceSettings } from "@renewlet/shared/built-in-icons";
@@ -81,6 +81,18 @@ const CRON_USER_CONCURRENCY = 5;
 type NotificationMessage = NotificationEmailMessage;
 type CronRunOutcome = "settled" | "keep_due";
 
+interface SharingSeatReminder {
+  memberName: string;
+  monthlyPrice: MoneyString;
+  currency: string;
+  billingMonths: number;
+  expiresAt: string;
+}
+
+type NotificationSubscription = ApiSubscription & {
+  sharingSeatReminders?: SharingSeatReminder[] | undefined;
+};
+
 /** 发送单渠道测试通知；settings 只临时合并，正文跟随请求语言，两者都不改写账号偏好。 */
 export async function notificationTest(request: Request, env: Env): Promise<Response> {
   const locale = requestLocale(request);
@@ -119,7 +131,7 @@ export async function notificationOverview(request: Request, env: Env): Promise<
   const auth = await requireAuth(request, env);
   const settings = await getSettings(env, auth.user.id);
   await renewAutoSubscriptionsForUserWithSettings(env, auth.user.id, settings, new Date());
-  const subscriptions = (await listSubscriptions(env, auth.user.id)).map(toApiSubscription);
+  const subscriptions = await attachSharingSeatReminders(env, auth.user.id, (await listSubscriptions(env, auth.user.id)).map(toApiSubscription));
   const overview = buildOverview(new Date(), settings, subscriptions);
   const [latestJob] = await readNotificationHistoryRows(env, auth.user.id, "all", 1);
   const [latestFailedJob] = await readNotificationHistoryRows(env, auth.user.id, "failed", 1);
@@ -269,11 +281,11 @@ async function runScheduledForUser(env: Env, userId: string, now = new Date()): 
   const occurrence = publicScheduleOccurrence(decision);
   // due 确认后才推进续订并读取 payload 候选，保持自动续订先于通知内容且不污染非 due 分钟。
   await renewAutoSubscriptionsForUserWithSettings(env, userId, settings, now);
-  const subscriptions = (await listNotificationScheduleCandidateSubscriptions(env, userId, {
+  const subscriptions = await attachSharingSeatReminders(env, userId, (await listNotificationScheduleCandidateSubscriptions(env, userId, {
     scheduledLocalDate: occurrence.scheduledLocalDate,
     includeExpired: true,
     showExpired: settings.showExpired,
-  })).map(toApiSubscription);
+  })).map(toApiSubscription));
   // Cron 没有 request origin；邮件 CTA 只在手动请求能确定公开域名时生成。
   const outcome = await runCronForUser(env, userId, settings, subscriptions, occurrence, now, locale);
   if (outcome === "settled") {
@@ -301,7 +313,7 @@ async function runManualForUser(
   const now = new Date();
   // 通知正文生成前先幂等推进自动续订，避免已自动续订的旧日期继续进入 expired/renewal 内容。
   await renewAutoSubscriptionsForUserWithSettings(env, userId, settings, now);
-  const subscriptions = (await listSubscriptions(env, userId)).map(toApiSubscription);
+  const subscriptions = await attachSharingSeatReminders(env, userId, (await listSubscriptions(env, userId)).map(toApiSubscription));
   const message = buildDueMessage(now, settings, subscriptions, true, locale);
   if (!message.hasPayload && !force) {
     return { sent: false, summary: { attempted: [], succeeded: [], failed: [] }, subscriptionCount: subscriptions.length };
@@ -428,7 +440,50 @@ function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T>
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
 }
 
-function buildOverview(now: Date, settings: ApiAppSettings, subscriptions: ApiSubscription[]) {
+async function attachSharingSeatReminders(
+  env: Env,
+  userId: string,
+  subscriptions: ApiSubscription[],
+): Promise<NotificationSubscription[]> {
+  if (subscriptions.length === 0) return subscriptions;
+  const rows = await env.DB.prepare(`
+    SELECT a.subscription_id, seat.member_name, seat.monthly_price, seat.currency,
+      seat.billing_months, seat.expires_at
+    FROM sharing_seats seat
+    JOIN sharing_accounts a ON a.id = seat.sharing_account_id AND a.user_id = seat.user_id
+    JOIN subscriptions s ON s.id = a.subscription_id AND s.user_id = a.user_id
+    WHERE seat.user_id = ? AND seat.status = 'active' AND seat.expires_at IS NOT NULL
+      AND a.status != 'archived' AND s.family_sharing_enabled = 1
+    ORDER BY seat.expires_at, seat.id
+  `).bind(userId).all<{
+    subscription_id: string;
+    member_name: string | null;
+    monthly_price: string | null;
+    currency: string | null;
+    billing_months: number | null;
+    expires_at: string | null;
+  }>();
+  const bySubscription = new Map<string, SharingSeatReminder[]>();
+  for (const row of rows.results) {
+    const price = moneyStringSchema.safeParse(row.monthly_price);
+    if (!row.member_name || !price.success || !row.currency || !row.billing_months || !row.expires_at) continue;
+    const reminders = bySubscription.get(row.subscription_id) ?? [];
+    reminders.push({
+      memberName: row.member_name,
+      monthlyPrice: price.data,
+      currency: row.currency,
+      billingMonths: row.billing_months,
+      expiresAt: row.expires_at,
+    });
+    bySubscription.set(row.subscription_id, reminders);
+  }
+  return subscriptions.map((subscription) => ({
+    ...subscription,
+    sharingSeatReminders: bySubscription.get(subscription.id) ?? [],
+  }));
+}
+
+function buildOverview(now: Date, settings: ApiAppSettings, subscriptions: NotificationSubscription[]) {
   const dailyNextCheck = getNextLocalScheduleOccurrence(now, settings.timezone, settings.notificationTimeLocal);
   const repeatNextCheck = getNextRepeatScheduleOccurrence(now, settings, subscriptions);
   const nextCheck = earlierOccurrence(dailyNextCheck, repeatNextCheck);
@@ -460,12 +515,12 @@ function buildTestMessage(now: Date, settings: ApiAppSettings, locale: AppLocale
   return { title: serverText(locale, "notification.content.testTitle"), content: serverText(locale, "notification.content.testBody"), timestamp: displayTime(now, settings), hasPayload: true, items: [] };
 }
 
-function buildDueMessage(now: Date, settings: ApiAppSettings, subscriptions: ApiSubscription[], includeExpired: boolean, locale: AppLocale): NotificationMessage {
+function buildDueMessage(now: Date, settings: ApiAppSettings, subscriptions: NotificationSubscription[], includeExpired: boolean, locale: AppLocale): NotificationMessage {
   const items = collectItems(dateOnlyInZone(now, settings.timezone), settings, subscriptions, { includeExpired });
   return buildMessageFromItems(now, settings, items, locale);
 }
 
-function buildDueMessageForSchedule(schedule: ScheduleOccurrence, now: Date, settings: ApiAppSettings, subscriptions: ApiSubscription[], includeExpired: boolean, locale: AppLocale): NotificationMessage {
+function buildDueMessageForSchedule(schedule: ScheduleOccurrence, now: Date, settings: ApiAppSettings, subscriptions: NotificationSubscription[], includeExpired: boolean, locale: AppLocale): NotificationMessage {
   const items = collectItemsForSchedule(schedule, settings, subscriptions, { includeExpired });
   return buildMessageFromItems(now, settings, items, locale);
 }
@@ -539,7 +594,7 @@ export function collectNotificationItemsForLocalDate(
   return collectItems(localDate, settings, subscriptions, { includeExpired: options.includeExpired ?? true });
 }
 
-function collectItems(localDate: string, settings: ApiAppSettings, subscriptions: ApiSubscription[], options: { includeExpired: boolean }): NotificationEmailItem[] {
+function collectItems(localDate: string, settings: ApiAppSettings, subscriptions: NotificationSubscription[], options: { includeExpired: boolean }): NotificationEmailItem[] {
   const items: NotificationEmailItem[] = [];
   for (const sub of subscriptions) {
     const daysUntilNext = daysBetween(localDate, sub.nextBillingDate);
@@ -558,11 +613,29 @@ function collectItems(localDate: string, settings: ApiAppSettings, subscriptions
         if (daysUntilTrial === reminderDays) items.push(item("trial", sub, sub.trialEndDate, daysUntilTrial, reminderDays));
       }
     }
-    if (!buyout) {
+    if (!buyout && !sub.familySharing?.enabled) {
       items.push(...collectCostSharingCollectionItems(sub, settings, localDate));
     }
+    items.push(...collectSharingSeatReminderItems(sub, settings, localDate));
   }
   return items;
+}
+
+function collectSharingSeatReminderItems(
+  sub: NotificationSubscription,
+  settings: ApiAppSettings,
+  localDate: string,
+): NotificationEmailItem[] {
+  const reminderDays = settings.notificationReminderDays;
+  return (sub.sharingSeatReminders ?? []).flatMap((seat) => {
+    if (daysBetween(localDate, seat.expiresAt) !== reminderDays) return [];
+    const amount = multiplyMoney(seat.monthlyPrice, seat.billingMonths);
+    return [item("costSharing", sub, seat.expiresAt, reminderDays, reminderDays, undefined, {
+      memberName: seat.memberName,
+      amount,
+      currency: seat.currency,
+    })];
+  });
 }
 
 function collectCostSharingCollectionItems(
@@ -609,7 +682,7 @@ export function collectNotificationItemsForSchedule(schedule: ScheduleOccurrence
   return collectItemsForSchedule(schedule, settings, subscriptions, { includeExpired: options.includeExpired ?? true });
 }
 
-function collectItemsForSchedule(schedule: ScheduleOccurrence, settings: ApiAppSettings, subscriptions: ApiSubscription[], options: { includeExpired: boolean }): NotificationEmailItem[] {
+function collectItemsForSchedule(schedule: ScheduleOccurrence, settings: ApiAppSettings, subscriptions: NotificationSubscription[], options: { includeExpired: boolean }): NotificationEmailItem[] {
   const items: NotificationEmailItem[] = [];
   if (schedule.scheduledLocalTime === settings.notificationTimeLocal) {
     items.push(...collectItems(schedule.scheduledLocalDate, settings, subscriptions, options));

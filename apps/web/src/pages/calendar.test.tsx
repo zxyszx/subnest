@@ -14,6 +14,11 @@ vi.mock("@/hooks/use-subscriptions", () => ({
   }),
 }));
 
+vi.mock("@/hooks/use-sharing", () => ({
+  useSharingAccounts: () => ({ data: { accounts: [], total: 0 }, isPending: false }),
+  useSharingAccountDetails: () => [],
+}));
+
 vi.mock("@/modules/subscriptions/application/use-subscription-crud", () => ({
   useSubscriptionCrud: () => ({
     editingSubscription: null,

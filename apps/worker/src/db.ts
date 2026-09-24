@@ -45,6 +45,8 @@ export const SUBSCRIPTION_COLUMN_NAMES = [
   "id",
   "user_id",
   "name",
+  "platform_name",
+  "account_number",
   "logo",
   "price",
   "currency",
@@ -58,6 +60,7 @@ export const SUBSCRIPTION_COLUMN_NAMES = [
   "pinned",
   "public_hidden",
   "payment_method",
+  "card_last4",
   "start_date",
   "next_billing_date",
   "auto_renew",
@@ -73,6 +76,12 @@ export const SUBSCRIPTION_COLUMN_NAMES = [
   "cost_sharing_json",
   "cost_sharing_collection_reminder_enabled",
   "cost_sharing_next_collection_reminder_date",
+  "family_sharing_enabled",
+  "sharing_login_account",
+  "sharing_encrypted_credentials",
+  "sharing_password_mask",
+  "sharing_verification_link",
+  "sharing_capacity",
   "extra_json",
   "created_at",
   "updated_at",
@@ -81,6 +90,8 @@ export const SUBSCRIPTION_COLUMN_NAMES = [
 export const SUBSCRIPTION_COLLECTION_COLUMN_NAMES = [
   "id",
   "name",
+  "platform_name",
+  "account_number",
   "logo",
   "price",
   "currency",
@@ -94,6 +105,7 @@ export const SUBSCRIPTION_COLLECTION_COLUMN_NAMES = [
   "pinned",
   "public_hidden",
   "payment_method",
+  "card_last4",
   "start_date",
   "next_billing_date",
   "auto_renew",
@@ -341,6 +353,8 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
   const normalized = {
     id: row.id,
     name: row.name,
+    platformName: row.platform_name || row.name,
+    accountNumber: row.account_number && row.account_number > 0 ? row.account_number : 1,
     ...(row.logo ? { logo: row.logo } : {}),
     price: moneyFromUnknown(row.price) ?? "0",
     currency: row.currency,
@@ -353,6 +367,7 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
     pinned: intToBool(row.pinned),
     publicHidden: intToBool(row.public_hidden),
     ...(row.payment_method ? { paymentMethod: row.payment_method } : {}),
+    ...(row.card_last4 ? { cardLast4: row.card_last4 } : {}),
     startDate: row.start_date,
     nextBillingDate: row.next_billing_date,
     autoRenew: row.billing_cycle === "one-time" ? false : intToBool(row.auto_renew),
@@ -376,6 +391,14 @@ export function toApiSubscription(row: SubscriptionRow): ApiSubscription {
     repeatReminderEnabled: intToBool(row.repeat_reminder_enabled),
     repeatReminderInterval: row.repeat_reminder_interval,
     repeatReminderWindow: row.repeat_reminder_window,
+    familySharing: intToBool(row.family_sharing_enabled) ? {
+      enabled: true,
+      loginAccount: row.sharing_login_account ?? "",
+      hasPassword: (row.sharing_encrypted_credentials?.length ?? 0) > 0,
+      passwordMask: row.sharing_password_mask ?? "",
+      verificationLink: row.sharing_verification_link ?? null,
+      capacity: Math.max(1, row.sharing_capacity ?? 5),
+    } : null,
     extra,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -471,6 +494,14 @@ export async function listNotificationScheduleCandidateSubscriptions(
         AND cost_sharing_next_collection_reminder_date IS NOT NULL
         AND cost_sharing_next_collection_reminder_date <= ?`);
   params.push(userId, options.scheduledLocalDate);
+  selects.push(`SELECT ${SUBSCRIPTION_COLUMNS} FROM subscriptions
+      WHERE user_id = ? AND family_sharing_enabled = 1 AND id IN (
+        SELECT a.subscription_id FROM sharing_accounts a
+        JOIN sharing_seats seat ON seat.sharing_account_id = a.id AND seat.user_id = a.user_id
+        WHERE a.user_id = ? AND a.status != 'archived' AND seat.status = 'active'
+          AND seat.expires_at >= ? AND seat.expires_at <= ?
+      )`);
+  params.push(userId, userId, options.scheduledLocalDate, maxDate);
   // scheduled cron 只走索引镜像列缩候选；精确 reminderDays、成员周期和收款成员 payload 由 collector 统一过滤。
   const result = await env.DB.prepare(`${selects.join("\nUNION\n")}\nORDER BY created_at DESC, id DESC`)
     .bind(...params)

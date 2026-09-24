@@ -50,6 +50,8 @@ describe("Cloudflare D1 subscription migrations", () => {
       });
 
       applyMigration(db, "0035_rebuild_cost_sharing_collection_reminder_schema.sql");
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
 
       expect(subscriptionColumnNames(db)).toEqual(expect.arrayContaining([
         "cost_sharing_collection_reminder_enabled",
@@ -81,6 +83,8 @@ describe("Cloudflare D1 subscription migrations", () => {
       applyMigration(db, "0034_cost_sharing_collection_reminders.sql");
 
       applyMigration(db, "0035_rebuild_cost_sharing_collection_reminder_schema.sql");
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
 
       expect(subscriptionColumnNames(db)).toEqual(expect.arrayContaining([
         "cost_sharing_collection_reminder_enabled",
@@ -108,6 +112,8 @@ describe("Cloudflare D1 subscription migrations", () => {
       applyMigration(db, "0035_rebuild_cost_sharing_collection_reminder_schema.sql");
       applyMigration(db, "0036_subscription_derived_state_v2.sql");
       applyMigration(db, "0039_rebuild_subscription_collection_projections.sql");
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
 
       const response = await readSubscriptions(new Request("https://renewlet.test/api/app/subscriptions?limit=10"), {
         DB: new SqliteD1Database(db) as unknown as D1Database,
@@ -215,6 +221,8 @@ describe("Cloudflare D1 subscription migrations", () => {
       applyMigration(db, "0036_subscription_derived_state_v2.sql");
 
       applyMigration(db, "0039_rebuild_subscription_collection_projections.sql");
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
 
       expect(db.prepare(`SELECT subscription_id, user_id, name, category, status
         FROM subscription_list_index`).get()).toEqual({
@@ -275,6 +283,8 @@ describe("Cloudflare D1 subscription migrations", () => {
       applyMigration(db, "0034_cost_sharing_collection_reminders.sql");
       applyMigration(db, "0035_rebuild_cost_sharing_collection_reminder_schema.sql");
       applyMigration(db, "0036_subscription_derived_state_v2.sql");
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
       insertSubscriptionClone(db, { id: "sub_pinned_active", name: "Pinned Active", pinned: 1, status: "active" });
       insertSubscriptionClone(db, { id: "sub_pinned_inactive", name: "Pinned Inactive", pinned: 1, status: "cancelled" });
       insertSubscriptionClone(db, { id: "sub_regular_active_tie", name: "Regular Active Tie", pinned: 0, status: "active" });
@@ -340,6 +350,34 @@ describe("Cloudflare D1 subscription migrations", () => {
         one_time_term_count: null,
         one_time_term_unit: null,
       });
+    } finally {
+      db.close();
+    }
+  });
+
+  it("backfills platform identity without changing existing subscription data", () => {
+    const db = openSubscriptionMigrationDatabase();
+    try {
+      insertCostSharingSubscription(db, {
+        costSharingJson: JSON.stringify(costSharingJson({})),
+        billingCycle: "monthly",
+      });
+
+      applyMigration(db, "0042_subscription_platform_fields.sql");
+      applyMigration(db, "0043_family_sharing.sql");
+
+      expect(db.prepare(`SELECT platform_name, account_number, card_last4, name, price, currency
+        FROM subscriptions WHERE id = ?`).get("sub_migrated")).toEqual({
+        platform_name: "Netflix",
+        account_number: 1,
+        card_last4: null,
+        name: "Netflix",
+        price: "30",
+        currency: "USD",
+      });
+      expect(readIndexSql(db, "idx_subscriptions_user_platform_order")).toContain(
+        "user_id, platform_name, account_number, created_at, id",
+      );
     } finally {
       db.close();
     }

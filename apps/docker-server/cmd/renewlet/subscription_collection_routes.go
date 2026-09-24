@@ -37,6 +37,8 @@ type subscriptionExportResponse struct {
 type subscriptionCollectionItemResponse struct {
 	ID                           string                 `json:"id"`
 	Name                         string                 `json:"name"`
+	PlatformName                 string                 `json:"platformName"`
+	AccountNumber                int                    `json:"accountNumber"`
 	Logo                         *string                `json:"logo,omitempty"`
 	Price                        string                 `json:"price"`
 	Currency                     string                 `json:"currency"`
@@ -50,6 +52,7 @@ type subscriptionCollectionItemResponse struct {
 	Pinned                       bool                   `json:"pinned"`
 	PublicHidden                 bool                   `json:"publicHidden"`
 	PaymentMethod                *string                `json:"paymentMethod,omitempty"`
+	CardLast4                    *string                `json:"cardLast4,omitempty"`
 	StartDate                    *string                `json:"startDate"`
 	NextBillingDate              string                 `json:"nextBillingDate"`
 	AutoRenew                    bool                   `json:"autoRenew"`
@@ -244,9 +247,20 @@ func subscriptionCollectionItemsFromRecords(records []*core.Record) []subscripti
 
 func subscriptionCollectionAPIFromRecord(record *core.Record) subscriptionCollectionItemResponse {
 	billingCycle := record.GetString("billingCycle")
+	name := record.GetString("name")
+	platformName := strings.TrimSpace(record.GetString("platformName"))
+	if platformName == "" {
+		platformName = name
+	}
+	accountNumber := record.GetInt("accountNumber")
+	if accountNumber < 1 {
+		accountNumber = 1
+	}
 	out := subscriptionCollectionItemResponse{
 		ID:                           record.Id,
-		Name:                         record.GetString("name"),
+		Name:                         name,
+		PlatformName:                 platformName,
+		AccountNumber:                accountNumber,
 		Logo:                         trimmedSubscriptionString(record.GetString("logo")),
 		Price:                        moneyForRecord(record.Get("price")),
 		Currency:                     record.GetString("currency"),
@@ -256,6 +270,7 @@ func subscriptionCollectionAPIFromRecord(record *core.Record) subscriptionCollec
 		Pinned:                       record.GetBool("pinned"),
 		PublicHidden:                 record.GetBool("publicHidden"),
 		PaymentMethod:                trimmedSubscriptionString(record.GetString("paymentMethod")),
+		CardLast4:                    trimmedSubscriptionString(record.GetString("cardLast4")),
 		StartDate:                    trimmedSubscriptionString(record.GetString("startDate")),
 		NextBillingDate:              record.GetString("nextBillingDate"),
 		AutoRenew:                    billingCycle != "one-time" && record.GetBool("autoRenew"),

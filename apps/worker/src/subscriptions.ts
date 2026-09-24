@@ -25,6 +25,8 @@ import type { Env, SubscriptionRow } from "./types";
 import { z } from "zod";
 import type { ApiAppSettings } from "@renewlet/shared/schemas/settings";
 import { nextCostSharingCollectionReminderDate } from "@renewlet/shared/cost-sharing";
+import { decryptSharingCredential, encryptSharingCredential, maskSharingPassword } from "./sharing-credential";
+import { sharingCredentialsPayloadSchema } from "@renewlet/shared/schemas/sharing";
 
 const subscriptionStorageBodySchema = subscriptionCreateBodySchema.refine((body) => body.startDate === null || body.nextBillingDate >= body.startDate, {
   path: ["nextBillingDate"],
@@ -60,18 +62,24 @@ export async function createSubscription(request: Request, env: Env): Promise<Re
   const body = parseSubscriptionBodyForStorage(await readJson(request, subscriptionCreateBodySchema, locale), locale);
   const timestamp = nowIso();
   const settings = await getSettings(env, auth.user.id);
-  const row = toSubscriptionRow(newId("sub"), auth.user.id, body, timestamp, timestamp, { settings });
+  const familySharing = await resolveFamilySharingStorage(env, body.familySharing ?? null, null, locale);
+  const row = toSubscriptionRow(newId("sub"), auth.user.id, body, timestamp, timestamp, { settings, familySharing });
+  await assertUniquePlatformAccountNumber(env, auth.user.id, row.platform_name ?? row.name, row.account_number ?? 1, null, locale);
   const factStatement = env.DB.prepare(`
     INSERT INTO subscriptions (
-      id, user_id, name, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit, one_time_term_count, one_time_term_unit,
+      id, user_id, name, platform_name, account_number, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit, one_time_term_count, one_time_term_unit,
       category, status, pinned, public_hidden, payment_method,
+      card_last4,
       start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date, trial_end_date, website, notes, tags_json,
       reminder_days, repeat_reminder_enabled, repeat_reminder_interval, repeat_reminder_window, cost_sharing_json,
-      cost_sharing_collection_reminder_enabled, cost_sharing_next_collection_reminder_date, extra_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      cost_sharing_collection_reminder_enabled, cost_sharing_next_collection_reminder_date,
+      family_sharing_enabled, sharing_login_account, sharing_encrypted_credentials, sharing_password_mask, sharing_verification_link, sharing_capacity,
+      extra_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(...subscriptionRowValues(row));
   const derived = subscriptionDerivedMutationPlan(env, { before: null, after: row, kind: "create" }, settings);
-  await env.DB.batch([...derived.beforeFact, factStatement, ...derived.afterFact]);
+  const sharingStatements = await sharingProjectionStatements(env, row, null, timestamp);
+  await env.DB.batch([...derived.beforeFact, factStatement, ...sharingStatements, ...derived.afterFact]);
   return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(row) }), { status: 201 });
 }
 
@@ -86,18 +94,24 @@ export async function updateSubscription(request: Request, env: Env, id: string)
   const settings = await getSettings(env, auth.user.id);
   // Worker 没有 PocketBase hook 可二次归一；切换计费类型时先清理互斥字段，再合并 patch 走同一套 create schema。
   const mergedBody = parseSubscriptionBodyForStorage(mergeSubscriptionPatchForStorage(toBody(existing), stripUndefined(patch)), locale);
-  const merged = toSubscriptionRow(existing.id, auth.user.id, mergedBody, existing.created_at, timestamp, { settings });
+  const familySharing = await resolveFamilySharingStorage(env, mergedBody.familySharing ?? null, existing, locale);
+  const merged = toSubscriptionRow(existing.id, auth.user.id, mergedBody, existing.created_at, timestamp, { settings, familySharing });
+  await assertUniquePlatformAccountNumber(env, auth.user.id, merged.platform_name ?? merged.name, merged.account_number ?? 1, id, locale);
   const factStatement = env.DB.prepare(`
     UPDATE subscriptions SET
-      name = ?, logo = ?, price = ?, currency = ?, billing_cycle = ?, custom_days = ?, custom_cycle_unit = ?,
+      name = ?, platform_name = ?, account_number = ?, logo = ?, price = ?, currency = ?, billing_cycle = ?, custom_days = ?, custom_cycle_unit = ?,
       one_time_term_count = ?, one_time_term_unit = ?, category = ?, status = ?,
-      pinned = ?, public_hidden = ?, payment_method = ?, start_date = ?, next_billing_date = ?, auto_renew = ?, auto_calculate_next_billing_date = ?,
+      pinned = ?, public_hidden = ?, payment_method = ?, card_last4 = ?, start_date = ?, next_billing_date = ?, auto_renew = ?, auto_calculate_next_billing_date = ?,
       trial_end_date = ?, website = ?, notes = ?, tags_json = ?, reminder_days = ?, repeat_reminder_enabled = ?,
       repeat_reminder_interval = ?, repeat_reminder_window = ?, cost_sharing_json = ?,
-      cost_sharing_collection_reminder_enabled = ?, cost_sharing_next_collection_reminder_date = ?, extra_json = ?, updated_at = ?
+      cost_sharing_collection_reminder_enabled = ?, cost_sharing_next_collection_reminder_date = ?,
+      family_sharing_enabled = ?, sharing_login_account = ?, sharing_encrypted_credentials = ?, sharing_password_mask = ?, sharing_verification_link = ?, sharing_capacity = ?,
+      extra_json = ?, updated_at = ?
     WHERE user_id = ? AND id = ?
   `).bind(
     merged.name,
+    merged.platform_name,
+    merged.account_number,
     merged.logo,
     merged.price,
     merged.currency,
@@ -111,6 +125,7 @@ export async function updateSubscription(request: Request, env: Env, id: string)
     merged.pinned,
     merged.public_hidden,
     merged.payment_method,
+    merged.card_last4,
     merged.start_date,
     merged.next_billing_date,
     merged.auto_renew,
@@ -126,13 +141,20 @@ export async function updateSubscription(request: Request, env: Env, id: string)
     merged.cost_sharing_json,
     merged.cost_sharing_collection_reminder_enabled,
     merged.cost_sharing_next_collection_reminder_date,
+    merged.family_sharing_enabled,
+    merged.sharing_login_account,
+    merged.sharing_encrypted_credentials,
+    merged.sharing_password_mask,
+    merged.sharing_verification_link,
+    merged.sharing_capacity,
     merged.extra_json,
     timestamp,
     auth.user.id,
     id,
   );
   const derived = subscriptionDerivedMutationPlan(env, { before: existing, after: merged, kind: "update" }, settings);
-  await env.DB.batch([...derived.beforeFact, factStatement, ...derived.afterFact]);
+  const sharingStatements = await sharingProjectionStatements(env, merged, existing, timestamp);
+  await env.DB.batch([...derived.beforeFact, factStatement, ...sharingStatements, ...derived.afterFact]);
   return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(merged) }));
 }
 
@@ -146,6 +168,17 @@ export async function deleteSubscription(request: Request, env: Env, id: string)
   const factStatement = env.DB.prepare("DELETE FROM subscriptions WHERE user_id = ? AND id = ?").bind(auth.user.id, id);
   await env.DB.batch([...derived.beforeFact, factStatement, ...derived.afterFact]);
   return ok();
+}
+
+export async function readSubscriptionFamilyCredentials(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await requireAuth(request, env);
+  const row = await env.DB.prepare(`
+    SELECT sharing_encrypted_credentials AS credential FROM subscriptions
+    WHERE id = ? AND user_id = ? AND family_sharing_enabled = 1 LIMIT 1
+  `).bind(id, auth.user.id).first<{ credential: string }>();
+  if (!row?.credential) throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND", "NOT_FOUND");
+  const password = await decryptSharingCredential(env, row.credential);
+  return successJson(sharingCredentialsPayloadSchema.parse({ password }), { headers: { "Cache-Control": "no-store" } });
 }
 
 /** 手动续订只允许当前 owner 的手动周期订阅；id 与 user_id 同查，避免通过续订错误枚举他人数据。 */
@@ -264,12 +297,32 @@ function parseSubscriptionBodyForStorage(body: unknown, locale: ReturnType<typeo
   }
 }
 
+async function assertUniquePlatformAccountNumber(
+  env: Env,
+  userId: string,
+  platformName: string,
+  accountNumber: number,
+  currentId: string | null,
+  locale: ReturnType<typeof requestLocale>,
+): Promise<void> {
+  const duplicate = await env.DB.prepare(`
+    SELECT id FROM subscriptions
+    WHERE user_id = ? AND platform_name = ? AND account_number = ?
+    LIMIT 1
+  `).bind(userId, platformName, accountNumber).first<{ id: string }>();
+  if (duplicate && duplicate.id !== currentId) {
+    throw new HttpError(409, serverText(locale, "common.invalidPayload"), "SUBSCRIPTION_PLATFORM_ACCOUNT_NUMBER_CONFLICT");
+  }
+}
+
 /** 把 D1 row 还原成 shared 写入 body，用于 PATCH 合并而不是直接拼 SQL 字段。 */
 function toBody(row: SubscriptionRow): SubscriptionBody {
   // PATCH 合并要容忍历史脏 tags_json；本次 UPDATE 会经 toSubscriptionRow 收敛回合法数组 JSON。
   const tags = parseStringArray(row.tags_json);
   return {
     name: row.name,
+    platformName: row.platform_name || row.name,
+    accountNumber: row.account_number && row.account_number > 0 ? row.account_number : 1,
     logo: row.logo,
     price: row.price,
     currency: row.currency,
@@ -283,6 +336,7 @@ function toBody(row: SubscriptionRow): SubscriptionBody {
     pinned: row.pinned === 1,
     publicHidden: row.public_hidden === 1,
     paymentMethod: row.payment_method,
+    cardLast4: row.card_last4,
     startDate: row.start_date,
     nextBillingDate: row.next_billing_date,
     autoRenew: row.billing_cycle === "one-time" ? false : row.auto_renew === 1,
@@ -297,6 +351,13 @@ function toBody(row: SubscriptionRow): SubscriptionBody {
     repeatReminderWindow: row.repeat_reminder_window as SubscriptionBody["repeatReminderWindow"],
     // PATCH 合并必须带回 costSharing，否则只改备注也会把 D1 JSON 分摊信息清空。
     costSharing: Object.keys(parseJsonObject(row.cost_sharing_json ?? "{}")).length > 0 ? parseJsonObject(row.cost_sharing_json ?? "{}") as SubscriptionBody["costSharing"] : null,
+    familySharing: row.family_sharing_enabled === 1 ? {
+      enabled: true,
+      loginAccount: row.sharing_login_account ?? "",
+      password: "",
+      verificationLink: row.sharing_verification_link ?? "",
+      capacity: Math.max(1, row.sharing_capacity ?? 5),
+    } : null,
     extra: parseJsonObject(row.extra_json),
   };
 }
@@ -308,14 +369,21 @@ export function toSubscriptionRow(
   body: SubscriptionBody,
   createdAt: string,
   updatedAt: string,
-  options: { settings?: Pick<ApiAppSettings, "timezone" | "notificationReminderDays">; referenceDate?: string } = {},
+  options: {
+    settings?: Pick<ApiAppSettings, "timezone" | "notificationReminderDays">;
+    referenceDate?: string;
+    familySharing?: FamilySharingStorage;
+  } = {},
 ): SubscriptionRow {
   const costSharingMirror = collectionReminderMirror(body, options);
   const customCycle = subscriptionCustomCycleForStorage(body);
+  const familySharing = options.familySharing ?? familySharingStorageFromBody(body.familySharing ?? null);
   return {
     id,
     user_id: userId,
     name: body.name,
+    platform_name: body.platformName?.trim() || body.name,
+    account_number: body.accountNumber ?? 1,
     logo: body.logo ?? null,
     price: body.price,
     currency: body.currency,
@@ -332,6 +400,7 @@ export function toSubscriptionRow(
     // publicHidden=false 是公开页启用后的默认展示语义；隐藏必须由用户逐条显式选择。
     public_hidden: boolToInt(body.publicHidden),
     payment_method: body.paymentMethod ?? null,
+    card_last4: body.cardLast4?.trim() || null,
     start_date: body.startDate,
     next_billing_date: body.nextBillingDate,
     // auto_renew 与 auto_calculate_next_billing_date 是两个独立契约：前者驱动后台续订，后者只影响日期锚点计算。
@@ -351,11 +420,120 @@ export function toSubscriptionRow(
     // 镜像列只服务通知 cron 的 D1 索引候选；真实配置和出站响应继续以 cost_sharing_json 为准。
     cost_sharing_collection_reminder_enabled: boolToInt(costSharingMirror.enabled),
     cost_sharing_next_collection_reminder_date: costSharingMirror.nextReminderDate,
+    family_sharing_enabled: boolToInt(familySharing.enabled),
+    sharing_login_account: familySharing.loginAccount,
+    sharing_encrypted_credentials: familySharing.encryptedCredentials,
+    sharing_password_mask: familySharing.passwordMask,
+    sharing_verification_link: familySharing.verificationLink,
+    sharing_capacity: familySharing.capacity,
     // extra 不走 UI 展示；它给 seed/import 留稳定幂等键，编辑订阅时必须随原记录保留。
     extra_json: JSON.stringify(body.extra ?? {}),
     created_at: createdAt,
     updated_at: updatedAt,
   };
+}
+
+interface FamilySharingStorage {
+  enabled: boolean;
+  loginAccount: string;
+  encryptedCredentials: string;
+  passwordMask: string;
+  verificationLink: string | null;
+  capacity: number;
+}
+
+function familySharingStorageFromBody(value: SubscriptionBody["familySharing"]): FamilySharingStorage {
+  return {
+    enabled: value?.enabled === true,
+    loginAccount: value?.loginAccount.trim() ?? "",
+    encryptedCredentials: "",
+    passwordMask: value?.password ? maskSharingPassword(value.password) : "",
+    verificationLink: value?.verificationLink.trim() || null,
+    capacity: value?.capacity ?? 5,
+  };
+}
+
+async function resolveFamilySharingStorage(
+  env: Env,
+  value: SubscriptionBody["familySharing"],
+  existing: SubscriptionRow | null,
+  locale: ReturnType<typeof requestLocale>,
+): Promise<FamilySharingStorage> {
+  if (!value?.enabled) {
+    return {
+      enabled: false,
+      loginAccount: existing?.sharing_login_account ?? "",
+      encryptedCredentials: existing?.sharing_encrypted_credentials ?? "",
+      passwordMask: existing?.sharing_password_mask ?? "",
+      verificationLink: existing?.sharing_verification_link ?? null,
+      capacity: existing?.sharing_capacity ?? 5,
+    };
+  }
+  const password = value.password;
+  const encryptedCredentials = password
+    ? await encryptSharingCredential(env, password)
+    : existing?.sharing_encrypted_credentials ?? "";
+  if (!value.loginAccount.trim() || !encryptedCredentials) {
+    throw new HttpError(400, serverText(locale, "common.invalidPayload"), "FAMILY_SHARING_CREDENTIALS_REQUIRED");
+  }
+  return {
+    enabled: true,
+    loginAccount: value.loginAccount.trim(),
+    encryptedCredentials,
+    passwordMask: password ? maskSharingPassword(password) : existing?.sharing_password_mask ?? "",
+    verificationLink: value.verificationLink.trim() || null,
+    capacity: value.capacity,
+  };
+}
+
+async function sharingProjectionStatements(
+  env: Env,
+  row: SubscriptionRow,
+  before: SubscriptionRow | null,
+  timestamp: string,
+): Promise<D1PreparedStatement[]> {
+  if (row.family_sharing_enabled !== 1 && before?.family_sharing_enabled !== 1) return [];
+  const existing = await env.DB.prepare(
+    "SELECT id FROM sharing_accounts WHERE user_id = ? AND subscription_id = ? LIMIT 1",
+  ).bind(row.user_id, row.id).first<{ id: string }>();
+  if (row.family_sharing_enabled !== 1) {
+    return existing
+      ? [env.DB.prepare("UPDATE sharing_accounts SET status = 'archived', updated_at = ? WHERE user_id = ? AND id = ?").bind(timestamp, row.user_id, existing.id)]
+      : [];
+  }
+
+  const capacity = Math.max(1, row.sharing_capacity ?? 5);
+  const accountId = existing?.id ?? newId("share");
+  if (existing) {
+    const occupiedAboveCapacity = await env.DB.prepare(`
+      SELECT COUNT(*) AS count FROM sharing_seats
+      WHERE user_id = ? AND sharing_account_id = ? AND seat_number > ? AND status NOT IN ('vacant', 'archived')
+    `).bind(row.user_id, accountId, capacity).first<{ count: number }>();
+    if ((occupiedAboveCapacity?.count ?? 0) > 0) {
+      throw new HttpError(409, "FAMILY_SHARING_CAPACITY_OCCUPIED", "FAMILY_SHARING_CAPACITY_OCCUPIED");
+    }
+  }
+
+  const statements: D1PreparedStatement[] = [env.DB.prepare(`
+    INSERT INTO sharing_accounts (id, user_id, subscription_id, status, notes, created_at, updated_at)
+    VALUES (?, ?, ?, 'active', NULL, ?, ?)
+    ON CONFLICT(subscription_id) DO UPDATE SET status = 'active', updated_at = excluded.updated_at
+  `).bind(accountId, row.user_id, row.id, timestamp, timestamp)];
+  for (let seatNumber = 1; seatNumber <= capacity; seatNumber += 1) {
+    statements.push(env.DB.prepare(`
+      INSERT INTO sharing_seats (
+        id, user_id, sharing_account_id, seat_number, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'vacant', ?, ?)
+      ON CONFLICT(user_id, sharing_account_id, seat_number) DO UPDATE SET
+        status = CASE WHEN sharing_seats.status = 'archived' THEN 'vacant' ELSE sharing_seats.status END,
+        updated_at = excluded.updated_at
+    `).bind(newId("seat"), row.user_id, accountId, seatNumber, timestamp, timestamp));
+  }
+  statements.push(env.DB.prepare(`
+    UPDATE sharing_seats SET status = 'archived', updated_at = ?
+    WHERE user_id = ? AND sharing_account_id = ? AND seat_number > ? AND status = 'vacant'
+  `).bind(timestamp, row.user_id, accountId, capacity));
+  return statements;
 }
 
 function subscriptionCustomCycleForStorage(body: SubscriptionBody): { days: number | null; unit: SubscriptionRow["custom_cycle_unit"] } {

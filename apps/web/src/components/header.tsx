@@ -12,7 +12,7 @@
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
 import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,6 @@ import { toast } from '@/components/ui/sonner';
 import { RenewletBrandMark } from '@/components/brand/renewlet-brand-mark';
 import { getHeaderDesktopNavLinkClass, getHeaderMobileNavLinkClass, headerLayout } from '@/components/header-layout';
 import { authClient } from '@/lib/auth-client';
-import { AddSubscriptionDialog } from '@/components/add-subscription-dialog';
 import { SystemUpdateDialog } from '@/components/system-update-dialog';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { MessageKey } from '@/i18n/messages';
@@ -29,11 +28,17 @@ import { RouteProgress } from '@/components/route-progress';
 import { cn } from '@/lib/utils';
 import { PRODUCT_NAME } from '@/lib/product-brand';
 
+const AddSubscriptionDialog = lazy(async () => {
+  const module = await import('@/components/add-subscription-dialog');
+  return { default: module.AddSubscriptionDialog };
+});
+
 interface HeaderProps {
   /** 新增订阅回调（传入订阅主体数据，不包含 id）。不传则隐藏“新增订阅”按钮。 */
   onAddSubscription?: (submission: SubscriptionFormSubmission) => void;
   /** 当前用户已有标签建议，用于新增订阅弹窗复用。 */
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly { name: string; logo?: string | null | undefined }[] | undefined;
   /** 订阅页专属快捷动作，渲染在“新增订阅”旁边。 */
   subscriptionActions?: ReactNode;
 }
@@ -68,7 +73,7 @@ function renderNavIcon(icon: NavIconKey, className: string) {
 }
 
 /** Header 组件：全局导航 + 主题切换 + 新增订阅入口。 */
-export function Header({ onAddSubscription, availableTags, subscriptionActions }: HeaderProps) {
+export function Header({ onAddSubscription, availableTags, platformSuggestions, subscriptionActions }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
@@ -152,7 +157,9 @@ export function Header({ onAddSubscription, availableTags, subscriptionActions }
           
           {onAddSubscription && (
             <>
-              <AddSubscriptionDialog onAdd={onAddSubscription} availableTags={availableTags} />
+              <Suspense fallback={null}>
+                <AddSubscriptionDialog onAdd={onAddSubscription} availableTags={availableTags} platformSuggestions={platformSuggestions} />
+              </Suspense>
               {subscriptionActions}
             </>
           )}

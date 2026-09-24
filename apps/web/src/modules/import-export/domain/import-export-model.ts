@@ -221,6 +221,8 @@ export function subscriptionToExportRow(subscription: Subscription): RenewletExp
     repeatReminderInterval: subscription.repeatReminderInterval,
     repeatReminderWindow: subscription.repeatReminderWindow,
     ...(subscription.costSharing ? { costSharing: subscription.costSharing } : {}),
+    // Ordinary backups intentionally exclude login credentials.
+    familySharing: null,
     extra: subscription.extra,
   };
 

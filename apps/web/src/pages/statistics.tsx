@@ -43,6 +43,8 @@ import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptio
 import { useI18n } from '@/i18n/I18nProvider';
 import { useSubscriptionDetailDialog } from '@/hooks/use-subscription-detail-dialog';
 import { todayDateOnlyInTimeZone } from '@/lib/time/date-only';
+import { useSharingAccounts } from '@/hooks/use-sharing';
+import { sharingMonthlyProfit, sharingMonthlyRevenue } from '@/lib/sharing-financials';
 
 /** 空订阅数组：用于在数据未加载完成时提供稳定引用，避免 useMemo 依赖抖动。 */
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
@@ -102,6 +104,7 @@ const Statistics = () => {
   const subscriptions = subscriptionsQuery.data ?? EMPTY_SUBSCRIPTIONS;
   const facetsQuery = useSubscriptionFacets();
   const settingsQuery = useSettings();
+  const sharingQuery = useSharingAccounts();
   const settings = settingsQuery.data;
   const { config } = useCustomConfigState();
   const monthlyBudget = settings?.monthlyBudget ?? "0";
@@ -125,6 +128,9 @@ const Statistics = () => {
   const ratesRefreshPending = ratesLoading || ratesRefreshing;
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const stats = useStatisticsModel(subscriptions, config, monthlyBudget, defaultCurrency, convert, timeZone, locale, personalCostBasis ? "personal" : "total");
+  const sharingAccounts = sharingQuery.data?.accounts ?? [];
+  const sharingIncome = sharingAccounts.reduce((total, account) => total + sharingMonthlyRevenue(account, defaultCurrency, convert), 0);
+  const sharingProfit = sharingAccounts.reduce((total, account) => total + sharingMonthlyProfit(account, defaultCurrency, convert), 0);
   const {
     editingSubscription,
     editingCollectionItem,
@@ -284,6 +290,8 @@ const Statistics = () => {
               variant="success"
               description={t("statistics.annualSavingsDescription")}
             />
+            <StatBox value={formatCurrency(sharingIncome, defaultCurrency)} label={t("statistics.sharingIncome")} variant="success" />
+            <StatBox value={formatCurrency(sharingProfit, defaultCurrency)} label={t("statistics.sharingProfit")} variant={sharingProfit >= 0 ? "success" : "warning"} />
           </div>
         </section>
 

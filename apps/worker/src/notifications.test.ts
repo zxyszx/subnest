@@ -100,6 +100,9 @@ async function handleFakeD1(
   if (query.method === "all" && query.params.length === 1 && query.sql.includes("FROM subscriptions") && query.sql.includes("WHERE user_id = ?") && query.sql.includes("ORDER BY created_at DESC, id DESC")) {
     return d1All([]);
   }
+  if (query.method === "all" && query.sql.includes("FROM sharing_seats seat")) {
+    return d1All([]);
+  }
   return await handler(query);
 }
 

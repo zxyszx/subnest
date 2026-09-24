@@ -266,6 +266,18 @@ func normalizeSubscriptionRecordWithSettings(record *core.Record, mirrorSettings
 		return errors.New("SUBSCRIPTION_NAME_TOO_LONG")
 	}
 	record.Set("name", name)
+	platformName := strings.TrimSpace(record.GetString("platformName"))
+	if platformName == "" {
+		platformName = name
+	}
+	if len([]rune(platformName)) > 80 {
+		return errors.New("SUBSCRIPTION_PLATFORM_NAME_TOO_LONG")
+	}
+	record.Set("platformName", platformName)
+	if record.GetInt("accountNumber") <= 0 {
+		record.Set("accountNumber", 1)
+	}
+	record.Set("cardLast4", strings.TrimSpace(record.GetString("cardLast4")))
 
 	currency := strings.ToUpper(strings.TrimSpace(record.GetString("currency")))
 	if !currencyCodeRe.MatchString(currency) {

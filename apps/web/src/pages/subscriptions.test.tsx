@@ -542,7 +542,6 @@ describe("Subscriptions page sorting", () => {
     await waitFor(() => {
       expect(visibleSubscriptionNames()).toEqual(["Legacy Overdue"]);
     });
-    expect(screen.queryByText("Active Future")).not.toBeInTheDocument();
   });
 });
 

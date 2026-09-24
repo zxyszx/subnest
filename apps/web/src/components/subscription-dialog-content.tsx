@@ -157,10 +157,15 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     const pendingTags = Array.from(
       formRef.current?.querySelectorAll<HTMLInputElement>("[data-subscription-tag-pending-input]") ?? [],
     ).flatMap((input) => parseTagsInput(input.value));
-    if (pendingTags.length === 0) return formData;
+    const platformName = formData.platformName.trim() || formData.name.trim();
     return {
       ...formData,
-      tags: normalizeTagsArray([...formData.tags, ...pendingTags]),
+      // name 是既有 API 必填字段；用户只维护平台名称，由提交边界统一兼容旧契约。
+      name: platformName,
+      platformName,
+      tags: pendingTags.length === 0
+        ? formData.tags
+        : normalizeTagsArray([...formData.tags, ...pendingTags]),
     };
   }, [formData]);
 
@@ -182,6 +187,19 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     }
 
     const nextErrors = validateForm(submissionFormData);
+    const normalizedPlatformName = submissionFormData.platformName.trim().toLocaleLowerCase();
+    const accountNumber = Number.parseInt(submissionFormData.accountNumber, 10);
+    const platformAccountAlreadyAdded = normalizedPlatformName !== ""
+      && Number.isInteger(accountNumber)
+      && (props.platformSuggestions ?? []).some((platform) => (
+        platform.name.trim().toLocaleLowerCase() === normalizedPlatformName
+        && platform.accounts?.some((account) => (
+          account.accountNumber === accountNumber && account.id !== editSubscription?.id
+        ))
+      ));
+    if (platformAccountAlreadyAdded) {
+      nextErrors.accountNumber = t("subscription.platformAccountAdded");
+    }
     if (Object.keys(nextErrors).length > 0) {
       setFormErrors(nextErrors);
       setSubmitError(null);
@@ -223,11 +241,13 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
       fields={loadingSlots?.fields ?? (
         <SubscriptionFormFields
           idPrefix={idPrefix}
+          subscriptionId={editSubscription?.id}
           config={config}
           formData={formData}
           setFormData={setFormData}
           currencyOptions={currencyOptions}
           availableTags={props.availableTags}
+          platformSuggestions={props.platformSuggestions}
           onLogoUploadStatusChange={setLogoUploadStatus}
           onFieldChange={handleFieldChange}
           errors={formErrors}

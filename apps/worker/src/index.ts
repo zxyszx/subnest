@@ -45,7 +45,7 @@ import {
 } from "./calendar-feed";
 import { readCustomConfig, readSettings, updateCustomConfig, updateSettings } from "./settings";
 import { putExchangeRateSnapshot, readExchangeRateSnapshots } from "./exchange-rate-snapshots";
-import { createSubscription, deleteSubscription, readSubscriptions, renewSubscription, updateSubscription } from "./subscriptions";
+import { createSubscription, deleteSubscription, readSubscriptionFamilyCredentials, readSubscriptions, renewSubscription, updateSubscription } from "./subscriptions";
 import {
   readSubscriptionAnalytics,
   readSubscriptionCalendar,
@@ -76,6 +76,13 @@ import { consumeBuiltInIconIndexRefreshQueue } from "./media-icon-index-refresh-
 import { mediaCandidates } from "./search";
 import { notificationHistory, notificationOverview, notificationRun, notificationTest, runScheduledNotifications } from "./notifications";
 import { renewAutoSubscriptionsForAllUsers } from "./subscription-renewal";
+import {
+  readSharingAccountCredentials,
+  readSharingAccountDetail,
+  readSharingAccounts,
+  rejectLegacySharingAccountMutation,
+  updateSharingSeat,
+} from "./sharing";
 import {
   createPublicStatusPage,
   deletePublicStatusPage,
@@ -282,12 +289,32 @@ defineRoute(subscriptionRoutes, "/:id/calendar.ics", {
 defineRoute(subscriptionRoutes, "/:id/renew", {
   POST: (context) => renewSubscription(context.req.raw, context.env, routeParam(context, "id")),
 });
+defineRoute(subscriptionRoutes, "/:id/family-credentials", {
+  GET: (context) => readSubscriptionFamilyCredentials(context.req.raw, context.env, routeParam(context, "id")),
+});
 defineRoute(subscriptionRoutes, "/:id", {
   GET: (context) => readSubscriptionDetail(context.req.raw, context.env, routeParam(context, "id")),
   PATCH: (context) => updateSubscription(context.req.raw, context.env, routeParam(context, "id")),
   DELETE: (context) => deleteSubscription(context.req.raw, context.env, routeParam(context, "id")),
 });
 app.route("/api/app/subscriptions", subscriptionRoutes);
+
+const sharingRoutes = newAppRouter();
+defineRoute(sharingRoutes, "/accounts", {
+  GET: (context) => readSharingAccounts(context.req.raw, context.env),
+  POST: (context) => rejectLegacySharingAccountMutation(context.req.raw, context.env),
+});
+defineRoute(sharingRoutes, "/accounts/:id/credentials", {
+  GET: (context) => readSharingAccountCredentials(context.req.raw, context.env, routeParam(context, "id")),
+});
+defineRoute(sharingRoutes, "/accounts/:id", {
+  GET: (context) => readSharingAccountDetail(context.req.raw, context.env, routeParam(context, "id")),
+  PUT: (context) => rejectLegacySharingAccountMutation(context.req.raw, context.env),
+});
+defineRoute(sharingRoutes, "/seats/:id", {
+  PUT: (context) => updateSharingSeat(context.req.raw, context.env, routeParam(context, "id")),
+});
+app.route("/api/app/sharing", sharingRoutes);
 
 defineRoute(app, "/api/app/import/preview", { POST: (context) => previewImport(context.req.raw, context.env) });
 defineRoute(app, "/api/app/import/apply", { POST: (context) => applyImport(context.req.raw, context.env) });

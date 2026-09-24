@@ -96,7 +96,7 @@ describe("SubscriptionCard", () => {
   it("keeps the mobile card header from forcing price or meta rows into a single-column layout", () => {
     const source = readFileSync(join(process.cwd(), "src/components/subscription-card.tsx"), "utf8");
 
-    renderSubscriptionCard({ name: "Figma Professional", paymentMethod: "credit_card" });
+    renderSubscriptionCard({ name: "Figma Professional", paymentMethod: "credit_card", cardLast4: "6109" });
 
     const card = screen.getByTestId("subscription-card");
     const metaFlow = screen.getByTestId("subscription-card-meta-flow");
@@ -122,6 +122,7 @@ describe("SubscriptionCard", () => {
     expect(dailyAverageMeta).toHaveClass("tabular-nums");
     expect(paymentMethodMeta).toHaveClass("min-w-0", "max-w-full");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
+    expect(within(paymentMethodMeta).getByText("信用卡 · •••• 6109")).toBeInTheDocument();
     expect(badgeFlow).toHaveClass("col-span-full", "flex", "flex-wrap", "gap-x-1.5", "gap-y-2", "sm:gap-2");
   });
 
@@ -137,6 +138,18 @@ describe("SubscriptionCard", () => {
     expect(logoTile).not.toHaveClass("media-thumbnail-canvas");
     expect(logoTile).not.toHaveClass("bg-linear-to-br");
     expect(logoTile?.getAttribute("style")).not.toContain("accent");
+  });
+
+  it("uses the platform name and shows the account number on the logo", () => {
+    renderSubscriptionCard({
+      name: "Netflix-01/高级套餐",
+      platformName: "Netflix",
+      accountNumber: 1,
+    });
+
+    expect(screen.getByRole("heading", { name: "Netflix" })).toBeInTheDocument();
+    expect(screen.getByLabelText("账号编号 1")).toHaveTextContent("1");
+    expect(screen.queryByRole("heading", { name: "Netflix-01/高级套餐" })).not.toBeInTheDocument();
   });
 
   it("keeps real subscription logo styling as one plate without an inner pseudo-element", () => {

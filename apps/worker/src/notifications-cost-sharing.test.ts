@@ -111,6 +111,36 @@ describe("Cloudflare cost sharing collection notifications", () => {
     ]);
   });
 
+  it("emits sharing seat renewal reminders with the seat currency and term amount", () => {
+    const familySubscription = subscription({ reminderDays: -2 }) as ApiSubscription & {
+      sharingSeatReminders: Array<{
+        memberName: string;
+        monthlyPrice: "15";
+        currency: string;
+        billingMonths: number;
+        expiresAt: string;
+      }>;
+    };
+    familySubscription.sharingSeatReminders = [{
+      memberName: "Quarterly friend",
+      monthlyPrice: "15",
+      currency: "EUR",
+      billingMonths: 3,
+      expiresAt: "2026-01-12",
+    }];
+
+    const items = collectNotificationItemsForLocalDate("2026-01-07", settings(), [familySubscription]);
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        type: "costSharing",
+        targetDate: "2026-01-12",
+        reminderDays: 5,
+        costSharing: { memberName: "Quarterly friend", amount: "45", currency: "EUR" },
+      }),
+    ]);
+  });
+
   it("skips one-time buyouts but keeps fixed-term one-time collection reminders", () => {
     const items = collectNotificationItemsForLocalDate("2026-01-07", settings(), [
       subscription({
@@ -179,6 +209,8 @@ describe("Cloudflare cost sharing collection notifications", () => {
     expect(query?.sql).toContain("UNION");
     expect(query?.sql).toContain("cost_sharing_collection_reminder_enabled = 1");
     expect(query?.sql).toContain("cost_sharing_next_collection_reminder_date <= ?");
+    expect(query?.sql).toContain("JOIN sharing_seats seat");
+    expect(query?.sql).toContain("seat.expires_at >= ? AND seat.expires_at <= ?");
     expect(query?.sql).not.toMatch(/json_extract|json_valid|\$\.collectionReminder/);
     expect(query?.params).toEqual(expect.arrayContaining(["usr_due", -2, "2026-01-07"]));
   });

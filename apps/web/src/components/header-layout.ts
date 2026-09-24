@@ -14,7 +14,7 @@ export const headerLayout = {
   desktopNavLabel: "whitespace-nowrap",
   desktopNavSkeletonLabel: "h-4 w-16",
   actions: "flex min-w-0 shrink-0 items-center justify-end gap-2",
-  mobileNav: "flex border-t border-border lg:hidden",
+  mobileNav: "flex overflow-x-auto overscroll-x-contain border-t border-border lg:hidden",
   mobileNavIcon: "h-5 w-5",
 } as const;
 
@@ -24,7 +24,7 @@ const headerDesktopNavLinkBase =
 const headerDesktopNavSkeletonItem =
   "flex h-10 w-auto items-center justify-start gap-2 rounded-lg px-3 xl:px-4";
 
-const headerMobileNavLinkBase = "flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors";
+const headerMobileNavLinkBase = "flex min-w-20 flex-none flex-col items-center gap-1 whitespace-nowrap py-3 text-xs font-medium transition-colors";
 
 export function getHeaderDesktopNavLinkClass(isActive: boolean) {
   return cn(

@@ -20,6 +20,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { getSubscriptionCalendarRange } from '@/modules/subscriptions/domain/subscription-calendar-range';
 import { useSubscriptionCrud } from '@/modules/subscriptions/application/use-subscription-crud';
+import { useSharingAccountDetails, useSharingAccounts } from '@/hooks/use-sharing';
+import { Badge } from '@/components/ui/badge';
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
@@ -32,9 +34,17 @@ const Calendar = () => {
   useRouteReady(!hasCalendarData && subscriptionsQuery.isPending);
   const subscriptions = subscriptionsQuery.data ?? EMPTY_SUBSCRIPTIONS;
   const facetsQuery = useSubscriptionFacets();
+  const sharingQuery = useSharingAccounts();
+  const sharingDetails = useSharingAccountDetails((sharingQuery.data?.accounts ?? []).map((account) => account.id));
   const { t } = useI18n();
   const isMobileCalendarPage = useMediaQuery("(max-width: 639px)");
   const availableTags = facetsQuery.data?.tags ?? [];
+  const expiringSeats = useMemo(() => sharingDetails.flatMap((query) => {
+    const detail = query.data;
+    if (!detail) return [];
+    return detail.seats.filter((seat) => seat.status === 'active' && seat.expiresAt && seat.expiresAt >= range.from && seat.expiresAt <= range.to)
+      .map((seat) => ({ account: detail.account, seat }));
+  }).sort((left, right) => (left.seat.expiresAt ?? '').localeCompare(right.seat.expiresAt ?? '')), [range.from, range.to, sharingDetails]);
   const {
     editingSubscription,
     editingCollectionItem,
@@ -87,6 +97,26 @@ const Calendar = () => {
           onCurrentMonthChange={setCurrentMonth}
           onEditSubscription={handleEditSubscription}
         />
+
+        <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card" aria-label={t("calendar.sharingExpiries")}>
+          <div className="border-b border-border px-4 py-3">
+            <h2 className="text-sm font-semibold text-foreground">{t("calendar.sharingExpiries")}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t("calendar.sharingExpiriesHelp")}</p>
+          </div>
+          {expiringSeats.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-muted-foreground">{t("calendar.noSharingExpiries")}</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {expiringSeats.map(({ account, seat }) => (
+                <li key={seat.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
+                  <time className="font-medium tabular-nums text-foreground">{seat.expiresAt}</time>
+                  <Badge variant="secondary">{account.subscription.platformName}</Badge>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{account.name} · {seat.memberName ?? t("sharing.noMember")}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
 
       <EditSubscriptionDialog

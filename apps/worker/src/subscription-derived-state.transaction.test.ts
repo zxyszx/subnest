@@ -265,6 +265,8 @@ function openDerivedStateDatabase(): { db: DatabaseSync; env: Env } {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
+      platform_name TEXT NOT NULL DEFAULT '',
+      account_number INTEGER NOT NULL DEFAULT 1,
       logo TEXT,
       price TEXT NOT NULL,
       currency TEXT NOT NULL,
@@ -278,6 +280,7 @@ function openDerivedStateDatabase(): { db: DatabaseSync; env: Env } {
       pinned INTEGER NOT NULL,
       public_hidden INTEGER NOT NULL,
       payment_method TEXT,
+      card_last4 TEXT,
       start_date TEXT,
       next_billing_date TEXT NOT NULL,
       auto_renew INTEGER NOT NULL,
@@ -293,6 +296,12 @@ function openDerivedStateDatabase(): { db: DatabaseSync; env: Env } {
       cost_sharing_json TEXT NOT NULL,
       cost_sharing_collection_reminder_enabled INTEGER NOT NULL,
       cost_sharing_next_collection_reminder_date TEXT,
+      family_sharing_enabled INTEGER NOT NULL DEFAULT 0,
+      sharing_login_account TEXT NOT NULL DEFAULT '',
+      sharing_encrypted_credentials TEXT NOT NULL DEFAULT '',
+      sharing_password_mask TEXT NOT NULL DEFAULT '',
+      sharing_verification_link TEXT,
+      sharing_capacity INTEGER NOT NULL DEFAULT 5,
       extra_json TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -387,6 +396,8 @@ function subscriptionRow(id: string, overrides: Partial<SubscriptionRow> = {}): 
     id,
     user_id: USER_ID,
     name: `Subscription ${id}`,
+    platform_name: `Platform ${id}`,
+    account_number: 1,
     logo: null,
     price: "10",
     currency: "USD",
@@ -400,6 +411,7 @@ function subscriptionRow(id: string, overrides: Partial<SubscriptionRow> = {}): 
     pinned: 0,
     public_hidden: 0,
     payment_method: null,
+    card_last4: null,
     start_date: "2026-01-15",
     next_billing_date: "2026-09-15",
     auto_renew: 0,
@@ -415,6 +427,12 @@ function subscriptionRow(id: string, overrides: Partial<SubscriptionRow> = {}): 
     cost_sharing_json: "{}",
     cost_sharing_collection_reminder_enabled: 0,
     cost_sharing_next_collection_reminder_date: null,
+    family_sharing_enabled: 0,
+    sharing_login_account: "",
+    sharing_encrypted_credentials: "",
+    sharing_password_mask: "",
+    sharing_verification_link: null,
+    sharing_capacity: 5,
     extra_json: "{}",
     created_at: "2026-08-17T00:00:00.000Z",
     updated_at: "2026-08-17T00:00:00.000Z",
@@ -425,10 +443,12 @@ function subscriptionRow(id: string, overrides: Partial<SubscriptionRow> = {}): 
 function insertSubscriptionStatement(env: Env, row: SubscriptionRow): D1PreparedStatement {
   return env.DB.prepare(`
     INSERT INTO subscriptions (
-      id, user_id, name, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit, one_time_term_count, one_time_term_unit,
-      category, status, pinned, public_hidden, payment_method, start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date,
+      id, user_id, name, platform_name, account_number, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit, one_time_term_count, one_time_term_unit,
+      category, status, pinned, public_hidden, payment_method, card_last4, start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date,
       trial_end_date, website, notes, tags_json, reminder_days, repeat_reminder_enabled, repeat_reminder_interval, repeat_reminder_window,
-      cost_sharing_json, cost_sharing_collection_reminder_enabled, cost_sharing_next_collection_reminder_date, extra_json, created_at, updated_at
+      cost_sharing_json, cost_sharing_collection_reminder_enabled, cost_sharing_next_collection_reminder_date,
+      family_sharing_enabled, sharing_login_account, sharing_encrypted_credentials, sharing_password_mask, sharing_verification_link, sharing_capacity,
+      extra_json, created_at, updated_at
     ) VALUES (${subscriptionRowValues(row).map(() => "?").join(", ")})
   `).bind(...subscriptionRowValues(row));
 }

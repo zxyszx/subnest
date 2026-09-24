@@ -94,6 +94,36 @@ func TestBuildDueNotificationUsesCustomCostSharingCollectionCurrency(t *testing.
 	}
 }
 
+func TestBuildDueNotificationCreatesSharingSeatRenewalReminder(t *testing.T) {
+	settings := defaultAppSettings()
+	settings.Timezone = "UTC"
+	settings.NotificationReminderDays = 5
+
+	message := buildDueNotificationForLocalDate("2026-09-25", time.Date(2026, 9, 25, 8, 0, 0, 0, time.UTC), settings, []notificationSubscription{
+		{
+			ID:              "netflix-1",
+			Name:            "Netflix #1",
+			Price:           "45",
+			Currency:        "CNY",
+			Status:          "active",
+			BillingCycle:    "monthly",
+			NextBillingDate: "2026-10-01",
+			ReminderDays:    disabledReminderDays,
+			SharingSeats: []notificationSharingSeat{
+				{MemberName: "Quarterly friend", MonthlyPrice: "15", Currency: "USD", BillingMonths: 3, ExpiresAt: "2026-09-30"},
+			},
+		},
+	}, true, accountContentLocale(settings))
+
+	if !message.HasPayload || len(message.Items) != 1 {
+		t.Fatalf("expected one sharing seat reminder, got %#v", message.Items)
+	}
+	item := message.Items[0]
+	if item.Type != "costSharing" || item.TargetDate != "2026-09-30" || item.CostSharing == nil || item.CostSharing.MemberName != "Quarterly friend" || item.CostSharing.Amount != "45" || item.CostSharing.Currency != "USD" {
+		t.Fatalf("unexpected sharing seat reminder: %#v", item)
+	}
+}
+
 func TestBuildDueNotificationSkipsOneTimeBuyoutCostSharingCollection(t *testing.T) {
 	settings := defaultAppSettings()
 	settings.Timezone = "UTC"

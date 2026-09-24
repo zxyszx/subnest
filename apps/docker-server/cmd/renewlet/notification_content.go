@@ -29,7 +29,15 @@ func listNotificationSubscriptionsByFilter(app core.App, filter string, params d
 			return nil, err
 		}
 		for _, row := range rows {
-			subscriptions = append(subscriptions, notificationSubscriptionFromRecord(row))
+			subscription := notificationSubscriptionFromRecord(row)
+			if row.GetBool("familySharingEnabled") {
+				seats, seatsErr := notificationSharingSeatsForSubscription(app, row.GetString("user"), row.Id)
+				if seatsErr != nil {
+					return nil, seatsErr
+				}
+				subscription.SharingSeats = seats
+			}
+			subscriptions = append(subscriptions, subscription)
 		}
 		if len(rows) < notificationSubscriptionPageSize {
 			return subscriptions, nil
@@ -53,7 +61,89 @@ func listNotificationScheduleCandidateSubscriptions(app core.App, userID string,
 	}
 	branches = append(branches, "user = {:user} && costSharingCollectionReminderEnabled = true && costSharingNextCollectionReminderDate != '' && costSharingNextCollectionReminderDate <= {:localDate}")
 	// 每个分支都对应独立索引候选；cron 热路径不解析 costSharing JSON，精确日期和成员周期由 collector 统一过滤。
-	return listNotificationSubscriptionsByIndexedBranches(app, branches, params)
+	subscriptions, err := listNotificationSubscriptionsByIndexedBranches(app, branches, params)
+	if err != nil {
+		return nil, err
+	}
+	return appendSharingSeatCandidateSubscriptions(app, subscriptions, userID, schedule.ScheduledLocalDate, addDateOnly(schedule.ScheduledLocalDate, maxReminderDays))
+}
+
+func appendSharingSeatCandidateSubscriptions(app core.App, subscriptions []notificationSubscription, userID, minDate, maxDate string) ([]notificationSubscription, error) {
+	seats, err := app.FindRecordsByFilter(
+		"sharing_seats",
+		"user = {:user} && status = 'active' && expiresAt >= {:minDate} && expiresAt <= {:maxDate}",
+		"expiresAt",
+		500,
+		0,
+		dbx.Params{"user": userID, "minDate": minDate, "maxDate": maxDate},
+	)
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]struct{}, len(subscriptions))
+	for _, subscription := range subscriptions {
+		seen[subscription.ID] = struct{}{}
+	}
+	for _, seat := range seats {
+		account, accountErr := app.FindRecordById("sharing_accounts", seat.GetString("sharingAccount"))
+		if accountErr != nil || account.GetString("user") != userID {
+			continue
+		}
+		subscriptionID := account.GetString("subscription")
+		if _, ok := seen[subscriptionID]; ok {
+			continue
+		}
+		record, recordErr := app.FindRecordById("subscriptions", subscriptionID)
+		if recordErr != nil || record.GetString("user") != userID || !record.GetBool("familySharingEnabled") {
+			continue
+		}
+		projection := notificationSubscriptionFromRecord(record)
+		projection.SharingSeats, err = notificationSharingSeatsForSubscription(app, userID, subscriptionID)
+		if err != nil {
+			return nil, err
+		}
+		subscriptions = append(subscriptions, projection)
+		seen[subscriptionID] = struct{}{}
+	}
+	return subscriptions, nil
+}
+
+func notificationSharingSeatsForSubscription(app core.App, userID, subscriptionID string) ([]notificationSharingSeat, error) {
+	accounts, err := app.FindRecordsByFilter(
+		"sharing_accounts",
+		"user = {:user} && subscription = {:subscription} && status != 'archived'",
+		"created",
+		100,
+		0,
+		dbx.Params{"user": userID, "subscription": subscriptionID},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result := []notificationSharingSeat{}
+	for _, account := range accounts {
+		seats, seatsErr := app.FindRecordsByFilter(
+			"sharing_seats",
+			"user = {:user} && sharingAccount = {:account} && status = 'active' && expiresAt != ''",
+			"expiresAt",
+			100,
+			0,
+			dbx.Params{"user": userID, "account": account.Id},
+		)
+		if seatsErr != nil {
+			return nil, seatsErr
+		}
+		for _, seat := range seats {
+			result = append(result, notificationSharingSeat{
+				MemberName:    seat.GetString("memberName"),
+				MonthlyPrice:  moneyForRecord(seat.Get("monthlyPrice")),
+				Currency:      seat.GetString("currency"),
+				BillingMonths: seat.GetInt("billingMonths"),
+				ExpiresAt:     seat.GetString("expiresAt"),
+			})
+		}
+	}
+	return result, nil
 }
 
 func listNotificationSubscriptionsByIndexedBranches(app core.App, filters []string, params dbx.Params) ([]notificationSubscription, error) {
@@ -109,6 +199,7 @@ func notificationSubscriptionFromRecord(row *core.Record) notificationSubscripti
 		RepeatReminderEnabled:  row.GetBool("repeatReminderEnabled"),
 		RepeatReminderInterval: normalizeRepeatReminderInterval(row.GetString("repeatReminderInterval")),
 		RepeatReminderWindow:   normalizeRepeatReminderWindow(row.GetString("repeatReminderWindow")),
+		FamilySharingEnabled:   row.GetBool("familySharingEnabled"),
 		CostSharing:            notificationCostSharingFromRecord(row),
 	}
 }
@@ -195,12 +286,30 @@ func collectNotificationItems(localDate string, settings appSettings, subscripti
 	for _, sub := range subscriptions {
 		if isValidDateOnly(sub.NextBillingDate) {
 			items = append(items, collectSubscriptionReminderItems(localDate, settings, sub, includeExpired)...)
-			if !(sub.BillingCycle == "one-time" && sub.OneTimeTermCount <= 0) {
+			if !sub.FamilySharingEnabled && !(sub.BillingCycle == "one-time" && sub.OneTimeTermCount <= 0) {
 				items = append(items, collectCostSharingCollectionReminderItems(localDate, settings, sub)...)
 			}
 		}
 
 		items = append(items, collectTrialReminderItems(localDate, settings, sub)...)
+		items = append(items, collectSharingSeatReminderItems(localDate, settings, sub)...)
+	}
+	return items
+}
+
+func collectSharingSeatReminderItems(localDate string, settings appSettings, sub notificationSubscription) []notificationContentItem {
+	reminderDays := normalizeNotificationReminderDays(settings.NotificationReminderDays)
+	items := []notificationContentItem{}
+	for _, seat := range sub.SharingSeats {
+		if seat.MemberName == "" || seat.BillingMonths < 1 || !isValidDateOnly(seat.ExpiresAt) || daysBetweenDateOnly(localDate, seat.ExpiresAt) != reminderDays {
+			continue
+		}
+		priceUnits, err := moneyUnits(seat.MonthlyPrice)
+		if err != nil || seat.Currency == "" || priceUnits > maxMoneyUnits/int64(seat.BillingMonths) {
+			continue
+		}
+		amount := moneyUnitsToString(priceUnits * int64(seat.BillingMonths))
+		items = append(items, newCostSharingNotificationContentItem(sub, seat.MemberName, amount, seat.Currency, seat.ExpiresAt, reminderDays, reminderDays))
 	}
 	return items
 }

@@ -11,6 +11,7 @@ export const SHARING_PAYMENT_STATUSES = ["pending", "paid"] as const;
 export const sharingSubscriptionSummarySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  platformName: z.string().min(1),
   logo: z.string().nullable(),
 }).strict();
 
@@ -30,6 +31,7 @@ export const sharingAccountSchema = z.object({
   capacity: z.number().int().min(1).max(100),
   occupiedSeats: z.number().int().nonnegative(),
   monthlyRevenue: moneyStringSchema,
+  monthlyRevenueByCurrency: z.record(z.string().regex(/^[A-Z]{3}$/), moneyStringSchema),
   outstandingAmount: moneyStringSchema,
   monthlyProfit: z.number().finite(),
   status: z.enum(SHARING_ACCOUNT_STATUSES),

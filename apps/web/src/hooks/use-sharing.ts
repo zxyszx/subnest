@@ -1,4 +1,4 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sharingService } from "@/services/sharing-service";
 import type { SharingAccountCreate, SharingAccountUpdate, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
 
@@ -34,6 +34,16 @@ export function useSharingAccountDetail(id: string | null) {
     queryFn: ({ signal }) => sharingService.detail(id ?? "", signal),
     enabled: Boolean(id),
     staleTime: 15_000,
+  });
+}
+
+export function useSharingAccountDetails(ids: readonly string[]) {
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: sharingQueryKeys.detail(id),
+      queryFn: ({ signal }: { signal: AbortSignal }) => sharingService.detail(id, signal),
+      staleTime: 15_000,
+    })),
   });
 }
 

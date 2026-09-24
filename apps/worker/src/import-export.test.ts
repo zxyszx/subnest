@@ -10,6 +10,7 @@ import {
   IMPORT_PREVIEW_SUBSCRIPTION_LIMIT,
 } from "@renewlet/shared/schemas/import-export";
 import { createDefaultAppSettings } from "@renewlet/shared/settings-defaults";
+import { SUBSCRIPTION_COLUMN_NAMES } from "./db";
 
 const authUser = {
   id: "usr_import",
@@ -91,6 +92,14 @@ function insertedSubscriptionRow(statements: Array<{ sql: string; values: unknow
   const row = rows[index];
   if (!row) throw new Error(`Missing bulk subscription row ${index}`);
   return row;
+}
+
+function insertedSubscriptionValue(
+  statements: Array<{ sql: string; values: unknown[] }>,
+  column: (typeof SUBSCRIPTION_COLUMN_NAMES)[number],
+  index = 0,
+): unknown {
+  return insertedSubscriptionRow(statements, index)[SUBSCRIPTION_COLUMN_NAMES.indexOf(column)];
 }
 
 function requestFor(path: string, body: unknown): Request {
@@ -254,10 +263,9 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    const row = insertedSubscriptionRow(statements);
-    expect(row[16]).toBeNull();
-    expect(row[17]).toBe("2026-06-21");
-    expect(row[19]).toBe(0);
+    expect(insertedSubscriptionValue(statements, "start_date")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "next_billing_date")).toBe("2026-06-21");
+    expect(insertedSubscriptionValue(statements, "auto_calculate_next_billing_date")).toBe(0);
   });
 
   it("normalizes one-time imports before binding D1 statements", async () => {
@@ -273,14 +281,13 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    const row = insertedSubscriptionRow(statements);
-    expect(row[6]).toBe("one-time");
-    expect(row[7]).toBeNull();
-    expect(row[8]).toBeNull();
-    expect(row[9]).toBeNull();
-    expect(row[10]).toBeNull();
-    expect(row[18]).toBe(0);
-    expect(row[19]).toBe(0);
+    expect(insertedSubscriptionValue(statements, "billing_cycle")).toBe("one-time");
+    expect(insertedSubscriptionValue(statements, "custom_days")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "custom_cycle_unit")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "one_time_term_count")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "one_time_term_unit")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "auto_renew")).toBe(0);
+    expect(insertedSubscriptionValue(statements, "auto_calculate_next_billing_date")).toBe(0);
   });
 
   it("restores historical exchange rate snapshots only from Renewlet ZIP payloads", async () => {
@@ -324,14 +331,13 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    const row = insertedSubscriptionRow(statements);
-    expect(row[6]).toBe("one-time");
-    expect(row[7]).toBeNull();
-    expect(row[8]).toBeNull();
-    expect(row[9]).toBe(6);
-    expect(row[10]).toBe("month");
-    expect(row[18]).toBe(0);
-    expect(row[19]).toBe(0);
+    expect(insertedSubscriptionValue(statements, "billing_cycle")).toBe("one-time");
+    expect(insertedSubscriptionValue(statements, "custom_days")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "custom_cycle_unit")).toBeNull();
+    expect(insertedSubscriptionValue(statements, "one_time_term_count")).toBe(6);
+    expect(insertedSubscriptionValue(statements, "one_time_term_unit")).toBe("month");
+    expect(insertedSubscriptionValue(statements, "auto_renew")).toBe(0);
+    expect(insertedSubscriptionValue(statements, "auto_calculate_next_billing_date")).toBe(0);
   });
 
   it("preserves disabled reminder days before binding D1 statements", async () => {
@@ -344,7 +350,7 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    expect(insertedSubscriptionRow(statements)[24]).toBe(-2);
+    expect(insertedSubscriptionValue(statements, "reminder_days")).toBe(-2);
   });
 
   it("preserves cost sharing before binding D1 statements", async () => {
@@ -364,12 +370,11 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    const row = insertedSubscriptionRow(statements);
     const insert = statements.find((statement) => statement.sql.includes("INSERT INTO subscriptions"));
     expect(insert?.sql).toContain("cost_sharing_json");
-    expect(JSON.parse(row[28] as string)).toEqual(costSharing);
-    expect(row[29]).toBe(1);
-    expect(row[30] as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(JSON.parse(insertedSubscriptionValue(statements, "cost_sharing_json") as string)).toEqual(costSharing);
+    expect(insertedSubscriptionValue(statements, "cost_sharing_collection_reminder_enabled")).toBe(1);
+    expect(insertedSubscriptionValue(statements, "cost_sharing_next_collection_reminder_date") as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("updates scheduler counts incrementally after applying subscription imports", async () => {
@@ -410,7 +415,7 @@ describe("Cloudflare import", () => {
 
     expect(response.status).toBe(200);
     expect(db.batch).toHaveBeenCalledTimes(1);
-    expect(insertedSubscriptionRow(statements)[18]).toBe(0);
+    expect(insertedSubscriptionValue(statements, "auto_renew")).toBe(0);
   });
 
   it("skips existing import keys unless replace is selected", async () => {

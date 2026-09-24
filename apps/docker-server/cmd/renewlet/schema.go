@@ -268,6 +268,8 @@ func ensureSubscriptionsCollection(app core.App, users *core.Collection) error {
 	return ensureCollectionWithSave(app, "subscriptions", func(c *core.Collection) (bool, error) {
 		ownerRules(c)
 		minZero := 0.0
+		minSharingCapacity := 1.0
+		maxSharingCapacity := 100.0
 		maxReminder := float64(maxReminderDays)
 		replaceLegacyLogoURLField := false
 		if existingLogo := c.Fields.GetByName("logo"); existingLogo != nil && existingLogo.Type() == core.FieldTypeURL {
@@ -276,6 +278,8 @@ func ensureSubscriptionsCollection(app core.App, users *core.Collection) error {
 		fields := []core.Field{
 			userRelation(users),
 			&core.TextField{Name: "name", Required: true, Max: 120},
+			&core.TextField{Name: "platformName", Max: 80},
+			&core.NumberField{Name: "accountNumber", OnlyInt: true, Min: types.Pointer(float64(0))},
 			&core.TextField{Name: "logo", Max: maxLogoReferenceLength},
 			subscriptionPriceTextField(),
 			&core.TextField{Name: "currency", Required: true, Max: 8, Pattern: `^[A-Z]{3}$`},
@@ -289,6 +293,7 @@ func ensureSubscriptionsCollection(app core.App, users *core.Collection) error {
 			&core.BoolField{Name: "pinned"},
 			&core.BoolField{Name: "publicHidden"},
 			&core.TextField{Name: "paymentMethod", Max: 80},
+			&core.TextField{Name: "cardLast4", Max: 32},
 			&core.TextField{Name: "startDate", Max: 10, Pattern: `^$|^\d{4}-\d{2}-\d{2}$`},
 			&core.TextField{Name: "nextBillingDate", Required: true, Max: 10, Pattern: `^\d{4}-\d{2}-\d{2}$`},
 			&core.BoolField{Name: "autoRenew"},
@@ -298,6 +303,12 @@ func ensureSubscriptionsCollection(app core.App, users *core.Collection) error {
 			&core.TextField{Name: "notes", Max: 5000},
 			&core.JSONField{Name: "tags", MaxSize: maxSubscriptionTagsFieldSize},
 			&core.JSONField{Name: "costSharing", MaxSize: 65536},
+			&core.BoolField{Name: "familySharingEnabled"},
+			&core.TextField{Name: "sharingLoginAccount", Max: 320},
+			&core.TextField{Name: "sharingEncryptedCredentials", Max: sharingCredentialMaxLength},
+			&core.TextField{Name: "sharingPasswordMask", Max: 1024},
+			&core.URLField{Name: "sharingVerificationLink"},
+			&core.NumberField{Name: "sharingCapacity", OnlyInt: true, Min: &minSharingCapacity, Max: &maxSharingCapacity},
 			// 内部镜像字段只为通知候选索引存在；公共契约仍读取 costSharing JSON。
 			&core.BoolField{Name: "costSharingCollectionReminderEnabled"},
 			&core.TextField{Name: "costSharingNextCollectionReminderDate", Max: 10, Pattern: `^$|^\d{4}-\d{2}-\d{2}$`},
@@ -333,6 +344,7 @@ func ensureSubscriptionsCollection(app core.App, users *core.Collection) error {
 		c.AddIndex("idx_subscriptions_user_billing_cycle_order", false, "user, billingCycle, created, id", "")
 		c.AddIndex("idx_subscriptions_user_currency_order", false, "user, currency, created, id", "")
 		c.AddIndex("idx_subscriptions_user_payment_method_order", false, "user, paymentMethod, created, id", "")
+		c.AddIndex("idx_subscriptions_user_platform_order", false, "user, platformName, accountNumber, created, id", "")
 		c.AddIndex("idx_subscriptions_user_pinned_order", false, "user, pinned, created, id", "")
 		c.AddIndex("idx_subscriptions_user_public_hidden_order", false, "user, publicHidden, created, id", "")
 		c.AddIndex("idx_subscriptions_user_reminder_mode_order", false, "user, reminderDays, created, id", "")

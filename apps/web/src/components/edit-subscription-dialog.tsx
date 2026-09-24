@@ -11,6 +11,7 @@ import type {
   SubscriptionCollectionItem,
   SubscriptionFormSubmission,
 } from "@/types/subscription";
+import type { SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
 
 interface EditSubscriptionDialogProps {
   /** 当前正在编辑的订阅（null 表示未选中）。 */
@@ -23,6 +24,7 @@ interface EditSubscriptionDialogProps {
   onSave: (submission: SubscriptionFormSubmission) => void;
   /** 当前用户已有标签建议。 */
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   loading?: boolean | undefined;
 }
 
@@ -34,6 +36,7 @@ export function EditSubscriptionDialog({
   onOpenChange,
   onSave,
   availableTags,
+  platformSuggestions,
   loading,
 }: EditSubscriptionDialogProps) {
   return (
@@ -45,7 +48,10 @@ export function EditSubscriptionDialog({
       loadingPreview={loadingPreview}
       onSubmit={onSave}
       availableTags={availableTags}
+      platformSuggestions={platformSuggestions}
       loading={loading}
     />
   );
 }
+
+export default EditSubscriptionDialog;

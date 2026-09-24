@@ -86,3 +86,22 @@ func TestSubscriptionsProductAPIDoesNotRebuildStaleListProjectionOnRead(t *testi
 		t.Fatalf("expected rebuilt projection to read fresh subscription, got %#v", body.Subscriptions[0])
 	}
 }
+
+func TestSubscriptionCollectionAPIDefaultsLegacyPlatformFields(t *testing.T) {
+	app := newSchemaTestApp(t)
+	if err := ensureSchema(app); err != nil {
+		t.Fatal(err)
+	}
+	registerRecordHooks(app)
+	user, _ := createRouteTestUser(t, app, "subscriptions-legacy-platform")
+	record := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
+		"name": "Legacy Netflix",
+	})
+	record.Set("platformName", "")
+	record.Set("accountNumber", 0)
+
+	got := subscriptionCollectionAPIFromRecord(record)
+	if got.PlatformName != "Legacy Netflix" || got.AccountNumber != 1 {
+		t.Fatalf("unexpected legacy platform defaults: %#v", got)
+	}
+}

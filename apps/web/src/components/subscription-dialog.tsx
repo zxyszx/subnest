@@ -98,4 +98,6 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
   );
 }
 
+export default SubscriptionDialog;
+
 export type { SubscriptionDialogContentProps, SubscriptionDialogProps };

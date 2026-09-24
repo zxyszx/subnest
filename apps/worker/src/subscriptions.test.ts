@@ -397,7 +397,7 @@ describe("Cloudflare subscription mapper", () => {
     expect(body.subscription.pinned).toBe(true);
     expect(body.subscription.trialEndDate).toBe("2026-06-20");
     expect(body.subscription.extra).toEqual({ import: { source: "wallos", sourceId: "wallos-1" } });
-    expect(updateValues?.[21]).toBe("[]");
+    expect(updateValues).toContain("[]");
     expect(schedulerMutationValues.slice(0, 5)).toEqual([0, 0, 0, 0, 0]);
     expect(schedulerMutationValues.at(-1)).toBe(USER_ID);
   });

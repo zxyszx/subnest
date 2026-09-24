@@ -372,6 +372,7 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	auth.GET("/subscriptions/{id}", func(e *core.RequestEvent) error { return handleSubscriptionRead(app, e) })
 	auth.PATCH("/subscriptions/{id}", func(e *core.RequestEvent) error { return handleSubscriptionUpdate(app, e) })
 	auth.DELETE("/subscriptions/{id}", func(e *core.RequestEvent) error { return handleSubscriptionDelete(app, e) })
+	auth.GET("/subscriptions/{id}/family-credentials", func(e *core.RequestEvent) error { return handleSubscriptionFamilyCredentials(app, e) })
 	auth.GET("/assets", func(e *core.RequestEvent) error { return handleAssetsList(app, e) })
 	auth.POST("/assets", func(e *core.RequestEvent) error { return handleAssetUpload(app, e) })
 	// 私有资产读取必须经过 handler 的 record.user 校验，不能直接暴露 PocketBase protected file URL。

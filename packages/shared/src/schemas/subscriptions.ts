@@ -68,6 +68,24 @@ const optionalUrlSchema = z
   .optional()
   .refine((value) => !value || isHttpUrl(value), "Invalid URL");
 
+export const subscriptionFamilySharingWriteSchema = z.object({
+  enabled: z.boolean(),
+  loginAccount: z.string().trim().max(320),
+  // 空密码在更新时表示保留已有密钥；创建时的必填约束由写入事务根据 enabled/已有状态判断。
+  password: z.string().max(1024),
+  verificationLink: z.string().trim().max(2048).refine((value) => !value || isHttpUrl(value), "Invalid URL"),
+  capacity: z.number().int().min(1).max(100),
+}).strict();
+
+export const subscriptionFamilySharingSchema = z.object({
+  enabled: z.boolean(),
+  loginAccount: z.string().max(320),
+  hasPassword: z.boolean(),
+  passwordMask: z.string(),
+  verificationLink: z.string().nullable(),
+  capacity: z.number().int().min(1).max(100),
+}).strict();
+
 export const logoReferenceSchema = z
   .string()
   .trim()
@@ -216,6 +234,8 @@ export function costSharingMemberJoinedDateRangeIsValid(value: {
  */
 const subscriptionWriteFieldShape = {
   name: z.string().trim().min(1).max(120),
+  platformName: z.string().trim().min(1).max(80).optional(),
+  accountNumber: z.number().int().positive().max(100000).optional(),
   logo: optionalLogoReferenceSchema,
   price: moneyStringSchema,
   currency: z.string().trim().regex(/^[A-Z]{3}$/),
@@ -229,6 +249,7 @@ const subscriptionWriteFieldShape = {
   pinned: z.boolean(),
   publicHidden: z.boolean(),
   paymentMethod: z.string().trim().min(1).max(80).nullable().optional(),
+  cardLast4: z.string().trim().max(32).nullable().optional(),
   startDate: nullableDateInputSchema,
   nextBillingDate: dateInputSchema,
   autoRenew: z.boolean(),
@@ -242,6 +263,7 @@ const subscriptionWriteFieldShape = {
   repeatReminderInterval: z.enum(REPEAT_REMINDER_INTERVALS),
   repeatReminderWindow: z.enum(REPEAT_REMINDER_WINDOWS),
   costSharing: costSharingSchema.nullable().optional(),
+  familySharing: subscriptionFamilySharingWriteSchema.nullable().optional(),
   // extra 是跨运行面的非展示元数据通道；seed/import 依赖它做幂等，不参与订阅 UI。
   extra: extraSchema,
 } satisfies z.ZodRawShape;
@@ -326,6 +348,8 @@ export const subscriptionRenewBodySchema = z.object({
 const apiSubscriptionCollectionItemShape = {
   id: z.string(),
   name: z.string(),
+  platformName: z.string().min(1).optional(),
+  accountNumber: z.number().int().positive().optional(),
   price: moneyStringSchema,
   currency: z.string(),
   category: z.string().min(1),
@@ -333,6 +357,7 @@ const apiSubscriptionCollectionItemShape = {
   pinned: z.boolean(),
   publicHidden: z.boolean(),
   paymentMethod: z.string().min(1).optional(),
+  cardLast4: z.string().min(1).optional(),
   startDate: nullableDateInputSchema,
   // 订阅响应的 date-only 字段由 shared 统一守门；Go、Worker 和前端都不能在本地补解析 ISO datetime。
   nextBillingDate: dateInputSchema,
@@ -382,6 +407,8 @@ const apiSubscriptionDetailShape = {
   repeatReminderInterval: z.enum(REPEAT_REMINDER_INTERVALS),
   repeatReminderWindow: z.enum(REPEAT_REMINDER_WINDOWS),
   extra: z.record(z.string(), z.unknown()),
+  // Optional during rolling upgrades so clients can still open data from an older backend.
+  familySharing: subscriptionFamilySharingSchema.nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 } satisfies z.ZodRawShape;
@@ -581,6 +608,8 @@ export type SubscriptionFacetsResponse = z.infer<typeof subscriptionFacetsPayloa
 export type SubscriptionsExportResponse = z.infer<typeof subscriptionsExportPayloadSchema>;
 export type SubscriptionResponse = z.infer<typeof subscriptionPayloadSchema>;
 export type SubscriptionRenewBody = z.infer<typeof subscriptionRenewBodySchema>;
+export type SubscriptionFamilySharing = z.infer<typeof subscriptionFamilySharingSchema>;
+export type SubscriptionFamilySharingWrite = z.infer<typeof subscriptionFamilySharingWriteSchema>;
 
 export type ApiSubscriptionCollectionItem = z.infer<typeof apiSubscriptionCollectionItemSchema>;
 export type ApiSubscription = z.infer<typeof apiSubscriptionSchema>;

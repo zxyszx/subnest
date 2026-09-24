@@ -64,6 +64,7 @@ import {
 } from '@/modules/subscriptions/domain/subscription-price-reference';
 import { isManualRenewEligible } from '@renewlet/shared/subscription-renewal';
 import { calculateCostSharingSummary } from '@renewlet/shared/cost-sharing';
+import { subscriptionPlatformName } from '@/lib/subscription-platform';
 
 export type SubscriptionCardLookup = ReadonlyMap<string, ConfigItem>;
 
@@ -187,6 +188,8 @@ function SubscriptionCardComponent({
   const categoryConfig = categoryByValue.get(subscription.category);
   const categoryLabel = categoryConfig ? label(categoryConfig.labels) : subscription.category;
   const categoryColor = categoryConfig?.color ?? DEFAULT_BADGE_COLOR;
+  const displayName = subscriptionPlatformName(subscription);
+  const accountNumber = subscription.accountNumber ?? 1;
   const categoryBadgeStyle = {
     backgroundColor: colorWithAlpha(categoryColor, 0.1) ?? undefined,
     borderColor: colorWithAlpha(categoryColor, 0.2) ?? undefined,
@@ -298,7 +301,7 @@ function SubscriptionCardComponent({
           tabular: true,
         }]
       : []),
-    ...(paymentMethodLabel
+    ...(paymentMethodLabel || subscription.cardLast4
       ? [{
           key: "payment-method",
           icon: paymentConfig?.icon ? (
@@ -306,7 +309,7 @@ function SubscriptionCardComponent({
           ) : (
             <CreditCard className="h-3.5 w-3.5 shrink-0" />
           ),
-          text: paymentMethodLabel,
+          text: [paymentMethodLabel, subscription.cardLast4 ? `•••• ${subscription.cardLast4}` : null].filter(Boolean).join(" · "),
           tone: "muted" as const,
           truncate: true,
         }]
@@ -355,14 +358,22 @@ function SubscriptionCardComponent({
       {onViewDetails ? (
         <button
           type="button"
-          aria-label={t("subscription.viewDetailsLabel", { name: subscription.name })}
+          aria-label={t("subscription.viewDetailsLabel", { name: displayName })}
           className="absolute inset-0 z-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           onClick={handleViewDetails}
           data-testid="subscription-card-primary-action"
         />
       ) : null}
       <div className={cn("relative z-10 flex items-start gap-4", onViewDetails && "pointer-events-none")}>
-        <SubscriptionLogo name={subscription.name} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
+        <div className="relative shrink-0">
+          <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
+          <span
+            aria-label={t("subscription.accountNumberBadge", { number: accountNumber })}
+            className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums"
+          >
+            {accountNumber}
+          </span>
+        </div>
 
         <div className="min-w-0 flex-1 grid gap-3">
           <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-x-3 gap-y-2">
@@ -375,7 +386,7 @@ function SubscriptionCardComponent({
               ) : null}
               <TruncatedTooltipText
                 as="h3"
-                text={subscription.name}
+                text={displayName}
                 className="min-w-0 font-semibold text-foreground"
               />
             </div>

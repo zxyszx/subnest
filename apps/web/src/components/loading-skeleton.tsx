@@ -48,7 +48,7 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
       </div>
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav-skeleton">
         {range(6).map((index) => (
-          <div key={index} className="flex flex-1 flex-col items-center gap-1 py-3">
+          <div key={index} className="flex min-w-20 flex-none flex-col items-center gap-1 py-3">
             <SkeletonBox className="h-5 w-5 rounded" />
             <SkeletonBox className="h-3 w-10" />
           </div>
@@ -100,25 +100,27 @@ function PageTitleSkeleton({ withActions = false, subtitleWidth = "w-48" }: { wi
 
 function StatCardSkeleton({
   compact = false,
+  dashboard = false,
   className,
   testId,
 }: {
   compact?: boolean;
+  dashboard?: boolean;
   className?: string;
   testId?: string;
 }) {
   return (
     <div
       data-testid={testId}
-      className={cn("rounded-xl border border-border bg-card", compact ? "p-4 lg:p-6" : "p-6", className)}
+      className={cn("rounded-xl border border-border bg-card", dashboard ? "p-4" : compact ? "p-4 lg:p-6" : "p-6", className)}
     >
-      <div className={cn("flex items-start justify-between", compact && "gap-3 lg:gap-4")}>
-        <div className={cn("grid min-w-0", compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
-          <SkeletonBox className={cn("w-20", compact ? "h-3.5 lg:h-4" : "h-4")} />
-          <SkeletonBox className={cn("w-24", compact ? "h-7 lg:h-8" : "h-8")} />
-          <SkeletonBox className={cn("h-3", compact ? "w-24 lg:w-28" : "w-28")} />
+      <div className={cn("flex items-start justify-between", (compact || dashboard) && "gap-3")}>
+        <div className={cn("grid min-w-0", dashboard ? "gap-1.5" : compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
+          <SkeletonBox className={cn("w-20", dashboard ? "h-3.5" : compact ? "h-3.5 lg:h-4" : "h-4")} />
+          <SkeletonBox className={cn("w-24", dashboard ? "h-6" : compact ? "h-7 lg:h-8" : "h-8")} />
+          <SkeletonBox className={cn("h-3", dashboard ? "w-24" : compact ? "w-24 lg:w-28" : "w-28")} />
         </div>
-        <SkeletonBox className={cn("shrink-0 rounded-lg", compact ? "h-10 w-10 lg:h-12 lg:w-12" : "h-12 w-12")} />
+        <SkeletonBox className={cn("shrink-0 rounded-lg", dashboard ? "h-9 w-9" : compact ? "h-10 w-10 lg:h-12 lg:w-12" : "h-12 w-12")} />
       </div>
     </div>
   );
@@ -145,17 +147,19 @@ function DashboardContentSkeleton() {
     <div className="grid gap-8">
       <div className={dashboardStatLayout.grid} data-testid="dashboard-skeleton-stat-grid">
         <StatCardSkeleton
-          compact
+          dashboard
           className={dashboardStatLayout.primaryCard}
           testId="dashboard-skeleton-stat-monthly-spend"
         />
-        <StatCardSkeleton compact testId="dashboard-skeleton-stat-active-subscriptions" />
-        <StatCardSkeleton compact testId="dashboard-skeleton-stat-upcoming-renewals" />
+        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-active-subscriptions" />
+        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-upcoming-renewals" />
         <StatCardSkeleton
-          compact
+          dashboard
           className={dashboardStatLayout.trialCard}
           testId="dashboard-skeleton-stat-trials"
         />
+        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-sharing-accounts" />
+        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-sharing-income" />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -165,7 +169,7 @@ function DashboardContentSkeleton() {
             <SkeletonBox className="h-9 w-20 rounded-md" />
           </div>
           <div className="grid items-stretch gap-4 sm:grid-cols-2">
-            {range(6).map((index) => <SubscriptionCardSkeleton key={index} />)}
+            {range(8).map((index) => <SubscriptionCardSkeleton key={index} />)}
           </div>
         </div>
 

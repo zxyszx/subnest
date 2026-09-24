@@ -5,6 +5,15 @@ import type {
   SubscriptionFormSubmission,
 } from "@/types/subscription";
 
+export type SubscriptionPlatformSuggestion = {
+  name: string;
+  logo?: string | null | undefined;
+  accounts?: readonly {
+    id: string;
+    accountNumber: number;
+  }[] | undefined;
+};
+
 type CreateSubscriptionDialogProps = {
   mode: "create";
   open: boolean;
@@ -12,6 +21,7 @@ type CreateSubscriptionDialogProps = {
   onSubmit: (submission: SubscriptionFormSubmission) => void;
   initialSubscription?: Subscription | null | undefined;
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   trigger?: ReactNode;
   loading?: boolean | undefined;
   loadingPreview: SubscriptionCollectionItem | null;
@@ -24,6 +34,7 @@ type EditSubscriptionDialogProps = {
   subscription: Subscription | null;
   onSubmit: (submission: SubscriptionFormSubmission) => void;
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   loading?: boolean | undefined;
   loadingPreview: SubscriptionCollectionItem | null;
 };

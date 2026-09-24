@@ -12,18 +12,14 @@
  * - 页面保留视图模式和布局，不承载业务规则。
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/header';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionGrid } from '@/components/subscription-grid';
-import { SubscriptionDetailDialog } from '@/components/subscription-detail-dialog';
 import { AddToCalendarDialog } from '@/components/add-to-calendar-dialog';
 import { subscriptionFilterLayout } from '@/components/subscription-filter-layout';
-import { AddSubscriptionDialog } from '@/components/add-subscription-dialog';
-import { EditSubscriptionDialog } from '@/components/edit-subscription-dialog';
 import { DeferredRenewSubscriptionDialog } from '@/components/renew-subscription-dialog-loader';
-import { SubscriptionDialog } from '@/components/subscription-dialog';
 import {
   DeferredImportDataDialog,
   preloadImportDataDialog,
@@ -65,6 +61,7 @@ import { SUBSCRIPTION_PAYMENT_METHOD_NONE_VALUE, type SubscriptionPaymentTypeFil
 import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptions/domain/subscription-price-reference';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useI18n } from '@/i18n/I18nProvider';
+import { subscriptionPlatformName } from '@/lib/subscription-platform';
 import type { MessageKey } from '@/i18n/messages';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSubscriptionDetailDialog } from '@/hooks/use-subscription-detail-dialog';
@@ -79,6 +76,24 @@ import {
 import {
   SubscriptionAdvancedFilter,
 } from '@/components/subscription-advanced-filter';
+
+const PlatformFilterBar = lazy(() => import('@/components/platform-filter-bar'));
+const AddSubscriptionDialog = lazy(async () => {
+  const module = await import('@/components/add-subscription-dialog');
+  return { default: module.AddSubscriptionDialog };
+});
+const EditSubscriptionDialog = lazy(async () => {
+  const module = await import('@/components/edit-subscription-dialog');
+  return { default: module.EditSubscriptionDialog };
+});
+const SubscriptionDialog = lazy(async () => {
+  const module = await import('@/components/subscription-dialog');
+  return { default: module.SubscriptionDialog };
+});
+const SubscriptionDetailDialog = lazy(async () => {
+  const module = await import('@/components/subscription-detail-dialog');
+  return { default: module.SubscriptionDetailDialog };
+});
 
 /** 空订阅数组：用于在数据未加载完成时提供稳定引用，避免 useMemo 依赖抖动。 */
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
@@ -142,6 +157,7 @@ const Subscriptions = () => {
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
   const isMobileTagFilter = useMediaQuery("(max-width: 767px)");
@@ -177,20 +193,57 @@ const Subscriptions = () => {
     today,
     availableTags: facetsQuery.data?.tags ?? [],
   });
-  const indexQuery = useSubscriptionIndex(subscriptionListFilters, needsCollectionIndex);
+  const useFilteredIndex = needsCollectionIndex || selectedPlatform !== null;
+  const indexQuery = useSubscriptionIndex(subscriptionListFilters, useFilteredIndex);
+  const platformIndexQuery = useSubscriptionIndex(undefined, true);
+  const platformOptions = useMemo(() => {
+    type PlatformOption = {
+      name: string;
+      logo: string | null | undefined;
+      accounts: { id: string; accountNumber: number }[];
+    };
+    const platforms = new Map<string, PlatformOption>();
+    for (const subscription of platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS) {
+      const platformName = subscriptionPlatformName(subscription);
+      const platform: PlatformOption = platforms.get(platformName) ?? {
+        name: platformName,
+        logo: subscription.logo,
+        accounts: [],
+      };
+      platform.accounts.push({ id: subscription.id, accountNumber: subscription.accountNumber ?? 1 });
+      if (!platform.logo && subscription.logo) platform.logo = subscription.logo;
+      platforms.set(platformName, platform);
+    }
+    return Array.from(platforms.values());
+  }, [platformIndexQuery.data?.subscriptions]);
   const indexedSubscriptions = indexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS;
-  const displaySourceSubscriptions = needsCollectionIndex ? indexedSubscriptions : subscriptions;
+  const displaySourceSubscriptions = useFilteredIndex ? indexedSubscriptions : subscriptions;
   // 先选择分页或全库索引，再只排序实际展示的数据；索引模式不能附带重排未展示的分页列表。
-  const filteredSubscriptions = useMemo(
-    () => sortSubscriptionsForDisplay(displaySourceSubscriptions),
-    [displaySourceSubscriptions, sortSubscriptionsForDisplay],
-  );
-  const isDisplayPending = needsCollectionIndex && indexQuery.isPending;
+  const filteredSubscriptions = useMemo(() => {
+    const platformSubscriptions = selectedPlatform
+      ? displaySourceSubscriptions.filter(
+          (subscription) => subscriptionPlatformName(subscription) === selectedPlatform,
+        )
+      : displaySourceSubscriptions;
+    if (selectedPlatform && sortOption === "default") {
+      return [...platformSubscriptions].sort((left, right) => (
+        (left.accountNumber ?? Number.MAX_SAFE_INTEGER) - (right.accountNumber ?? Number.MAX_SAFE_INTEGER)
+        || left.name.localeCompare(right.name, locale)
+      ));
+    }
+    return sortSubscriptionsForDisplay(platformSubscriptions);
+  }, [displaySourceSubscriptions, locale, selectedPlatform, sortOption, sortSubscriptionsForDisplay]);
+  const isDisplayPending = useFilteredIndex && indexQuery.isPending;
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
-  const displayError = needsCollectionIndex ? indexQuery.error : subscriptionsQuery.error;
-  const retryDisplayQuery = needsCollectionIndex ? indexQuery.refetch : subscriptionsQuery.refetch;
-  const displayedTotal = needsCollectionIndex ? (indexQuery.data?.total ?? 0) : subscriptionsQuery.total;
-  const unfilteredTotal = hasActiveFilters ? facetsQuery.data?.total : undefined;
+  const displayError = useFilteredIndex ? indexQuery.error : subscriptionsQuery.error;
+  const retryDisplayQuery = useFilteredIndex ? indexQuery.refetch : subscriptionsQuery.refetch;
+  const displayedTotal = selectedPlatform
+    ? filteredSubscriptions.length
+    : useFilteredIndex
+      ? (indexQuery.data?.total ?? 0)
+      : subscriptionsQuery.total;
+  const hasDisplayFilters = hasActiveFilters || selectedPlatform !== null;
+  const unfilteredTotal = hasDisplayFilters ? facetsQuery.data?.total : undefined;
   const {
     editingSubscription,
     editingCollectionItem,
@@ -282,7 +335,7 @@ const Subscriptions = () => {
   if (subscriptionsQuery.isPending) {
     return (
       <div className="app-page bg-background">
-        <Header onAddSubscription={handleAddSubscription} availableTags={allTags} subscriptionActions={aiRecognitionAction} />
+        <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
         <main className="app-main mx-auto max-w-7xl">
           <SubscriptionsPageSkeleton withPageShell={false} />
         </main>
@@ -292,7 +345,7 @@ const Subscriptions = () => {
 
   return (
     <div className="app-page bg-background">
-      <Header onAddSubscription={handleAddSubscription} availableTags={allTags} subscriptionActions={aiRecognitionAction} />
+      <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
@@ -351,7 +404,25 @@ const Subscriptions = () => {
           </div>
         </div>
 
-        <div className={cn("mb-6 rounded-xl border border-border bg-card p-5", isMobileTagFilter ? "grid gap-3" : "grid gap-4")}>
+        {platformOptions.length > 0 ? (
+          <Suspense fallback={<div className="h-12 rounded-t-lg border border-b-0 bg-card" />}>
+            <PlatformFilterBar
+              platforms={platformOptions}
+              value={selectedPlatform}
+              onValueChange={setSelectedPlatform}
+              allLabel={t("subscriptions.allPlatforms")}
+              moreLabel={t("subscriptions.morePlatforms")}
+              ariaLabel={t("subscriptions.platformFilter")}
+              className="rounded-t-lg border border-b-0 bg-card px-2"
+            />
+          </Suspense>
+        ) : null}
+
+        <div className={cn(
+          "mb-6 border border-border bg-card p-5",
+          platformOptions.length > 0 ? "rounded-b-xl rounded-t-none border-t-0" : "rounded-xl",
+          isMobileTagFilter ? "grid gap-3" : "grid gap-4",
+        )}>
           {isMobileTagFilter ? (
             <>
               <div className="relative w-full">
@@ -585,26 +656,42 @@ const Subscriptions = () => {
               <Search className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="mb-2 text-lg font-medium text-foreground">
-              {hasActiveFilters ? t("subscriptions.emptyFilteredTitle") : t("subscriptions.emptyNoDataTitle")}
+              {hasDisplayFilters ? t("subscriptions.emptyFilteredTitle") : t("subscriptions.emptyNoDataTitle")}
             </h3>
             <p className="mb-6 text-sm text-muted-foreground">
-              {hasActiveFilters ? t("subscriptions.emptyFiltered") : t("subscriptions.emptyNoData")}
+              {hasDisplayFilters ? t("subscriptions.emptyFiltered") : t("subscriptions.emptyNoData")}
             </p>
-            {hasActiveFilters ? (
-              <Button type="button" variant="outline" className="gap-2 border-border" onClick={clearFilters}>
+            {hasDisplayFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 border-border"
+                onClick={() => {
+                  clearFilters();
+                  setSelectedPlatform(null);
+                }}
+              >
                 {t("subscriptions.clearFilters")}
               </Button>
             ) : (
-              <AddSubscriptionDialog 
-                onAdd={handleAddSubscription}
-                availableTags={allTags}
-                trigger={
+              <Suspense fallback={
+                <Button disabled className="gap-2 bg-primary text-primary-foreground">
+                  <Plus className="h-4 w-4" />
+                  {t("subscriptions.addFirst")}
+                </Button>
+              }>
+                <AddSubscriptionDialog
+                  onAdd={handleAddSubscription}
+                  availableTags={allTags}
+                  platformSuggestions={platformOptions}
+                  trigger={
                   <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-glow">
                     <Plus className="h-4 w-4" />
                     {t("subscriptions.addFirst")}
                   </Button>
-                }
-              />
+                  }
+                />
+              </Suspense>
             )}
           </div>
         ) : (
@@ -629,7 +716,7 @@ const Subscriptions = () => {
               onAddToCalendar={calendarDialog.show}
               onPrefetchDetails={handlePrefetchSubscription}
             />
-            {!needsCollectionIndex && subscriptionsQuery.hasNextPage && (
+            {!useFilteredIndex && subscriptionsQuery.hasNextPage && (
               <div className="mt-6 flex justify-center [overflow-anchor:none]" data-testid="subscriptions-load-more-row">
                 <Button
                   type="button"
@@ -648,25 +735,29 @@ const Subscriptions = () => {
 
       <BackToTopFloatButton />
 
-      <EditSubscriptionDialog
-        subscription={editingSubscription}
-        loadingPreview={editingCollectionItem}
-        open={editDialogOpen}
-        onOpenChange={handleEditDialogOpenChange}
-        onSave={handleSaveSubscription}
-        availableTags={allTags}
-        loading={editDetailPending}
-      />
-      <SubscriptionDialog
-        mode="create"
-        open={cloneDialogOpen}
-        onOpenChange={handleCloneDialogOpenChange}
-        onSubmit={handleSaveClonedSubscription}
-        initialSubscription={cloningSubscription}
-        loadingPreview={cloningCollectionItem}
-        availableTags={allTags}
-        loading={cloneDetailPending}
-      />
+      <Suspense fallback={null}>
+        <EditSubscriptionDialog
+          subscription={editingSubscription}
+          loadingPreview={editingCollectionItem}
+          open={editDialogOpen}
+          onOpenChange={handleEditDialogOpenChange}
+          onSave={handleSaveSubscription}
+          availableTags={allTags}
+          platformSuggestions={platformOptions}
+          loading={editDetailPending}
+        />
+        <SubscriptionDialog
+          mode="create"
+          open={cloneDialogOpen}
+          onOpenChange={handleCloneDialogOpenChange}
+          onSubmit={handleSaveClonedSubscription}
+          initialSubscription={cloningSubscription}
+          loadingPreview={cloningCollectionItem}
+          availableTags={allTags}
+          platformSuggestions={platformOptions}
+          loading={cloneDetailPending}
+        />
+      </Suspense>
       <DeferredRenewSubscriptionDialog
         subscription={renewingSubscription}
         loadingPreview={renewingCollectionItem}
@@ -679,19 +770,21 @@ const Subscriptions = () => {
         onSubmit={handleSubmitRenewSubscription}
         loading={renewDetailPending}
       />
-      <SubscriptionDetailDialog
-        open={detailDialogOpen}
-        onOpenChange={handleDetailDialogOpenChange}
-        subscription={selectedDetailSubscription}
-        loadingPreview={selectedDetailCollectionItem}
-        onEditSubscription={handleEditFromDetail}
-        onRenewSubscription={handleRenewSubscription}
-        today={today}
-        currencyConvert={convert}
-        currencyRatesReady={currencyRatesReady}
-        priceReferenceCurrency={priceReferenceCurrency}
-        loading={detailPending}
-      />
+      <Suspense fallback={null}>
+        <SubscriptionDetailDialog
+          open={detailDialogOpen}
+          onOpenChange={handleDetailDialogOpenChange}
+          subscription={selectedDetailSubscription}
+          loadingPreview={selectedDetailCollectionItem}
+          onEditSubscription={handleEditFromDetail}
+          onRenewSubscription={handleRenewSubscription}
+          today={today}
+          currencyConvert={convert}
+          currencyRatesReady={currencyRatesReady}
+          priceReferenceCurrency={priceReferenceCurrency}
+          loading={detailPending}
+        />
+      </Suspense>
       <AddToCalendarDialog
         open={calendarDialog.open}
         onOpenChange={calendarDialog.onOpenChange}

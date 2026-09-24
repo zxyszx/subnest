@@ -4,16 +4,19 @@ import type { SearchableSelectOption } from "@/lib/searchable-options";
 import type { CustomConfig } from "@/types/config";
 import type { SubscriptionFormState } from "@/types/subscription-form";
 import type { SubscriptionFormErrorField, SubscriptionFormErrors } from "@/lib/subscription-form";
+import type { SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
 
 export interface SubscriptionFormFieldsProps {
   /** 同一页面可能同时渲染新增/编辑弹窗，id 前缀用于保持 label 与错误提示的 a11y 关联唯一。 */
   idPrefix: string;
+  subscriptionId?: string | undefined;
   config: CustomConfig;
   formData: SubscriptionFormState;
   setFormData: Dispatch<SetStateAction<SubscriptionFormState>>;
   /** 由表单宿主统一生成，字段组件不能重建货币列表，否则会绕开设置页货币管理顺序。 */
   currencyOptions: SearchableSelectOption[];
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   showLogoField?: boolean | undefined;
   onLogoUploadStatusChange: (status: LogoUploadStatus) => void;
   onFieldChange?: <K extends keyof SubscriptionFormState>(key: K, value: SubscriptionFormState[K]) => void;
@@ -34,6 +37,8 @@ export type SubscriptionFormFieldUpdater = <K extends keyof SubscriptionFormStat
 // 输入态字段到错误区块的唯一映射；onChange 清错和 submit 校验共用它，避免某些字段改动后旧错误残留。
 export const errorFieldByFormKey: Partial<Record<keyof SubscriptionFormState, SubscriptionFormErrorField>> = {
   name: "name",
+  platformName: "platformName",
+  accountNumber: "accountNumber",
   price: "price",
   currency: "currency",
   billingCycle: "billingCycle",
@@ -47,6 +52,7 @@ export const errorFieldByFormKey: Partial<Record<keyof SubscriptionFormState, Su
   reminderDays: "reminderDays",
   customReminderDays: "reminderDays",
   costSharing: "costSharing",
+  familySharing: "familySharing",
   website: "website",
   tags: "tags",
 } satisfies Partial<Record<keyof SubscriptionFormState, SubscriptionFormErrorField>>;

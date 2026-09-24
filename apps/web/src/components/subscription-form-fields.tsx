@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { compareDateOnly } from "@/lib/time/date-only";
 import { LogoPicker } from "@/components/logo-picker";
-import { CostSharingFields } from "@/components/subscription-cost-sharing-fields";
+import { SubscriptionFamilySharingFields } from "@/components/subscription-family-sharing-fields";
 import { SubscriptionFormDateFields } from "@/components/subscription-form-date-fields";
 import { SubscriptionPaymentMethodSelect } from "@/components/subscription-payment-method-select";
 import { SubscriptionTagInput } from "@/components/subscription-tag-input";
@@ -31,6 +31,7 @@ import {
   REPEAT_REMINDER_SENTENCE_INTERVAL_LABELS,
   REPEAT_REMINDER_WINDOW_OPTIONS,
 } from "@/types/subscription";
+
 import type { SubscriptionFormReminderType, SubscriptionFormState } from "@/types/subscription-form";
 import { toReminderDays } from "@/lib/subscription-form";
 import { customCycleUnitLabelKey } from "@/lib/subscription-billing";
@@ -67,24 +68,41 @@ function disableCollectionReminder(costSharing: CostSharing | undefined): CostSh
 
 export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   idPrefix,
+  subscriptionId,
   config,
   formData,
   setFormData,
   currencyOptions,
   availableTags = [],
+  platformSuggestions = [],
   showLogoField = true,
   onLogoUploadStatusChange,
   onFieldChange,
   errors = {},
   onClearFieldError,
   notificationReminderDays,
-  costSharingCurrencyConvert,
-  onNestedDialogOpenChange,
 }: SubscriptionFormFieldsProps) {
   const { t, locale, label } = useI18n();
 
   const update = useCallback(<K extends keyof SubscriptionFormState>(key: K, value: SubscriptionFormState[K]) => {
     setFormData((prev) => {
+      if (key === "platformName") {
+        const nextPlatformName = value as string;
+        return {
+          ...prev,
+          platformName: nextPlatformName,
+          // 后端仍保留 name 契约；界面只维护一个平台名称，提交数据不会因此缺字段。
+          name: nextPlatformName,
+        };
+      }
+      if (key === "name") {
+        const nextName = value as string;
+        return {
+          ...prev,
+          name: nextName,
+          platformName: prev.platformName.trim() === "" ? nextName : prev.platformName,
+        };
+      }
       if (key === "billingCycle") {
         const nextBillingCycle = value as BillingCycle;
         const leavingImplicitBuyoutReminder =
@@ -151,6 +169,16 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
 
   const id = (name: string) => `${idPrefix}${name}`;
   const categoryId = id("category");
+  const normalizedPlatformName = formData.platformName.trim().toLocaleLowerCase();
+  const parsedAccountNumber = Number.parseInt(formData.accountNumber, 10);
+  const platformAccountAlreadyAdded = normalizedPlatformName !== "" && Number.isInteger(parsedAccountNumber)
+    ? platformSuggestions.some((platform) => (
+        platform.name.trim().toLocaleLowerCase() === normalizedPlatformName
+        && platform.accounts?.some((account) => (
+          account.accountNumber === parsedAccountNumber && account.id !== subscriptionId
+        ))
+      ))
+    : false;
 
   const statusLabel = config.statuses.find((status) => status.value === formData.status)?.labels;
   const categoryLabel = config.categories.find((category) => category.value === formData.category)?.labels;
@@ -171,27 +199,81 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
 
   return (
     <>
-      <FormField id={id("name")} label={t("subscription.field.name")} error={errors.name} errorId={id("name-error")}>
-        {(field) => (
-          <Input
-            id={field.id} name={field.id} enterKeyHint="next"
-            placeholder={t("subscription.placeholder.name")}
-            value={formData.name}
-            onChange={(e) => update("name", e.target.value)}
-            required
-            aria-invalid={field.invalid}
-            aria-describedby={field.describedBy}
-            className="border-border bg-secondary"
-          />
-        )}
-      </FormField>
+      <FormFieldRow
+        alignAt="sm"
+        rowClassName="sm:grid-cols-[minmax(0,1fr)_9rem]"
+        errors={[
+          { id: id("platformName-error"), message: errors.platformName },
+          { id: id("accountNumber-error"), message: errors.accountNumber },
+        ]}
+      >
+        <FormField
+          id={id("platformName")}
+          label={t("subscription.field.platformName")}
+          description={t("subscription.platformNameHelp")}
+          error={errors.platformName}
+          errorId={id("platformName-error")}
+          renderError={false}
+        >
+          {(field) => (
+            <Input
+              id={field.id}
+              name={field.id}
+              value={formData.platformName}
+              onChange={(event) => {
+                const platformName = event.target.value;
+                update("platformName", platformName);
+                const match = platformSuggestions.find((platform) => platform.name === platformName);
+                if (!formData.logo && match?.logo) update("logo", match.logo);
+              }}
+              placeholder={t("subscription.placeholder.platformName")}
+              autoComplete="organization"
+              required
+              aria-invalid={field.invalid || platformAccountAlreadyAdded}
+              aria-describedby={field.describedBy}
+              className="border-border bg-secondary"
+            />
+          )}
+        </FormField>
+        <FormField
+          id={id("accountNumber")}
+          label={t("subscription.field.accountNumber")}
+          error={errors.accountNumber}
+          errorId={id("accountNumber-error")}
+          renderError={false}
+        >
+          {(field) => (
+            <div className="space-y-1.5">
+              <NumericInput
+                id={field.id}
+                name={field.id}
+                value={formData.accountNumber}
+                onRawValueChange={(value) => update("accountNumber", value)}
+                allowNegative={false}
+                decimalScale={0}
+                inputMode="numeric"
+                min={1}
+                required
+                aria-invalid={field.invalid || platformAccountAlreadyAdded}
+                aria-describedby={platformAccountAlreadyAdded ? id("accountNumber-added") : field.describedBy}
+                className="border-border bg-secondary"
+              />
+              {platformAccountAlreadyAdded ? (
+                <p id={id("accountNumber-added")} className="text-xs font-medium text-warning">
+                  {t("subscription.platformAccountAdded")}
+                </p>
+              ) : null}
+            </div>
+          )}
+        </FormField>
+      </FormFieldRow>
 
       {showLogoField ? (
         <LogoPicker
           value={formData.logo}
           onChange={(logo) => update("logo", logo)}
           onUploadStatusChange={onLogoUploadStatusChange}
-          serviceName={formData.name}
+          serviceName={formData.platformName}
           website={formData.website}
         />
       ) : null}
@@ -291,6 +373,21 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           )}
         </FormField>
       </FormFieldRow>
+
+      <FormField id={id("cardLast4")} label={t("subscription.field.cardLast4")} description={t("subscription.cardLast4Help")}>
+        {(field) => (
+          <Input
+            id={field.id}
+            name={field.id}
+            value={formData.cardLast4}
+            onChange={(event) => update("cardLast4", event.target.value)}
+            maxLength={32}
+            placeholder={t("subscription.placeholder.cardLast4")}
+            aria-describedby={field.describedBy}
+            className="border-border bg-secondary"
+          />
+        )}
+      </FormField>
 
       <FormFieldRow
         alignAt="sm"
@@ -679,16 +776,12 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         </div>
       )}
 
-      <CostSharingFields
+      <SubscriptionFamilySharingFields
         id={id}
-        formData={formData}
-        update={update}
-        error={errors.costSharing}
-        currencyOptions={currencyOptions}
-        currencyConvert={costSharingCurrencyConvert}
-        notificationReminderDays={notificationReminderDays}
-        collectionReminderAllowed={!isOneTimeBuyout}
-        onNestedDialogOpenChange={onNestedDialogOpenChange}
+        subscriptionId={subscriptionId}
+        value={formData.familySharing}
+        onChange={(familySharing) => update("familySharing", familySharing)}
+        error={errors.familySharing}
       />
 
       <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-secondary/30 p-3">

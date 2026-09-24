@@ -11,6 +11,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubscriptionDialog } from "@/components/subscription-dialog";
 import type { SubscriptionFormSubmission } from "@/types/subscription";
+import type { SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
 import { useI18n } from "@/i18n/I18nProvider";
 
 interface AddSubscriptionDialogProps {
@@ -18,12 +19,13 @@ interface AddSubscriptionDialogProps {
   onAdd: (submission: SubscriptionFormSubmission) => void;
   /** 当前用户已有标签建议。 */
   availableTags?: readonly string[] | undefined;
+  platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   /** 自定义触发器（不传则使用默认 “+ 新增订阅” 按钮）。 */
   trigger?: ReactNode;
 }
 
 /** 以 create mode 渲染通用订阅弹窗。 */
-export function AddSubscriptionDialog({ onAdd, availableTags, trigger }: AddSubscriptionDialogProps) {
+export function AddSubscriptionDialog({ onAdd, availableTags, platformSuggestions, trigger }: AddSubscriptionDialogProps) {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
 
@@ -43,7 +45,10 @@ export function AddSubscriptionDialog({ onAdd, availableTags, trigger }: AddSubs
       onSubmit={onAdd}
       loadingPreview={null}
       availableTags={availableTags}
+      platformSuggestions={platformSuggestions}
       trigger={trigger || defaultTrigger}
     />
   );
 }
+
+export default AddSubscriptionDialog;

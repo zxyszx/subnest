@@ -33,6 +33,7 @@ export function subscriptionPerformanceCollectionItems(size: number) {
     repeatReminderInterval: _repeatReminderInterval,
     repeatReminderWindow: _repeatReminderWindow,
     extra: _extra,
+    familySharing: _familySharing,
     ...collection
   }) => fromApiSubscriptionCollectionItem(collection));
 }

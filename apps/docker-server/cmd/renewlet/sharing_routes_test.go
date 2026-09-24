@@ -6,6 +6,59 @@ import (
 	"testing"
 )
 
+func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
+	app := newSchemaTestApp(t)
+	if err := ensureSchema(app); err != nil {
+		t.Fatal(err)
+	}
+	registerRecordHooks(app)
+	_, token := createRouteTestUser(t, app, "family-sharing-owner")
+	var body map[string]interface{}
+	if err := json.Unmarshal([]byte(subscriptionCreateBody("Netflix Premium")), &body); err != nil {
+		t.Fatal(err)
+	}
+	body["platformName"] = "Netflix"
+	body["accountNumber"] = 7
+	body["cardLast4"] = "6109"
+	body["familySharing"] = map[string]interface{}{
+		"enabled": true, "loginAccount": "netflix07@example.com", "password": "secret-password",
+		"verificationLink": "https://mail.example.com/code", "capacity": 5,
+	}
+	encoded, _ := json.Marshal(body)
+	created := serveTestRequest(t, app, http.MethodPost, "/api/app/subscriptions", string(encoded), token)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("subscription create status = %d body=%s", created.Code, created.Body.String())
+	}
+	var envelope struct {
+		Data subscriptionResponse `json:"data"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	sharing := envelope.Data.Subscription.FamilySharing
+	if sharing == nil || sharing.LoginAccount != "netflix07@example.com" || sharing.PasswordMask != "s*************d" || !sharing.HasPassword || sharing.Capacity != 5 {
+		t.Fatalf("unexpected family sharing response: %#v", sharing)
+	}
+	accounts, err := app.FindRecordsByFilter("sharing_accounts", "subscription = {:subscription}", "created", 10, 0, map[string]interface{}{"subscription": envelope.Data.Subscription.ID})
+	if err != nil || len(accounts) != 1 {
+		t.Fatalf("projected accounts = %d err=%v", len(accounts), err)
+	}
+	seats, err := app.FindRecordsByFilter("sharing_seats", "sharingAccount = {:account}", "seatNumber", 10, 0, map[string]interface{}{"account": accounts[0].Id})
+	if err != nil || len(seats) != 5 {
+		t.Fatalf("projected seats = %d err=%v", len(seats), err)
+	}
+
+	patch := `{"familySharing":null}`
+	disabled := serveTestRequest(t, app, http.MethodPatch, "/api/app/subscriptions/"+envelope.Data.Subscription.ID, patch, token)
+	if disabled.Code != http.StatusOK {
+		t.Fatalf("disable status = %d body=%s", disabled.Code, disabled.Body.String())
+	}
+	account, err := app.FindRecordById("sharing_accounts", accounts[0].Id)
+	if err != nil || account.GetString("status") != "archived" {
+		t.Fatalf("disabled account status = %q err=%v", account.GetString("status"), err)
+	}
+}
+
 func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {
@@ -15,8 +68,14 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	user, token := createRouteTestUser(t, app, "sharing-owner")
 	_, foreignToken := createRouteTestUser(t, app, "sharing-foreign")
 	subscription := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
-		"name": "Netflix",
-		"logo": "https://example.com/netflix.png",
+		"name":            "Netflix",
+		"logo":            "https://example.com/netflix.png",
+		"price":           "45",
+		"currency":        "CNY",
+		"billingCycle":    "monthly",
+		"nextBillingDate": "2026-10-01",
+		"paymentMethod":   "Visa",
+		"cardLast4":       "6109",
 	})
 
 	body := `{
@@ -104,15 +163,15 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	if foreignSeatUpdate.Code != http.StatusNotFound {
 		t.Fatalf("foreign seat update status = %d, want 404", foreignSeatUpdate.Code)
 	}
-	mismatchedCurrencyBody := `{
+	crossCurrencyBody := `{
 		"memberName":"Alice","contact":"alice@example.com","contactType":"email",
 		"monthlyPrice":"15","currency":"USD","billingMonths":3,
 		"startDate":"2026-10-01","expiresAt":"2026-12-31","status":"active",
 		"paymentStatus":"paid","notes":"quarterly"
 	}`
-	mismatchedCurrency := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, mismatchedCurrencyBody, token)
-	if mismatchedCurrency.Code != http.StatusBadRequest {
-		t.Fatalf("mismatched seat currency status = %d, want 400", mismatchedCurrency.Code)
+	crossCurrency := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, crossCurrencyBody, token)
+	if crossCurrency.Code != http.StatusOK || !containsJSONText(crossCurrency.Body.Bytes(), "USD") {
+		t.Fatalf("cross-currency seat update status = %d body=%s", crossCurrency.Code, crossCurrency.Body.String())
 	}
 
 	list := serveTestRequest(t, app, http.MethodGet, "/api/app/sharing/accounts", "", token)

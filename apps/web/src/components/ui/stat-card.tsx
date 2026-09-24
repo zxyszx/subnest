@@ -14,7 +14,7 @@ interface StatCardProps {
   subtitle?: string;
   icon: ReactNode;
   variant?: 'default' | 'primary' | 'warning';
-  density?: "default" | "compact";
+  density?: "default" | "compact" | "dashboard";
   className?: string;
   "data-testid"?: string;
 }
@@ -30,25 +30,26 @@ export function StatCard({
   "data-testid": dataTestId,
 }: StatCardProps) {
   const compact = density === "compact";
+  const dashboard = density === "dashboard";
 
   return (
     <div
       data-testid={dataTestId}
       className={cn(
         "relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
-        compact ? "p-4 lg:p-6" : "p-6",
+        dashboard ? "p-4" : compact ? "p-4 lg:p-6" : "p-6",
         className,
       )}
     >
-      <div className={cn("flex items-start justify-between", compact && "gap-3 lg:gap-4")}>
-        <div className={cn("grid min-w-0", compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
-          <p className={cn("font-medium text-muted-foreground", compact ? "truncate text-xs lg:text-sm" : "text-sm")}>
+      <div className={cn("flex items-start justify-between", (compact || dashboard) && "gap-3")}>
+        <div className={cn("grid min-w-0", dashboard ? "gap-1.5" : compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
+          <p className={cn("font-medium text-muted-foreground", (compact || dashboard) ? "truncate text-xs" : "text-sm")}>
             {title}
           </p>
           <p
             className={cn(
               "font-bold tracking-tight",
-              compact ? "truncate text-2xl lg:text-3xl" : "text-3xl",
+              dashboard ? "truncate text-xl tabular-nums 2xl:text-2xl" : compact ? "truncate text-2xl lg:text-3xl" : "text-3xl",
               variant === 'primary' && "text-foreground",
               variant === 'warning' && "text-warning",
             )}
@@ -56,7 +57,7 @@ export function StatCard({
             {value}
           </p>
           {subtitle && (
-            <p className={cn("text-muted-foreground", compact ? "truncate text-[11px] leading-4 lg:text-xs" : "text-xs")}>
+            <p className={cn("text-muted-foreground", (compact || dashboard) ? "truncate text-[11px] leading-4" : "text-xs")}>
               {subtitle}
             </p>
           )}
@@ -64,7 +65,7 @@ export function StatCard({
         <div
           className={cn(
             "flex shrink-0 items-center justify-center rounded-lg",
-            compact ? "h-10 w-10 [&_svg]:h-5 [&_svg]:w-5 lg:h-12 lg:w-12 lg:[&_svg]:h-6 lg:[&_svg]:w-6" : "h-12 w-12",
+            dashboard ? "h-9 w-9 [&_svg]:h-4 [&_svg]:w-4" : compact ? "h-10 w-10 [&_svg]:h-5 [&_svg]:w-5 lg:h-12 lg:w-12 lg:[&_svg]:h-6 lg:[&_svg]:w-6" : "h-12 w-12",
             variant === 'default' && "bg-secondary text-muted-foreground",
             variant === 'primary' && "bg-secondary text-primary",
             variant === 'warning' && "bg-warning/10 text-warning",
