@@ -6,7 +6,6 @@ import { Header } from "@/components/header";
 import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
-import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
@@ -178,9 +177,9 @@ export default function Sharing() {
               : "mt-6 rounded-lg",
           )}>
             <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full min-w-240 text-left text-sm">
+              <table className="w-full min-w-216 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-4 py-3 font-medium">{t("sharing.seats")}</th><th className="w-64 px-4 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                  <th className="px-4 py-3 font-medium">{t("sharing.accountName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-4 py-3 font-medium">{t("sharing.seats")}</th><th className="w-52 px-4 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-border">{visibleAccounts.map((account) => (
                   <tr key={account.id} className="hover:bg-muted/20">
@@ -188,11 +187,10 @@ export default function Sharing() {
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
                     <td className="px-4 py-3 tabular-nums">{account.occupiedSeats} / {account.capacity}</td>
                     <td className="px-4 py-3">
-                      <div className="grid min-w-52 gap-1.5 text-xs">
+                      <div className="grid min-w-44 gap-1.5 text-xs">
                         <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{t("sharing.monthlyCost")}</span><strong className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</strong></div>
                         <div className="flex items-center gap-1.5 text-muted-foreground"><CalendarClock className="h-3.5 w-3.5 shrink-0" /><span>{t("sharing.nextBillingDate")}</span><span className="ml-auto tabular-nums text-foreground">{account.nextBillingDate}</span></div>
                         <div className="flex items-center gap-1.5 text-muted-foreground"><TrendingUp className="h-3.5 w-3.5 shrink-0" /><span>{t("sharing.monthlyProfit")}</span><span className={cn("ml-auto font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</span></div>
-                        <SharingPaymentSummary paymentMethod={account.paymentMethod} cardLast4={account.cardLast4} className="text-muted-foreground" />
                       </div>
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1">
@@ -212,9 +210,9 @@ export default function Sharing() {
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                     <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{account.occupiedSeats} / {account.capacity}</dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.costAndRenewal")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
-                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)} · {account.nextBillingDate}</dd></div>
-                    {account.paymentMethod || account.cardLast4 ? <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.paymentMethod")}</dt><dd className="mt-1 font-medium text-foreground"><SharingPaymentSummary paymentMethod={account.paymentMethod} cardLast4={account.cardLast4} /></dd></div> : null}
+                    <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{account.nextBillingDate}</dd></div>
+                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>
                   </dl>
                   <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
