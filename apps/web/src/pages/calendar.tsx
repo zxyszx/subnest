@@ -21,7 +21,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { getSubscriptionCalendarRange } from '@/modules/subscriptions/domain/subscription-calendar-range';
 import { useSubscriptionCrud } from '@/modules/subscriptions/application/use-subscription-crud';
 import { useSharingAccountDetails, useSharingAccounts } from '@/hooks/use-sharing';
-import { Badge } from '@/components/ui/badge';
+import { CalendarAccountIdentity } from '@/components/calendar-account-identity';
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
@@ -110,7 +110,12 @@ const Calendar = () => {
               {expiringSeats.map(({ account, seat }) => (
                 <li key={seat.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
                   <time className="font-medium tabular-nums text-foreground">{seat.expiresAt}</time>
-                  <Badge variant="secondary">{account.subscription.platformName}</Badge>
+                  <CalendarAccountIdentity
+                    platformName={account.subscription.platformName}
+                    logo={account.subscription.logo}
+                    accountNumber={account.accountNumber}
+                    size="xs"
+                  />
                   <span className="min-w-0 flex-1 truncate text-foreground">{account.name} · {seat.memberName ?? t("sharing.noMember")}</span>
                 </li>
               ))}

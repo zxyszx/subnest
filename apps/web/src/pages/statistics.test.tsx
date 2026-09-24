@@ -362,6 +362,19 @@ describe("Statistics page", () => {
     expect(screen.queryByText("查看详细分析和数据洞察")).not.toBeInTheDocument();
   });
 
+  it("groups subscription renewals, sharing income, and sharing profit in one cashflow summary", () => {
+    renderStatistics();
+
+    const cashflow = screen.getByTestId("statistics-cashflow-overview");
+    expect(within(cashflow).getByRole("heading", { name: "续费与合租" })).toBeInTheDocument();
+    expect(within(cashflow).getByText("本月订阅续费")).toBeInTheDocument();
+    expect(within(cashflow).getByText("合租月收入")).toBeInTheDocument();
+    expect(within(cashflow).getByText("合租月净利润")).toBeInTheDocument();
+    expect(screen.getAllByText("本月订阅续费")).toHaveLength(1);
+    expect(screen.getAllByText("合租月收入")).toHaveLength(1);
+    expect(screen.getAllByText("合租月净利润")).toHaveLength(1);
+  });
+
   it("uses compact placeholders for empty breakdown charts", () => {
     mocks.useSubscriptionAnalytics.mockReturnValue({ data: [], isPending: false });
 

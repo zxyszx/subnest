@@ -1,5 +1,5 @@
 // 日历弹窗可访问性测试保护移动/桌面详情弹层的标题、焦点和订阅入口语义。
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertDateOnly } from "@/lib/time/date-only";
@@ -166,7 +166,8 @@ describe("SubscriptionCalendar dialogs", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Apple" }));
 
-    const logo = screen.getByAltText("Apple");
+    const dialog = screen.getByRole("dialog", { name: /Apple/ });
+    const logo = within(dialog).getByAltText("Apple");
     const logoTile = logo.closest(".subscription-logo-tile");
 
     expect(logo).toHaveClass("subscription-logo-image", "object-contain");
@@ -190,7 +191,8 @@ describe("SubscriptionCalendar dialogs", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Better Stack Uptime Team" }));
 
-    const logo = screen.getByAltText("Better Stack Uptime Team");
+    const dialog = screen.getByRole("dialog", { name: /Better Stack Uptime Team/ });
+    const logo = within(dialog).getByAltText("Better Stack Uptime Team");
 
     expect(logo).toHaveClass("subscription-logo-image", "object-contain");
     expect(logo.closest(".subscription-logo-tile")).not.toBeNull();
@@ -204,7 +206,8 @@ describe("SubscriptionCalendar dialogs", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "dmit" }));
 
-    const initials = screen.getByText("DM");
+    const dialog = screen.getByRole("dialog", { name: /dmit/ });
+    const initials = within(dialog).getByText("DM");
     const logoTile = initials.closest(".subscription-logo-tile");
 
     expect(initials).toHaveClass("subscription-logo-fallback");
@@ -275,7 +278,8 @@ describe("SubscriptionCalendar dialogs", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "+1 更多" }));
 
-    const logo = screen.getByAltText("Better Stack Uptime Team");
+    const dialog = screen.getByRole("dialog", { name: "5月14日 续费/到期" });
+    const logo = within(dialog).getByAltText("Better Stack Uptime Team");
     const logoTile = logo.closest(".subscription-logo-tile");
 
     expect(logo).toHaveClass("subscription-logo-image", "object-contain");
@@ -283,6 +287,26 @@ describe("SubscriptionCalendar dialogs", () => {
     expect(logoTile).not.toBeNull();
     expect(logoTile).not.toHaveClass("media-thumbnail-canvas");
     expect(logoTile).not.toHaveClass("bg-linear-to-br");
+  });
+
+  it("shows the platform logo, account number, and platform name on calendar events", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-14T12:00:00Z"));
+
+    renderCalendar([
+      subscription({
+        id: "netflix-7",
+        name: "Netflix",
+        platformName: "Netflix",
+        accountNumber: 7,
+        logo: "https://example.com/netflix.svg",
+      }),
+    ]);
+
+    const event = screen.getByRole("button", { name: "Netflix" });
+    expect(event).toHaveTextContent("Netflix");
+    expect(within(event).getByText("7")).toBeInTheDocument();
+    expect(within(event).getByAltText("Netflix")).toBeInTheDocument();
   });
 
   it("renders the mobile agenda with only active and trial subscriptions", async () => {

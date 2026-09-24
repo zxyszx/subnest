@@ -2276,7 +2276,12 @@ msgstr "本月事件"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:637
 msgid "statistics.thisMonthDue"
-msgstr "本月应付金额"
+msgstr "本月订阅续费"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:637
+msgid "statistics.cashflowOverview"
+msgstr "续费与合租"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:722

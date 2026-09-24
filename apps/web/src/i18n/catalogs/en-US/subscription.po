@@ -2276,7 +2276,12 @@ msgstr "Events this month"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:637
 msgid "statistics.thisMonthDue"
-msgstr "Amount due this month"
+msgstr "Subscription renewals this month"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:637
+msgid "statistics.cashflowOverview"
+msgstr "Renewals and sharing"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:722

@@ -221,6 +221,19 @@ const Statistics = () => {
           <ExchangeRateErrorFeedback error={ratesError} details={ratesErrorDetails} />
         ) : null}
 
+        <section className="mb-8" data-testid="statistics-cashflow-overview">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">{t("statistics.cashflowOverview")}</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatBox
+              value={formatCurrency(stats.thisMonthDue, defaultCurrency)}
+              label={t("statistics.thisMonthDue")}
+              variant="warning"
+            />
+            <StatBox value={formatCurrency(sharingIncome, defaultCurrency)} label={t("statistics.sharingIncome")} variant="success" />
+            <StatBox value={formatCurrency(sharingProfit, defaultCurrency)} label={t("statistics.sharingProfit")} variant={sharingProfit >= 0 ? "success" : "warning"} />
+          </div>
+        </section>
+
         {/* 总体统计 */}
         <section className="mb-8">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -260,11 +273,6 @@ const Statistics = () => {
               label={stats.mostExpensive ? t("statistics.mostExpensiveNamed", { name: stats.mostExpensive.name }) : t("statistics.mostExpensive")}
             />
             <StatBox
-              value={formatCurrency(stats.thisMonthDue, defaultCurrency)}
-              label={t("statistics.thisMonthDue")}
-              variant="warning"
-            />
-            <StatBox
               value={`${stats.budgetUsedPercent.toFixed(1)}%`}
               label={t("statistics.budgetPercent")}
               variant={stats.budgetUsedPercent > 80 ? 'warning' : 'primary'}
@@ -290,8 +298,6 @@ const Statistics = () => {
               variant="success"
               description={t("statistics.annualSavingsDescription")}
             />
-            <StatBox value={formatCurrency(sharingIncome, defaultCurrency)} label={t("statistics.sharingIncome")} variant="success" />
-            <StatBox value={formatCurrency(sharingProfit, defaultCurrency)} label={t("statistics.sharingProfit")} variant={sharingProfit >= 0 ? "success" : "warning"} />
           </div>
         </section>
 

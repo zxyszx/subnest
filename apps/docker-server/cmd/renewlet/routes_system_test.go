@@ -152,6 +152,9 @@ func TestSystemVersionRouteIsReadableBySignedInUsers(t *testing.T) {
 			if res.Code != tc.wantCode {
 				t.Fatalf("expected version auth status %d, got %d: %s", tc.wantCode, res.Code, res.Body.String())
 			}
+			if tc.wantCode == http.StatusOK && res.Header().Get("Cache-Control") != "no-store" {
+				t.Fatalf("expected version response to disable HTTP caching, got %q", res.Header().Get("Cache-Control"))
+			}
 			if tc.name == "admin" {
 				body := decodeAPISuccessDataForTest[systemVersionResponse](t, res.Body.Bytes())
 				if !body.HasUpdate || body.LatestVersion != "1.1.0" {

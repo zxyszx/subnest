@@ -16,21 +16,11 @@ import { useCustomConfigState } from '@/contexts/CustomConfigContext';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { DateOnly } from '@/lib/time/date-only';
 import { getEffectiveSubscriptionStatus } from '@/modules/subscriptions/domain/subscription-status';
-import { SubscriptionLogo } from '@/components/subscription-logo';
+import { CalendarAccountIdentity } from '@/components/calendar-account-identity';
 import { formatBillingCycleLabel } from '@/lib/subscription-billing';
 import { SubscriptionStatusBadge } from '@/components/subscription-status-badge';
 
 const DEFAULT_LOGO_FALLBACK_COLOR = "hsl(var(--primary))";
-
-interface CalendarSubscriptionLogoProps {
-  subscription: SubscriptionCollectionItem;
-  categoryColor: string | undefined;
-  className?: string | undefined;
-}
-
-function CalendarSubscriptionLogo({ subscription, categoryColor, className }: CalendarSubscriptionLogoProps) {
-  return <SubscriptionLogo name={subscription.name} logo={subscription.logo} fallbackColor={categoryColor ?? DEFAULT_LOGO_FALLBACK_COLOR} size="sm" className={className} />;
-}
 
 export interface CalendarDaySubscriptions {
   date: Date;
@@ -74,15 +64,20 @@ function DaySubscriptionsList({ subscriptions, onSelectSubscription, onPrefetchS
             className="group flex min-w-0 w-full max-w-full items-center gap-3 rounded-lg border border-border bg-secondary/30 p-3 text-left transition-colors hover:bg-secondary/60"
             data-testid="calendar-day-subscription-item"
           >
-            <CalendarSubscriptionLogo
-              subscription={sub}
-              categoryColor={
+            <CalendarAccountIdentity
+              platformName={sub.platformName ?? sub.name}
+              logo={sub.logo}
+              accountNumber={sub.accountNumber ?? 1}
+              fallbackColor={
                 config.categories.find((item) => item.value === sub.category)?.color ??
                 DEFAULT_LOGO_FALLBACK_COLOR
               }
+              className="min-w-0 flex-1"
             />
             <div className="min-w-0 flex-1">
-              <TruncatedTooltipText as="p" text={sub.name} className="text-sm font-medium" />
+              {(sub.platformName ?? sub.name) !== sub.name ? (
+                <TruncatedTooltipText as="p" text={sub.name} className="text-xs text-muted-foreground" />
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 {formatBillingCycleLabel(sub, locale)}
               </p>

@@ -409,6 +409,7 @@ func handleSystemVersion(e *core.RequestEvent) error {
 	if !canReadSystemVersion(e.Auth) {
 		return e.ForbiddenError(serverText(locale, "auth.adminRequiredShort"), nil)
 	}
+	e.Response.Header().Set("Cache-Control", "no-store")
 	force := e.Request.URL.Query().Get("force") == "true"
 	info, err := defaultSystemUpdateService.CheckVersion(e.Request.Context(), locale, force)
 	if err != nil {

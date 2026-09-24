@@ -38,6 +38,7 @@ import { isEffectivelyActiveSubscription } from '@/modules/subscriptions/domain/
 import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptions/domain/subscription-price-reference';
 import { getSubscriptionCalendarRange } from '@/modules/subscriptions/domain/subscription-calendar-range';
 import { useSubscriptionDetailDialog } from '@/hooks/use-subscription-detail-dialog';
+import { CalendarAccountIdentity } from '@/components/calendar-account-identity';
 
 interface SubscriptionCalendarProps {
   /** 订阅列表（前端 domain 类型）。 */
@@ -469,7 +470,11 @@ export const SubscriptionCalendar = ({
                               data-testid="calendar-mobile-agenda-item"
                             >
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-foreground">{sub.name}</p>
+                                <CalendarAccountIdentity
+                                  platformName={sub.platformName ?? sub.name}
+                                  logo={sub.logo}
+                                  accountNumber={sub.accountNumber ?? 1}
+                                />
                                 <p className="mt-0.5 text-xs text-muted-foreground">
                                   {formatBillingCycleLabel(sub, locale)}
                                 </p>
@@ -534,12 +539,17 @@ export const SubscriptionCalendar = ({
                               onPointerEnter={() => handlePrefetchDetails(sub.id)}
                               onFocus={() => handlePrefetchDetails(sub.id)}
                               className={cn(
-                                "w-full truncate rounded border px-1.5 py-0.5 text-left text-xs transition-colors",
+                                "w-full rounded border px-1 py-0.5 text-left transition-colors",
                                 "border-border bg-background text-foreground hover:bg-secondary/60",
                                 "cursor-pointer hover:border-border"
                               )}
                             >
-                              {sub.name}
+                              <CalendarAccountIdentity
+                                platformName={sub.platformName ?? sub.name}
+                                logo={sub.logo}
+                                accountNumber={sub.accountNumber ?? 1}
+                                size="xs"
+                              />
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs">

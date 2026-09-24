@@ -1850,6 +1850,7 @@ export const MESSAGE_KEYS = [
   "statistics.budgetPercent",
   "statistics.budgetRemaining",
   "statistics.budgetUsed",
+  "statistics.cashflowOverview",
   "statistics.categoryView",
   "statistics.costBudget",
   "statistics.dailyCost",

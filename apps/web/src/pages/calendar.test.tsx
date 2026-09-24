@@ -5,6 +5,8 @@ import Calendar from "./calendar";
 
 const mocks = vi.hoisted(() => ({
   useSubscriptionCalendar: vi.fn(),
+  useSharingAccounts: vi.fn(),
+  useSharingAccountDetails: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-subscriptions", () => ({
@@ -15,8 +17,8 @@ vi.mock("@/hooks/use-subscriptions", () => ({
 }));
 
 vi.mock("@/hooks/use-sharing", () => ({
-  useSharingAccounts: () => ({ data: { accounts: [], total: 0 }, isPending: false }),
-  useSharingAccountDetails: () => [],
+  useSharingAccounts: mocks.useSharingAccounts,
+  useSharingAccountDetails: mocks.useSharingAccountDetails,
 }));
 
 vi.mock("@/modules/subscriptions/application/use-subscription-crud", () => ({
@@ -95,6 +97,38 @@ describe("Calendar page", () => {
       isFetching: false,
       isPending: false,
     });
+    mocks.useSharingAccounts.mockReturnValue({ data: { accounts: [], total: 0 }, isPending: false });
+    mocks.useSharingAccountDetails.mockReturnValue([]);
+  });
+
+  it("shows logo, account number, and platform name for sharing expiries", () => {
+    mocks.useSharingAccounts.mockReturnValue({
+      data: { accounts: [{ id: "sharing-1" }], total: 1 },
+      isPending: false,
+    });
+    mocks.useSharingAccountDetails.mockReturnValue([{
+      data: {
+        account: {
+          id: "sharing-1",
+          name: "编号 7",
+          accountNumber: 7,
+          subscription: {
+            id: "netflix-7",
+            name: "Netflix",
+            platformName: "Netflix",
+            logo: "https://example.com/netflix.svg",
+          },
+        },
+        seats: [{ id: "seat-1", status: "active", expiresAt: "2026-09-30", memberName: "Zhao" }],
+      },
+    }]);
+
+    renderCalendarPage({ mobile: false });
+
+    expect(screen.getByAltText("Netflix")).toBeInTheDocument();
+    expect(screen.getByText("Netflix")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText(/编号 7 · Zhao/)).toBeInTheDocument();
   });
 
   it("renders a page-isomorphic skeleton while subscriptions are pending", () => {
