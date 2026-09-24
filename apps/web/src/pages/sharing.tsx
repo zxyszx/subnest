@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
-import { SharingSeatOccupancy } from "@/components/sharing-seat-occupancy";
+import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
 import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
@@ -22,7 +22,7 @@ import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
-import { toPlainDate } from "@/lib/time/date-only";
+import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
 import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
@@ -192,14 +192,24 @@ export default function Sharing() {
         <span className="whitespace-nowrap text-xs font-medium tabular-nums text-foreground"><DenseDate value={nearest.expiresAt} /></span>
         <span className={cn(
           "w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums",
-          nearest.daysUntilExpiry <= 3
+          sharingSeatExpiryTone(nearest.daysUntilExpiry) === "danger"
             ? "bg-destructive/10 text-destructive"
-            : nearest.daysUntilExpiry <= 7
+            : sharingSeatExpiryTone(nearest.daysUntilExpiry) === "warning"
               ? "bg-warning/10 text-warning"
               : "bg-primary/10 text-primary",
         )}>{status}</span>
       </div>
     );
+  };
+
+  const seatTones = (account: SharingAccount): SharingSeatTone[] => {
+    const seatsByNumber = new Map(accountDetails.get(account.id)?.seats.map((seat) => [seat.seatNumber, seat]));
+    return Array.from({ length: account.capacity }, (_, index) => {
+      const seat = seatsByNumber.get(index + 1);
+      if (!seat || !seat.memberName || seat.status === "vacant" || seat.status === "archived") return "vacant";
+      if (!seat.expiresAt) return "normal";
+      return sharingSeatExpiryTone(daysBetweenDateOnly(today, seat.expiresAt));
+    });
   };
 
   return (
@@ -276,7 +286,7 @@ export default function Sharing() {
                   <tr key={account.id} className="transition-colors duration-200 hover:bg-muted/20">
                     <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
-                    <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} /></td>
+                    <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></td>
                     <td className="px-3 py-3"><NearestExpiry accountId={account.id} /></td>
                     <td className="px-3 py-3">
                       <dl className="grid min-w-44 gap-1 rounded-md border border-border/70 bg-muted/45 px-2.5 py-2 text-xs leading-4 text-muted-foreground">
@@ -303,7 +313,7 @@ export default function Sharing() {
                   <AccountIdentity account={account} />
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                     <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} /></dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
