@@ -16,8 +16,8 @@ const COMPOSE_FILES = [
 const README_CONTRACTS = [
   {
     relativePath: "README.md",
-    recommendation: "Use the uppercase names by default.",
-    precedence: "Do not set both forms; when both are present, Go uses the uppercase value.",
+    recommendation: "默认使用大写变量。",
+    precedence: "不要同时配置大小写两组变量；两组同时存在时，Go 优先读取大写值。",
   },
   {
     relativePath: "README.zh-CN.md",

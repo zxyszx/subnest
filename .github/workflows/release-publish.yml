@@ -142,7 +142,8 @@ jobs:
         run: node scripts/release.mjs validate-version "${{ needs.metadata.outputs.version }}"
 
       - name: Validate deployment config
-        run: pnpm check:deploy
+        # Cloudflare migration history has its own cloudflare-check job; Docker 发布只需要验证 Compose/env/Docker 契约。
+        run: node scripts/check-deploy-config.mjs
 
       - name: Resolve Docker tags
         id: tags

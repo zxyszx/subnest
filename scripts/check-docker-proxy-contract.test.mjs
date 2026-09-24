@@ -22,13 +22,13 @@ const compose = `services:
 ${envNames.map((envName) => `      ${envName}: \${${envName}:-}`).join("\n")}
     restart: unless-stopped
 `;
-const readme = `# Renewlet
+const readme = `# SubNest
 
 HTTP_PROXY="http://proxy.example:7890"
 HTTPS_PROXY="http://proxy.example:7890"
 NO_PROXY="localhost,127.0.0.1"
 
-Use the uppercase names by default. The lowercase alternatives are \`http_proxy\`, \`https_proxy\`, and \`no_proxy\`. Do not set both forms; when both are present, Go uses the uppercase value.
+默认使用大写变量。小写备选名为 \`http_proxy\`、\`https_proxy\` 和 \`no_proxy\`。不要同时配置大小写两组变量；两组同时存在时，Go 优先读取大写值。
 `;
 const readmeZh = `# Renewlet
 
@@ -146,7 +146,7 @@ test("rejects README proxy guidance that omits the precedence rule", () => {
     writeFileSync(
       path,
       readFileSync(path, "utf8").replace(
-        "Do not set both forms; when both are present, Go uses the uppercase value.",
+        "不要同时配置大小写两组变量；两组同时存在时，Go 优先读取大写值。",
         "",
       ),
     );
