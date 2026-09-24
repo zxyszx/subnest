@@ -288,7 +288,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto bg-card" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit} className="space-y-5" autoComplete="off">
           <DialogHeader>
             <DialogTitle>{t(mode === "renew" ? "sharing.renewSeat" : "sharing.editSeat")} #{seat.seatNumber}</DialogTitle>
             <DialogDescription>{mode === "renew" ? t("sharing.renewSeatDescription") : account.name}</DialogDescription>
@@ -298,11 +298,11 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
             <div className="flex items-center gap-2 text-sm font-semibold"><UserRound className="h-4 w-4" />{t("sharing.memberDetails")}</div>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
               <FormField id="sharing-seat-status" label={t("sharing.status")}>{(field) => <Select value={draft.status} onValueChange={(value) => update("status", value as SharingSeatUpdate["status"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{seatStatuses.map((status) => <SelectItem key={status} value={status}>{t(seatStatusLabelKeys[status])}</SelectItem>)}</SelectContent></Select>}</FormField>
-              <FormField id="sharing-seat-member" label={t("sharing.memberName")}>{(field) => <Input className="bg-secondary" id={field.id} aria-describedby={field.describedBy} value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} required={draft.status !== "vacant"} />}</FormField>
+              <FormField id="sharing-seat-member" label={t("sharing.memberName")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-alias" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} required={draft.status !== "vacant"} />}</FormField>
             </FormFieldRow>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
               <FormField id="sharing-seat-contact-type" label={t("sharing.contactType")}>{(field) => <Select value={draft.contactType || "other"} onValueChange={(value) => update("contactType", value as SharingSeatUpdate["contactType"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{contactTypes.map((type) => <SelectItem key={type} value={type}>{t(contactTypeLabelKeys[type])}</SelectItem>)}</SelectContent></Select>}</FormField>
-              <FormField id="sharing-seat-contact" label={t("sharing.contact")}>{(field) => <Input className="bg-secondary" id={field.id} aria-describedby={field.describedBy} value={draft.contact} onChange={(event) => update("contact", event.target.value)} />}</FormField>
+              <FormField id="sharing-seat-contact" label={t("sharing.contact")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-contact" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.contact} onChange={(event) => update("contact", event.target.value)} />}</FormField>
             </FormFieldRow>
           </section>
 

@@ -24,6 +24,11 @@ msgid "sharing.nextSevenDays"
 msgstr "Next 7 days"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:109
+msgid "sharing.upcomingDialogTitle"
+msgstr "Renewing within 7 days"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:92
 msgid "sharing.telegram"
 msgstr "Telegram"
@@ -274,6 +279,16 @@ msgid "sharing.platformFilter"
 msgstr "Filter shared accounts by platform"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:110
+msgid "sharing.upcomingDialogDescription"
+msgstr "Sorted by urgency, with the nearest expiry first."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:106
+msgid "sharing.searchPlaceholder"
+msgstr "Search account number or platform"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:30
 msgid "sharing.paymentMethod"
 msgstr "Payment method"
@@ -339,6 +354,11 @@ msgid "sharing.monthlyRevenue"
 msgstr "Monthly revenue"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:111
+msgid "sharing.upcomingDialogEmpty"
+msgstr "No members expire within the next 7 days"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:48
 msgid "sharing.noVerificationLink"
 msgstr "No verification link"
@@ -347,6 +367,11 @@ msgstr "No verification link"
 #: src/i18n/descriptors/sharing.ts:88
 msgid "sharing.calculatedReceivable"
 msgstr "Receivable for this term"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:108
+msgid "sharing.openUpcomingRenewals"
+msgstr "View members renewing within 7 days"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:70
@@ -362,6 +387,11 @@ msgstr "Monthly cost"
 #: src/i18n/descriptors/sharing.ts:62
 msgid "sharing.monthlyPrice"
 msgstr "Monthly charge"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:107
+msgid "sharing.noSearchResults"
+msgstr "No matching sharing accounts found"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:94

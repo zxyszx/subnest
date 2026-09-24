@@ -24,6 +24,11 @@ msgid "sharing.nextSevenDays"
 msgstr "7 天内"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:109
+msgid "sharing.upcomingDialogTitle"
+msgstr "7 天内即将续费"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:92
 msgid "sharing.telegram"
 msgstr "Telegram"
@@ -206,7 +211,7 @@ msgstr "将一个平台订阅绑定为合租账号，并自动创建对应数量
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:10
 msgid "sharing.occupiedSeats"
-msgstr "已占用车位"
+msgstr "已占车位"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:46
@@ -274,6 +279,16 @@ msgid "sharing.platformFilter"
 msgstr "按平台筛选合租账号"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:110
+msgid "sharing.upcomingDialogDescription"
+msgstr "按紧急程度排序，越接近到期越靠前。"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:106
+msgid "sharing.searchPlaceholder"
+msgstr "搜索序列号或平台名称"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:30
 msgid "sharing.paymentMethod"
 msgstr "支付方式"
@@ -339,6 +354,11 @@ msgid "sharing.monthlyRevenue"
 msgstr "月收入"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:111
+msgid "sharing.upcomingDialogEmpty"
+msgstr "未来 7 天内没有车友到期"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:48
 msgid "sharing.noVerificationLink"
 msgstr "未设置验证码链接"
@@ -347,6 +367,11 @@ msgstr "未设置验证码链接"
 #: src/i18n/descriptors/sharing.ts:88
 msgid "sharing.calculatedReceivable"
 msgstr "本期应收"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:108
+msgid "sharing.openUpcomingRenewals"
+msgstr "查看 7 天内即将续费的车友"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:70
@@ -362,6 +387,11 @@ msgstr "每月成本"
 #: src/i18n/descriptors/sharing.ts:62
 msgid "sharing.monthlyPrice"
 msgstr "每月收费"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:107
+msgid "sharing.noSearchResults"
+msgstr "没有找到匹配的合租账号"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:94

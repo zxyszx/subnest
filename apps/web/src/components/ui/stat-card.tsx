@@ -16,6 +16,7 @@ interface StatCardProps {
   variant?: 'default' | 'primary' | 'warning';
   density?: "default" | "compact" | "dashboard";
   className?: string;
+  valueClassName?: string;
   "data-testid"?: string;
 }
 
@@ -27,6 +28,7 @@ export function StatCard({
   variant = 'default',
   density = "default",
   className,
+  valueClassName,
   "data-testid": dataTestId,
 }: StatCardProps) {
   const compact = density === "compact";
@@ -52,6 +54,7 @@ export function StatCard({
               dashboard ? "truncate text-xl tabular-nums 2xl:text-2xl" : compact ? "truncate text-2xl lg:text-3xl" : "text-3xl",
               variant === 'primary' && "text-foreground",
               variant === 'warning' && "text-warning",
+              valueClassName,
             )}
           >
             {value}
