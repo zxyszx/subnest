@@ -181,7 +181,7 @@ export default function Sharing() {
 
   const NearestExpiry = ({ accountId }: { accountId: string }) => {
     const nearest = sharingNearestSeatExpiry(accountDetails.get(accountId), today);
-    if (!nearest) return <span className="text-muted-foreground">-</span>;
+    if (!nearest) return <span className="whitespace-nowrap text-xs text-muted-foreground">{t("sharing.noMember")}</span>;
     const status = nearest.daysUntilExpiry < 0
       ? t("subscription.card.expiredDays", { days: Math.abs(nearest.daysUntilExpiry) })
       : nearest.daysUntilExpiry === 0
@@ -192,7 +192,7 @@ export default function Sharing() {
         <span className="whitespace-nowrap text-xs font-medium tabular-nums text-foreground"><DenseDate value={nearest.expiresAt} /></span>
         <span className={cn(
           "w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums",
-          nearest.daysUntilExpiry < 0
+          nearest.daysUntilExpiry <= 3
             ? "bg-destructive/10 text-destructive"
             : nearest.daysUntilExpiry <= 7
               ? "bg-warning/10 text-warning"
