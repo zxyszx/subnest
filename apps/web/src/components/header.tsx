@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, Inbox } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -43,13 +43,14 @@ interface HeaderProps {
   subscriptionActions?: ReactNode;
 }
 
-type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "calendar" | "statistics" | "settings";
+type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "inbox" | "calendar" | "statistics" | "settings";
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
-const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey }> = [
+const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean }> = [
   { path: '/', labelKey: 'nav.dashboard', icon: "dashboard" },
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
   { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
+  { path: '/shared-inboxes', labelKey: 'nav.sharedInbox', icon: "inbox", adminOnly: true },
   { path: '/calendar', labelKey: 'nav.calendar', icon: "calendar" },
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
@@ -63,6 +64,8 @@ function renderNavIcon(icon: NavIconKey, className: string) {
       return <List className={className} />;
     case "sharing":
       return <UsersRound className={className} />;
+    case "inbox":
+      return <Inbox className={className} />;
     case "calendar":
       return <CalendarDays className={className} />;
     case "statistics":
@@ -80,6 +83,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const { data: sessionData } = authClient.useSession();
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
   const isAuthenticated = Boolean(sessionData?.user);
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
 
   /**
    * Header 是全局快捷开关，只写本机偏好；账户级外观草稿必须从 Settings 页外观控件产生。
@@ -128,7 +132,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           </div>
 
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <NavLink
                 key={item.path}
                 href={item.path}
@@ -179,7 +183,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
 
       {/* 移动端导航 */}
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.path}
             href={item.path}

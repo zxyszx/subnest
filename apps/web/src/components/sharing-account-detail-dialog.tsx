@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarClock, CircleDollarSign, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
+import { CalendarClock, CircleDollarSign, Copy, Pencil, ReceiptText, RotateCw, Settings2, UserRound } from "lucide-react";
 
 import { useSharingAccountDetail, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -20,6 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import type { SharingAccount, SharingSeat, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
+import Link from "@/components/router-link";
+import { copyTextToClipboard } from "@/shared/browser/clipboard";
+
+const inboxCopy = { copy: "复制收件链接", manage: "管理共享收件箱", copied: "收件链接已复制", failed: "复制收件链接失败" };
 
 interface SharingAccountDetailDialogProps {
   account: SharingAccount | null;
@@ -124,7 +128,11 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                 <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
                 <div className="min-w-0 sm:col-span-2 lg:col-span-4">
                   <div className="text-xs text-muted-foreground">{t("sharing.verificationLink")}</div>
-                  <div className="mt-1 truncate font-medium text-foreground" title={detail.account.verificationLink ?? undefined}>{detail.account.verificationLink ?? "-"}</div>
+                  <div className="mt-1 flex min-w-0 items-center gap-1">
+                    <div className="min-w-0 flex-1 truncate font-medium text-foreground" title={detail.account.verificationLink ?? undefined}>{detail.account.verificationLink ?? "-"}</div>
+                    {detail.account.verificationLink ? <Button type="button" size="icon" variant="ghost" aria-label={inboxCopy.copy} onClick={async () => { const result = await copyTextToClipboard(detail.account.verificationLink ?? ""); toast[result.ok ? "success" : "error"](result.ok ? inboxCopy.copied : inboxCopy.failed); }}><Copy className="h-4 w-4" /></Button> : null}
+                    {detail.account.verificationLink?.includes("/s/") ? <Button size="icon" variant="ghost" asChild aria-label={inboxCopy.manage}><Link href="/shared-inboxes"><Settings2 className="h-4 w-4" /></Link></Button> : null}
+                  </div>
                 </div>
               </section>
 

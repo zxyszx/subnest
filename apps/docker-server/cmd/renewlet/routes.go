@@ -14,6 +14,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"sort"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -103,7 +104,17 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	admin.PUT("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigUpdate(app, e) })
 	admin.POST("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigTest(app, e) })
 	admin.GET("/newszxcn/mailboxes", func(e *core.RequestEvent) error { return handleNewSzxcnMailboxes(app, e) })
-	admin.GET("/newszxcn/mailboxes/:mailboxId/folders", func(e *core.RequestEvent) error { return handleNewSzxcnFolders(app, e) })
+	admin.GET("/newszxcn/mailboxes/{mailboxId}/folders", func(e *core.RequestEvent) error { return handleNewSzxcnFolders(app, e) })
+	admin.GET("/shared-inbox-links", func(e *core.RequestEvent) error { return handleSharedInboxLinks(app, e) })
+	admin.POST("/shared-inbox-links", func(e *core.RequestEvent) error { return handleSharedInboxLinkCreate(app, e) })
+	admin.DELETE("/shared-inbox-links/{id}", func(e *core.RequestEvent) error { return handleSharedInboxLinkRevoke(app, e) })
+	api.GET("/api/shared-inbox/{shortKey}/messages", func(e *core.RequestEvent) error { return handleSharedInboxProxy(app, e, "/messages") })
+	api.GET("/api/shared-inbox/{shortKey}/messages/{messageId}", func(e *core.RequestEvent) error {
+		return handleSharedInboxProxy(app, e, "/messages/"+url.PathEscape(e.Request.PathValue("messageId")))
+	})
+	api.GET("/api/shared-inbox/{shortKey}/attachments/{attachmentId}", func(e *core.RequestEvent) error {
+		return handleSharedInboxProxy(app, e, "/attachments/"+url.PathEscape(e.Request.PathValue("attachmentId")))
+	})
 	// 访问安全是站点级管理员策略；不要挂到账号 settings route，避免 secret 进入用户导出/备份链路。
 	admin.GET("/auth-security", func(e *core.RequestEvent) error { return handleAuthSecurityRead(app, e) })
 	admin.PUT("/auth-security", func(e *core.RequestEvent) error { return handleAuthSecurityUpdate(app, e) })

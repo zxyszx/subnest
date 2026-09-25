@@ -53,8 +53,8 @@ func handleNewSzxcnConfigUpdate(app core.App, e *core.RequestEvent) error {
 		base = "https://mail.newszxcn.com"
 	}
 	parsed, err := url.Parse(base)
-	if err != nil || parsed.Scheme != "https" {
-		return e.BadRequestError("API 地址必须使用 HTTPS", nil)
+	if err != nil || parsed.Scheme != "https" || !strings.EqualFold(parsed.Hostname(), "mail.newszxcn.com") || parsed.Port() != "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return e.BadRequestError("API 地址必须是 https://mail.newszxcn.com", nil)
 	}
 	collection, err := app.FindCollectionByNameOrId("newszxcn_integrations")
 	if err != nil {

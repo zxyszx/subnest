@@ -29,6 +29,7 @@ const Privacy = lazy(lazyRouteLoader("privacy"));
 const Terms = lazy(lazyRouteLoader("terms"));
 const PublicStatus = lazy(lazyRouteLoader("publicStatus"));
 const SharedInbox = lazy(lazyRouteLoader("sharedInbox"));
+const SharedInboxAdmin = lazy(lazyRouteLoader("sharedInboxAdmin"));
 const AdminUsers = lazy(lazyRouteLoader("adminUsers"));
 const ForgotPassword = lazy(lazyRouteLoader("forgotPassword"));
 const ResetPassword = lazy(lazyRouteLoader("resetPassword"));
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="calendar" element={<Calendar />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="shared-inboxes" element={<ProtectedRoute adminOnly><SharedInboxAdmin /></ProtectedRoute>} />
             <Route path="admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
           </Route>
           <Route path="/setup" element={<Setup />} />

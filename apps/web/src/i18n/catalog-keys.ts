@@ -794,6 +794,7 @@ export const MESSAGE_KEYS = [
   "nav.calendar",
   "nav.dashboard",
   "nav.settings",
+  "nav.sharedInbox",
   "nav.sharing",
   "nav.statistics",
   "nav.subscriptions",

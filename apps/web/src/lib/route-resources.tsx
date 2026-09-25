@@ -44,6 +44,7 @@ const loadPrivacy = () => import("@/pages/privacy");
 const loadTerms = () => import("@/pages/terms");
 const loadPublicStatus = () => import("@/pages/public-status");
 const loadSharedInbox = () => import("@/pages/shared-inbox");
+const loadSharedInboxAdmin = () => import("@/pages/shared-inbox-admin");
 const loadAdminUsers = () => import("@/pages/admin/users");
 const loadForgotPassword = () => import("@/pages/forgot-password");
 const loadResetPassword = () => import("@/pages/reset-password");
@@ -170,6 +171,7 @@ export const routeResources = {
     fallback: LightweightRouteFallback,
   },
   sharedInbox: { path: "/s", load: loadSharedInbox, fallback: LightweightRouteFallback },
+  sharedInboxAdmin: { path: "/shared-inboxes", load: loadSharedInboxAdmin, fallback: SubscriptionsRouteFallback, usesPrivateShell: true },
   notFound: {
     path: "*",
     load: loadNotFound,

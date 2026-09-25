@@ -51,6 +51,7 @@ export const messages = [
   msg({ id: "nav.dashboard", message: "仪表盘" }),
   msg({ id: "nav.subscriptions", message: "订阅列表" }),
   msg({ id: "nav.sharing", message: "合租" }),
+  msg({ id: "nav.sharedInbox", message: "共享收件箱" }),
   msg({ id: "nav.calendar", message: "日历" }),
   msg({ id: "nav.statistics", message: "统计" }),
   msg({ id: "nav.settings", message: "设置" }),

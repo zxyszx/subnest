@@ -30,7 +30,7 @@ func ensureNewSzxcnCollections(app core.App, users *core.Collection) error {
 		if err := upsertField(c, userRelation(users)); err != nil {
 			return err
 		}
-		fields := []core.Field{&core.TextField{Name: "shortKeyHash", Required: true, Max: 128}, &core.TextField{Name: "shortKeyCiphertext", Required: true, Max: 65536}, &core.TextField{Name: "grantId", Required: true, Max: 256}, &core.TextField{Name: "mailboxId", Required: true, Max: 256}, &core.TextField{Name: "mailboxAddress", Required: true, Max: 320}, &core.JSONField{Name: "folderIds"}, &core.NumberField{Name: "windowMinutes", OnlyInt: true}, &core.TextField{Name: "expiresAt", Max: 40}, &core.SelectField{Name: "status", Required: true, Values: []string{"active", "revoked"}}}
+		fields := []core.Field{&core.TextField{Name: "shortKeyHash", Required: true, Max: 128}, &core.TextField{Name: "shortKeyCiphertext", Required: true, Max: 65536}, &core.TextField{Name: "grantId", Required: true, Max: 256}, &core.TextField{Name: "externalGrantId", Max: 256}, &core.TextField{Name: "mailboxId", Required: true, Max: 256}, &core.TextField{Name: "mailboxAddress", Required: true, Max: 320}, &core.JSONField{Name: "folderIds"}, &core.NumberField{Name: "windowMinutes", OnlyInt: true}, &core.TextField{Name: "expiresAt", Max: 40}, &core.SelectField{Name: "status", Required: true, Values: []string{"active", "revoked"}}}
 		for _, field := range fields {
 			if err := upsertField(c, field); err != nil {
 				return err

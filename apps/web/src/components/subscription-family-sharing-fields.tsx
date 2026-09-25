@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, RefreshCw, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Eye, EyeOff, Loader2, RefreshCw, Settings2, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -13,6 +13,17 @@ import { subscriptionService } from "@/services/subscription-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { toast } from "@/components/ui/sonner";
 import { generateFamilySharingPassword } from "@/lib/family-sharing-password";
+import Link from "@/components/router-link";
+
+const managedCopy = { title: "NewSzxcn 受管邮箱", shared: "已分享 · 最近 30 分钟", closed: "未开启分享", manage: "管理", toggle: "开启共享收件箱" };
+type NewSzxcnMailbox = { id: string; address: string };
+type SharedInboxLink = { id: string; shortUrl: string; mailboxId: string; status: "active" | "revoked" };
+async function managedInboxRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, credentials: "include", headers: { "Content-Type": "application/json", ...init?.headers } });
+  const payload = await response.json() as { data?: T; error?: { message?: string }; message?: string };
+  if (!response.ok || !payload.data) throw new Error(payload.error?.message || payload.message || "共享收件箱请求失败");
+  return payload.data;
+}
 
 export function SubscriptionFamilySharingFields({
   id,
@@ -30,8 +41,46 @@ export function SubscriptionFamilySharingFields({
   const { t } = useI18n();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
+  const [managedLinks, setManagedLinks] = useState<SharedInboxLink[]>([]);
+  const [shareLoading, setShareLoading] = useState(false);
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => {
     onChange({ ...value, [key]: next });
+  };
+  useEffect(() => {
+    if (!value.enabled) return;
+    void Promise.all([
+      managedInboxRequest<{ items: NewSzxcnMailbox[] }>("/api/app/admin/newszxcn/mailboxes"),
+      managedInboxRequest<{ links: SharedInboxLink[] }>("/api/app/admin/shared-inbox-links"),
+    ]).then(([mailboxResult, linkResult]) => { setMailboxes(mailboxResult.items); setManagedLinks(linkResult.links); })
+      .catch(() => { setMailboxes([]); setManagedLinks([]); });
+  }, [value.enabled]);
+  const managedMailbox = useMemo(() => mailboxes.find((mailbox) => mailbox.address.toLowerCase() === value.loginAccount.trim().toLowerCase()) ?? null, [mailboxes, value.loginAccount]);
+  const managedLink = useMemo(() => managedMailbox ? managedLinks.find((link) => link.mailboxId === managedMailbox.id && link.status === "active") ?? null : null, [managedLinks, managedMailbox]);
+  useEffect(() => {
+    if (managedLink && value.verificationLink !== managedLink.shortUrl) onChange({ ...value, verificationLink: managedLink.shortUrl });
+  }, [managedLink, onChange, value]);
+
+  const toggleManagedShare = async (enabled: boolean) => {
+    if (!managedMailbox) return;
+    setShareLoading(true);
+    try {
+      if (enabled) {
+        const folders = await managedInboxRequest<{ items: Array<{ id: string; role?: string }> }>(`/api/app/admin/newszxcn/mailboxes/${encodeURIComponent(managedMailbox.id)}/folders`);
+        const inbox = folders.items.find((folder) => folder.role === "inbox") ?? folders.items[0];
+        if (!inbox) throw new Error("该邮箱没有可分享的文件夹");
+        const result = await managedInboxRequest<{ link: SharedInboxLink }>("/api/app/admin/shared-inbox-links", { method: "POST", body: JSON.stringify({ mailboxId: managedMailbox.id, folderIds: [inbox.id], windowMinutes: 30 }) });
+        setManagedLinks((current) => [result.link, ...current]);
+        update("verificationLink", result.link.shortUrl);
+        toast.success("共享收件箱已开启");
+      } else if (managedLink) {
+        await managedInboxRequest<Record<string, never>>(`/api/app/admin/shared-inbox-links/${encodeURIComponent(managedLink.id)}`, { method: "DELETE" });
+        setManagedLinks((current) => current.map((link) => link.id === managedLink.id ? { ...link, status: "revoked" } : link));
+        update("verificationLink", "");
+        toast.success("共享收件箱已关闭");
+      }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "共享收件箱操作失败"); }
+    finally { setShareLoading(false); }
   };
   const readSavedPassword = async () => {
     if (!subscriptionId || !value.hasPassword) return value.password;
@@ -99,9 +148,12 @@ export function SubscriptionFamilySharingFields({
                 required
                 aria-describedby={field.describedBy}
                 className="border-border bg-secondary"
+                list={mailboxes.length ? id("newszxcn-mailboxes") : undefined}
               />
             )}
           </FormField>
+          {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
+          {managedMailbox ? <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2"><div className="min-w-0"><p className="text-sm font-medium">{managedCopy.title}</p><p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p></div><div className="flex items-center gap-2"><Link href="/shared-inboxes" className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"><Settings2 className="h-4 w-4" />{managedCopy.manage}</Link><Switch checked={Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} /></div></div> : null}
           <FormField
             id={id("familySharingPassword")}
             label={t("subscription.familySharing.password")}
@@ -168,6 +220,7 @@ export function SubscriptionFamilySharingFields({
                   placeholder={t("subscription.familySharing.verificationLinkPlaceholder")}
                   aria-describedby={field.describedBy}
                   className="border-border bg-secondary"
+                  readOnly={Boolean(managedMailbox)}
                 />
               )}
             </FormField>
