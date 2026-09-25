@@ -88,7 +88,7 @@ func handleNewSzxcnConfigUpdate(app core.App, e *core.RequestEvent) error {
 	return apiSuccessJSON(e, http.StatusOK, newszxcnConfigResponse{Integration: &newszxcnConfig{BaseURL: strings.TrimRight(base, "/"), TokenMask: maskNewSzxcnToken(token), TokenSet: true}})
 }
 func handleNewSzxcnConfigTest(app core.App, e *core.RequestEvent) error {
-	items, err := fetchNewSzxcn[[]newszxcnMailbox](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes")
+	items, err := fetchNewSzxcn[newszxcnMailbox](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes")
 	if err != nil {
 		return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_UPSTREAM_FAILED", "NewSzxcn 邮箱连接失败", err)
 	}
@@ -96,7 +96,7 @@ func handleNewSzxcnConfigTest(app core.App, e *core.RequestEvent) error {
 }
 
 func handleNewSzxcnMailboxes(app core.App, e *core.RequestEvent) error {
-	items, err := fetchNewSzxcn[[]newszxcnMailbox](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes")
+	items, err := fetchNewSzxcn[newszxcnMailbox](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes")
 	if err != nil {
 		return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_UPSTREAM_FAILED", "NewSzxcn 邮箱请求失败", err)
 	}
@@ -107,7 +107,7 @@ func handleNewSzxcnFolders(app core.App, e *core.RequestEvent) error {
 	if mailboxID == "" {
 		return e.BadRequestError("邮箱 ID 不能为空", nil)
 	}
-	items, err := fetchNewSzxcn[[]newszxcnFolder](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes/"+url.PathEscape(mailboxID)+"/folders")
+	items, err := fetchNewSzxcn[newszxcnFolder](app, e.Auth.Id, "/api/open/v1/subnest/mailboxes/"+url.PathEscape(mailboxID)+"/folders")
 	if err != nil {
 		return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_UPSTREAM_FAILED", "NewSzxcn 文件夹请求失败", err)
 	}
@@ -139,6 +139,10 @@ func fetchNewSzxcn[T any](app core.App, userID, path string) ([]T, error) {
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return nil, fmt.Errorf("upstream status %d", response.StatusCode)
 	}
+	return decodeNewSzxcnItems[T](raw)
+}
+
+func decodeNewSzxcnItems[T any](raw []byte) ([]T, error) {
 	var envelope struct {
 		Items []T `json:"items"`
 	}
