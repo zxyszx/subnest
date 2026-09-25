@@ -209,7 +209,7 @@ function SummaryMetric({ label, value, icon, emphasis }: { label: string; value:
   return (
     <div className="flex min-h-24 items-center gap-3 border-b px-4 py-3 last:border-b-0 sm:nth-last-[-n+2]:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
-      <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className={`mt-1 truncate font-semibold tabular-nums ${emphasis === "positive" ? "text-emerald-600 dark:text-emerald-400" : emphasis === "negative" ? "text-destructive" : "text-foreground"}`}>{value}</div></div>
+      <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className={`mt-1 whitespace-normal break-words text-sm font-semibold leading-5 tabular-nums ${emphasis === "positive" ? "text-emerald-600 dark:text-emerald-400" : emphasis === "negative" ? "text-destructive" : "text-foreground"}`} title={value}>{value}</div></div>
     </div>
   );
 }
