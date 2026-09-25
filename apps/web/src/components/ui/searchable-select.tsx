@@ -164,10 +164,10 @@ export function SearchableSelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    "relative flex cursor-default select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none transition-colors",
+                    "relative flex cursor-pointer select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none transition-colors",
                     "h5-mobile-option-item h5-mobile-option-item-leading",
                     "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground",
-                    "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                    "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
                   )}
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">

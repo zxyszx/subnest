@@ -40,6 +40,33 @@
     overflow: hidden;
   }
 
+  /* 桌面鼠标需要明确区分可交互与禁用状态；触屏设备不依赖悬停光标，保持原生行为。 */
+  @media (hover: hover) and (pointer: fine) {
+    :where(
+      a[href],
+      button:not(:disabled),
+      select:not(:disabled),
+      summary,
+      label[for],
+      [role="button"]:not([aria-disabled="true"]),
+      [role="link"]:not([aria-disabled="true"]),
+      [role="menuitem"]:not([data-disabled]),
+      [role="option"]:not([data-disabled]),
+      [role="tab"]:not([aria-disabled="true"])
+    ) {
+      cursor: pointer;
+    }
+
+    :where(
+      button:disabled,
+      select:disabled,
+      [aria-disabled="true"],
+      [data-disabled]
+    ) {
+      cursor: not-allowed;
+    }
+  }
+
   #root {
     height: 100vh;
     height: var(--app-viewport-height);
