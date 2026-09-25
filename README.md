@@ -62,7 +62,7 @@ http://localhost:3000/setup
 正式使用时建议固定版本：
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.28"#' .env
 docker compose pull
 docker compose up -d
 ```
@@ -88,7 +88,7 @@ tar -czf renewlet-backup-$(date +%F).tgz .env docker-compose.yml data
 更新 Docker 镜像：
 
 ```bash
-sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.27"#' .env
+sed -i.bak 's#RENEWLET_IMAGE=.*#RENEWLET_IMAGE="ghcr.io/zxyszx/subnest:0.3.28"#' .env
 docker compose pull
 docker compose up -d
 docker compose logs -f
