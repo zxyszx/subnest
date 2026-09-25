@@ -81,8 +81,8 @@ export function SettingsScreen() {
   } = password;
   const [mobileSectionNavOpen, setMobileSectionNavOpen] = useState(false);
   const settingsSections = useMemo(
-    () => createSettingsSections({ canManageAccessSecurity: authSecurity.canManage }),
-    [authSecurity.canManage],
+    () => createSettingsSections({ canManageAccessSecurity: authSecurity.canManage, canManageSharedInboxes: canManageUsers }),
+    [authSecurity.canManage, canManageUsers],
   );
   const {
     activeSectionId,

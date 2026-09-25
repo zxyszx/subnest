@@ -18,7 +18,7 @@ type CreateSubscriptionDialogProps = {
   mode: "create";
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (submission: SubscriptionFormSubmission) => void;
+  onSubmit: (submission: SubscriptionFormSubmission) => void | Promise<void>;
   initialSubscription?: Subscription | null | undefined;
   availableTags?: readonly string[] | undefined;
   platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
@@ -32,7 +32,7 @@ type EditSubscriptionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subscription: Subscription | null;
-  onSubmit: (submission: SubscriptionFormSubmission) => void;
+  onSubmit: (submission: SubscriptionFormSubmission) => void | Promise<void>;
   availableTags?: readonly string[] | undefined;
   platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   loading?: boolean | undefined;

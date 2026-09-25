@@ -49,22 +49,23 @@ describe("SettingsScreen section navigation", () => {
   it("renders section navigation links that target every settings section", () => {
     const { container } = renderSettingsScreen();
     const sections = [
-      ["settings-account", "账户"],
+      ["settings-account", "账户设置"],
       ["settings-access-security", "访问安全"],
-      ["settings-appearance", "外观"],
-      ["settings-display", "显示"],
+      ["settings-appearance", "主题外观"],
+      ["settings-display", "显示设置"],
       ["settings-icon-sources", "图标来源"],
-      ["settings-uploaded-icons", "上传图标"],
+      ["settings-uploaded-icons", "自定义图标"],
       ["settings-ai-recognition", "AI 识别"],
-      ["settings-budget", "预算"],
+      ["settings-budget", "预算设置"],
       ["settings-data-config", "数据配置"],
-      ["settings-cloud-backup", "云同步与备份"],
-      ["settings-exchange", "汇率"],
+      ["settings-cloud-backup", "云端备份"],
+      ["settings-exchange", "汇率设置"],
       ["settings-calendar-feed", "日历订阅"],
       ["settings-public-status", "公开展示"],
-      ["settings-public-api", "Public API"],
-      ["settings-timezone", "时区"],
-      ["settings-notifications", "通知"],
+      ["settings-public-api", "开放接口"],
+      ["settings-newszxcn", "共享收件箱"],
+      ["settings-timezone", "时区设置"],
+      ["settings-notifications", "通知设置"],
     ] as const;
 
     const desktopNav = screen.getByTestId("settings-section-nav-desktop");
@@ -77,7 +78,7 @@ describe("SettingsScreen section navigation", () => {
       "overflow-y-auto",
     );
     expect(desktopNav).not.toHaveClass("top-28", "max-h-[calc(100vh-8rem)]");
-    expect(within(desktopNav).getByRole("link", { name: "账户" })).toHaveAttribute("aria-current", "location");
+    expect(within(desktopNav).getByRole("link", { name: "账户设置" })).toHaveAttribute("aria-current", "location");
     expect(IntersectionObserver).not.toHaveBeenCalled();
     expect(screen.queryByTestId("settings-section-content-scroll")).not.toBeInTheDocument();
     const content = screen.getByTestId("settings-section-content");
@@ -117,7 +118,7 @@ describe("SettingsScreen section navigation", () => {
     const mobileTrigger = within(mobileHeader).getByRole("button", { name: /打开设置目录/ });
     expect(mobileTrigger).toHaveClass("h-10", "w-10", "shrink-0", "rounded-lg", "border", "border-border", "bg-card/80");
     expect(mobileTrigger).not.toHaveTextContent("目录");
-    expect(mobileTrigger).not.toHaveTextContent("时区");
+    expect(mobileTrigger).not.toHaveTextContent("时区设置");
     expect(within(mobileHeader).getByTestId("settings-mobile-page-subtitle")).toHaveTextContent("管理您的账户、显示和通知设置");
     const sectionNav = within(desktopNav);
 
@@ -157,7 +158,7 @@ describe("SettingsScreen section navigation", () => {
       "rounded-r-xl",
       "bg-card/95",
     );
-    const notificationLink = within(drawer).getByRole("link", { name: "通知" });
+    const notificationLink = within(drawer).getByRole("link", { name: "通知设置" });
     expect(notificationLink).toHaveClass("rounded-lg", "px-3", "py-2", "text-sm");
     expect(notificationLink).not.toHaveClass("h5-mobile-option-item");
     expect(notificationLink).not.toHaveClass("border", "bg-secondary/30");
@@ -169,7 +170,7 @@ describe("SettingsScreen section navigation", () => {
     renderSettingsScreen();
 
     const nav = screen.getByTestId("settings-section-nav-desktop");
-    const notificationLink = within(nav).getByRole("link", { name: "通知" });
+    const notificationLink = within(nav).getByRole("link", { name: "通知设置" });
     await user.click(notificationLink);
 
     expect(notificationLink).toHaveAttribute("aria-current", "location");
@@ -208,7 +209,7 @@ describe("SettingsScreen section navigation", () => {
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
     });
     expect(window.location.hash).toBe("");
 
@@ -216,7 +217,7 @@ describe("SettingsScreen section navigation", () => {
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "通知" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
     });
     expect(window.location.hash).toBe("");
   });
@@ -229,7 +230,7 @@ describe("SettingsScreen section navigation", () => {
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "汇率" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "汇率设置" })).toHaveAttribute("aria-current", "location");
     });
 
     setSectionAnchorGeometry("settings-calendar-feed");
@@ -238,7 +239,7 @@ describe("SettingsScreen section navigation", () => {
     await waitFor(() => {
       expect(within(desktopNav).getByRole("link", { name: "日历订阅" })).toHaveAttribute("aria-current", "location");
     });
-    expect(within(desktopNav).getByRole("link", { name: "汇率" })).not.toHaveAttribute("aria-current");
+    expect(within(desktopNav).getByRole("link", { name: "汇率设置" })).not.toHaveAttribute("aria-current");
   });
 
   it("keeps clicked target active while smooth scrolling passes intermediate sections", async () => {
@@ -246,18 +247,18 @@ describe("SettingsScreen section navigation", () => {
     renderSettingsScreen();
 
     const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "通知" }));
+    await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
 
     dispatchRootScroll(setSectionAnchorGeometry("settings-appearance"));
     dispatchRootScroll(setSectionAnchorGeometry("settings-display"));
     dispatchRootScroll(setSectionAnchorGeometry("settings-timezone"));
 
-    expect(within(desktopNav).getByRole("link", { name: "通知" })).toHaveAttribute("aria-current", "location");
+    expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
 
     dispatchRootScroll(setSectionAnchorGeometry("settings-notifications"));
     dispatchRootScroll(setSectionAnchorGeometry("settings-timezone"));
 
-    expect(within(desktopNav).getByRole("link", { name: "通知" })).toHaveAttribute("aria-current", "location");
+    expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
   });
 
   it("keeps icon sources active when the adjacent budget section is also visible", async () => {
@@ -278,7 +279,7 @@ describe("SettingsScreen section navigation", () => {
     await waitFor(() => {
       expect(within(desktopNav).getByRole("link", { name: "图标来源" })).toHaveAttribute("aria-current", "location");
     });
-    expect(within(desktopNav).getByRole("link", { name: "预算" })).not.toHaveAttribute("aria-current");
+    expect(within(desktopNav).getByRole("link", { name: "预算设置" })).not.toHaveAttribute("aria-current");
   });
 
   it("hands active state back to root scroll when the user interrupts a menu scroll", async () => {
@@ -287,14 +288,14 @@ describe("SettingsScreen section navigation", () => {
 
     const root = setSectionAnchorGeometry("settings-account");
     const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "通知" }));
+    await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
 
     setSectionAnchorGeometry("settings-timezone");
     root.dispatchEvent(new WheelEvent("wheel", { bubbles: true }));
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
     });
   });
 
@@ -304,14 +305,14 @@ describe("SettingsScreen section navigation", () => {
 
     const root = setSectionAnchorGeometry("settings-account");
     const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "通知" }));
+    await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
 
     setSectionAnchorGeometry("settings-timezone");
     root.dispatchEvent(new Event("scrollend"));
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
     });
   });
 
@@ -327,7 +328,7 @@ describe("SettingsScreen section navigation", () => {
     await user.click(within(screen.getByTestId("settings-mobile-page-header")).getByRole("button", { name: /打开设置目录/ }));
 
     const drawer = await screen.findByTestId("settings-section-nav-drawer");
-    const activeNotificationLink = within(drawer).getByRole("link", { name: "通知" });
+    const activeNotificationLink = within(drawer).getByRole("link", { name: "通知设置" });
     expect(activeNotificationLink).toHaveAttribute("aria-current", "location");
     expect(activeNotificationLink).toHaveClass("bg-primary/10", "text-primary");
   });
@@ -342,14 +343,14 @@ describe("SettingsScreen section navigation", () => {
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
     });
 
     root = setRootMetrics({ scrollTop: 1600, clientHeight: 800, scrollHeight: 2400 });
     dispatchRootScroll(root);
 
     await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "通知" })).toHaveAttribute("aria-current", "location");
+      expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
     });
   });
 
@@ -361,7 +362,7 @@ describe("SettingsScreen section navigation", () => {
       .getByRole("button", { name: /打开设置目录/ });
     await user.click(trigger);
     const drawer = await screen.findByTestId("settings-section-nav-drawer");
-    await user.click(within(drawer).getByRole("link", { name: "通知" }));
+    await user.click(within(drawer).getByRole("link", { name: "通知设置" }));
     const root = setSectionAnchorGeometry("settings-notifications");
     dispatchRootScroll(root);
     root.dispatchEvent(new Event("scrollend"));
@@ -372,7 +373,7 @@ describe("SettingsScreen section navigation", () => {
 
     await user.click(trigger);
     const reopenedDrawer = await screen.findByTestId("settings-section-nav-drawer");
-    const activeNotificationLink = within(reopenedDrawer).getByRole("link", { name: "通知" });
+    const activeNotificationLink = within(reopenedDrawer).getByRole("link", { name: "通知设置" });
     expect(activeNotificationLink).toHaveAttribute("aria-current", "location");
     expect(activeNotificationLink).toHaveClass("bg-primary/10", "text-primary");
     expect(activeNotificationLink.querySelector(".absolute.left-0")).not.toBeNull();
@@ -389,7 +390,7 @@ describe("SettingsScreen section navigation", () => {
     renderSettingsScreen();
 
     const nav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(nav).getByRole("link", { name: "通知" }));
+    await user.click(within(nav).getByRole("link", { name: "通知设置" }));
 
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(window.location.hash).toBe("#settings-notifications");

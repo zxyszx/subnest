@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { Activity, Coins, CreditCard, FolderKanban, Settings2 } from "lucide-react";
 import { DeferredImportDataDialog } from "@/components/import-data-dialog-loader";
 import { RawErrorResponseDialog } from "@/components/raw-error-response-dialog";
+import { NewSzxcnAdminPanel } from "@/components/newszxcn-admin-panel";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +86,7 @@ export function SettingsAdvancedSections({
     builtInIconIndex,
     publicStatusPage,
     publicApi,
+    canManageUsers,
     telegramBotCommands,
     externalIntegrationsDisabled,
   } = controller;
@@ -355,6 +357,10 @@ export function SettingsAdvancedSections({
         className={SETTINGS_SECTION_SCROLL_CLASS}
         controller={publicApi}
       />
+
+      {canManageUsers ? (
+        <NewSzxcnAdminPanel id="settings-newszxcn" className={SETTINGS_SECTION_FRAME_CLASS} />
+      ) : null}
 
       <section id="settings-timezone" className={SETTINGS_SECTION_FRAME_CLASS}>
         <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.timezone")}</h2>

@@ -495,7 +495,7 @@ msgstr "Minimal"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:31
 msgid "settings.sectionNav.newszxcn"
-msgstr "NewSzxcn 共享收件箱"
+msgstr "共享收件箱"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:670
@@ -560,7 +560,7 @@ msgstr "Prefix"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:26
 msgid "settings.sectionNav.publicApi"
-msgstr "Public API"
+msgstr "开放接口"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:430
@@ -785,7 +785,7 @@ msgstr "一次性 API Token"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:20
 msgid "settings.sectionNav.uploadedIcons"
-msgstr "上传图标"
+msgstr "自定义图标"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:196
@@ -845,7 +845,7 @@ msgstr "为避免过于冗长的通知可以关闭这项"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:30
 msgid "settings.sectionNav.cloudBackup"
-msgstr "云同步与备份"
+msgstr "云端备份"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:469
@@ -1779,7 +1779,7 @@ msgstr "复制恢复码"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:17
 msgid "settings.sectionNav.appearance"
-msgstr "外观"
+msgstr "主题外观"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:107
@@ -2474,7 +2474,7 @@ msgstr "旧链接会立即失效，已添加的日历需要使用新链接重新
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:27
 msgid "settings.sectionNav.timezone"
-msgstr "时区"
+msgstr "时区设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:321
@@ -2529,7 +2529,7 @@ msgstr "星期日"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:18
 msgid "settings.sectionNav.display"
-msgstr "显示"
+msgstr "显示设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:108
@@ -2964,7 +2964,7 @@ msgstr "汇总换算为 {currency}，单项保留原账单币种。"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:23
 msgid "settings.sectionNav.exchange"
-msgstr "汇率"
+msgstr "汇率设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:572
@@ -3569,7 +3569,7 @@ msgstr "账号安全初始化失败，请稍后重试。"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:16
 msgid "settings.sectionNav.account"
-msgstr "账户"
+msgstr "账户设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:570
@@ -3719,7 +3719,7 @@ msgstr "通用品牌与技术图标库，默认优先显示。"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:28
 msgid "settings.sectionNav.notifications"
-msgstr "通知"
+msgstr "通知设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:610
@@ -3914,7 +3914,7 @@ msgstr "预留字段：部分渠道可能需要手机号/收件人 ID；当前�
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:21
 msgid "settings.sectionNav.budget"
-msgstr "预算"
+msgstr "预算设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:633

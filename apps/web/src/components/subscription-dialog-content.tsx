@@ -1,5 +1,5 @@
 // 单次 open session 独占表单草稿；本层只编排字段、自动日期和提交转换，不拥有 Radix modal 生命周期。
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ function resolveLoadingStructure(preview: SubscriptionFormLoadingPreview): Subsc
 
 export function SubscriptionDialogContent(props: SubscriptionDialogContentProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [submitting, setSubmitting] = useState(false);
   const { config } = useCustomConfigState();
   const { data: settings } = useSettings();
   const { t, locale } = useI18n();
@@ -176,9 +177,9 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     [t],
   );
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (logoUploadStatus === "uploading") return;
+    if (logoUploadStatus === "uploading" || submitting) return;
 
     const submissionFormData = getSubmissionFormData();
     if (submissionFormData !== formData) {
@@ -216,12 +217,19 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     setSubmitError(null);
 
     if (props.mode === "edit" && !props.subscription) return;
-    props.onSubmit(submission);
-    setFormErrors({});
-    props.onRequestClose();
+    setSubmitting(true);
+    try {
+      await props.onSubmit(submission);
+      setFormErrors({});
+      props.onRequestClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : t("common.unknown"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const submitDisabled = logoUploadStatus === "uploading";
+  const submitDisabled = logoUploadStatus === "uploading" || submitting;
   const loadingPreview = props.mode === "create"
     ? props.initialSubscription ?? props.loadingPreview ?? formData
     : props.loadingPreview;
@@ -277,7 +285,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
             disabled={submitDisabled}
             className="w-full bg-primary text-primary-foreground hover:bg-primary-glow sm:w-auto"
           >
-            {logoUploadStatus === "uploading" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {logoUploadStatus === "uploading" || submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {props.mode === "create"
               ? isCloneCreateMode
                 ? t("subscription.cloneSubmit")

@@ -55,6 +55,7 @@ export const SETTINGS_SECTION_IDS = [
   "settings-calendar-feed",
   "settings-public-status",
   "settings-public-api",
+  "settings-newszxcn",
   "settings-timezone",
   "settings-notifications",
 ] as const;

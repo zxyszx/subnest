@@ -13,6 +13,7 @@ import { useSubscriptionCrud } from "./use-subscription-crud";
 
 const mocks = vi.hoisted(() => ({
   createMutate: vi.fn(),
+  createMutateAsync: vi.fn(),
   updateMutate: vi.fn(),
   patchMutate: vi.fn(),
   renewMutateAsync: vi.fn(),
@@ -23,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/hooks/use-subscriptions", () => ({
   prefetchSubscriptionDetail: mocks.prefetchDetail,
-  useCreateSubscription: () => ({ mutate: mocks.createMutate }),
+  useCreateSubscription: () => ({ mutate: mocks.createMutate, mutateAsync: mocks.createMutateAsync }),
   useUpdateSubscription: () => ({ mutate: mocks.updateMutate }),
   usePatchSubscription: () => ({ mutate: mocks.patchMutate }),
   useRenewSubscription: () => ({
@@ -140,6 +141,23 @@ describe("useSubscriptionCrud", () => {
     expect(result.current.editingCollectionItem).toBe(collectionItem);
     expect(result.current.cloningCollectionItem).toBe(collectionItem);
     expect(result.current.renewingCollectionItem).toBe(collectionItem);
+  });
+
+  it("creates a clone after changing its account number", async () => {
+    const { wrapper } = createWrapper();
+    const source = { ...subscription(), accountNumber: 7 };
+    const submission = { ...formSubmission(), accountNumber: 8 };
+    mocks.detailById.set(source.id, source);
+    mocks.createMutateAsync.mockResolvedValue({ ...source, ...submission, id: "sub-2" });
+    const { result } = renderHook(() => useSubscriptionCrud([source]), { wrapper });
+
+    act(() => result.current.handleCloneSubscription(source.id));
+    await act(async () => result.current.handleSaveClonedSubscription(submission));
+
+    expect(mocks.createMutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      accountNumber: 8,
+      platformName: source.platformName,
+    }));
   });
 
   it("keeps intent previews when the collection changes during open sessions", () => {

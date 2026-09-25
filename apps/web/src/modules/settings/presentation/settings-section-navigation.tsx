@@ -17,6 +17,7 @@ import { settingsLayout } from './settings-layout';
 
 const PROGRAMMATIC_SCROLL_IDLE_MS = 160;
 const BOTTOM_EDGE_TOLERANCE_PX = 4;
+const SETTINGS_GROUP_STARTS = new Set(["settings-appearance", "settings-budget", "settings-calendar-feed", "settings-timezone"]);
 
 export const SETTINGS_SECTIONS = [
   { id: "settings-account", labelKey: "settings.sectionNav.account" },
@@ -33,6 +34,7 @@ export const SETTINGS_SECTIONS = [
   { id: "settings-calendar-feed", labelKey: "settings.sectionNav.calendarFeed" },
   { id: "settings-public-status", labelKey: "settings.sectionNav.publicStatus" },
   { id: "settings-public-api", labelKey: "settings.sectionNav.publicApi" },
+  { id: "settings-newszxcn", labelKey: "settings.sectionNav.newszxcn" },
   { id: "settings-timezone", labelKey: "settings.sectionNav.timezone" },
   { id: "settings-notifications", labelKey: "settings.sectionNav.notifications" },
 ] as const;
@@ -43,12 +45,16 @@ export type SettingsSectionList = readonly SettingsSectionDefinition[];
 
 export function createSettingsSections({
   canManageAccessSecurity,
+  canManageSharedInboxes,
 }: {
   canManageAccessSecurity: boolean;
+  canManageSharedInboxes: boolean;
 }): SettingsSectionList {
-  return canManageAccessSecurity
-    ? SETTINGS_SECTIONS
-    : SETTINGS_SECTIONS.filter((section) => section.id !== "settings-access-security");
+  return SETTINGS_SECTIONS.filter((section) => {
+    if (section.id === "settings-access-security" && !canManageAccessSecurity) return false;
+    if (section.id === "settings-newszxcn" && !canManageSharedInboxes) return false;
+    return true;
+  });
 }
 
 /**
@@ -419,14 +425,15 @@ export function DesktopSettingsSectionNav({
         </p>
         <div className="grid gap-1">
           {sections.map((section) => (
-            <SettingsSectionNavLink
-              key={section.id}
-              section={section}
-              active={activeSectionId === section.id}
-              onSectionClick={onSectionClick}
-              onSectionIntent={onSectionIntent}
-              variant="desktop"
-            />
+            <div key={section.id} className={cn(SETTINGS_GROUP_STARTS.has(section.id) && "mt-2 border-t border-border pt-2")}>
+              <SettingsSectionNavLink
+                section={section}
+                active={activeSectionId === section.id}
+                onSectionClick={onSectionClick}
+                onSectionIntent={onSectionIntent}
+                variant="desktop"
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -479,7 +486,7 @@ export function MobileSettingsSectionDrawer({
         <nav aria-label={t("settings.sectionNavLabel")} className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
           <ul className="grid gap-1">
             {sections.map((section) => (
-              <li key={section.id}>
+              <li key={section.id} className={cn(SETTINGS_GROUP_STARTS.has(section.id) && "mt-2 border-t border-border pt-2")}>
                 <SettingsSectionNavLink
                   section={section}
                   active={activeSectionId === section.id}

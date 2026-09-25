@@ -131,7 +131,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                   <div className="mt-1 flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1 truncate font-medium text-foreground" title={detail.account.verificationLink ?? undefined}>{detail.account.verificationLink ?? "-"}</div>
                     {detail.account.verificationLink ? <Button type="button" size="icon" variant="ghost" aria-label={inboxCopy.copy} onClick={async () => { const result = await copyTextToClipboard(detail.account.verificationLink ?? ""); toast[result.ok ? "success" : "error"](result.ok ? inboxCopy.copied : inboxCopy.failed); }}><Copy className="h-4 w-4" /></Button> : null}
-                    {detail.account.verificationLink?.includes("/s/") ? <Button size="icon" variant="ghost" asChild aria-label={inboxCopy.manage}><Link href="/shared-inboxes"><Settings2 className="h-4 w-4" /></Link></Button> : null}
+                    {detail.account.verificationLink?.includes("/s/") ? <Button size="icon" variant="ghost" asChild aria-label={inboxCopy.manage}><Link href="/settings#settings-newszxcn"><Settings2 className="h-4 w-4" /></Link></Button> : null}
                   </div>
                 </div>
               </section>

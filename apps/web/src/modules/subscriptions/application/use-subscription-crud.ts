@@ -25,7 +25,7 @@ import type { SubscriptionRenewBody } from "@renewlet/shared/schemas/subscriptio
 /** CRUD 控制器只保存会话目标与列表快照；完整对象始终来自唯一的详情查询缓存。 */
 export function useSubscriptionCrud(subscriptions: readonly SubscriptionCollectionItem[]) {
   const queryClient = useQueryClient();
-  const { mutate: createSubscription } = useCreateSubscription();
+  const { mutate: createSubscription, mutateAsync: createSubscriptionAsync } = useCreateSubscription();
   const { mutate: updateSubscription } = useUpdateSubscription();
   const { mutate: patchSubscription } = usePatchSubscription();
   const {
@@ -129,10 +129,11 @@ export function useSubscriptionCrud(subscriptions: readonly SubscriptionCollecti
     updateSubscription({ id: editingSubscriptionId, changes });
   }, [editingSubscriptionId, updateSubscription]);
 
-  const handleSaveClonedSubscription = useCallback((submission: SubscriptionFormSubmission) => {
-    if (!cloningQuery.data) return;
-    createSubscription(buildClonedSubscriptionDraft(cloningQuery.data, submission));
-  }, [cloningQuery.data, createSubscription]);
+  const handleSaveClonedSubscription = useCallback(async (submission: SubscriptionFormSubmission) => {
+    const source = cloneDialogSession.subscription;
+    if (!source) throw new Error("复制来源尚未加载，请稍后重试");
+    await createSubscriptionAsync(buildClonedSubscriptionDraft(source, submission));
+  }, [cloneDialogSession.subscription, createSubscriptionAsync]);
 
   const handleSubmitRenewSubscription = useCallback(async (payload: SubscriptionRenewBody) => {
     if (!renewingSubscriptionId) return;
