@@ -99,9 +99,11 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	})
 
 	admin := api.Group("/api/app/admin").Bind(appAuthMiddleware(app)).BindFunc(requireAdmin)
-	admin.GET("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigRead(app,e) })
-	admin.PUT("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigUpdate(app,e) })
-	admin.POST("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigTest(app,e) })
+	admin.GET("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigRead(app, e) })
+	admin.PUT("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigUpdate(app, e) })
+	admin.POST("/newszxcn", func(e *core.RequestEvent) error { return handleNewSzxcnConfigTest(app, e) })
+	admin.GET("/newszxcn/mailboxes", func(e *core.RequestEvent) error { return handleNewSzxcnMailboxes(app, e) })
+	admin.GET("/newszxcn/mailboxes/:mailboxId/folders", func(e *core.RequestEvent) error { return handleNewSzxcnFolders(app, e) })
 	// 访问安全是站点级管理员策略；不要挂到账号 settings route，避免 secret 进入用户导出/备份链路。
 	admin.GET("/auth-security", func(e *core.RequestEvent) error { return handleAuthSecurityRead(app, e) })
 	admin.PUT("/auth-security", func(e *core.RequestEvent) error { return handleAuthSecurityUpdate(app, e) })
