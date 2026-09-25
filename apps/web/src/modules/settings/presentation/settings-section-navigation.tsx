@@ -29,6 +29,7 @@ export const SETTINGS_SECTIONS = [
   { id: "settings-budget", labelKey: "settings.sectionNav.budget" },
   { id: "settings-data-config", labelKey: "settings.sectionNav.dataConfig" },
   { id: "settings-cloud-backup", labelKey: "settings.sectionNav.cloudBackup" },
+  { id: "settings-newszxcn", labelKey: "settings.sectionNav.newszxcn" },
   { id: "settings-exchange", labelKey: "settings.sectionNav.exchange" },
   { id: "settings-calendar-feed", labelKey: "settings.sectionNav.calendarFeed" },
   { id: "settings-public-status", labelKey: "settings.sectionNav.publicStatus" },

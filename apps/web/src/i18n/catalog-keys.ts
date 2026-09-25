@@ -1531,6 +1531,7 @@ export const MESSAGE_KEYS = [
   "settings.sectionNav.budget",
   "settings.sectionNav.calendarFeed",
   "settings.sectionNav.cloudBackup",
+  "settings.sectionNav.newszxcn",
   "settings.sectionNav.dataConfig",
   "settings.sectionNav.display",
   "settings.sectionNav.exchange",

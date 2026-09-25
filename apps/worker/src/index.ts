@@ -108,6 +108,7 @@ import {
   telegramWebhook,
 } from "./telegram-bot";
 import { systemRestart, systemUpdate, systemUpdateStatus, systemVersion } from "./system";
+import { readNewSzxcnConfig, updateNewSzxcnConfig, testNewSzxcnConnection, listNewSzxcnMailboxes, listNewSzxcnFolders, listSharedInboxLinks, createSharedInboxLink, revokeSharedInboxLink, publicSharedInboxMessagesProxy } from "./newszxcn";
 import { errorResponse, methodNotAllowed, requestLocale, requireSameOriginUnsafe, successJson, toResponse, type AppLocale } from "./http";
 import { serverText } from "./server-i18n";
 import type { Env } from "./types";
@@ -221,6 +222,11 @@ defineRoute(adminRoutes, "/media/icon-index/providers/:provider/check", {
 defineRoute(adminRoutes, "/media/icon-index/providers/:provider/refresh", {
   POST: (context) => refreshBuiltInIconIndexProvider(context.req.raw, context.env, routeParam(context, "provider")),
 });
+defineRoute(adminRoutes, "/newszxcn", { GET: (context) => readNewSzxcnConfig(context.req.raw, context.env), PUT: (context) => updateNewSzxcnConfig(context.req.raw, context.env), POST: (context) => testNewSzxcnConnection(context.req.raw, context.env) });
+defineRoute(adminRoutes, "/newszxcn/mailboxes", { GET: (context) => listNewSzxcnMailboxes(context.req.raw, context.env) });
+defineRoute(adminRoutes, "/newszxcn/mailboxes/:mailboxId/folders", { GET: (context) => listNewSzxcnFolders(context.req.raw, context.env, routeParam(context, "mailboxId")) });
+defineRoute(adminRoutes, "/shared-inbox-links", { GET: (context) => listSharedInboxLinks(context.req.raw, context.env), POST: (context) => createSharedInboxLink(context.req.raw, context.env) });
+defineRoute(adminRoutes, "/shared-inbox-links/:id", { DELETE: (context) => revokeSharedInboxLink(context.req.raw, context.env, routeParam(context, "id")) });
 app.route("/api/app/admin", adminRoutes);
 
 const accountRoutes = newAppRouter();
@@ -350,6 +356,10 @@ defineRoute(assetRoutes, "/:id", {
   DELETE: (context) => deleteAsset(context.req.raw, context.env, routeParam(context, "id")),
 });
 app.route("/api/app/assets", assetRoutes);
+
+defineRoute(app, "/api/shared-inbox/:shortKey/messages", { GET: (context) => publicSharedInboxMessagesProxy(context.req.raw, context.env, routeParam(context, "shortKey"), "/messages") });
+defineRoute(app, "/api/shared-inbox/:shortKey/messages/:messageId", { GET: (context) => publicSharedInboxMessagesProxy(context.req.raw, context.env, routeParam(context, "shortKey"), `/messages/${encodeURIComponent(routeParam(context, "messageId"))}`) });
+defineRoute(app, "/api/shared-inbox/:shortKey/attachments/:attachmentId", { GET: (context) => publicSharedInboxMessagesProxy(context.req.raw, context.env, routeParam(context, "shortKey"), `/attachments/${encodeURIComponent(routeParam(context, "attachmentId"))}`) });
 
 defineRoute(app, "/api/app/calendar-feed", {
   GET: (context) => readCalendarFeed(context.req.raw, context.env),

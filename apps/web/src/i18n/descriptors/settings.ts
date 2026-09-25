@@ -28,6 +28,7 @@ export const messages = [
   msg({ id: "settings.sectionNav.notifications", message: "通知" }),
   msg({ id: "settings.sectionNav.aiRecognition", message: "AI 识别" }),
   msg({ id: "settings.sectionNav.cloudBackup", message: "云同步与备份" }),
+  msg({ id: "settings.sectionNav.newszxcn", message: "NewSzxcn 共享收件箱" }),
   msg({ id: "settings.account", message: "管理员账户" }),
   msg({ id: "settings.username", message: "用户名" }),
   msg({ id: "settings.emailLoading", message: "加载中…" }),

@@ -7,6 +7,7 @@ export const ADVANCED_SETTINGS_SECTION_IDS = [
   "settings-budget",
   "settings-data-config",
   "settings-cloud-backup",
+  "settings-newszxcn",
   "settings-exchange",
   "settings-calendar-feed",
   "settings-public-status",

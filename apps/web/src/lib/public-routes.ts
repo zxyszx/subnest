@@ -36,6 +36,7 @@ export function isPublicRoutePath(pathname: string): boolean {
   if (pathname.startsWith("/status/")) {
     return true;
   }
+  if (pathname.startsWith("/s/")) return true;
 
   return false;
 }

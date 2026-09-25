@@ -86,6 +86,7 @@ func ensureCollectionsSchema(app core.App) error {
 	if err := ensureSharingCollections(app, users); err != nil {
 		return err
 	}
+	if err := ensureNewSzxcnCollections(app, users); err != nil { return err }
 	if err := ensureSubscriptionSchedulerStatesCollection(app, users); err != nil {
 		return err
 	}

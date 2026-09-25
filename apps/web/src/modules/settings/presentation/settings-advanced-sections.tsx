@@ -39,6 +39,7 @@ import { PublicApiSection } from "./public-api-section";
 import { PublicStatusPageSection } from "./public-status-page-section";
 import { SETTINGS_SECTION_FRAME_CLASS, SETTINGS_SECTION_SCROLL_CLASS } from "./settings-layout";
 import { UploadedIconsSection } from "./uploaded-icons-section";
+import { NewSzxcnAdminPanel } from "@/components/newszxcn-admin-panel";
 
 export function SettingsAdvancedSections({
   controller,
@@ -299,6 +300,10 @@ export function SettingsAdvancedSections({
         controller={cloudBackup}
         disabled={externalIntegrationsDisabled}
       />
+
+      <section id="settings-newszxcn" className={SETTINGS_SECTION_SCROLL_CLASS}>
+        <NewSzxcnAdminPanel />
+      </section>
 
       <ExchangeRatesSection
         id="settings-exchange"

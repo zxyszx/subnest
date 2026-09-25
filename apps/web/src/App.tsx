@@ -28,6 +28,7 @@ const Login = lazy(lazyRouteLoader("login"));
 const Privacy = lazy(lazyRouteLoader("privacy"));
 const Terms = lazy(lazyRouteLoader("terms"));
 const PublicStatus = lazy(lazyRouteLoader("publicStatus"));
+const SharedInbox = lazy(lazyRouteLoader("sharedInbox"));
 const AdminUsers = lazy(lazyRouteLoader("adminUsers"));
 const ForgotPassword = lazy(lazyRouteLoader("forgotPassword"));
 const ResetPassword = lazy(lazyRouteLoader("resetPassword"));
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/status/:token" element={<PublicStatus />} />
+          <Route path="/s/:shortKey" element={<SharedInbox />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />
