@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 )
 
 // defaultSystemReleaseClient 返回只信任 GitHub Release feed 和下载边界的 HTTP 客户端。
@@ -102,27 +103,35 @@ func (client *httpSystemReleaseClient) probeReleaseAsset(ctx context.Context, so
 	if err := validateTrustedDownloadURL(sourceURL); err != nil {
 		return 0, false
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodHead, sourceURL, nil)
-	if err != nil {
-		return 0, false
+	// GitHub 的 feed 和附件不是原子发布：feed 可能先看到新版本，附件随后才可 HEAD。
+	for attempt := 0; attempt < 3; attempt++ {
+		request, err := http.NewRequestWithContext(ctx, http.MethodHead, sourceURL, nil)
+		if err != nil {
+			return 0, false
+		}
+		request.Header.Set("User-Agent", "Renewlet/"+Version)
+		response, err := sendUpstreamHTTPRequest(request, upstreamHTTPRequestOptions{
+			Provider: "GitHub Release asset",
+			Timeout:  systemUpdateAssetRequestTimeout,
+			Client:   client.assetClient,
+		})
+		if err == nil {
+			statusOK := response.StatusCode >= http.StatusOK && response.StatusCode < http.StatusMultipleChoices
+			size := response.ContentLength
+			response.Body.Close()
+			if statusOK {
+				return size, true
+			}
+		}
+		if attempt < 2 {
+			select {
+			case <-ctx.Done():
+				return 0, false
+			case <-time.After(time.Duration(attempt+1) * 500 * time.Millisecond):
+			}
+		}
 	}
-	request.Header.Set("User-Agent", "Renewlet/"+Version)
-	response, err := sendUpstreamHTTPRequest(request, upstreamHTTPRequestOptions{
-		Provider: "GitHub Release asset",
-		Timeout:  systemUpdateAssetRequestTimeout,
-		Client:   client.assetClient,
-	})
-	if err != nil {
-		return 0, false
-	}
-	defer response.Body.Close()
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return 0, false
-	}
-	if response.ContentLength < 0 {
-		return 0, true
-	}
-	return response.ContentLength, true
+	return 0, false
 }
 
 // DownloadFile 把大归档交给独立下载状态机；Release 元数据和 checksum 仍使用短请求客户端。

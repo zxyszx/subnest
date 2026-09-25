@@ -43,7 +43,7 @@ jobs:
         # 下游用 is-stable 决定 draft/prerelease 和 Cloudflare 生产部署；RC 永远不能碰 latest/生产。
         run: |
           VERSION="$(node scripts/release.mjs validate-version "${GITHUB_REF_NAME}")"
-          node scripts/release.mjs validate-package-versions "$VERSION"
+          node scripts/release.mjs preflight "$VERSION"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           if [[ "$VERSION" == *"-rc."* ]]; then
             echo "is-stable=false" >> "$GITHUB_OUTPUT"
@@ -359,7 +359,28 @@ jobs:
         id: build-time
         run: echo "value=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
+      - name: Check production credentials
+        id: cloudflare-config
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKER_NAME: ${{ secrets.WORKER_NAME }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          missing=()
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID WORKER_NAME D1_DATABASE_ID R2_BUCKET_NAME; do
+            if [[ -z "${!name}" ]]; then missing+=("$name"); fi
+          done
+          if ((${#missing[@]})); then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare production deploy skipped: missing GitHub Environment secrets: ${missing[*]}" >&2
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate stable release version
+        if: ${{ steps.cloudflare-config.outputs.ready == 'true' }}
         # 双保险：上游 job 已过滤 RC，但生产部署自身也拒绝候选版，避免改动条件时误放行。
         run: |
           VERSION="$(node scripts/release.mjs validate-version "${{ needs.metadata.outputs.version }}")"
@@ -369,6 +390,7 @@ jobs:
           fi
 
       - name: Generate Cloudflare config
+        if: ${{ steps.cloudflare-config.outputs.ready == 'true' }}
         env:
           RENEWLET_VERSION: ${{ needs.metadata.outputs.version }}
           RENEWLET_COMMIT: ${{ github.sha }}
@@ -376,10 +398,13 @@ jobs:
         run: pnpm cloudflare:config:ci
 
       - name: Check Cloudflare build
+        if: ${{ steps.cloudflare-config.outputs.ready == 'true' }}
         run: pnpm check:cloudflare
 
       - name: Build Cloudflare assets
+        if: ${{ steps.cloudflare-config.outputs.ready == 'true' }}
         run: pnpm build:cloudflare
 
       - name: Deploy Renewlet through the exclusive migration orchestrator
+        if: ${{ steps.cloudflare-config.outputs.ready == 'true' }}
         run: pnpm deploy -- --config "$CI_WRANGLER_CONFIG" --maintenance-config "$CI_WRANGLER_MAINTENANCE_CONFIG"

@@ -42,6 +42,7 @@ function usage() {
   node scripts/release.mjs notes --version <version> [--previous <tag>]
   node scripts/release.mjs docker-tags <version>
   node scripts/release.mjs package-docker <version>
+  node scripts/release.mjs preflight <version>
   node scripts/release.mjs release-body --version <version> [--previous <tag>]`);
 }
 
@@ -390,6 +391,14 @@ function packageDocker(rawVersion) {
   console.log(zipPath);
 }
 
+function preflight(rawVersion) {
+  const version = normalizeVersion(rawVersion);
+  validatePackageVersions(version);
+  releaseBody(version);
+  packageDocker(version);
+  console.log(`Release preflight passed for v${version}.`);
+}
+
 function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = args._[0];
@@ -417,6 +426,9 @@ function main(argv = process.argv.slice(2)) {
       break;
     case "package-docker":
       packageDocker(args._[1]);
+      break;
+    case "preflight":
+      preflight(args._[1]);
       break;
     case "release-body":
       process.stdout.write(releaseBody(args.version, args.previous));
