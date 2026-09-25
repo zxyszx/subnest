@@ -843,6 +843,11 @@ msgid "settings.sectionNav.cloudBackup"
 msgstr "Cloud sync & backup"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:31
+msgid "settings.sectionNav.newszxcn"
+msgstr "NewSzxcn shared inbox"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:468
 msgid "settings.cloudBackup"
 msgstr "Cloud sync & backup"
