@@ -15,6 +15,7 @@ type customConfigItem struct {
 }
 
 type customConfigPayload struct {
+	Platforms      []customConfigItem `json:"platforms,omitempty"`
 	Categories     []customConfigItem `json:"categories"`
 	Statuses       []customConfigItem `json:"statuses"`
 	PaymentMethods []customConfigItem `json:"paymentMethods"`

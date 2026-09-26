@@ -309,6 +309,21 @@ describe("SubscriptionCalendar dialogs", () => {
     expect(within(event).getByAltText("Netflix")).toBeInTheDocument();
   });
 
+  it("uses the service name for unbound calendar events", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-14T12:00:00Z"));
+
+    renderCalendar([
+      subscription({
+        id: "unbound-server",
+        name: "Standalone Server",
+        platformName: "",
+      }),
+    ]);
+
+    expect(screen.getByRole("button", { name: "Standalone Server" })).toBeInTheDocument();
+  });
+
   it("renders the mobile agenda with only active and trial subscriptions", async () => {
     mockMobileCalendar();
     vi.useFakeTimers();

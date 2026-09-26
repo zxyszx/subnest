@@ -471,7 +471,7 @@ export const SubscriptionCalendar = ({
                             >
                               <div className="min-w-0 flex-1">
                                 <CalendarAccountIdentity
-                                  platformName={sub.platformName ?? sub.name}
+                                  platformName={sub.platformName || sub.name}
                                   logo={sub.logo}
                                   accountNumber={sub.accountNumber ?? 1}
                                 />
@@ -545,7 +545,7 @@ export const SubscriptionCalendar = ({
                               )}
                             >
                               <CalendarAccountIdentity
-                                platformName={sub.platformName ?? sub.name}
+                                platformName={sub.platformName || sub.name}
                                 logo={sub.logo}
                                 accountNumber={sub.accountNumber ?? 1}
                                 size="xs"

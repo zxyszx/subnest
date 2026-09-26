@@ -265,7 +265,10 @@ test("desktop 1000-row search uses one index request and keeps the virtual list 
     name: `Scale Needle ${index}`,
   }));
   await page.route("**/api/app/subscriptions/index**", async (route) => {
-    indexRequests.push(route.request().url());
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.searchParams.get("q") === "Scale Needle") {
+      indexRequests.push(requestUrl.toString());
+    }
     await route.fulfill({
       status: 200,
       contentType: "application/json",

@@ -712,6 +712,7 @@ func normalizeCustomConfigPayload(config *customConfigPayload) error {
 		name  string
 		items *[]customConfigItem
 	}{
+		{name: "platforms", items: &config.Platforms},
 		{name: "categories", items: &config.Categories},
 		{name: "statuses", items: &config.Statuses},
 		{name: "paymentMethods", items: &config.PaymentMethods},

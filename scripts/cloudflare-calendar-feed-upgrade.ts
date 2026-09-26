@@ -24,6 +24,12 @@ const subscriptionColumns0035 = [
   "repeat_reminder_window", "cost_sharing_json", "cost_sharing_collection_reminder_enabled",
   "cost_sharing_next_collection_reminder_date", "extra_json", "created_at", "updated_at",
 ] as const;
+const subscriptionColumnsCurrent = [
+  ...subscriptionColumns0035,
+  "platform_name", "account_number", "card_last4",
+  "family_sharing_enabled", "sharing_login_account", "sharing_encrypted_credentials",
+  "sharing_password_mask", "sharing_verification_link", "sharing_capacity",
+] as const;
 const pre0035AllowedExtraColumns = new Set([
   ...subscriptionColumns0035,
   "cost_sharing_collection_reminder_enabled",
@@ -388,7 +394,11 @@ async function hasSubscriptionMigrationTempTable(client: D1Client): Promise<bool
 }
 
 function assertPost0035SubscriptionShape(columns: readonly string[]): void {
-  if (!sameOrderedValues(columns, subscriptionColumns0035)) {
+  // 0042/0043 只在 0035 收敛后的表尾追加已审查字段；恢复流程既要兼容刚完成 0035 的库，也要接受当前完整结构。
+  if (
+    !sameOrderedValues(columns, subscriptionColumns0035)
+    && !sameOrderedValues(columns, subscriptionColumnsCurrent)
+  ) {
     throw new Error("Cloudflare subscriptions schema after 0035 is invalid or mixed; refusing automatic recovery");
   }
 }

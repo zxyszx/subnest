@@ -285,8 +285,8 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
   // 顺序化 issue 列表是普通提交、draft 转换和 AI preflight 的共同事实源；新增规则时必须保持“首错可直接操作”的顺序。
   const issues: SubscriptionFormValidationIssue[] = [];
 
-  if (!formData.platformName.trim() && !formData.name.trim()) {
-    issues.push({ code: "platformNameRequired", field: "platformName", messageKey: "subscription.validation.platformNameRequired" });
+  if (!formData.name.trim()) {
+    issues.push({ code: "nameRequired", field: "name", messageKey: "subscription.validation.nameRequired" });
   }
   if (parsePositiveIntegerInput(formData.accountNumber, 100000) === null) {
     issues.push({ code: "accountNumberInvalid", field: "accountNumber", messageKey: "subscription.validation.accountNumberInvalid" });
@@ -431,9 +431,10 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
   }
 
   const repeatReminderEnabled = reminderDays === DISABLED_REMINDER_DAYS ? false : formData.repeatReminderEnabled;
-  const platformName = formData.platformName.trim() || formData.name.trim();
+  const platformName = formData.platformName.trim() || "__unbound__";
   const base = {
-    name: platformName,
+    // name 与 platformName 可独立维护；旧表单只填平台时仍使用平台名作为服务名。
+    name: formData.name.trim() || formData.platformName.trim(),
     platformName,
     accountNumber: parsePositiveIntegerInput(formData.accountNumber, 100000) ?? 1,
     logo: formData.logo,

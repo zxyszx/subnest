@@ -111,7 +111,7 @@ const DEFAULT_BADGE_COLOR = "hsl(var(--primary))";
 const CARD_ACTION_MENU_CONTENT_CLASSNAME = "pointer-events-auto w-max min-w-40";
 const CARD_ACTION_MENU_ITEM_CLASSNAME = "gap-2.5 px-2.5 py-2 text-sm whitespace-nowrap";
 
-type SubscriptionCardMetaTone = "muted" | "warning";
+type SubscriptionCardMetaTone = "muted" | "warning" | "danger";
 
 type SubscriptionCardMetaItem = {
   key: string;
@@ -125,6 +125,7 @@ type SubscriptionCardMetaItem = {
 const metaToneClassNames = {
   muted: "text-muted-foreground",
   warning: "text-warning",
+  danger: "text-destructive",
 } satisfies Record<SubscriptionCardMetaTone, string>;
 
 function SubscriptionCardMetaToken({ item }: { item: SubscriptionCardMetaItem }) {
@@ -163,6 +164,32 @@ function SubscriptionCardMetaFlow({ items }: { items: readonly SubscriptionCardM
   );
 }
 
+function SubscriptionCardGridMeta({ items }: { items: readonly SubscriptionCardMetaItem[] }) {
+  const relativeBilling = items.find((item) => item.key === "relative-billing");
+  const primaryItems = items.filter((item) => item.key === "start-date" || item.key === "billing-date");
+  const secondaryItems = items.filter((item) => (
+    item.key !== "start-date" && item.key !== "billing-date" && item.key !== "relative-billing"
+  ));
+
+  return (
+    <div data-testid="subscription-card-meta-flow" className="grid min-w-0 gap-1.5">
+      <div data-testid="subscription-card-meta-date-group" className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1.5">
+        {primaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
+      </div>
+      {secondaryItems.length > 0 ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          {secondaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
+        </div>
+      ) : null}
+      {relativeBilling ? (
+        <div className="flex min-w-0 items-center justify-end border-t border-border/50 pt-1.5">
+          <SubscriptionCardMetaToken item={relativeBilling} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** 订阅卡片。 */
 function SubscriptionCardComponent({
   subscription,
@@ -189,6 +216,7 @@ function SubscriptionCardComponent({
   const categoryLabel = categoryConfig ? label(categoryConfig.labels) : subscription.category;
   const categoryColor = categoryConfig?.color ?? DEFAULT_BADGE_COLOR;
   const displayName = subscriptionPlatformName(subscription);
+  const serviceName = subscription.name.trim();
   const accountNumber = subscription.accountNumber ?? 1;
   const categoryBadgeStyle = {
     backgroundColor: colorWithAlpha(categoryColor, 0.1) ?? undefined,
@@ -234,6 +262,11 @@ function SubscriptionCardComponent({
   const isInactive = isExpired || effectiveStatus === "paused" || effectiveStatus === "cancelled";
   // 这里是展示提示窗口，不等同于 Cron 通知窗口；不要把两者的阈值混用。
   const isRenewingSoon = !isInactive && !isBuyout && daysUntilRenewal <= 7 && daysUntilRenewal >= 0;
+  const renewalTone: "normal" | "warning" | "danger" = !isRenewingSoon
+    ? "normal"
+    : daysUntilRenewal <= 3
+      ? "danger"
+      : "warning";
   const isTrialEndingSoon = !isExpired && subscription.status === 'trial' && daysUntilTrialEnd !== null &&
     daysUntilTrialEnd <= 3 && daysUntilTrialEnd >= 0;
   const billingDateText = isBuyout && subscription.startDate
@@ -264,7 +297,11 @@ function SubscriptionCardComponent({
       ? t("subscription.card.renewsToday")
       : t("subscription.card.renewsInDays", { days: daysUntilRenewal });
   })();
-  const billingStatusTone: SubscriptionCardMetaTone = isRenewingSoon ? "warning" : "muted";
+  const billingStatusTone: SubscriptionCardMetaTone = renewalTone === "danger"
+    ? "danger"
+    : renewalTone === "warning"
+      ? "warning"
+      : "muted";
   const paymentConfig = subscription.paymentMethod ? paymentMethodByValue.get(subscription.paymentMethod) : undefined;
   const paymentMethodLabel = subscription.paymentMethod
     ? paymentConfig
@@ -345,13 +382,16 @@ function SubscriptionCardComponent({
     <>
     <div
       data-testid="subscription-card"
+      data-view-mode={viewMode}
       onPointerEnter={() => onPrefetchDetails?.(subscription.id)}
       onFocusCapture={() => onPrefetchDetails?.(subscription.id)}
       className={cn(
-        "group relative h-full overflow-hidden rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-300 hover:bg-card-hover",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
+        viewMode === "list" ? "h-full p-5" : "p-4 sm:p-5",
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
-        isRenewingSoon && "border-warning/40",
+        renewalTone === "warning" && "border-warning/50 animate-renewal-warning",
+        renewalTone === "danger" && "border-destructive/50 animate-renewal-danger",
         isTrialEndingSoon && "animate-pulse-glow"
       )}
     >
@@ -364,7 +404,7 @@ function SubscriptionCardComponent({
           data-testid="subscription-card-primary-action"
         />
       ) : null}
-      <div className={cn("relative z-10 flex items-start gap-4", onViewDetails && "pointer-events-none")}>
+      <div className={cn("relative z-10 flex items-start gap-3.5", viewMode === "list" && "gap-4", onViewDetails && "pointer-events-none")}>
         <div className="relative shrink-0">
           <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
           <span
@@ -375,24 +415,39 @@ function SubscriptionCardComponent({
           </span>
         </div>
 
-        <div className="min-w-0 flex-1 grid gap-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-x-3 gap-y-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {subscription.pinned ? (
-                <>
-                  <Pin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" data-testid="subscription-pinned-title-icon" />
-                  <span className="sr-only">{t("subscription.pin")}</span>
-                </>
+        <div className={cn("min-w-0 flex-1 grid", viewMode === "grid" ? "gap-2" : "gap-3")}>
+          <div className={cn(
+            "grid grid-cols-[minmax(0,1fr)_auto_auto] items-start",
+            viewMode === "grid" ? "gap-x-2 gap-y-1.5" : "gap-x-3 gap-y-2",
+          )}>
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-1.5">
+                {subscription.pinned ? (
+                  <>
+                    <Pin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" data-testid="subscription-pinned-title-icon" />
+                    <span className="sr-only">{t("subscription.pin")}</span>
+                  </>
+                ) : null}
+                <TruncatedTooltipText
+                  as="h3"
+                  text={displayName}
+                  className="min-w-0 font-semibold text-foreground"
+                />
+              </div>
+              {serviceName && serviceName !== displayName ? (
+                <TruncatedTooltipText
+                  as="p"
+                  text={serviceName}
+                  className="mt-0.5 min-w-0 text-xs text-muted-foreground"
+                />
               ) : null}
-              <TruncatedTooltipText
-                as="h3"
-                text={displayName}
-                className="min-w-0 font-semibold text-foreground"
-              />
             </div>
 
-            <div className="min-w-0 max-w-35 shrink-0 text-right sm:max-w-40">
-              <p className="truncate text-xl font-bold text-foreground">
+            <div className={cn(
+              "min-w-0 shrink-0 text-right",
+              viewMode === "grid" ? "max-w-32 sm:max-w-36" : "max-w-35 sm:max-w-40",
+            )}>
+              <p className={cn("truncate font-bold text-foreground", viewMode === "grid" ? "text-lg" : "text-xl")}>
                 {formatCurrency(subscription.price, subscription.currency)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -476,7 +531,13 @@ function SubscriptionCardComponent({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div data-testid="subscription-card-badge-flow" className="col-span-full flex flex-wrap items-center gap-x-1.5 gap-y-2 sm:gap-2">
+            <div
+              data-testid="subscription-card-badge-flow"
+              className={cn(
+                "col-span-full flex flex-wrap items-center",
+                viewMode === "grid" ? "mt-0.5 gap-x-1.5 gap-y-1.5" : "gap-x-1.5 gap-y-2 sm:gap-2",
+              )}
+            >
               <Badge
                 data-testid="subscription-card-badge-category"
                 variant="outline"
@@ -498,8 +559,13 @@ function SubscriptionCardComponent({
             </div>
           </div>
 
-          <div className="grid min-w-0 gap-y-1.5 text-sm">
-            <SubscriptionCardMetaFlow items={metaItems} />
+          <div className={cn(
+            "grid min-w-0 text-sm",
+            viewMode === "grid" ? "gap-y-1 border-t border-border/60 pt-2" : "gap-y-1.5",
+          )}>
+            {viewMode === "grid"
+              ? <SubscriptionCardGridMeta items={metaItems} />
+              : <SubscriptionCardMetaFlow items={metaItems} />}
 
             {viewMode === 'list' && !isBuyout && (
               <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">

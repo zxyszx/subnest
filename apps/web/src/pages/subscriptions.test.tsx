@@ -126,6 +126,7 @@ vi.mock("@/contexts/CustomConfigContext", () => ({
       currencies: [],
     },
     updateCategories: vi.fn(),
+    updatePlatforms: vi.fn(),
     updateStatuses: vi.fn(),
     updatePaymentMethods: vi.fn(),
     updateCurrencies: vi.fn(),

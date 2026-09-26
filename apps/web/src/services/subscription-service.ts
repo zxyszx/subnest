@@ -114,7 +114,7 @@ function fromApiSubscriptionCollectionBase(
   return {
     id: parsedRow.id,
     name: parsedRow.name,
-    platformName: parsedRow.platformName ?? parsedRow.name,
+    platformName: parsedRow.platformName === "__unbound__" ? "" : (parsedRow.platformName ?? parsedRow.name),
     accountNumber: parsedRow.accountNumber ?? 1,
     logo: parsedRow.logo,
     price: parsedRow.price,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { subscriptionPlatformName } from "./subscription-platform";
+import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "./subscription-platform";
 
 describe("subscriptionPlatformName", () => {
   it("preserves an explicitly managed platform name", () => {
@@ -16,5 +16,8 @@ describe("subscriptionPlatformName", () => {
     expect(subscriptionPlatformName({ name: "ChatGPT 4" })).toBe("ChatGPT 4");
     expect(subscriptionPlatformName({ name: "Office-365" })).toBe("Office-365");
   });
-});
 
+  it("maps the explicit unbound value to an empty platform for display", () => {
+    expect(subscriptionPlatformName({ name: "独立服务", platformName: UNBOUND_PLATFORM_VALUE })).toBe("");
+  });
+});

@@ -93,7 +93,7 @@ describe("SubscriptionCard", () => {
     expect(source).not.toContain("useCustomConfig");
   });
 
-  it("keeps the mobile card header from forcing price or meta rows into a single-column layout", () => {
+  it("uses a compact information hierarchy in grid cards", () => {
     const source = readFileSync(join(process.cwd(), "src/components/subscription-card.tsx"), "utf8");
 
     renderSubscriptionCard({ name: "Figma Professional", paymentMethod: "credit_card", cardLast4: "6109" });
@@ -110,9 +110,10 @@ describe("SubscriptionCard", () => {
     expect(source).not.toContain("@container/subscription-card");
     expect(source).not.toContain("@max-xs/subscription-card");
     expect(card.getAttribute("class")).not.toContain("@container/subscription-card");
-    expect(metaFlow).toHaveClass("flex", "flex-wrap");
+    expect(card).toHaveAttribute("data-view-mode", "grid");
+    expect(metaFlow).toHaveClass("grid", "gap-1.5");
     expect(metaFlow.getAttribute("class")).not.toContain("@max-xs/subscription-card");
-    expect(dateGroup).toHaveClass("inline-flex", "min-w-0", "max-w-full", "flex-[0_1_auto]", "flex-wrap");
+    expect(dateGroup).toHaveClass("grid", "grid-cols-2", "gap-x-3");
     expect(dateGroup).toContainElement(startDateMeta);
     expect(dateGroup).toContainElement(billingDateMeta);
     expect(metaFlow).toContainElement(paymentMethodMeta);
@@ -123,7 +124,7 @@ describe("SubscriptionCard", () => {
     expect(paymentMethodMeta).toHaveClass("min-w-0", "max-w-full");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
     expect(within(paymentMethodMeta).getByText("信用卡 · •••• 6109")).toBeInTheDocument();
-    expect(badgeFlow).toHaveClass("col-span-full", "flex", "flex-wrap", "gap-x-1.5", "gap-y-2", "sm:gap-2");
+    expect(badgeFlow).toHaveClass("col-span-full", "flex", "flex-wrap", "gap-x-1.5", "gap-y-1.5");
   });
 
   it("renders subscription logos through the unified theme-aware logo surface", () => {
@@ -150,6 +151,30 @@ describe("SubscriptionCard", () => {
     expect(screen.getByRole("heading", { name: "Netflix" })).toBeInTheDocument();
     expect(screen.getByLabelText("账号编号 1")).toHaveTextContent("1");
     expect(screen.queryByRole("heading", { name: "Netflix-01/高级套餐" })).not.toBeInTheDocument();
+  });
+
+  it("shows a distinct service name only when it differs from the platform", () => {
+    renderSubscriptionCard({ name: "搬瓦工", platformName: "服务器" });
+
+    expect(screen.getByRole("heading", { name: "服务器" })).toBeInTheDocument();
+    expect(screen.getByText("搬瓦工")).toBeInTheDocument();
+  });
+
+  it("uses a yellow renewal treatment from four to seven days", () => {
+    renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-23") });
+
+    const card = screen.getByTestId("subscription-card");
+    expect(card).toHaveClass("border-warning/50", "animate-renewal-warning");
+    expect(card).not.toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-warning");
+  });
+
+  it("uses a red renewal treatment within three days", () => {
+    renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-21") });
+
+    const card = screen.getByTestId("subscription-card");
+    expect(card).toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-destructive");
   });
 
   it("keeps real subscription logo styling as one plate without an inner pseudo-element", () => {
@@ -236,7 +261,7 @@ describe("SubscriptionCard", () => {
     expect(pinnedIcon).toHaveAttribute("aria-hidden", "true");
     expect(pinnedIcon.compareDocumentPosition(subscriptionName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText("置顶")).toHaveClass("sr-only");
-    expect(cardContent).toHaveClass("relative", "z-10", "flex", "items-start", "gap-4");
+    expect(cardContent).toHaveClass("relative", "z-10", "flex", "items-start", "gap-3.5");
     expect(cardContent).not.toHaveClass("pt-7");
   });
 
@@ -295,7 +320,7 @@ describe("SubscriptionCard", () => {
     const statusBadge = screen.getByText("活跃").closest("div");
     const subscriptionName = screen.getByText(baseSubscription.name);
 
-    expect(badgeGroup).toHaveClass("col-span-full", "flex", "flex-wrap", "items-center", "gap-x-1.5", "gap-y-2", "sm:gap-2");
+    expect(badgeGroup).toHaveClass("col-span-full", "flex", "flex-wrap", "items-center", "gap-x-1.5", "gap-y-1.5");
     expect(badgeGroup).not.toHaveClass("overflow-hidden");
     expect(subscriptionName).toHaveAttribute("data-slot", "truncated-tooltip-text");
     expect(subscriptionName).not.toHaveAttribute("title");

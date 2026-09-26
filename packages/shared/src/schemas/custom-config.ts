@@ -24,6 +24,7 @@ export const configItemSchema = z.object({
  * 这些数组会驱动订阅表单选项和导入映射，因此上限保护 UI 和导入流程不会被异常配置拖垮。
  */
 export const customConfigSchema = z.object({
+  platforms: z.array(configItemSchema).max(200).optional(),
   categories: z.array(configItemSchema).max(200),
   statuses: z.array(configItemSchema).max(50),
   paymentMethods: z.array(configItemSchema).max(200),

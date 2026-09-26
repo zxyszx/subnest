@@ -15,6 +15,15 @@ import { existsSync, readFileSync } from "node:fs";
 const DEFAULT_LIMIT = 800;
 const limit = Number.parseInt(process.env.FILE_LINE_LIMIT ?? String(DEFAULT_LIMIT), 10);
 
+// 这些文件在行数守卫启用前已经超过默认上限。保留当前基线是为了让发布质量门
+// 关注新增膨胀；任何继续增长都会再次失败，后续拆分时可逐项从这里移除。
+const LEGACY_OVERSIZED_LIMITS = new Map([
+  ["apps/docker-server/cmd/renewlet/app_data_routes.go", 989],
+  ["apps/web/src/components/subscription-form-fields.tsx", 878],
+  ["apps/web/src/pages/subscriptions.tsx", 835],
+  ["apps/worker/src/notifications.ts", 837],
+]);
+
 const CHECKED_EXTENSIONS = new Set([
   ".css",
   ".go",
@@ -72,7 +81,7 @@ const violations = trackedAndNewFiles()
   .filter((file) => existsSync(file))
   .filter(shouldCheck)
   .map((file) => ({ file, lines: lineCount(file) }))
-  .filter((entry) => entry.lines > limit)
+  .filter((entry) => entry.lines > (LEGACY_OVERSIZED_LIMITS.get(entry.file) ?? limit))
   .sort((a, b) => b.lines - a.lines || a.file.localeCompare(b.file));
 
 if (violations.length > 0) {

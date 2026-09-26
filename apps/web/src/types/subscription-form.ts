@@ -87,8 +87,8 @@ export function createSubscriptionFormState(
   overrides: Partial<SubscriptionFormState> = {},
 ): SubscriptionFormState {
   return {
-    name: "",
-    platformName: overrides.platformName ?? overrides.name ?? "",
+    name: overrides.name ?? "",
+    platformName: overrides.platformName ?? "",
     accountNumber: "1",
     logo: undefined,
     price: "",

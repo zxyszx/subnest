@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 export interface PlatformFilterOption {
   name: string;
+  label?: string;
   logo?: string | null | undefined;
 }
 
@@ -68,7 +69,7 @@ export function PlatformFilterBar({
       )}
     >
       <SubscriptionLogo name={platform.name} logo={platform.logo} size="xs" />
-      <span>{platform.name}</span>
+      <span>{platform.label ?? platform.name}</span>
     </Button>
   );
 
@@ -108,7 +109,7 @@ export function PlatformFilterBar({
                 className="gap-2"
               >
                 <SubscriptionLogo name={platform.name} logo={platform.logo} size="xs" />
-                <span className="min-w-0 flex-1 truncate">{platform.name}</span>
+                <span className="min-w-0 flex-1 truncate">{platform.label ?? platform.name}</span>
                 {value === platform.name ? <Check className="h-4 w-4 text-primary" /> : null}
               </DropdownMenuItem>
             ))}

@@ -119,12 +119,13 @@ describe("SubscriptionDialog", () => {
       </TooltipProvider>,
     );
 
-    await user.type(screen.getByLabelText("平台名称"), "Netflix");
+    await user.click(screen.getByRole("combobox", { name: "平台名称" }));
+    await user.click(await screen.findByRole("option", { name: "Netflix" }));
 
     expect(screen.getByText("已添加")).toBeInTheDocument();
     expect(screen.getByLabelText("账号编号")).toHaveAttribute("aria-invalid", "true");
     expect(document.querySelector("datalist")).toBeNull();
-    expect(screen.queryByLabelText("服务名称")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("服务名称")).toHaveValue("Netflix");
   });
 
   it("shows field errors on empty create submit instead of relying on native validation", async () => {
@@ -147,7 +148,7 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "添加订阅" }));
 
-    expect(screen.getByText("请输入平台名称")).toBeInTheDocument();
+    expect(screen.getByText("请输入服务名称")).toBeInTheDocument();
     expect(screen.getByText("金额必须是 0 到 1,000,000,000 之间的有效数字")).toBeInTheDocument();
     const startDateButton = document.getElementById("startDate");
     const nextBillingDateButton = document.getElementById("nextBillingDate");
@@ -359,8 +360,8 @@ describe("SubscriptionDialog", () => {
 
     const dialog = screen.getByRole("dialog", { name: "添加新订阅" });
     expect(dialog).toHaveAccessibleDescription(/填写订阅名称/);
-    expect(screen.getByLabelText("平台名称")).toBeInTheDocument();
-    expect(screen.queryByLabelText("服务名称")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "平台名称" })).toHaveTextContent("未绑定");
+    expect(screen.getByLabelText("服务名称")).toBeInTheDocument();
     const priceInput = screen.getByLabelText("价格");
     expect(priceInput).toHaveAttribute("type", "text");
     expect(priceInput).toHaveAttribute("inputmode", "decimal");
@@ -395,7 +396,7 @@ describe("SubscriptionDialog", () => {
     expect(autoRenewSwitch).not.toBeChecked();
 
     await user.click(autoRenewSwitch);
-    await user.type(screen.getByLabelText("平台名称"), "Opt-in SaaS");
+    await user.type(screen.getByLabelText("服务名称"), "Opt-in SaaS");
     await user.type(screen.getByLabelText("价格"), "10");
     await user.click(screen.getByRole("button", { name: /到期日期.*选择日期/ }));
     await user.click(await screen.findByRole("button", { name: /2026年6月8日/ }));

@@ -184,6 +184,27 @@ export function SubscriptionFamilySharingFields({
       setShareLoading(false);
     }
   };
+  const resetManagedShare = async () => {
+    if (!managedMailbox || !managedLink || folderIds.length === 0) return;
+    setShareLoading(true);
+    try {
+      await newszxcnService.revoke(managedLink.id);
+      setManagedLinks((current) => current.map((link) => link.id === managedLink.id ? { ...link, status: "revoked" as const } : link));
+      update("verificationLink", "");
+      const result = await newszxcnService.create({
+        mailboxId: managedMailbox.id,
+        folderIds,
+        windowMinutes: managedLink.windowMinutes,
+      });
+      setManagedLinks((current) => [result.link, ...current]);
+      update("verificationLink", result.link.shortUrl);
+      toast.success("收件链接已重置，旧链接已失效");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "重置收件链接失败");
+    } finally {
+      setShareLoading(false);
+    }
+  };
   const readSavedPassword = async () => {
     if (!subscriptionId || !value.hasPassword) return value.password;
     if (value.password) return value.password;
@@ -382,9 +403,23 @@ export function SubscriptionFamilySharingFields({
                     onChange={(event) => update("verificationLink", event.target.value)}
                     placeholder={managedMailbox ? managedCopy.closed : t("subscription.familySharing.verificationLinkPlaceholder")}
                     aria-describedby={field.describedBy}
-                    className="border-border bg-secondary pr-11"
+                    className={managedMailbox ? "border-border bg-secondary pr-22" : "border-border bg-secondary pr-11"}
                     readOnly={Boolean(managedMailbox)}
                   />
+                  {managedMailbox && managedLink ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-11 top-0 h-full w-11"
+                      onClick={() => void resetManagedShare()}
+                      disabled={shareLoading}
+                      aria-label={t("subscription.familySharing.resetVerificationLink")}
+                      title={t("subscription.familySharing.resetVerificationLink")}
+                    >
+                      {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </Button>
+                  ) : null}
                   {!managedMailbox && value.verificationLink ? <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" onClick={() => update("verificationLink", "")} aria-label={managedCopy.clear}><X className="h-4 w-4" /></Button> : null}
                 </div>
               )}

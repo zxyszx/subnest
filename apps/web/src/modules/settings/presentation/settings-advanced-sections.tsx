@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react";
-import { Activity, Coins, CreditCard, FolderKanban, Settings2 } from "lucide-react";
+import { Activity, Coins, CreditCard, FolderKanban, Settings2, Tags } from "lucide-react";
 import { DeferredImportDataDialog } from "@/components/import-data-dialog-loader";
 import { RawErrorResponseDialog } from "@/components/raw-error-response-dialog";
 import { NewSzxcnAdminPanel } from "@/components/newszxcn-admin-panel";
@@ -66,6 +66,7 @@ export function SettingsAdvancedSections({
     reportBasisStatus,
     getCurrencySymbol,
     updateCategories,
+    updatePlatforms,
     updateStatuses,
     updatePaymentMethods,
     updateSetting,
@@ -245,6 +246,15 @@ export function SettingsAdvancedSections({
         </div>
         <p className="mb-6 text-sm text-muted-foreground">{t("settings.dataConfigDescription")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
+          <ConfigManagerDialog
+            title={t("settings.platformManager")}
+            description={t("settings.platformManagerDescription")}
+            items={customConfig.platforms ?? []}
+            onUpdate={updatePlatforms}
+            icon={<Tags className="h-4 w-4" />}
+            showIcon
+            maxItems={200}
+          />
           <ConfigManagerDialog
             title={t("settings.categoryManager")}
             description={t("settings.categoryManagerDescription")}
