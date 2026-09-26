@@ -105,3 +105,21 @@ func TestSubscriptionCollectionAPIDefaultsLegacyPlatformFields(t *testing.T) {
 		t.Fatalf("unexpected legacy platform defaults: %#v", got)
 	}
 }
+
+func TestSubscriptionCollectionAPIPreservesUnboundPlatform(t *testing.T) {
+	app := newSchemaTestApp(t)
+	if err := ensureSchema(app); err != nil {
+		t.Fatal(err)
+	}
+	registerRecordHooks(app)
+	user, _ := createRouteTestUser(t, app, "subscriptions-unbound-platform")
+	record := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
+		"name":         "Standalone Server",
+		"platformName": "__unbound__",
+	})
+
+	got := subscriptionCollectionAPIFromRecord(record)
+	if got.PlatformName != "__unbound__" {
+		t.Fatalf("expected canonical unbound platform marker, got %#v", got)
+	}
+}

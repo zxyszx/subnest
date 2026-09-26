@@ -112,7 +112,7 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
     }] });
     render(<Harness onPendingChange={vi.fn()} />);
 
-    const resetButton = await screen.findByRole("button", { name: "重置收件链接" });
+    const resetButton = await screen.findByRole("button", { name: "subscription.familySharing.resetVerificationLink" });
     await user.click(resetButton);
 
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link-old"));

@@ -285,8 +285,8 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
   // 顺序化 issue 列表是普通提交、draft 转换和 AI preflight 的共同事实源；新增规则时必须保持“首错可直接操作”的顺序。
   const issues: SubscriptionFormValidationIssue[] = [];
 
-  if (!formData.platformName.trim() && !formData.name.trim()) {
-    issues.push({ code: "platformNameRequired", field: "platformName", messageKey: "subscription.validation.platformNameRequired" });
+  if (!formData.name.trim()) {
+    issues.push({ code: "nameRequired", field: "name", messageKey: "subscription.validation.nameRequired" });
   }
   if (parsePositiveIntegerInput(formData.accountNumber, 100000) === null) {
     issues.push({ code: "accountNumberInvalid", field: "accountNumber", messageKey: "subscription.validation.accountNumberInvalid" });

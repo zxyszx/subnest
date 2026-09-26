@@ -249,9 +249,7 @@ func subscriptionCollectionAPIFromRecord(record *core.Record) subscriptionCollec
 	billingCycle := record.GetString("billingCycle")
 	name := record.GetString("name")
 	platformName := strings.TrimSpace(record.GetString("platformName"))
-	if platformName == "__unbound__" {
-		platformName = ""
-	} else if platformName == "" {
+	if platformName == "" {
 		platformName = name
 	}
 	accountNumber := record.GetInt("accountNumber")

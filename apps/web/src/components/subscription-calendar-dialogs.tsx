@@ -65,7 +65,7 @@ function DaySubscriptionsList({ subscriptions, onSelectSubscription, onPrefetchS
             data-testid="calendar-day-subscription-item"
           >
             <CalendarAccountIdentity
-              platformName={sub.platformName ?? sub.name}
+              platformName={sub.platformName || sub.name}
               logo={sub.logo}
               accountNumber={sub.accountNumber ?? 1}
               fallbackColor={
@@ -75,7 +75,7 @@ function DaySubscriptionsList({ subscriptions, onSelectSubscription, onPrefetchS
               className="min-w-0 flex-1"
             />
             <div className="min-w-0 flex-1">
-              {(sub.platformName ?? sub.name) !== sub.name ? (
+              {(sub.platformName || sub.name) !== sub.name ? (
                 <TruncatedTooltipText as="p" text={sub.name} className="text-xs text-muted-foreground" />
               ) : null}
               <p className="text-xs text-muted-foreground">
