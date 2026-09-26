@@ -38,6 +38,7 @@ export interface SettingsFormController {
   reportBasisStatus: ReportExchangeRateBasisStatus;
   getCurrencySymbol: (currency: string) => string;
   updateCategories: (items: ConfigItem[]) => void;
+  updatePlatforms: (items: ConfigItem[]) => void;
   updateStatuses: (items: ConfigItem[]) => void;
   updatePaymentMethods: (items: ConfigItem[]) => void;
   updateCurrencies: (items: ConfigItem[]) => void;

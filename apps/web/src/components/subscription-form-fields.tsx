@@ -38,6 +38,7 @@ import { customCycleUnitLabelKey } from "@/lib/subscription-billing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { localizedLabel } from "@/i18n/locales";
 import { getErrorFieldsToClearForFormChange, type SubscriptionFormErrors, type SubscriptionFormFieldsProps } from "@/components/subscription-form-fields-model";
+import { UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 
 export type { SubscriptionFormReminderType };
 export type { SubscriptionFormState };
@@ -92,8 +93,8 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         return {
           ...prev,
           platformName: nextPlatformName,
-          // 后端仍保留 name 契约；界面只维护一个平台名称，提交数据不会因此缺字段。
-          name: nextPlatformName,
+          ...(prev.name.trim() === "" ? { name: nextPlatformName } : {}),
+          // 平台名称负责归类；服务名称单独维护，便于同一平台下区分多个服务器或套餐。
         };
       }
       if (key === "name") {
@@ -101,7 +102,6 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         return {
           ...prev,
           name: nextName,
-          platformName: prev.platformName.trim() === "" ? nextName : prev.platformName,
         };
       }
       if (key === "billingCycle") {
@@ -197,13 +197,28 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     repeatReminderWindowHours === null || reminderDaysForPreview * 24 <= repeatReminderWindowHours
       ? t("subscription.repeatReminderPreview.afterFirst", { interval: repeatReminderSentenceInterval })
       : t("subscription.repeatReminderPreview.finalWindow", { hours: repeatReminderWindowHours });
+  const currentPlatformOption = formData.platformName.trim() && !platformSuggestions.some(
+    (platform) => (platform.value ?? platform.name) === formData.platformName.trim(),
+  )
+    ? [{ value: formData.platformName.trim(), label: formData.platformName.trim() }]
+    : [];
+  const platformSelectOptions = [
+    { value: UNBOUND_PLATFORM_VALUE, label: t("subscription.platformUnbound"), keywords: ["未绑定", "unbound"] },
+    ...currentPlatformOption,
+    ...platformSuggestions.map((platform) => ({
+      value: platform.value ?? platform.name,
+      label: platform.label ?? platform.name,
+      keywords: [platform.name],
+    })),
+  ];
 
   return (
     <>
       <FormFieldRow
         alignAt="sm"
-        rowClassName="sm:grid-cols-[minmax(0,1fr)_9rem]"
+        rowClassName="sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]"
         errors={[
+          { id: id("name-error"), message: errors.name },
           { id: id("platformName-error"), message: errors.platformName },
           { id: id("accountNumber-error"), message: errors.accountNumber },
         ]}
@@ -217,20 +232,40 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           renderError={false}
         >
           {(field) => (
+            <SearchableSelect
+              id={field.id}
+              value={formData.platformName || UNBOUND_PLATFORM_VALUE}
+              options={platformSelectOptions}
+              onValueChange={(value) => {
+                const platformName = value === UNBOUND_PLATFORM_VALUE ? "" : value;
+                update("platformName", platformName);
+                const match = platformSuggestions.find((platform) => (platform.value ?? platform.name) === value);
+                if (match?.logo) update("logo", match.logo);
+              }}
+              placeholder={t("subscription.platformSelectPlaceholder")}
+              searchPlaceholder={t("subscription.platformSearchPlaceholder")}
+              aria-invalid={field.invalid || platformAccountAlreadyAdded}
+              aria-describedby={field.describedBy}
+              className="border-border bg-secondary"
+            />
+          )}
+        </FormField>
+        <FormField
+          id={id("name")}
+          label={t("subscription.field.name")}
+          error={errors.name}
+          errorId={id("name-error")}
+          renderError={false}
+        >
+          {(field) => (
             <Input
               id={field.id}
               name={field.id}
-              value={formData.platformName}
-              onChange={(event) => {
-                const platformName = event.target.value;
-                update("platformName", platformName);
-                const match = platformSuggestions.find((platform) => platform.name === platformName);
-                if (!formData.logo && match?.logo) update("logo", match.logo);
-              }}
-              placeholder={t("subscription.placeholder.platformName")}
-              autoComplete="organization"
-              required
-              aria-invalid={field.invalid || platformAccountAlreadyAdded}
+              value={formData.name}
+              onChange={(event) => update("name", event.target.value)}
+              placeholder={t("subscription.placeholder.name")}
+              autoComplete="off"
+              aria-invalid={field.invalid}
               aria-describedby={field.describedBy}
               className="border-border bg-secondary"
             />
@@ -274,7 +309,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           value={formData.logo}
           onChange={(logo) => update("logo", logo)}
           onUploadStatusChange={onLogoUploadStatusChange}
-          serviceName={formData.platformName}
+          serviceName={formData.name || formData.platformName}
           website={formData.website}
         />
       ) : null}

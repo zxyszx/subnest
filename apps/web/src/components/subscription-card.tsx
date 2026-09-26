@@ -189,6 +189,7 @@ function SubscriptionCardComponent({
   const categoryLabel = categoryConfig ? label(categoryConfig.labels) : subscription.category;
   const categoryColor = categoryConfig?.color ?? DEFAULT_BADGE_COLOR;
   const displayName = subscriptionPlatformName(subscription);
+  const serviceName = subscription.name.trim();
   const accountNumber = subscription.accountNumber ?? 1;
   const categoryBadgeStyle = {
     backgroundColor: colorWithAlpha(categoryColor, 0.1) ?? undefined,
@@ -377,18 +378,27 @@ function SubscriptionCardComponent({
 
         <div className="min-w-0 flex-1 grid gap-3">
           <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-x-3 gap-y-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {subscription.pinned ? (
-                <>
-                  <Pin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" data-testid="subscription-pinned-title-icon" />
-                  <span className="sr-only">{t("subscription.pin")}</span>
-                </>
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-1.5">
+                {subscription.pinned ? (
+                  <>
+                    <Pin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" data-testid="subscription-pinned-title-icon" />
+                    <span className="sr-only">{t("subscription.pin")}</span>
+                  </>
+                ) : null}
+                <TruncatedTooltipText
+                  as="h3"
+                  text={displayName}
+                  className="min-w-0 font-semibold text-foreground"
+                />
+              </div>
+              {serviceName && serviceName !== displayName ? (
+                <TruncatedTooltipText
+                  as="p"
+                  text={serviceName}
+                  className="mt-0.5 min-w-0 text-xs text-muted-foreground"
+                />
               ) : null}
-              <TruncatedTooltipText
-                as="h3"
-                text={displayName}
-                className="min-w-0 font-semibold text-foreground"
-              />
             </div>
 
             <div className="min-w-0 max-w-35 shrink-0 text-right sm:max-w-40">

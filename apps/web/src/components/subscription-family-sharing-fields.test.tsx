@@ -95,4 +95,32 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
     }));
     await waitFor(() => expect(onPendingChange).toHaveBeenLastCalledWith(false));
   });
+
+  it("resets the active link while preserving its folder scope and time window", async () => {
+    const user = userEvent.setup();
+    mocks.links.mockResolvedValueOnce({ links: [{
+      id: "link-old",
+      shortUrl: "https://dingyue.xzys.me/s/old-link",
+      mailboxId: "mailbox-16",
+      mailboxAddress: "netflix16@newszxcn.com",
+      folderIds: ["folder-netflix"],
+      windowMinutes: 60,
+      expiresAt: null,
+      status: "active",
+      createdAt: "2026-09-25T00:00:00Z",
+      updatedAt: "2026-09-25T00:00:00Z",
+    }] });
+    render(<Harness onPendingChange={vi.fn()} />);
+
+    const resetButton = await screen.findByRole("button", { name: "重置收件链接" });
+    await user.click(resetButton);
+
+    await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link-old"));
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({
+      mailboxId: "mailbox-16",
+      folderIds: ["folder-netflix"],
+      windowMinutes: 60,
+    }));
+    expect(screen.getByDisplayValue("https://dingyue.xzys.me/s/new-link")).toBeInTheDocument();
+  });
 });

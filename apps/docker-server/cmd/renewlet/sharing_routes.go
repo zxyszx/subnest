@@ -570,6 +570,9 @@ func safeSharingVerificationLink(raw string) *string {
 
 func sharingPlatformName(subscription *core.Record) string {
 	if platformName := strings.TrimSpace(subscription.GetString("platformName")); platformName != "" {
+		if platformName == "__unbound__" {
+			return ""
+		}
 		return platformName
 	}
 	return subscription.GetString("name")

@@ -557,6 +557,8 @@ export const messages = [
   msg({ id: "settings.cloudBackupDeleteFailedDescription", message: "无法删除远端快照，请稍后重试。" }),
   msg({ id: "settings.dataConfig", message: "数据配置" }),
   msg({ id: "settings.dataConfigDescription", message: "自定义订阅的分类、状态、支付方式和货币选项，点击管理各项配置。" }),
+  msg({ id: "settings.platformManager", message: "平台管理" }),
+  msg({ id: "settings.platformManagerDescription", message: "维护订阅可选择的平台名称和固定图标；留空平台的订阅会归入未绑定。" }),
   msg({ id: "settings.categoryManager", message: "分类管理" }),
   msg({ id: "settings.categoryManagerDescription", message: "管理订阅的分类选项，支持自定义颜色用于可视化区分" }),
   msg({ id: "settings.categoryKeepOne", message: "至少保留 1 个分类，否则新增/筛选订阅时将无法选择分类。" }),

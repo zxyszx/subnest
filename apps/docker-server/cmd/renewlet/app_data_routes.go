@@ -220,6 +220,7 @@ func costSharingScheduleSettingsChanged(before appSettings, after appSettings) b
 func handleCustomConfigRead(app core.App, e *core.RequestEvent) error {
 	locale := requestLocale(e.Request)
 	config := customConfigPayload{
+		Platforms:      []customConfigItem{},
 		Categories:     []customConfigItem{},
 		Statuses:       []customConfigItem{},
 		PaymentMethods: []customConfigItem{},
@@ -327,7 +328,9 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 
 func validateUniqueSubscriptionPlatformAccount(app core.App, record *core.Record) error {
 	platformName := strings.TrimSpace(record.GetString("platformName"))
-	if platformName == "" {
+	if platformName == "__unbound__" {
+		platformName = ""
+	} else if platformName == "" {
 		platformName = strings.TrimSpace(record.GetString("name"))
 	}
 	accountNumber := record.GetInt("accountNumber")

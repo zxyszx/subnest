@@ -38,6 +38,8 @@ export interface ConfigItem {
  * - 分类/状态/支付方式/货币：用于下拉选项、统计展示、以及一些 UI 的颜色/图标表现。
  */
 export interface CustomConfig {
+  /** 固定平台目录；订阅表单只允许从这里选择，空值表示未绑定。 */
+  platforms?: ConfigItem[];
   /** 分类配置：可排序、可新增/编辑颜色。 */
   categories: ConfigItem[];
   /** 状态配置：只允许排序（与统计逻辑强相关）。 */
@@ -196,6 +198,7 @@ function makeDefaultCurrencyItem(option: CurrencyOption): ConfigItem {
 }
 
 export const DEFAULT_CUSTOM_CONFIG: CustomConfig = {
+  platforms: [],
   categories: getDefaultCategories(),
   statuses: getDefaultStatuses(),
   paymentMethods: getDefaultPaymentMethods(),
