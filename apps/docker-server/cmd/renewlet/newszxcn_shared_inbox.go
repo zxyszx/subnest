@@ -154,6 +154,29 @@ func handleSharedInboxLinkRevoke(app core.App, e *core.RequestEvent) error {
 	return apiEmptySuccessJSON(e, http.StatusOK)
 }
 
+// Local status is checked on every public proxy request. Revoke it before a
+// subscription change is committed so an old short link cannot remain usable.
+// The upstream grant cleanup is best effort because the local proxy is the
+// authoritative access boundary for SubNest links.
+func revokeSharedInboxLinksForMailbox(app core.App, userID, mailboxAddress string) error {
+	mailboxAddress = strings.TrimSpace(mailboxAddress)
+	if mailboxAddress == "" {
+		return nil
+	}
+	records, err := app.FindRecordsByFilter("shared_inbox_links", "user = {:user} && mailboxAddress = {:address} && status = 'active'", "", 500, 0, map[string]any{"user": userID, "address": mailboxAddress})
+	if err != nil {
+		return err
+	}
+	for _, record := range records {
+		_, _ = requestNewSzxcn(app, userID, http.MethodDelete, "/api/open/v1/subnest/grants/"+url.PathEscape(record.GetString("grantId")), nil)
+		record.Set("status", "revoked")
+		if err := app.Save(record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) error {
 	shortKey := strings.TrimSpace(e.Request.PathValue("shortKey"))
 	if shortKey == "" || len(shortKey) > 128 {

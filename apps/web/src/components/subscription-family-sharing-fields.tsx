@@ -37,19 +37,39 @@ export function SubscriptionFamilySharingFields({
   const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
   const [managedLinks, setManagedLinks] = useState<SharedInboxLink[]>([]);
   const [shareLoading, setShareLoading] = useState(false);
+  const [shareIntent, setShareIntent] = useState<boolean | null>(null);
+  const [mailboxesLoading, setMailboxesLoading] = useState(false);
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => {
     onChange({ ...value, [key]: next });
   };
   useEffect(() => {
-    if (!value.enabled) return;
+    if (!value.enabled) {
+      setMailboxes([]);
+      setManagedLinks([]);
+      setMailboxesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setMailboxesLoading(true);
     void Promise.all([
       newszxcnService.mailboxes(),
       newszxcnService.links(),
-    ]).then(([mailboxResult, linkResult]) => { setMailboxes(mailboxResult.items); setManagedLinks(linkResult.links); })
-      .catch(() => { setMailboxes([]); setManagedLinks([]); });
+    ]).then(([mailboxResult, linkResult]) => {
+      if (cancelled) return;
+      setMailboxes(mailboxResult.items);
+      setManagedLinks(linkResult.links);
+    }).catch(() => {
+      if (cancelled) return;
+      setMailboxes([]);
+      setManagedLinks([]);
+    }).finally(() => {
+      if (!cancelled) setMailboxesLoading(false);
+    });
+    return () => { cancelled = true; };
   }, [value.enabled]);
   const managedMailbox = useMemo(() => mailboxes.find((mailbox) => mailbox.address.toLowerCase() === value.loginAccount.trim().toLowerCase()) ?? null, [mailboxes, value.loginAccount]);
   const managedLink = useMemo(() => managedMailbox ? managedLinks.find((link) => link.mailboxId === managedMailbox.id && link.status === "active") ?? null : null, [managedLinks, managedMailbox]);
+  useEffect(() => { setShareIntent(null); }, [managedMailbox?.id]);
   useEffect(() => {
     if (managedLink && value.verificationLink !== managedLink.shortUrl) {
       onChange({ ...value, verificationLink: managedLink.shortUrl });
@@ -62,6 +82,7 @@ export function SubscriptionFamilySharingFields({
   const toggleManagedShare = async (enabled: boolean) => {
     if (!managedMailbox) return;
     setShareLoading(true);
+    setShareIntent(enabled);
     try {
       if (enabled) {
         const folders = await newszxcnService.folders(managedMailbox.id);
@@ -78,7 +99,7 @@ export function SubscriptionFamilySharingFields({
         toast.success("共享收件箱已关闭");
       }
     } catch (error) { toast.error(error instanceof Error ? error.message : "共享收件箱操作失败"); }
-    finally { setShareLoading(false); }
+    finally { setShareLoading(false); setShareIntent(null); }
   };
   const readSavedPassword = async () => {
     if (!subscriptionId || !value.hasPassword) return value.password;
@@ -151,7 +172,8 @@ export function SubscriptionFamilySharingFields({
             )}
           </FormField>
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
-          {managedMailbox ? <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2"><div className="min-w-0"><p className="text-sm font-medium">{managedCopy.title}</p><p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p></div><div className="flex items-center gap-2"><Link href="/settings#settings-newszxcn" className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"><Settings2 className="h-4 w-4" />{managedCopy.manage}</Link><Switch checked={Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} /></div></div> : null}
+          {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="text-xs text-muted-foreground">正在匹配 NewSzxcn 邮箱...</p> : null}
+          {managedMailbox ? <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2" aria-busy={shareLoading}><div className="min-w-0"><p className="text-sm font-medium">{managedCopy.title}</p><p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p></div><div className="flex items-center gap-2"><Link href="/settings#settings-newszxcn" className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"><Settings2 className="h-4 w-4" />{managedCopy.manage}</Link>{shareLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="正在更新共享状态" /> : null}<Switch checked={shareIntent ?? Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} /></div></div> : null}
           <FormField
             id={id("familySharingPassword")}
             label={t("subscription.familySharing.password")}

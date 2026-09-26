@@ -306,11 +306,18 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError(serverText(locale, "subscription.notFound"), err)
 	}
+	previousFamilyEnabled := record.GetBool("familySharingEnabled")
+	previousMailboxAddress := record.GetString("sharingLoginAccount")
 	if err := applySubscriptionWriteRequest(app, record, body, false); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	if err := validateUniqueSubscriptionPlatformAccount(app, record); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || !strings.EqualFold(previousMailboxAddress, record.GetString("sharingLoginAccount"))) {
+		if err := revokeSharedInboxLinksForMailbox(app, record.GetString("user"), previousMailboxAddress); err != nil {
+			return e.BadRequestError(serverText(locale, "common.invalidRequestParameters"), err)
+		}
 	}
 	if err := app.Save(record); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
@@ -351,6 +358,9 @@ func handleSubscriptionDelete(app core.App, e *core.RequestEvent) error {
 	if err := app.RunInTransaction(func(txApp core.App) error {
 		txRecord, err := txApp.FindRecordById("subscriptions", record.Id)
 		if err != nil {
+			return err
+		}
+		if err := revokeSharedInboxLinksForMailbox(txApp, txRecord.GetString("user"), txRecord.GetString("sharingLoginAccount")); err != nil {
 			return err
 		}
 		if err := deleteSharingProjectionForSubscription(txApp, txRecord); err != nil {
@@ -712,6 +722,10 @@ func applySubscriptionFamilySharing(app core.App, record *core.Record, field opt
 	}
 	if field.Null || !field.Value.Enabled {
 		record.Set("familySharingEnabled", false)
+		record.Set("sharingLoginAccount", "")
+		record.Set("sharingVerificationLink", "")
+		record.Set("sharingEncryptedCredentials", "")
+		record.Set("sharingPasswordMask", "")
 		return nil
 	}
 	value := field.Value
