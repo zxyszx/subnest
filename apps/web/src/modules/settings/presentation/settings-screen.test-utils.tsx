@@ -553,6 +553,7 @@ export function createControllerState(overrides: {
     },
     getCurrencySymbol: (currency: string) => currencySymbols[currency] ?? currency,
     updateCategories: fn,
+    updatePlatforms: fn,
     updateStatuses: fn,
     updatePaymentMethods: fn,
     updateCurrencies: fn,

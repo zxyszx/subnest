@@ -159,11 +159,11 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     const pendingTags = Array.from(
       formRef.current?.querySelectorAll<HTMLInputElement>("[data-subscription-tag-pending-input]") ?? [],
     ).flatMap((input) => parseTagsInput(input.value));
-    const platformName = formData.platformName.trim() || formData.name.trim();
+    const platformName = formData.platformName.trim() || "__unbound__";
     return {
       ...formData,
       // 旧数据可能没有独立服务名称；提交时回退到平台名称，保持兼容。
-      name: formData.name.trim() || platformName,
+      name: formData.name.trim() || formData.platformName.trim(),
       platformName,
       tags: pendingTags.length === 0
         ? formData.tags

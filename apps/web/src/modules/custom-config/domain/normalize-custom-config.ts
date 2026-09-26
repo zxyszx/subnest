@@ -59,6 +59,7 @@ export function normalizeCustomConfig(value: unknown): CustomConfig {
   if (!isRecord(value)) return DEFAULT_CUSTOM_CONFIG;
 
   return {
+    platforms: asConfigItemArray(value["platforms"], DEFAULT_CUSTOM_CONFIG.platforms ?? []),
     categories: normalizeCategories(asConfigItemArray(value["categories"], DEFAULT_CUSTOM_CONFIG.categories)),
     statuses: normalizeStatuses(asConfigItemArray(value["statuses"], DEFAULT_CUSTOM_CONFIG.statuses)),
     paymentMethods: normalizePaymentMethods(

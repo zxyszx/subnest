@@ -292,6 +292,10 @@ export function useSettingsFormController(): SettingsFormController {
     setCustomConfig((prev) => ({ ...prev, categories: items }));
   }, []);
 
+  const updatePlatforms = useCallback((items: ConfigItem[]) => {
+    setCustomConfig((prev) => ({ ...prev, platforms: items }));
+  }, []);
+
   const updateStatuses = useCallback((items: ConfigItem[]) => {
     setCustomConfig((prev) => ({ ...prev, statuses: items }));
   }, []);
@@ -560,6 +564,7 @@ export function useSettingsFormController(): SettingsFormController {
     reportBasisStatus,
     getCurrencySymbol,
     updateCategories,
+    updatePlatforms,
     updateStatuses,
     updatePaymentMethods,
     updateCurrencies,

@@ -38,6 +38,7 @@ import { customCycleUnitLabelKey } from "@/lib/subscription-billing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { localizedLabel } from "@/i18n/locales";
 import { getErrorFieldsToClearForFormChange, type SubscriptionFormErrors, type SubscriptionFormFieldsProps } from "@/components/subscription-form-fields-model";
+import { UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 
 export type { SubscriptionFormReminderType };
 export type { SubscriptionFormState };
@@ -196,6 +197,20 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     repeatReminderWindowHours === null || reminderDaysForPreview * 24 <= repeatReminderWindowHours
       ? t("subscription.repeatReminderPreview.afterFirst", { interval: repeatReminderSentenceInterval })
       : t("subscription.repeatReminderPreview.finalWindow", { hours: repeatReminderWindowHours });
+  const currentPlatformOption = formData.platformName.trim() && !platformSuggestions.some(
+    (platform) => (platform.value ?? platform.name) === formData.platformName.trim(),
+  )
+    ? [{ value: formData.platformName.trim(), label: formData.platformName.trim() }]
+    : [];
+  const platformSelectOptions = [
+    { value: UNBOUND_PLATFORM_VALUE, label: "未绑定", keywords: ["未绑定", "unbound"] },
+    ...currentPlatformOption,
+    ...platformSuggestions.map((platform) => ({
+      value: platform.value ?? platform.name,
+      label: platform.label ?? platform.name,
+      keywords: [platform.name],
+    })),
+  ];
 
   return (
     <>
@@ -217,19 +232,18 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           renderError={false}
         >
           {(field) => (
-            <Input
+            <SearchableSelect
               id={field.id}
-              name={field.id}
-              value={formData.platformName}
-              onChange={(event) => {
-                const platformName = event.target.value;
+              value={formData.platformName || UNBOUND_PLATFORM_VALUE}
+              options={platformSelectOptions}
+              onValueChange={(value) => {
+                const platformName = value === UNBOUND_PLATFORM_VALUE ? "" : value;
                 update("platformName", platformName);
-                const match = platformSuggestions.find((platform) => platform.name === platformName);
-                if (!formData.logo && match?.logo) update("logo", match.logo);
+                const match = platformSuggestions.find((platform) => (platform.value ?? platform.name) === value);
+                if (match?.logo) update("logo", match.logo);
               }}
-              placeholder={t("subscription.placeholder.platformName")}
-              autoComplete="organization"
-              required
+              placeholder="选择平台（可留空）"
+              searchPlaceholder="搜索平台"
               aria-invalid={field.invalid || platformAccountAlreadyAdded}
               aria-describedby={field.describedBy}
               className="border-border bg-secondary"

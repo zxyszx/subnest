@@ -7,6 +7,8 @@ import type {
 
 export type SubscriptionPlatformSuggestion = {
   name: string;
+  label?: string;
+  value?: string;
   logo?: string | null | undefined;
   accounts?: readonly {
     id: string;

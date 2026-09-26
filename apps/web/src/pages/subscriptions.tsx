@@ -61,7 +61,8 @@ import { SUBSCRIPTION_PAYMENT_METHOD_NONE_VALUE, type SubscriptionPaymentTypeFil
 import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptions/domain/subscription-price-reference';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useI18n } from '@/i18n/I18nProvider';
-import { subscriptionPlatformName } from '@/lib/subscription-platform';
+import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from '@/lib/subscription-platform';
+import { getConfigItemLabel } from '@/types/config';
 import type { MessageKey } from '@/i18n/messages';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSubscriptionDetailDialog } from '@/hooks/use-subscription-detail-dialog';
@@ -199,14 +200,26 @@ const Subscriptions = () => {
   const platformOptions = useMemo(() => {
     type PlatformOption = {
       name: string;
+      label?: string;
+      value?: string;
       logo: string | null | undefined;
       accounts: { id: string; accountNumber: number }[];
     };
     const platforms = new Map<string, PlatformOption>();
+    for (const item of config.platforms ?? []) {
+      platforms.set(item.value, {
+        name: item.value,
+        value: item.value,
+        label: getConfigItemLabel(item, locale),
+        logo: item.icon,
+        accounts: [],
+      });
+    }
     for (const subscription of platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS) {
       const platformName = subscriptionPlatformName(subscription);
       const platform: PlatformOption = platforms.get(platformName) ?? {
         name: platformName,
+        value: platformName,
         logo: subscription.logo,
         accounts: [],
       };
@@ -214,15 +227,24 @@ const Subscriptions = () => {
       if (!platform.logo && subscription.logo) platform.logo = subscription.logo;
       platforms.set(platformName, platform);
     }
+    platforms.set(UNBOUND_PLATFORM_VALUE, {
+      name: UNBOUND_PLATFORM_VALUE,
+      label: "未绑定",
+      value: UNBOUND_PLATFORM_VALUE,
+      logo: null,
+      accounts: [],
+    });
     return Array.from(platforms.values());
-  }, [platformIndexQuery.data?.subscriptions]);
+  }, [config.platforms, locale, platformIndexQuery.data?.subscriptions]);
   const indexedSubscriptions = indexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS;
   const displaySourceSubscriptions = useFilteredIndex ? indexedSubscriptions : subscriptions;
   // 先选择分页或全库索引，再只排序实际展示的数据；索引模式不能附带重排未展示的分页列表。
   const filteredSubscriptions = useMemo(() => {
     const platformSubscriptions = selectedPlatform
       ? displaySourceSubscriptions.filter(
-          (subscription) => subscriptionPlatformName(subscription) === selectedPlatform,
+          (subscription) => selectedPlatform === UNBOUND_PLATFORM_VALUE
+            ? subscriptionPlatformName(subscription) === ""
+            : subscriptionPlatformName(subscription) === selectedPlatform,
         )
       : displaySourceSubscriptions;
     if (selectedPlatform && sortOption === "default") {
