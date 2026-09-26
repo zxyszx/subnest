@@ -493,11 +493,6 @@ msgid "aiRecognition.thinking.gemini.level.minimal"
 msgstr "Minimal"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:31
-msgid "settings.sectionNav.newszxcn"
-msgstr "共享收件箱"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:670
 msgid "settings.help.notifyx"
 msgstr "Notifyx 说明"
@@ -556,11 +551,6 @@ msgstr "PocketBase 后台"
 #: src/i18n/descriptors/settings.ts:494
 msgid "settings.cloudBackupS3Prefix"
 msgstr "Prefix"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:26
-msgid "settings.sectionNav.publicApi"
-msgstr "开放接口"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:430
@@ -783,11 +773,6 @@ msgid "settings.publicApiPlainToken"
 msgstr "一次性 API Token"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:20
-msgid "settings.sectionNav.uploadedIcons"
-msgstr "自定义图标"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:196
 msgid "settings.uploadedIcons"
 msgstr "上传图标"
@@ -843,9 +828,9 @@ msgid "settings.showExpiredHelp"
 msgstr "为避免过于冗长的通知可以关闭这项"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:30
-msgid "settings.sectionNav.cloudBackup"
-msgstr "云端备份"
+#: src/i18n/descriptors/settings.ts:17
+msgid "settings.sectionNav.appearance"
+msgstr "主题外观"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:469
@@ -881,6 +866,11 @@ msgstr "云备份配置无效"
 #: src/i18n/descriptors/settings.ts:537
 msgid "settings.cloudBackupUpstreamTitle"
 msgstr "云存储错误详情"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:30
+msgid "settings.sectionNav.cloudBackup"
+msgstr "云端备份"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:522
@@ -1195,6 +1185,11 @@ msgstr "公开页将隐藏金额字段。"
 #: src/i18n/descriptors/settings.ts:403
 msgid "settings.publicStatusCurrency"
 msgstr "公开页统计货币"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:31
+msgid "settings.sectionNav.newszxcn"
+msgstr "共享收件箱"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:735
@@ -1777,11 +1772,6 @@ msgid "settings.mfaCopyRecovery"
 msgstr "复制恢复码"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:17
-msgid "settings.sectionNav.appearance"
-msgstr "主题外观"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:107
 msgid "settings.appearance"
 msgstr "外观设置"
@@ -2010,6 +2000,11 @@ msgstr "开启后可用逗号/换行分隔多个邮箱。"
 #: src/i18n/descriptors/settings.ts:402
 msgid "settings.publicStatusShowPricesHelp"
 msgstr "开启后显示价格和币种；关闭时只给最小状态。"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:26
+msgid "settings.sectionNav.publicApi"
+msgstr "开放接口"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:439
@@ -2962,11 +2957,6 @@ msgid "settings.publicStatusCurrencyHelp"
 msgstr "汇总换算为 {currency}，单项保留原账单币种。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:23
-msgid "settings.sectionNav.exchange"
-msgstr "汇率设置"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:572
 msgid "settings.exchange"
 msgstr "汇率与统计货币"
@@ -2985,6 +2975,11 @@ msgstr "汇率来源"
 #: src/i18n/descriptors/settings.ts:637
 msgid "settings.exchangeRateProviderSaved"
 msgstr "汇率来源已保存"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:23
+msgid "settings.sectionNav.exchange"
+msgstr "汇率设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:249
@@ -3357,6 +3352,11 @@ msgid "settings.dingtalkKeyword"
 msgstr "自定义关键词（可选）"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:20
+msgid "settings.sectionNav.uploadedIcons"
+msgstr "自定义图标"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:559
 msgid "settings.dataConfigDescription"
 msgstr "自定义订阅的分类、状态、支付方式和货币选项，点击管理各项配置。"
@@ -3717,11 +3717,6 @@ msgid "settings.builtInIconSource.thesvg.help"
 msgstr "通用品牌与技术图标库，默认优先显示。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:28
-msgid "settings.sectionNav.notifications"
-msgstr "通知设置"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:610
 msgid "settings.notificationChannels"
 msgstr "通知方式 (可多选)"
@@ -3730,6 +3725,11 @@ msgstr "通知方式 (可多选)"
 #: src/i18n/descriptors/settings.ts:604
 msgid "settings.notificationTime"
 msgstr "通知时间（本地时间）"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:28
+msgid "settings.sectionNav.notifications"
+msgstr "通知设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:603
@@ -3912,14 +3912,14 @@ msgid "settings.testPhoneHelp"
 msgstr "预留字段：部分渠道可能需要手机号/收件人 ID；当前版本不会影响已支持渠道。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/settings.ts:21
-msgid "settings.sectionNav.budget"
-msgstr "预算设置"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:633
 msgid "settings.budgetInvalid"
 msgstr "预算必须是 0 到 1,000,000,000 之间的有效数字"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:21
+msgid "settings.sectionNav.budget"
+msgstr "预算设置"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:317

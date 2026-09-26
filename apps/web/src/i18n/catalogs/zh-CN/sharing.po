@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:100
+#: src/i18n/descriptors/sharing.ts:101
 msgid "sharing.twoMonths"
 msgstr "2 个月"
 
@@ -24,12 +24,12 @@ msgid "sharing.nextSevenDays"
 msgstr "7 天内"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:109
+#: src/i18n/descriptors/sharing.ts:110
 msgid "sharing.upcomingDialogTitle"
 msgstr "7 天内即将续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:92
+#: src/i18n/descriptors/sharing.ts:93
 msgid "sharing.telegram"
 msgstr "Telegram"
 
@@ -44,7 +44,7 @@ msgid "sharing.nextBillingDate"
 msgstr "下次续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:98
+#: src/i18n/descriptors/sharing.ts:99
 msgid "sharing.renewSeatDescription"
 msgstr "从原到期日期开始顺延，可提前续费。"
 
@@ -54,32 +54,32 @@ msgid "sharing.outstanding"
 msgstr "代收金额"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:77
+#: src/i18n/descriptors/sharing.ts:78
 msgid "sharing.active"
 msgstr "使用中"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:82
+#: src/i18n/descriptors/sharing.ts:83
 msgid "sharing.saving"
 msgstr "保存中…"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:105
+#: src/i18n/descriptors/sharing.ts:106
 msgid "sharing.accountSaveFailed"
 msgstr "保存失败，请检查账号资料"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:84
+#: src/i18n/descriptors/sharing.ts:85
 msgid "sharing.seatSaveFailed"
 msgstr "保存失败，请检查车友和收费信息"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:103
+#: src/i18n/descriptors/sharing.ts:104
 msgid "sharing.saveAccount"
 msgstr "保存账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:81
+#: src/i18n/descriptors/sharing.ts:82
 msgid "sharing.saveSeat"
 msgstr "保存车位"
 
@@ -94,12 +94,12 @@ msgid "sharing.allPlatforms"
 msgstr "全部平台"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:95
+#: src/i18n/descriptors/sharing.ts:96
 msgid "sharing.other"
 msgstr "其他"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:112
+#: src/i18n/descriptors/sharing.ts:113
 msgid "sharing.nearestExpiry"
 msgstr "最近到期"
 
@@ -124,7 +124,7 @@ msgid "sharing.goToSubscriptions"
 msgstr "前往订阅列表"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:67
+#: src/i18n/descriptors/sharing.ts:68
 msgid "sharing.semiAnnual"
 msgstr "半年付 · 6个月"
 
@@ -164,7 +164,7 @@ msgid "sharing.createSuccess"
 msgstr "合租账号已创建"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:104
+#: src/i18n/descriptors/sharing.ts:105
 msgid "sharing.accountSaved"
 msgstr "合租账号资料已更新"
 
@@ -184,6 +184,11 @@ msgid "sharing.copyPassword"
 msgstr "复制密码"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:62
+msgid "sharing.copyContact"
+msgstr "复制联系方式"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:42
 msgid "sharing.copyAccount"
 msgstr "复制账号"
@@ -194,7 +199,7 @@ msgid "sharing.copyLink"
 msgstr "复制验证码链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:66
+#: src/i18n/descriptors/sharing.ts:67
 msgid "sharing.quarterly"
 msgstr "季付 · 3个月"
 
@@ -224,12 +229,12 @@ msgid "sharing.copySuccess"
 msgstr "已复制"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:79
+#: src/i18n/descriptors/sharing.ts:80
 msgid "sharing.archived"
 msgstr "已归档"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:74
+#: src/i18n/descriptors/sharing.ts:75
 msgid "sharing.paid"
 msgstr "已收"
 
@@ -244,17 +249,17 @@ msgid "sharing.subscription"
 msgstr "平台订阅"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:68
+#: src/i18n/descriptors/sharing.ts:69
 msgid "sharing.annual"
 msgstr "年付 · 12个月"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:71
+#: src/i18n/descriptors/sharing.ts:72
 msgid "sharing.startDate"
 msgstr "开始日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:75
+#: src/i18n/descriptors/sharing.ts:76
 msgid "sharing.pending"
 msgstr "待收"
 
@@ -264,7 +269,7 @@ msgid "sharing.outstandingAmount"
 msgstr "待收金额"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:91
+#: src/i18n/descriptors/sharing.ts:92
 msgid "sharing.wechat"
 msgstr "微信"
 
@@ -284,12 +289,12 @@ msgid "sharing.platformFilter"
 msgstr "按平台筛选合租账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:110
+#: src/i18n/descriptors/sharing.ts:111
 msgid "sharing.upcomingDialogDescription"
 msgstr "按紧急程度排序，越接近到期越靠前。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:106
+#: src/i18n/descriptors/sharing.ts:107
 msgid "sharing.searchPlaceholder"
 msgstr "搜索序列号或平台名称"
 
@@ -299,22 +304,22 @@ msgid "sharing.paymentMethod"
 msgstr "支付方式"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:73
+#: src/i18n/descriptors/sharing.ts:74
 msgid "sharing.paymentStatus"
 msgstr "收款状态"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:87
+#: src/i18n/descriptors/sharing.ts:88
 msgid "sharing.billingDetails"
 msgstr "收费与周期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:64
+#: src/i18n/descriptors/sharing.ts:65
 msgid "sharing.billingCycle"
 msgstr "收费周期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:63
+#: src/i18n/descriptors/sharing.ts:64
 msgid "sharing.billingMonths"
 msgstr "收费月数"
 
@@ -329,12 +334,12 @@ msgid "sharing.loadFailed"
 msgstr "无法加载合租账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:90
+#: src/i18n/descriptors/sharing.ts:91
 msgid "sharing.loadDetailFailed"
 msgstr "无法加载账号详情"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:78
+#: src/i18n/descriptors/sharing.ts:79
 msgid "sharing.paused"
 msgstr "暂停"
 
@@ -344,7 +349,7 @@ msgid "sharing.morePlatforms"
 msgstr "更多"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:65
+#: src/i18n/descriptors/sharing.ts:66
 msgid "sharing.monthly"
 msgstr "月付"
 
@@ -359,7 +364,7 @@ msgid "sharing.monthlyRevenue"
 msgstr "月收入"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:111
+#: src/i18n/descriptors/sharing.ts:112
 msgid "sharing.upcomingDialogEmpty"
 msgstr "未来 7 天内没有车友到期"
 
@@ -369,17 +374,17 @@ msgid "sharing.noVerificationLink"
 msgstr "未设置验证码链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:88
+#: src/i18n/descriptors/sharing.ts:89
 msgid "sharing.calculatedReceivable"
 msgstr "本期应收"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:108
+#: src/i18n/descriptors/sharing.ts:109
 msgid "sharing.openUpcomingRenewals"
 msgstr "查看 7 天内即将续费的车友"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:70
+#: src/i18n/descriptors/sharing.ts:71
 msgid "sharing.expiryAutoHint"
 msgstr "根据开始日期和收费周期自动计算，仍可手动调整。"
 
@@ -389,22 +394,22 @@ msgid "sharing.monthlyCost"
 msgstr "每月成本"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:62
+#: src/i18n/descriptors/sharing.ts:63
 msgid "sharing.monthlyPrice"
 msgstr "每月收费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:107
+#: src/i18n/descriptors/sharing.ts:108
 msgid "sharing.noSearchResults"
 msgstr "没有找到匹配的合租账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:94
+#: src/i18n/descriptors/sharing.ts:95
 msgid "sharing.phone"
 msgstr "电话"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:102
+#: src/i18n/descriptors/sharing.ts:103
 msgid "sharing.passwordKeepHint"
 msgstr "留空表示保留当前密码"
 
@@ -414,12 +419,12 @@ msgid "sharing.loginAccount"
 msgstr "登录账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:99
+#: src/i18n/descriptors/sharing.ts:100
 msgid "sharing.confirmRenewal"
 msgstr "确认续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:76
+#: src/i18n/descriptors/sharing.ts:77
 msgid "sharing.vacant"
 msgstr "空闲"
 
@@ -429,7 +434,7 @@ msgid "sharing.availableSeats"
 msgstr "空闲车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:89
+#: src/i18n/descriptors/sharing.ts:90
 msgid "sharing.noMember"
 msgstr "等待分配车友"
 
@@ -444,17 +449,17 @@ msgid "sharing.manageAccount"
 msgstr "管理账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:80
+#: src/i18n/descriptors/sharing.ts:81
 msgid "sharing.editSeat"
 msgstr "管理车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:97
+#: src/i18n/descriptors/sharing.ts:98
 msgid "sharing.renewSeat"
 msgstr "续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:96
+#: src/i18n/descriptors/sharing.ts:97
 msgid "sharing.editAccount"
 msgstr "编辑账号资料"
 
@@ -469,7 +474,7 @@ msgid "sharing.contactType"
 msgstr "联系方式类型"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:69
+#: src/i18n/descriptors/sharing.ts:70
 msgid "sharing.customMonths"
 msgstr "自定义月数"
 
@@ -496,7 +501,7 @@ msgid "sharing.accountNumber"
 msgstr "账号编号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:101
+#: src/i18n/descriptors/sharing.ts:102
 msgid "sharing.accountDetails"
 msgstr "账号资料"
 
@@ -516,7 +521,7 @@ msgid "sharing.seatNumber"
 msgstr "车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:83
+#: src/i18n/descriptors/sharing.ts:84
 msgid "sharing.seatSaved"
 msgstr "车位与应收已更新"
 
@@ -526,12 +531,12 @@ msgid "sharing.capacity"
 msgstr "车位数"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:85
+#: src/i18n/descriptors/sharing.ts:86
 msgid "sharing.status"
 msgstr "车位状态"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:72
+#: src/i18n/descriptors/sharing.ts:73
 msgid "sharing.expiresAt"
 msgstr "车友到期"
 
@@ -541,7 +546,7 @@ msgid "sharing.memberName"
 msgstr "车友名称"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:86
+#: src/i18n/descriptors/sharing.ts:87
 msgid "sharing.memberDetails"
 msgstr "车友资料"
 
@@ -551,7 +556,7 @@ msgid "sharing.emptyTitle"
 msgstr "还没有合租账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:93
+#: src/i18n/descriptors/sharing.ts:94
 msgid "sharing.email"
 msgstr "邮箱"
 
