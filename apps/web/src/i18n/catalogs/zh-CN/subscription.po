@@ -3324,6 +3324,16 @@ msgid "subscription.familySharing.capacity"
 msgstr "车位数"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:141
+msgid "subscription.familySharing.matchingManagedMailbox"
+msgstr "正在匹配 NewSzxcn 邮箱..."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:142
+msgid "subscription.familySharing.updatingManagedShare"
+msgstr "正在更新共享状态"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:703
 msgid "calendar.sharingExpiries"
 msgstr "车友到期"

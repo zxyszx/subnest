@@ -138,6 +138,8 @@ export const messages = [
   msg({ id: "subscription.familySharing.verificationLink", message: "邮箱验证码链接" }),
   msg({ id: "subscription.familySharing.verificationLinkPlaceholder", message: "https://" }),
   msg({ id: "subscription.familySharing.capacity", message: "车位数" }),
+  msg({ id: "subscription.familySharing.matchingManagedMailbox", message: "正在匹配 NewSzxcn 邮箱..." }),
+  msg({ id: "subscription.familySharing.updatingManagedShare", message: "正在更新共享状态" }),
   msg({ id: "subscription.costSharing.help", message: "当前账户默认付款；共享成员是其他人，金额表示你希望从成员回收的金额。" }),
   msg({ id: "subscription.costSharing.splitMode", message: "分摊方式" }),
   msg({ id: "subscription.costSharing.equal", message: "平均分摊" }),

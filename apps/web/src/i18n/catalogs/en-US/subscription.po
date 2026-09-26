@@ -3324,6 +3324,16 @@ msgid "subscription.familySharing.capacity"
 msgstr "Seat count"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:141
+msgid "subscription.familySharing.matchingManagedMailbox"
+msgstr "Matching NewSzxcn mailbox..."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:142
+msgid "subscription.familySharing.updatingManagedShare"
+msgstr "Updating shared inbox status"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:703
 msgid "calendar.sharingExpiries"
 msgstr "Friend expiries"
