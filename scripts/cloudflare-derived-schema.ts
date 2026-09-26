@@ -49,7 +49,7 @@ function column(
 }
 
 // 签名包含类型、NOT NULL、默认值和 PK 序号；只比较列名会把手工修改的混合 schema 误当成可修复状态。
-const subscriptionsColumns = [
+const subscriptionsColumns0039 = [
   column("id", 0, null, 1), column("user_id", 1), column("name", 1), column("logo"),
   column("price", 1), column("currency", 1), column("billing_cycle", 1), column("custom_days", 0, null, 0, "INTEGER"),
   column("custom_cycle_unit"), column("one_time_term_count", 0, null, 0, "INTEGER"), column("one_time_term_unit"),
@@ -63,6 +63,17 @@ const subscriptionsColumns = [
   column("cost_sharing_collection_reminder_enabled", 1, "0", 0, "INTEGER"),
   column("cost_sharing_next_collection_reminder_date"), column("extra_json", 1, "'{}'"),
   column("created_at", 1), column("updated_at", 1),
+] as const;
+// 0042/0043 使用 ALTER TABLE 在现有事实表尾部追加字段；顺序也是持久结构契约的一部分。
+const subscriptionsColumns0042 = [
+  ...subscriptionsColumns0039,
+  column("platform_name", 1, "''"), column("account_number", 1, "1", 0, "INTEGER"), column("card_last4"),
+] as const;
+const subscriptionsColumnsCurrent = [
+  ...subscriptionsColumns0042,
+  column("family_sharing_enabled", 1, "0", 0, "INTEGER"), column("sharing_login_account", 1, "''"),
+  column("sharing_encrypted_credentials", 1, "''"), column("sharing_password_mask", 1, "''"),
+  column("sharing_verification_link"), column("sharing_capacity", 1, "5", 0, "INTEGER"),
 ] as const;
 
 const listIndexColumns = [
@@ -160,9 +171,18 @@ async function foreignKeySignatures(client: D1Client, table: string): Promise<st
   )).sort();
 }
 
-async function tableDefinitionsValid(client: D1Client): Promise<boolean> {
+async function tableDefinitionsValid(
+  client: D1Client,
+  migrations: { familySharingApplied: boolean; platformFieldsApplied: boolean },
+): Promise<boolean> {
+  if (migrations.familySharingApplied && !migrations.platformFieldsApplied) return false;
+  const expectedSubscriptionColumns = migrations.familySharingApplied
+    ? subscriptionsColumnsCurrent
+    : migrations.platformFieldsApplied
+      ? subscriptionsColumns0042
+      : subscriptionsColumns0039;
   const expected = {
-    subscriptions: subscriptionsColumns,
+    subscriptions: expectedSubscriptionColumns,
     subscription_list_index: listIndexColumns,
     subscription_tags: tagColumns,
     subscription_user_stats: statsColumns,
@@ -240,8 +260,13 @@ async function foreignKeysValid(client: D1Client): Promise<boolean> {
  */
 export async function probeDerivedBackfillState(client: D1Client): Promise<DerivedBackfillState> {
   const migrationRows = await client.query(
-    "SELECT name FROM d1_migrations WHERE name IN (?, ?)",
-    ["0036_subscription_derived_state_v2.sql", "0039_rebuild_subscription_collection_projections.sql"],
+    "SELECT name FROM d1_migrations WHERE name IN (?, ?, ?, ?)",
+    [
+      "0036_subscription_derived_state_v2.sql",
+      "0039_rebuild_subscription_collection_projections.sql",
+      "0042_subscription_platform_fields.sql",
+      "0043_family_sharing.sql",
+    ],
     migrationRowSchema.parse,
   );
   const listRows = await tableColumnRows(client, "subscription_list_index");
@@ -274,7 +299,10 @@ export async function probeDerivedBackfillState(client: D1Client): Promise<Deriv
     backfillColumns: backfillRows.map((row) => row.name),
     primaryKeysValid: await primaryKeysValid(client),
     foreignKeysValid: await foreignKeysValid(client),
-    constraintsValid: await tableDefinitionsValid(client)
+    constraintsValid: await tableDefinitionsValid(client, {
+      familySharingApplied: migrationRows.some((row) => row.name === "0043_family_sharing.sql"),
+      platformFieldsApplied: migrationRows.some((row) => row.name === "0042_subscription_platform_fields.sql"),
+    })
       && await requiredIndexesValid(client)
       && await statsChecksValid(client),
     markerPresent: markerRows.length === 1,
