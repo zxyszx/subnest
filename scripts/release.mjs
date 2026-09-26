@@ -20,6 +20,7 @@ const ghcrImage = `ghcr.io/${githubRepository}`;
 const firstStableVersion = "0.1.0";
 const latestTag = "latest";
 const rcTag = "rc";
+const minimumNodeVersion = { major: 24, minor: 19 };
 const defaultGhcrImage = `${ghcrImage}:${latestTag}`;
 const versionPattern = /^v?(?<version>\d+\.\d+\.\d+(?:-rc\.(?<rc>\d+))?)$/;
 const stablePattern = /^v?\d+\.\d+\.\d+$/;
@@ -81,6 +82,13 @@ function normalizeVersion(rawVersion) {
 
 function isStableVersion(version) {
   return stablePattern.test(version);
+}
+
+function validateReleaseNodeVersion() {
+  const [major, minor] = process.versions.node.split(".").map((part) => Number.parseInt(part, 10));
+  if (major < minimumNodeVersion.major || (major === minimumNodeVersion.major && minor < minimumNodeVersion.minor)) {
+    fail(`Release commands require Node.js >= ${minimumNodeVersion.major}.${minimumNodeVersion.minor}.0; current version is ${process.versions.node}.`);
+  }
 }
 
 function majorMinor(version) {
@@ -296,9 +304,6 @@ function markdownNotes(rawVersion, previous, options = {}) {
     fail(`Missing release notes: docs/release-notes/v${stableVersion}-zh.md`);
   }
 
-  if (releaseNotesSection(version, "en")) {
-    lines.push(`[English ->](${githubBaseUrl}/blob/main/docs/release-notes/v${stableVersion}-en.md)`, "");
-  }
   lines.push(notes, "");
 
   if (includeFullChangelog) {
@@ -338,10 +343,6 @@ function releaseBody(rawVersion, previous) {
     "",
     "- GitHub Container Registry",
     ...ghcrTags.map((tag) => `  - \`${tag}\``),
-    "",
-    "## Full Changelog",
-    "",
-    `- ${compareLink(previous, version)}`,
     "",
   ].join("\n");
 }
@@ -392,9 +393,18 @@ function packageDocker(rawVersion) {
 }
 
 function preflight(rawVersion) {
+  validateReleaseNodeVersion();
   const version = normalizeVersion(rawVersion);
   validatePackageVersions(version);
   releaseBody(version);
+  execFileSync(process.execPath, ["../../scripts/check-i18n-catalogs.mjs"], {
+    cwd: join(repoRoot, "apps", "web"),
+    stdio: "inherit",
+  });
+  execFileSync(process.execPath, ["scripts/check-deploy-config.mjs"], {
+    cwd: repoRoot,
+    stdio: "inherit",
+  });
   packageDocker(version);
   console.log(`Release preflight passed for v${version}.`);
 }
