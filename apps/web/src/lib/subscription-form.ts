@@ -433,7 +433,8 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
   const repeatReminderEnabled = reminderDays === DISABLED_REMINDER_DAYS ? false : formData.repeatReminderEnabled;
   const platformName = formData.platformName.trim() || formData.name.trim();
   const base = {
-    name: platformName,
+    // name 与 platformName 可独立维护；旧表单只填平台时仍使用平台名作为服务名。
+    name: formData.name.trim() || platformName,
     platformName,
     accountNumber: parsePositiveIntegerInput(formData.accountNumber, 100000) ?? 1,
     logo: formData.logo,

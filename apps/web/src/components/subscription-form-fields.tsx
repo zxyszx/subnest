@@ -92,8 +92,8 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         return {
           ...prev,
           platformName: nextPlatformName,
-          // 后端仍保留 name 契约；界面只维护一个平台名称，提交数据不会因此缺字段。
-          name: nextPlatformName,
+          ...(prev.name.trim() === "" ? { name: nextPlatformName } : {}),
+          // 平台名称负责归类；服务名称单独维护，便于同一平台下区分多个服务器或套餐。
         };
       }
       if (key === "name") {
@@ -101,7 +101,6 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         return {
           ...prev,
           name: nextName,
-          platformName: prev.platformName.trim() === "" ? nextName : prev.platformName,
         };
       }
       if (key === "billingCycle") {
@@ -202,8 +201,9 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     <>
       <FormFieldRow
         alignAt="sm"
-        rowClassName="sm:grid-cols-[minmax(0,1fr)_9rem]"
+        rowClassName="sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]"
         errors={[
+          { id: id("name-error"), message: errors.name },
           { id: id("platformName-error"), message: errors.platformName },
           { id: id("accountNumber-error"), message: errors.accountNumber },
         ]}
@@ -231,6 +231,27 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
               autoComplete="organization"
               required
               aria-invalid={field.invalid || platformAccountAlreadyAdded}
+              aria-describedby={field.describedBy}
+              className="border-border bg-secondary"
+            />
+          )}
+        </FormField>
+        <FormField
+          id={id("name")}
+          label={t("subscription.field.name")}
+          error={errors.name}
+          errorId={id("name-error")}
+          renderError={false}
+        >
+          {(field) => (
+            <Input
+              id={field.id}
+              name={field.id}
+              value={formData.name}
+              onChange={(event) => update("name", event.target.value)}
+              placeholder={t("subscription.placeholder.name")}
+              autoComplete="off"
+              aria-invalid={field.invalid}
               aria-describedby={field.describedBy}
               className="border-border bg-secondary"
             />
@@ -274,7 +295,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           value={formData.logo}
           onChange={(logo) => update("logo", logo)}
           onUploadStatusChange={onLogoUploadStatusChange}
-          serviceName={formData.platformName}
+          serviceName={formData.name || formData.platformName}
           website={formData.website}
         />
       ) : null}
