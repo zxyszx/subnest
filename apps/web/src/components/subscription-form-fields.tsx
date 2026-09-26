@@ -309,7 +309,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           value={formData.logo}
           onChange={(logo) => update("logo", logo)}
           onUploadStatusChange={onLogoUploadStatusChange}
-          serviceName={formData.name || formData.platformName}
+          serviceName={formData.platformName || formData.name}
           website={formData.website}
         />
       ) : null}

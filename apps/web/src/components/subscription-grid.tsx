@@ -84,7 +84,7 @@ export function SubscriptionGrid({
     if (!row) return null;
 
     return row.map((subscription) => (
-      <div key={subscription.id} className="h-full">
+      <div key={subscription.id}>
         <SubscriptionCard
           subscription={subscription}
           viewMode={viewMode}
@@ -137,7 +137,7 @@ export function SubscriptionGrid({
       getItemKey={getRowKey}
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
-        "grid items-stretch gap-4",
+        "grid items-start gap-4",
         viewMode === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1",
       )}
       testId="virtualized-subscription-list"

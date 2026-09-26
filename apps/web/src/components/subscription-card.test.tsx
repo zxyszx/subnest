@@ -152,6 +152,30 @@ describe("SubscriptionCard", () => {
     expect(screen.queryByRole("heading", { name: "Netflix-01/高级套餐" })).not.toBeInTheDocument();
   });
 
+  it("shows a distinct service name only when it differs from the platform", () => {
+    renderSubscriptionCard({ name: "搬瓦工", platformName: "服务器" });
+
+    expect(screen.getByRole("heading", { name: "服务器" })).toBeInTheDocument();
+    expect(screen.getByText("搬瓦工")).toBeInTheDocument();
+  });
+
+  it("uses a yellow renewal treatment from four to seven days", () => {
+    renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-23") });
+
+    const card = screen.getByTestId("subscription-card");
+    expect(card).toHaveClass("border-warning/50", "animate-renewal-warning");
+    expect(card).not.toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-warning");
+  });
+
+  it("uses a red renewal treatment within three days", () => {
+    renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-21") });
+
+    const card = screen.getByTestId("subscription-card");
+    expect(card).toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-destructive");
+  });
+
   it("keeps real subscription logo styling as one plate without an inner pseudo-element", () => {
     expect(mediaUtilitiesCss).not.toContain(".subscription-logo-tile::before");
     expect(mediaUtilitiesCss).not.toContain(".dark .subscription-logo-tile::before");

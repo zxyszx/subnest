@@ -111,7 +111,7 @@ const DEFAULT_BADGE_COLOR = "hsl(var(--primary))";
 const CARD_ACTION_MENU_CONTENT_CLASSNAME = "pointer-events-auto w-max min-w-40";
 const CARD_ACTION_MENU_ITEM_CLASSNAME = "gap-2.5 px-2.5 py-2 text-sm whitespace-nowrap";
 
-type SubscriptionCardMetaTone = "muted" | "warning";
+type SubscriptionCardMetaTone = "muted" | "warning" | "danger";
 
 type SubscriptionCardMetaItem = {
   key: string;
@@ -125,6 +125,7 @@ type SubscriptionCardMetaItem = {
 const metaToneClassNames = {
   muted: "text-muted-foreground",
   warning: "text-warning",
+  danger: "text-destructive",
 } satisfies Record<SubscriptionCardMetaTone, string>;
 
 function SubscriptionCardMetaToken({ item }: { item: SubscriptionCardMetaItem }) {
@@ -235,6 +236,11 @@ function SubscriptionCardComponent({
   const isInactive = isExpired || effectiveStatus === "paused" || effectiveStatus === "cancelled";
   // 这里是展示提示窗口，不等同于 Cron 通知窗口；不要把两者的阈值混用。
   const isRenewingSoon = !isInactive && !isBuyout && daysUntilRenewal <= 7 && daysUntilRenewal >= 0;
+  const renewalTone: "normal" | "warning" | "danger" = !isRenewingSoon
+    ? "normal"
+    : daysUntilRenewal <= 3
+      ? "danger"
+      : "warning";
   const isTrialEndingSoon = !isExpired && subscription.status === 'trial' && daysUntilTrialEnd !== null &&
     daysUntilTrialEnd <= 3 && daysUntilTrialEnd >= 0;
   const billingDateText = isBuyout && subscription.startDate
@@ -265,7 +271,11 @@ function SubscriptionCardComponent({
       ? t("subscription.card.renewsToday")
       : t("subscription.card.renewsInDays", { days: daysUntilRenewal });
   })();
-  const billingStatusTone: SubscriptionCardMetaTone = isRenewingSoon ? "warning" : "muted";
+  const billingStatusTone: SubscriptionCardMetaTone = renewalTone === "danger"
+    ? "danger"
+    : renewalTone === "warning"
+      ? "warning"
+      : "muted";
   const paymentConfig = subscription.paymentMethod ? paymentMethodByValue.get(subscription.paymentMethod) : undefined;
   const paymentMethodLabel = subscription.paymentMethod
     ? paymentConfig
@@ -352,7 +362,8 @@ function SubscriptionCardComponent({
         "group relative h-full overflow-hidden rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-300 hover:bg-card-hover",
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
-        isRenewingSoon && "border-warning/40",
+        renewalTone === "warning" && "border-warning/50 animate-renewal-warning",
+        renewalTone === "danger" && "border-destructive/50 animate-renewal-danger",
         isTrialEndingSoon && "animate-pulse-glow"
       )}
     >
