@@ -164,6 +164,32 @@ function SubscriptionCardMetaFlow({ items }: { items: readonly SubscriptionCardM
   );
 }
 
+function SubscriptionCardGridMeta({ items }: { items: readonly SubscriptionCardMetaItem[] }) {
+  const relativeBilling = items.find((item) => item.key === "relative-billing");
+  const primaryItems = items.filter((item) => item.key === "start-date" || item.key === "billing-date");
+  const secondaryItems = items.filter((item) => (
+    item.key !== "start-date" && item.key !== "billing-date" && item.key !== "relative-billing"
+  ));
+
+  return (
+    <div data-testid="subscription-card-meta-flow" className="grid min-w-0 gap-1.5">
+      <div data-testid="subscription-card-meta-date-group" className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1.5">
+        {primaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
+      </div>
+      {secondaryItems.length > 0 ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          {secondaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
+        </div>
+      ) : null}
+      {relativeBilling ? (
+        <div className="flex min-w-0 items-center justify-end border-t border-border/50 pt-1.5">
+          <SubscriptionCardMetaToken item={relativeBilling} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** 订阅卡片。 */
 function SubscriptionCardComponent({
   subscription,
@@ -356,10 +382,12 @@ function SubscriptionCardComponent({
     <>
     <div
       data-testid="subscription-card"
+      data-view-mode={viewMode}
       onPointerEnter={() => onPrefetchDetails?.(subscription.id)}
       onFocusCapture={() => onPrefetchDetails?.(subscription.id)}
       className={cn(
-        "group relative h-full overflow-hidden rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-300 hover:bg-card-hover",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
+        viewMode === "list" ? "h-full p-5" : "p-4 sm:p-5",
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
         renewalTone === "warning" && "border-warning/50 animate-renewal-warning",
@@ -376,7 +404,7 @@ function SubscriptionCardComponent({
           data-testid="subscription-card-primary-action"
         />
       ) : null}
-      <div className={cn("relative z-10 flex items-start gap-4", onViewDetails && "pointer-events-none")}>
+      <div className={cn("relative z-10 flex items-start gap-3.5", viewMode === "list" && "gap-4", onViewDetails && "pointer-events-none")}>
         <div className="relative shrink-0">
           <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
           <span
@@ -387,8 +415,11 @@ function SubscriptionCardComponent({
           </span>
         </div>
 
-        <div className="min-w-0 flex-1 grid gap-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-x-3 gap-y-2">
+        <div className={cn("min-w-0 flex-1 grid", viewMode === "grid" ? "gap-2" : "gap-3")}>
+          <div className={cn(
+            "grid grid-cols-[minmax(0,1fr)_auto_auto] items-start",
+            viewMode === "grid" ? "gap-x-2 gap-y-1.5" : "gap-x-3 gap-y-2",
+          )}>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
                 {subscription.pinned ? (
@@ -412,8 +443,11 @@ function SubscriptionCardComponent({
               ) : null}
             </div>
 
-            <div className="min-w-0 max-w-35 shrink-0 text-right sm:max-w-40">
-              <p className="truncate text-xl font-bold text-foreground">
+            <div className={cn(
+              "min-w-0 shrink-0 text-right",
+              viewMode === "grid" ? "max-w-32 sm:max-w-36" : "max-w-35 sm:max-w-40",
+            )}>
+              <p className={cn("truncate font-bold text-foreground", viewMode === "grid" ? "text-lg" : "text-xl")}>
                 {formatCurrency(subscription.price, subscription.currency)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -497,7 +531,13 @@ function SubscriptionCardComponent({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div data-testid="subscription-card-badge-flow" className="col-span-full flex flex-wrap items-center gap-x-1.5 gap-y-2 sm:gap-2">
+            <div
+              data-testid="subscription-card-badge-flow"
+              className={cn(
+                "col-span-full flex flex-wrap items-center",
+                viewMode === "grid" ? "mt-0.5 gap-x-1.5 gap-y-1.5" : "gap-x-1.5 gap-y-2 sm:gap-2",
+              )}
+            >
               <Badge
                 data-testid="subscription-card-badge-category"
                 variant="outline"
@@ -519,8 +559,13 @@ function SubscriptionCardComponent({
             </div>
           </div>
 
-          <div className="grid min-w-0 gap-y-1.5 text-sm">
-            <SubscriptionCardMetaFlow items={metaItems} />
+          <div className={cn(
+            "grid min-w-0 text-sm",
+            viewMode === "grid" ? "gap-y-1 border-t border-border/60 pt-2" : "gap-y-1.5",
+          )}>
+            {viewMode === "grid"
+              ? <SubscriptionCardGridMeta items={metaItems} />
+              : <SubscriptionCardMetaFlow items={metaItems} />}
 
             {viewMode === 'list' && !isBuyout && (
               <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
