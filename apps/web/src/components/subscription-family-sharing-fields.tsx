@@ -25,6 +25,7 @@ const managedCopy = {
   chooseFolders: "选择文件夹",
   viewFolders: "查看文件夹",
   folders: "可查看文件夹",
+  mailUnit: "封",
   noFolders: "该邮箱没有可分享的文件夹",
   selectRequired: "请至少选择一个文件夹，再开启分享。",
   activeHelp: "需要更改范围时，请先关闭分享，再重新选择文件夹。",
@@ -295,7 +296,7 @@ export function SubscriptionFamilySharingFields({
                             onChange={(event) => setFolderIds((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))}
                           />
                           <span className="min-w-0 flex-1 truncate">{folderLabel(folder)}</span>
-                          <span className="text-xs text-muted-foreground">{folder.totalCount ?? 0} 封</span>
+                          <span className="text-xs text-muted-foreground">{folder.totalCount ?? 0} {managedCopy.mailUnit}</span>
                         </label>
                       ))}
                     </div>
