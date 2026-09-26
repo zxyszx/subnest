@@ -5,10 +5,6 @@
 </p>
 
 <p align="center">
-  <a href="README.zh-CN.md">简体中文</a> · <a href="README.md">English</a>
-</p>
-
-<p align="center">
   <img alt="Self-hosted" src="https://img.shields.io/badge/self--hosted-0f172a?style=flat-square">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ed?style=flat-square">
   <img alt="Cloudflare Workers" src="https://img.shields.io/badge/Cloudflare%20Workers-ready-f38020?style=flat-square">
