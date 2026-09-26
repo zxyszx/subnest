@@ -6,6 +6,15 @@ import (
 	"testing"
 )
 
+func TestSafeSharingVerificationLinkDoesNotExposeNewSzxcnToken(t *testing.T) {
+	if got := safeSharingVerificationLink("https://mail.newszxcn.com/shared-inbox#nis_secret"); got != nil {
+		t.Fatalf("expected legacy upstream link to be hidden, got %q", *got)
+	}
+	if got := safeSharingVerificationLink("https://dingyue.xzys.me/s/short-key"); got == nil || *got != "https://dingyue.xzys.me/s/short-key" {
+		t.Fatalf("expected short link to remain visible, got %#v", got)
+	}
+}
+
 func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {

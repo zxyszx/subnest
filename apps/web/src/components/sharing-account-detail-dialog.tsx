@@ -65,6 +65,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
   const detailQuery = useSharingAccountDetail(open ? account?.id ?? null : null);
   const settingsQuery = useSettingsEnvelope();
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
+  const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
   const [selectedSeat, setSelectedSeat] = useState<SharingSeat | null>(null);
   const [seatDialogMode, setSeatDialogMode] = useState<"edit" | "renew">("edit");
   const detail = detailQuery.data;
@@ -73,27 +74,27 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
     const accountCurrency = detail.account.currency;
     const activeSeats = detail.seats.filter((seat) => seat.status === "active" && seat.monthlyPrice && seat.currency);
     const monthlyRevenue = activeSeats.reduce(
-      (total, seat) => total + convert(Number(seat.monthlyPrice), seat.currency ?? accountCurrency, accountCurrency),
+      (total, seat) => total + convert(Number(seat.monthlyPrice), seat.currency ?? accountCurrency, defaultCurrency),
       0,
     );
     const receivables = detail.seats.map((seat) => ({ seat, receivable: seat.currentReceivable })).filter(
       (item): item is { seat: SharingSeat; receivable: NonNullable<SharingSeat["currentReceivable"]> } => Boolean(item.receivable && item.seat.currency),
     );
     const contractedRevenue = receivables.reduce(
-      (total, { seat, receivable }) => total + convert(Number(receivable.amount), seat.currency ?? accountCurrency, accountCurrency),
+      (total, { seat, receivable }) => total + convert(Number(receivable.amount), seat.currency ?? accountCurrency, defaultCurrency),
       0,
     );
     const collectedRevenue = receivables.reduce(
-      (total, { seat, receivable }) => total + convert(Number(receivable.paidAmount), seat.currency ?? accountCurrency, accountCurrency),
+      (total, { seat, receivable }) => total + convert(Number(receivable.paidAmount), seat.currency ?? accountCurrency, defaultCurrency),
       0,
     );
     const outstandingAmount = receivables.reduce((total, { seat, receivable }) => {
       const remaining = Number(receivable.amount) - Number(receivable.paidAmount);
-      return total + convert(Math.max(remaining, 0), seat.currency ?? accountCurrency, accountCurrency);
+      return total + convert(Math.max(remaining, 0), seat.currency ?? accountCurrency, defaultCurrency);
     }, 0);
-    const monthlyProfit = monthlyRevenue - Number(detail.account.monthlyCost);
+    const monthlyProfit = monthlyRevenue - convert(Number(detail.account.monthlyCost), accountCurrency, defaultCurrency);
     return { monthlyRevenue, monthlyProfit, contractedRevenue, collectedRevenue, outstandingAmount };
-  }, [convert, detail]);
+  }, [convert, defaultCurrency, detail]);
 
   return (
     <>
@@ -111,11 +112,11 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
           ) : (
             <div className="space-y-5">
               <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden rounded-md border sm:grid-cols-2 lg:grid-cols-5">
-                <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, detail.account.currency)} icon={<CircleDollarSign />} />
-                <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, detail.account.currency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
-                <SummaryMetric label={t("sharing.contractedRevenue")} value={formatCurrency(convertedTotals?.contractedRevenue ?? 0, detail.account.currency)} icon={<CalendarClock />} />
-                <SummaryMetric label={t("sharing.collectedRevenue")} value={formatCurrency(convertedTotals?.collectedRevenue ?? 0, detail.account.currency)} icon={<CircleDollarSign />} />
-                <SummaryMetric label={t("sharing.outstandingAmount")} value={formatCurrency(convertedTotals?.outstandingAmount ?? 0, detail.account.currency)} icon={<ReceiptText />} emphasis={(convertedTotals?.outstandingAmount ?? 0) > 0 ? "negative" : undefined} />
+                <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
+                <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
+                <SummaryMetric label={t("sharing.contractedRevenue")} value={formatCurrency(convertedTotals?.contractedRevenue ?? 0, defaultCurrency)} icon={<CalendarClock />} />
+                <SummaryMetric label={t("sharing.collectedRevenue")} value={formatCurrency(convertedTotals?.collectedRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
+                <SummaryMetric label={t("sharing.outstandingAmount")} value={formatCurrency(convertedTotals?.outstandingAmount ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.outstandingAmount ?? 0) > 0 ? "negative" : undefined} />
               </section>
 
               <section aria-label={t("sharing.accountDetails")} className="grid gap-x-6 gap-y-3 rounded-md border p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -162,7 +163,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                           <td className="px-4 py-3 font-medium tabular-nums">#{seat.seatNumber}</td>
                           <td className="px-4 py-3">
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
-                            {seat.contact && <div className="mt-0.5 max-w-56 truncate text-xs text-muted-foreground">{seat.contact}</div>}
+                            {seat.contact && <button type="button" className="mt-0.5 flex max-w-56 items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                           </td>
                           <td className="px-4 py-3"><Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
                           <td className="px-4 py-3 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
@@ -186,7 +187,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                         <div className="min-w-0">
                           <div className="text-xs text-muted-foreground">{t("sharing.seatNumber")} #{seat.seatNumber}</div>
                           <div className="mt-1 truncate font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
-                          {seat.contact && <div className="mt-0.5 truncate text-xs text-muted-foreground">{seat.contact}</div>}
+                          {seat.contact && <button type="button" className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                         </div>
                         <Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge>
                       </div>
@@ -272,11 +273,10 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
   if (!seat || !draft) return null;
   const update = <K extends keyof SharingSeatUpdate>(key: K, value: SharingSeatUpdate[K]) => setDraft((current) => current ? { ...current, [key]: value } : current);
-  const updateBillingMonths = (billingMonths: number) => setDraft((current) => current ? {
-    ...current,
-    billingMonths,
-    expiresAt: sharingExpiryDate(current.startDate, billingMonths),
-  } : current);
+  const updateBillingMonths = (billingMonths: number) => {
+    if (!Number.isInteger(billingMonths) || billingMonths < 1 || billingMonths > 120) return;
+    setDraft((current) => current ? { ...current, billingMonths, expiresAt: sharingExpiryDate(current.startDate, billingMonths) } : current);
+  };
   const updateStartDate = (startDate: string) => setDraft((current) => current ? {
     ...current,
     startDate,
@@ -325,7 +325,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
                 {SHARING_BILLING_MONTH_PRESETS.map((months) => {
                   return <Button key={months} type="button" variant={draft.billingMonths === months ? "default" : "outline"} aria-pressed={draft.billingMonths === months} onClick={() => updateBillingMonths(months)}>{t(billingPresetLabelKeys[months])}</Button>;
                 })}
-                <Input className="bg-secondary" aria-label={t("sharing.customMonths")} title={t("sharing.customMonths")} type="number" min={1} max={120} value={SHARING_BILLING_MONTH_PRESETS.includes(draft.billingMonths as (typeof SHARING_BILLING_MONTH_PRESETS)[number]) ? "" : draft.billingMonths} placeholder={t("sharing.customMonths")} onChange={(event) => updateBillingMonths(Number(event.target.value))} />
+                <Input className="bg-secondary" aria-label={t("sharing.customMonths")} title={t("sharing.customMonths")} type="number" min={1} max={120} value={SHARING_BILLING_MONTH_PRESETS.includes(draft.billingMonths as (typeof SHARING_BILLING_MONTH_PRESETS)[number]) ? "" : draft.billingMonths} placeholder={t("sharing.customMonths")} onChange={(event) => { if (event.target.value !== "") updateBillingMonths(Number(event.target.value)); }} />
               </div>}
             </FormField>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">

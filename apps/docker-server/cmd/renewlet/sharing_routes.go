@@ -533,7 +533,7 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),
 		LoginAccount:             loginAccount,
 		HasPassword:              encryptedCredentials != "",
-		VerificationLink:         optionalSharingString(verificationLink),
+		VerificationLink:         safeSharingVerificationLink(verificationLink),
 		MonthlyCost:              moneyUnitsToString(monthlyCostUnits),
 		Currency:                 subscription.GetString("currency"),
 		NextBillingDate:          subscription.GetString("nextBillingDate"),
@@ -549,6 +549,23 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 		Notes:                    optionalSharingString(record.GetString("notes")),
 		CreatedAt:                sharingCreatedAt(record),
 	}, nil
+}
+
+// Legacy records can contain the upstream NewSzxcn share URL, including its
+// bearer token. It must never cross the API boundary to the browser.
+func safeSharingVerificationLink(raw string) *string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return nil
+	}
+	if strings.EqualFold(parsed.Hostname(), "mail.newszxcn.com") && strings.EqualFold(strings.TrimSuffix(parsed.EscapedPath(), "/"), "/shared-inbox") {
+		return nil
+	}
+	return optionalSharingString(value)
 }
 
 func sharingPlatformName(subscription *core.Record) string {

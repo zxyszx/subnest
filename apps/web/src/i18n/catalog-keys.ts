@@ -1760,6 +1760,7 @@ export const MESSAGE_KEYS = [
   "sharing.collectedRevenue",
   "sharing.confirmRenewal",
   "sharing.contact",
+  "sharing.copyContact",
   "sharing.contactType",
   "sharing.contractedRevenue",
   "sharing.copyAccount",

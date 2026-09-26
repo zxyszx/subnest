@@ -290,8 +290,8 @@ export default function Sharing() {
                     <td className="px-3 py-3"><NearestExpiry accountId={account.id} /></td>
                     <td className="px-3 py-3">
                       <dl className="grid min-w-44 gap-1 rounded-md border border-border/70 bg-muted/45 px-2.5 py-2 text-xs leading-4 text-muted-foreground">
-                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyCost")}</dt><dd className="font-semibold tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
-                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd className={cn("font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-amber-400" : "text-emerald-400")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>
+                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyCost")}</dt><dd className="font-semibold tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
+                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd className={cn("font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-amber-400" : "text-emerald-400")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
                         <div className="flex items-center justify-between gap-2"><dt>{t("sharing.nextBillingDate")}</dt><dd className="tabular-nums text-foreground/85"><DenseDate value={account.nextBillingDate} /></dd></div>
                       </dl>
                     </td>
@@ -315,9 +315,9 @@ export default function Sharing() {
                     <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(Number(account.monthlyCost), account.currency)}</dd></div>
+                    <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
                     <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
-                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, account.currency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, account.currency, convert), account.currency)}</dd></div>
+                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
                   </dl>
                   <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
