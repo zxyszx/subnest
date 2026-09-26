@@ -42,10 +42,18 @@ func handleSharedInboxLinks(app core.App, e *core.RequestEvent) error {
 		return e.InternalServerError("load shared inbox links failed", err)
 	}
 	links := make([]sharedInboxLinkResponse, 0, len(records))
+	syncedMailboxes := map[string]bool{}
 	for _, record := range records {
 		link, err := sharedInboxLinkFromRecord(app, e.Request, record)
 		if err != nil {
 			return e.InternalServerError("shared inbox link decryption failed", err)
+		}
+		mailboxKey := strings.ToLower(strings.TrimSpace(link.MailboxAddress))
+		if link.Status == "active" && !syncedMailboxes[mailboxKey] {
+			if err := syncSharedInboxLinkToSubscriptions(app, e.Auth.Id, link.MailboxAddress, "", link.ShortURL); err != nil {
+				return e.InternalServerError("sync shared inbox link failed", err)
+			}
+			syncedMailboxes[mailboxKey] = true
 		}
 		links = append(links, link)
 	}
@@ -104,30 +112,37 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 		return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_INVALID_RESPONSE", "邮箱授权响应无效", err)
 	}
 
-	collection, err := app.FindCollectionByNameOrId("shared_inbox_links")
-	if err != nil {
-		return e.InternalServerError("schema unavailable", err)
-	}
 	shortKey := randomURLToken(24)
 	encryptedKey, err := encryptSharingCredential(app, shortKey)
 	if err != nil {
 		return e.InternalServerError("short link encryption failed", err)
 	}
-	record := core.NewRecord(collection)
-	record.Set("user", e.Auth.Id)
-	record.Set("shortKeyHash", tokenHash(shortKey))
-	record.Set("shortKeyCiphertext", encryptedKey)
-	record.Set("grantId", grant.ID)
-	record.Set("externalGrantId", externalGrantID)
-	record.Set("mailboxId", body.MailboxID)
-	record.Set("mailboxAddress", mailbox.Address)
-	record.Set("folderIds", body.FolderIDs)
-	record.Set("windowMinutes", body.WindowMinutes)
-	if body.ExpiresAt != nil {
-		record.Set("expiresAt", *body.ExpiresAt)
-	}
-	record.Set("status", "active")
-	if err := app.Save(record); err != nil {
+	var record *core.Record
+	shortURL := externalRequestURL(e.Request, "/s/"+shortKey, nil)
+	if err := app.RunInTransaction(func(txApp core.App) error {
+		collection, err := txApp.FindCollectionByNameOrId("shared_inbox_links")
+		if err != nil {
+			return err
+		}
+		record = core.NewRecord(collection)
+		record.Set("user", e.Auth.Id)
+		record.Set("shortKeyHash", tokenHash(shortKey))
+		record.Set("shortKeyCiphertext", encryptedKey)
+		record.Set("grantId", grant.ID)
+		record.Set("externalGrantId", externalGrantID)
+		record.Set("mailboxId", body.MailboxID)
+		record.Set("mailboxAddress", mailbox.Address)
+		record.Set("folderIds", body.FolderIDs)
+		record.Set("windowMinutes", body.WindowMinutes)
+		if body.ExpiresAt != nil {
+			record.Set("expiresAt", *body.ExpiresAt)
+		}
+		record.Set("status", "active")
+		if err := txApp.Save(record); err != nil {
+			return err
+		}
+		return syncSharedInboxLinkToSubscriptions(txApp, e.Auth.Id, mailbox.Address, "", shortURL)
+	}); err != nil {
 		_, _ = requestNewSzxcn(app, e.Auth.Id, http.MethodDelete, "/api/open/v1/subnest/grants/"+url.PathEscape(grant.ID), nil)
 		return e.InternalServerError("save shared inbox link failed", err)
 	}
@@ -147,11 +162,60 @@ func handleSharedInboxLinkRevoke(app core.App, e *core.RequestEvent) error {
 	if _, err := requestNewSzxcn(app, e.Auth.Id, http.MethodDelete, "/api/open/v1/subnest/grants/"+url.PathEscape(record.GetString("grantId")), nil); err != nil {
 		return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_UPSTREAM_FAILED", "撤销邮箱授权失败", err)
 	}
-	record.Set("status", "revoked")
-	if err := app.Save(record); err != nil {
+	oldLink, err := sharedInboxLinkFromRecord(app, e.Request, record)
+	if err != nil {
+		return e.InternalServerError("short link decryption failed", err)
+	}
+	if err := app.RunInTransaction(func(txApp core.App) error {
+		txRecord, findErr := txApp.FindRecordById("shared_inbox_links", record.Id)
+		if findErr != nil {
+			return findErr
+		}
+		txRecord.Set("status", "revoked")
+		if saveErr := txApp.Save(txRecord); saveErr != nil {
+			return saveErr
+		}
+		return syncSharedInboxLinkToSubscriptions(txApp, e.Auth.Id, record.GetString("mailboxAddress"), oldLink.ShortURL, "")
+	}); err != nil {
 		return e.InternalServerError("revoke shared inbox link failed", err)
 	}
 	return apiEmptySuccessJSON(e, http.StatusOK)
+}
+
+// Keep subscription quick actions on the same short URL as the managed mailbox.
+// User ownership and mailbox matching are checked again here even though callers
+// are authenticated, because this mutates every matching subscription at once.
+func syncSharedInboxLinkToSubscriptions(app core.App, userID, mailboxAddress, expectedOldURL, newURL string) error {
+	mailboxAddress = strings.TrimSpace(mailboxAddress)
+	if mailboxAddress == "" {
+		return nil
+	}
+	const pageSize = 200
+	for offset := 0; ; offset += pageSize {
+		records, err := app.FindRecordsByFilter("subscriptions", "user = {:user} && familySharingEnabled = true", "id", pageSize, offset, map[string]any{"user": userID})
+		if err != nil {
+			return err
+		}
+		for _, subscription := range records {
+			if !strings.EqualFold(strings.TrimSpace(subscription.GetString("sharingLoginAccount")), mailboxAddress) {
+				continue
+			}
+			if expectedOldURL != "" && strings.TrimSpace(subscription.GetString("sharingVerificationLink")) != expectedOldURL {
+				continue
+			}
+			if strings.TrimSpace(subscription.GetString("sharingVerificationLink")) == newURL {
+				continue
+			}
+			subscription.Set("sharingVerificationLink", newURL)
+			if err := app.Save(subscription); err != nil {
+				return err
+			}
+		}
+		if len(records) < pageSize {
+			break
+		}
+	}
+	return nil
 }
 
 // Local status is checked on every public proxy request. Revoke it before a

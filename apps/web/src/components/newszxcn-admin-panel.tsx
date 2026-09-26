@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, ExternalLink, Inbox, Link2, Loader2, Plug, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +10,8 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { newszxcnService, type NewSzxcnFolder, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
+import { sharingQueryKeys } from "@/hooks/use-sharing";
+import { subscriptionQueryKeys } from "@/hooks/subscription-query-cache";
 
 const ranges = [{ value: 30, label: "最近 30 分钟" }, { value: 60, label: "最近 1 小时" }, { value: 360, label: "最近 6 小时" }, { value: 1440, label: "最近 1 天" }, { value: 10080, label: "最近 7 天" }];
 const copy = { title: "共享收件箱", description: "通过只读 API 管理 NewSzxcn 邮箱的访问范围和短链接。", apiConnection: "邮箱连接", connected: "连接正常", configureHelp: "配置只读 API 后载入邮箱，令牌仅保存在服务端。", enabled: "已连接", unconfigured: "待配置", apiAddress: "服务地址", tokenKeep: "API 令牌（留空保持不变）", tokenEnter: "输入只读 API 令牌", apiToken: "API 令牌", save: "保存配置", test: "测试连接", myMailboxes: "邮箱列表", mailboxHelp: "搜索邮箱并管理只读分享，对外链接不会暴露 API 令牌。", search: "搜索邮箱，例如 01", all: "全部状态", shared: "已分享", unshared: "未分享", refresh: "刷新", loading: "正在读取邮箱", empty: "没有匹配的邮箱", configureFirst: "请先配置邮箱连接", manage: "管理", manageTitle: "管理共享收件箱", range: "最近可查看范围", rollingRange: "范围会随当前时间滚动，不代表链接有效期。", folders: "可查看文件夹", mailUnit: "封", shortLink: "SubNest 短链接", copyLink: "复制链接", preview: "访客预览", close: "关闭分享", reset: "重置链接", open: "开启分享" };
@@ -26,6 +29,7 @@ function folderLabel(folder: NewSzxcnFolder) {
 }
 
 export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?: string }) {
+  const queryClient = useQueryClient();
   const [baseUrl, setBaseUrl] = useState("https://mail.newszxcn.com");
   const [token, setToken] = useState("");
   const [configured, setConfigured] = useState(false);
@@ -50,6 +54,13 @@ export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?:
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void reload(); }, [reload]);
+  const reloadAfterMutation = useCallback(async () => {
+    await reload();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all }),
+      queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.all }),
+    ]);
+  }, [queryClient, reload]);
 
   const activeByMailbox = useMemo(() => {
     const result = new Map<string, SharedInboxLink>();
@@ -97,7 +108,7 @@ export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?:
       </div>
       {loading ? <div className="flex min-h-48 items-center justify-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.loading}</div> : visible.length === 0 ? <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center text-muted-foreground"><Inbox className="mb-2 h-8 w-8" /><p>{configured ? copy.empty : copy.configureFirst}</p></div> : <div className="divide-y divide-border">{visible.map((mailbox) => { const link = activeByMailbox.get(mailbox.id); return <div key={mailbox.id} className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div className="min-w-0"><p className="truncate font-medium">{mailbox.address}</p>{mailbox.displayName ? <p className="truncate text-xs text-muted-foreground">{mailbox.displayName}</p> : null}</div><span className={link ? "w-fit rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-600" : "w-fit rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"}>{link ? `${copy.shared} · ${ranges.find((item) => item.value === link.windowMinutes)?.label ?? `${link.windowMinutes} 分钟`}` : copy.unshared}</span><Button variant="outline" size="sm" onClick={() => setSelected(mailbox)}>{copy.manage}</Button></div>; })}</div>}
     </div>
-    <MailboxShareDialog mailbox={selected} link={selected ? activeByMailbox.get(selected.id) ?? null : null} onOpenChange={(open) => { if (!open) setSelected(null); }} onChanged={reload} />
+    <MailboxShareDialog mailbox={selected} link={selected ? activeByMailbox.get(selected.id) ?? null : null} onOpenChange={(open) => { if (!open) setSelected(null); }} onChanged={reloadAfterMutation} />
   </section>;
 }
 
@@ -106,7 +117,7 @@ function MailboxShareDialog({ mailbox, link, onOpenChange, onChanged }: { mailbo
   useEffect(() => {
     if (!mailbox) return;
     setWindowMinutes(link?.windowMinutes ?? 30); setFolderIds(link?.folderIds ?? []);
-    void newszxcnService.folders(mailbox.id).then((result) => { setFolders(result.items); if (!link) { const inbox = result.items.find((item) => item.role === "inbox") ?? result.items[0]; setFolderIds(inbox ? [inbox.id] : []); } }).catch((error) => toast.error(error instanceof Error ? error.message : "读取文件夹失败"));
+    void newszxcnService.folders(mailbox.id).then((result) => { setFolders(result.items); if (!link) setFolderIds([]); }).catch((error) => toast.error(error instanceof Error ? error.message : "读取文件夹失败"));
   }, [mailbox, link]);
   if (!mailbox) return null;
   const create = async () => { if (folderIds.length === 0) { toast.error("请至少选择一个文件夹"); return; } setWorking(true); try { await newszxcnService.create({ mailboxId: mailbox.id, folderIds, windowMinutes }); toast.success("分享已开启"); await onChanged(); } catch (error) { toast.error(error instanceof Error ? error.message : "开启分享失败"); } finally { setWorking(false); } };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, RefreshCw, Settings2, UsersRound, X } from "lucide-react";
+import { Copy, Eye, EyeOff, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -13,10 +13,38 @@ import { subscriptionService } from "@/services/subscription-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { toast } from "@/components/ui/sonner";
 import { generateFamilySharingPassword } from "@/lib/family-sharing-password";
-import Link from "@/components/router-link";
-import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
+import { newszxcnService, type NewSzxcnFolder, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
 
-const managedCopy = { title: "NewSzxcn 共享收件箱", shared: "已开启只读分享", closed: "尚未开启分享", manage: "管理", toggle: "开启共享收件箱", link: "收件链接", clear: "清空收件链接" };
+const managedCopy = {
+  title: "NewSzxcn 共享收件箱",
+  shared: "已开启只读分享",
+  closed: "尚未开启分享",
+  toggle: "开启共享收件箱",
+  link: "收件链接",
+  clear: "清空收件链接",
+  chooseFolders: "选择文件夹",
+  viewFolders: "查看文件夹",
+  folders: "可查看文件夹",
+  noFolders: "该邮箱没有可分享的文件夹",
+  selectRequired: "请至少选择一个文件夹，再开启分享。",
+  activeHelp: "需要更改范围时，请先关闭分享，再重新选择文件夹。",
+  openShare: "开启分享",
+};
+
+const systemFolderNames: Record<string, string> = {
+  inbox: "收件箱",
+  sent: "已发送",
+  spam: "垃圾邮件",
+  trash: "回收站",
+  archive: "归档",
+  drafts: "草稿箱",
+};
+
+function folderLabel(folder: NewSzxcnFolder) {
+  const role = folder.role?.trim().toLowerCase();
+  const name = folder.name.trim().toLowerCase();
+  return (role && systemFolderNames[role]) || systemFolderNames[name] || folder.name;
+}
 
 export function SubscriptionFamilySharingFields({
   id,
@@ -24,12 +52,14 @@ export function SubscriptionFamilySharingFields({
   value,
   onChange,
   error,
+  onShareSetupPendingChange,
 }: {
   id: (name: string) => string;
   subscriptionId?: string | undefined;
   value: FamilySharingFormState;
   onChange: (value: FamilySharingFormState) => void;
   error?: string | undefined;
+  onShareSetupPendingChange?: ((pending: boolean) => void) | undefined;
 }) {
   const { t } = useI18n();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -39,6 +69,10 @@ export function SubscriptionFamilySharingFields({
   const [shareLoading, setShareLoading] = useState(false);
   const [shareIntent, setShareIntent] = useState<boolean | null>(null);
   const [mailboxesLoading, setMailboxesLoading] = useState(false);
+  const [folders, setFolders] = useState<NewSzxcnFolder[]>([]);
+  const [folderIds, setFolderIds] = useState<string[]>([]);
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+  const [foldersLoading, setFoldersLoading] = useState(false);
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => {
     onChange({ ...value, [key]: next });
   };
@@ -69,7 +103,30 @@ export function SubscriptionFamilySharingFields({
   }, [value.enabled]);
   const managedMailbox = useMemo(() => mailboxes.find((mailbox) => mailbox.address.toLowerCase() === value.loginAccount.trim().toLowerCase()) ?? null, [mailboxes, value.loginAccount]);
   const managedLink = useMemo(() => managedMailbox ? managedLinks.find((link) => link.mailboxId === managedMailbox.id && link.status === "active") ?? null : null, [managedLinks, managedMailbox]);
-  useEffect(() => { setShareIntent(null); }, [managedMailbox?.id]);
+  useEffect(() => {
+    setShareIntent(null);
+    setFolderPickerOpen(false);
+    setFolders([]);
+    setFolderIds([]);
+    if (!managedMailbox) return;
+    let cancelled = false;
+    setFoldersLoading(true);
+    void newszxcnService.folders(managedMailbox.id).then((result) => {
+      if (!cancelled) setFolders(result.items);
+    }).catch((error) => {
+      if (!cancelled) toast.error(error instanceof Error ? error.message : "读取文件夹失败");
+    }).finally(() => {
+      if (!cancelled) setFoldersLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [managedMailbox]);
+  useEffect(() => {
+    if (managedLink) setFolderIds(managedLink.folderIds);
+  }, [managedLink]);
+  useEffect(() => {
+    onShareSetupPendingChange?.(Boolean(managedMailbox && shareIntent && !managedLink));
+    return () => onShareSetupPendingChange?.(false);
+  }, [managedLink, managedMailbox, onShareSetupPendingChange, shareIntent]);
   useEffect(() => {
     if (managedLink && value.verificationLink !== managedLink.shortUrl) {
       onChange({ ...value, verificationLink: managedLink.shortUrl });
@@ -81,25 +138,50 @@ export function SubscriptionFamilySharingFields({
 
   const toggleManagedShare = async (enabled: boolean) => {
     if (!managedMailbox) return;
+    if (enabled && !managedLink) {
+      setShareIntent(true);
+      setFolderPickerOpen(true);
+      return;
+    }
+    if (!enabled && !managedLink) {
+      setShareIntent(null);
+      setFolderIds([]);
+      setFolderPickerOpen(false);
+      return;
+    }
     setShareLoading(true);
     setShareIntent(enabled);
     try {
-      if (enabled) {
-        const folders = await newszxcnService.folders(managedMailbox.id);
-        const inbox = folders.items.find((folder) => folder.role === "inbox") ?? folders.items[0];
-        if (!inbox) throw new Error("该邮箱没有可分享的文件夹");
-        const result = await newszxcnService.create({ mailboxId: managedMailbox.id, folderIds: [inbox.id], windowMinutes: 30 });
-        setManagedLinks((current) => [result.link, ...current]);
-        update("verificationLink", result.link.shortUrl);
-        toast.success("共享收件箱已开启");
-      } else if (managedLink) {
+      if (managedLink) {
         await newszxcnService.revoke(managedLink.id);
         setManagedLinks((current) => current.map((link) => link.id === managedLink.id ? { ...link, status: "revoked" } : link));
         update("verificationLink", "");
+        setFolderIds([]);
+        setFolderPickerOpen(false);
         toast.success("共享收件箱已关闭");
       }
     } catch (error) { toast.error(error instanceof Error ? error.message : "共享收件箱操作失败"); }
     finally { setShareLoading(false); setShareIntent(null); }
+  };
+  const createManagedShare = async () => {
+    if (!managedMailbox) return;
+    if (folderIds.length === 0) {
+      toast.error(managedCopy.selectRequired);
+      return;
+    }
+    setShareLoading(true);
+    try {
+      const result = await newszxcnService.create({ mailboxId: managedMailbox.id, folderIds, windowMinutes: 30 });
+      setManagedLinks((current) => [result.link, ...current]);
+      update("verificationLink", result.link.shortUrl);
+      setFolderPickerOpen(false);
+      setShareIntent(null);
+      toast.success("共享收件箱已开启");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "共享收件箱操作失败");
+    } finally {
+      setShareLoading(false);
+    }
   };
   const readSavedPassword = async () => {
     if (!subscriptionId || !value.hasPassword) return value.password;
@@ -173,7 +255,66 @@ export function SubscriptionFamilySharingFields({
           </FormField>
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
           {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
-          {managedMailbox ? <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2" aria-busy={shareLoading}><div className="min-w-0"><p className="text-sm font-medium">{managedCopy.title}</p><p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p></div><div className="flex items-center gap-2"><Link href="/settings#settings-newszxcn" className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"><Settings2 className="h-4 w-4" />{managedCopy.manage}</Link>{shareLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label={t("subscription.familySharing.updatingManagedShare")} /> : null}<Switch checked={shareIntent ?? Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} /></div></div> : null}
+          {managedMailbox ? (
+            <div className="grid gap-3 rounded-md border border-border bg-background p-3" aria-busy={shareLoading}>
+              <div className="flex min-h-11 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{managedCopy.title}</p>
+                  <p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p>
+                </div>
+                <div className="flex items-center justify-between gap-2 sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-11"
+                    onClick={() => setFolderPickerOpen((current) => !current)}
+                    disabled={foldersLoading}
+                    aria-expanded={folderPickerOpen}
+                  >
+                    {foldersLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
+                    {managedLink ? managedCopy.viewFolders : managedCopy.chooseFolders}
+                  </Button>
+                  {shareLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label={t("subscription.familySharing.updatingManagedShare")} /> : null}
+                  <Switch checked={shareIntent ?? Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} />
+                </div>
+              </div>
+              {folderPickerOpen ? (
+                <div className="grid gap-2 border-t border-border pt-3">
+                  <Label>{managedCopy.folders}</Label>
+                  {folders.length === 0 && !foldersLoading ? (
+                    <p className="text-sm text-muted-foreground">{managedCopy.noFolders}</p>
+                  ) : (
+                    <div className="max-h-44 divide-y divide-border overflow-y-auto rounded-md border border-border">
+                      {folders.map((folder) => (
+                        <label key={folder.id} className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={folderIds.includes(folder.id)}
+                            disabled={Boolean(managedLink) || shareLoading}
+                            onChange={(event) => setFolderIds((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))}
+                          />
+                          <span className="min-w-0 flex-1 truncate">{folderLabel(folder)}</span>
+                          <span className="text-xs text-muted-foreground">{folder.totalCount ?? 0} 封</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {managedLink ? (
+                    <p className="text-xs leading-5 text-muted-foreground">{managedCopy.activeHelp}</p>
+                  ) : (
+                    <>
+                      {folderIds.length === 0 && shareIntent ? <p role="alert" className="text-xs text-destructive">{managedCopy.selectRequired}</p> : null}
+                      <Button type="button" size="sm" className="justify-self-end" disabled={shareLoading || folderIds.length === 0} onClick={() => void createManagedShare()}>
+                        {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {managedCopy.openShare}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <FormField
             id={id("familySharingPassword")}
             label={t("subscription.familySharing.password")}

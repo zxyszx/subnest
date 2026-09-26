@@ -25,6 +25,7 @@ export interface SubscriptionFormFieldsProps {
   notificationReminderDays: number;
   costSharingCurrencyConvert?: ((amount: number | string, fromCurrency: string, toCurrency: string) => number) | undefined;
   onNestedDialogOpenChange?: ((open: boolean) => void) | undefined;
+  onManagedShareSetupPendingChange?: ((pending: boolean) => void) | undefined;
 }
 
 export type { SubscriptionFormErrors };

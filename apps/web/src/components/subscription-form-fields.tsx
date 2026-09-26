@@ -81,6 +81,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   errors = {},
   onClearFieldError,
   notificationReminderDays,
+  onManagedShareSetupPendingChange,
 }: SubscriptionFormFieldsProps) {
   const { t, locale, label } = useI18n();
 
@@ -782,6 +783,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         value={formData.familySharing}
         onChange={(familySharing) => update("familySharing", familySharing)}
         error={errors.familySharing}
+        onShareSetupPendingChange={onManagedShareSetupPendingChange}
       />
 
       <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-secondary/30 p-3">

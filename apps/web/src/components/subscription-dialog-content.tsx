@@ -72,6 +72,7 @@ function resolveLoadingStructure(preview: SubscriptionFormLoadingPreview): Subsc
 export function SubscriptionDialogContent(props: SubscriptionDialogContentProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [managedShareSetupPending, setManagedShareSetupPending] = useState(false);
   const { config } = useCustomConfigState();
   const { data: settings } = useSettings();
   const { t, locale } = useI18n();
@@ -229,7 +230,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     }
   };
 
-  const submitDisabled = logoUploadStatus === "uploading" || submitting;
+  const submitDisabled = logoUploadStatus === "uploading" || submitting || managedShareSetupPending;
   const loadingPreview = props.mode === "create"
     ? props.initialSubscription ?? props.loadingPreview ?? formData
     : props.loadingPreview;
@@ -263,6 +264,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
           notificationReminderDays={notificationReminderDays}
           costSharingCurrencyConvert={convertCurrency}
           onNestedDialogOpenChange={props.onNestedDialogOpenChange}
+          onManagedShareSetupPendingChange={setManagedShareSetupPending}
         />
       )}
       actions={loadingSlots?.actions ?? (
