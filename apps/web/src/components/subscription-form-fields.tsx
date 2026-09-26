@@ -203,7 +203,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     ? [{ value: formData.platformName.trim(), label: formData.platformName.trim() }]
     : [];
   const platformSelectOptions = [
-    { value: UNBOUND_PLATFORM_VALUE, label: "未绑定", keywords: ["未绑定", "unbound"] },
+    { value: UNBOUND_PLATFORM_VALUE, label: t("subscription.platformUnbound"), keywords: ["未绑定", "unbound"] },
     ...currentPlatformOption,
     ...platformSuggestions.map((platform) => ({
       value: platform.value ?? platform.name,
@@ -242,8 +242,8 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
                 const match = platformSuggestions.find((platform) => (platform.value ?? platform.name) === value);
                 if (match?.logo) update("logo", match.logo);
               }}
-              placeholder="选择平台（可留空）"
-              searchPlaceholder="搜索平台"
+              placeholder={t("subscription.platformSelectPlaceholder")}
+              searchPlaceholder={t("subscription.platformSearchPlaceholder")}
               aria-invalid={field.invalid || platformAccountAlreadyAdded}
               aria-describedby={field.describedBy}
               className="border-border bg-secondary"

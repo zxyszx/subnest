@@ -247,8 +247,8 @@ export function SettingsAdvancedSections({
         <p className="mb-6 text-sm text-muted-foreground">{t("settings.dataConfigDescription")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <ConfigManagerDialog
-            title="平台管理"
-            description="维护订阅可选择的平台名称和固定图标；留空平台的订阅会归入未绑定。"
+            title={t("settings.platformManager")}
+            description={t("settings.platformManagerDescription")}
             items={customConfig.platforms ?? []}
             onUpdate={updatePlatforms}
             icon={<Tags className="h-4 w-4" />}

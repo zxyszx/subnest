@@ -414,8 +414,8 @@ export function SubscriptionFamilySharingFields({
                       className="absolute right-11 top-0 h-full w-11"
                       onClick={() => void resetManagedShare()}
                       disabled={shareLoading}
-                      aria-label="重置收件链接"
-                      title="重置收件链接"
+                      aria-label={t("subscription.familySharing.resetVerificationLink")}
+                      title={t("subscription.familySharing.resetVerificationLink")}
                     >
                       {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                     </Button>

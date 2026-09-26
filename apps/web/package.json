@@ -2,7 +2,7 @@
   "name": "@renewlet/client",
   "private": true,
   "license": "MIT",
-  "version": "0.3.41",
+  "version": "0.3.42",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
