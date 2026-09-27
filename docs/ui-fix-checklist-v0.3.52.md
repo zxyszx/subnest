@@ -22,4 +22,4 @@
 | ✅ | 客户端完整测试 | 229 个测试文件、1505 项测试通过 |
 | ✅ | 新增重点回归测试 | 远端配置首次回显、公开 2FA 复制反馈均已覆盖 |
 | ✅ | 生产构建与 release preflight | 客户端、Cloudflare、Docker Server 构建及发布预检通过 |
-| ❌ | 提交、推送、创建 GitHub Release | 远端发布流程及附件核对完成后更新 |
+| ✅ | 提交、推送、创建 GitHub Release | `main` 与 `v0.3.52` 已推送；发布流水线通过，Docker 镜像与 4 个 Release 附件已核对 |
