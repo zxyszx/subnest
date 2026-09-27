@@ -33,6 +33,7 @@ type accountSecurityKeyRing struct {
 	recoveryCode      []byte
 	mfaTicket         []byte
 	passkeyChallenge  []byte
+	onlineTotp        []byte
 }
 
 type accountSecurityKeyFile struct {
@@ -153,12 +154,17 @@ func deriveAccountSecurityKeyRing(master []byte) (*accountSecurityKeyRing, error
 	if err != nil {
 		return nil, err
 	}
+	onlineTotp, err := deriveAccountSecurityKey(prk, "online-totp-vault-aes-gcm")
+	if err != nil {
+		return nil, err
+	}
 	return &accountSecurityKeyRing{
 		totpSeed:          totpSeed,
 		sharingCredential: sharingCredential,
 		recoveryCode:      recoveryCode,
 		mfaTicket:         mfaTicket,
 		passkeyChallenge:  passkeyChallenge,
+		onlineTotp:        onlineTotp,
 	}, nil
 }
 

@@ -108,6 +108,14 @@ import {
   telegramWebhook,
 } from "./telegram-bot";
 import { systemRestart, systemUpdate, systemUpdateStatus, systemVersion } from "./system";
+import {
+  createOnlineTotpAccount,
+  deleteOnlineTotpAccount,
+  listOnlineTotpAccounts,
+  readPublicOnlineTotp,
+  rotateOnlineTotpShare,
+  updateOnlineTotpAccount,
+} from "./online-totp";
 import { readNewSzxcnConfig, updateNewSzxcnConfig, testNewSzxcnConnection, listNewSzxcnMailboxes, listNewSzxcnFolders, listSharedInboxLinks, createSharedInboxLink, revokeSharedInboxLink, publicSharedInboxMessagesProxy } from "./newszxcn";
 import { errorResponse, methodNotAllowed, requestLocale, requireSameOriginUnsafe, successJson, toResponse, type AppLocale } from "./http";
 import { serverText } from "./server-i18n";
@@ -321,6 +329,24 @@ defineRoute(sharingRoutes, "/seats/:id", {
   PUT: (context) => updateSharingSeat(context.req.raw, context.env, routeParam(context, "id")),
 });
 app.route("/api/app/sharing", sharingRoutes);
+
+const onlineTotpRoutes = newAppRouter();
+defineRoute(onlineTotpRoutes, "/accounts", {
+  GET: (context) => listOnlineTotpAccounts(context.req.raw, context.env),
+  POST: (context) => createOnlineTotpAccount(context.req.raw, context.env),
+});
+defineRoute(onlineTotpRoutes, "/accounts/:id/share/reset", {
+  POST: (context) => rotateOnlineTotpShare(context.req.raw, context.env, routeParam(context, "id")),
+});
+defineRoute(onlineTotpRoutes, "/accounts/:id", {
+  PUT: (context) => updateOnlineTotpAccount(context.req.raw, context.env, routeParam(context, "id")),
+  DELETE: (context) => deleteOnlineTotpAccount(context.req.raw, context.env, routeParam(context, "id")),
+});
+app.route("/api/app/online-totp", onlineTotpRoutes);
+
+defineRoute(app, "/api/online-totp/:shareKey", {
+  GET: (context) => readPublicOnlineTotp(context.req.raw, context.env, routeParam(context, "shareKey")),
+});
 
 defineRoute(app, "/api/app/import/preview", { POST: (context) => previewImport(context.req.raw, context.env) });
 defineRoute(app, "/api/app/import/apply", { POST: (context) => applyImport(context.req.raw, context.env) });

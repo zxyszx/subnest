@@ -35,6 +35,7 @@ const loadPrivateAppShell = () => import("@/components/private-app-shell");
 const loadDashboard = () => import("@/pages/dashboard");
 const loadSubscriptions = () => import("@/pages/subscriptions");
 const loadSharing = () => import("@/pages/sharing");
+const loadOnlineTotp = () => import("@/pages/online-totp");
 const loadCalendar = () => import("@/pages/calendar");
 const loadStatistics = () => import("@/pages/statistics");
 const loadSettings = () => import("@/pages/settings");
@@ -44,6 +45,7 @@ const loadPrivacy = () => import("@/pages/privacy");
 const loadTerms = () => import("@/pages/terms");
 const loadPublicStatus = () => import("@/pages/public-status");
 const loadSharedInbox = () => import("@/pages/shared-inbox");
+const loadPublicOnlineTotp = () => import("@/pages/public-online-totp");
 const loadAdminUsers = () => import("@/pages/admin/users");
 const loadForgotPassword = () => import("@/pages/forgot-password");
 const loadResetPassword = () => import("@/pages/reset-password");
@@ -104,6 +106,12 @@ export const routeResources = {
   sharing: {
     path: "/sharing",
     load: loadSharing,
+    fallback: SubscriptionsRouteFallback,
+    usesPrivateShell: true,
+  },
+  onlineTotp: {
+    path: "/online-2fa",
+    load: loadOnlineTotp,
     fallback: SubscriptionsRouteFallback,
     usesPrivateShell: true,
   },
@@ -170,6 +178,7 @@ export const routeResources = {
     fallback: LightweightRouteFallback,
   },
   sharedInbox: { path: "/s", load: loadSharedInbox, fallback: LightweightRouteFallback },
+  publicOnlineTotp: { path: "/otp", load: loadPublicOnlineTotp, fallback: LightweightRouteFallback },
   sharedInboxAdmin: { path: "/shared-inboxes", load: loadSettings, fallback: SettingsRouteFallback, usesPrivateShell: true },
   notFound: {
     path: "*",
@@ -180,7 +189,7 @@ export const routeResources = {
 
 const resourcesByExactPath = new Map<string, RouteResource>(
   Object.values(routeResources)
-    .filter((resource) => resource.path !== "*" && resource.path !== "/status")
+    .filter((resource) => resource.path !== "*" && resource.path !== "/status" && resource.path !== "/s" && resource.path !== "/otp")
     .map((resource) => [resource.path, resource]),
 );
 
@@ -188,6 +197,8 @@ const inFlightPreloads = new Map<string, Promise<void>>();
 
 function routeResourceForPathname(pathname: string): RouteResource | null {
   if (pathname.startsWith("/status/")) return routeResources.publicStatus;
+  if (pathname.startsWith("/s/")) return routeResources.sharedInbox;
+  if (pathname.startsWith("/otp/")) return routeResources.publicOnlineTotp;
   return resourcesByExactPath.get(pathname) ?? null;
 }
 

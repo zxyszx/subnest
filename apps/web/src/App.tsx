@@ -20,6 +20,7 @@ const PrivateAppShell = lazy(lazyPrivateAppShellLoader);
 const Dashboard = lazy(lazyRouteLoader("dashboard"));
 const Subscriptions = lazy(lazyRouteLoader("subscriptions"));
 const Sharing = lazy(lazyRouteLoader("sharing"));
+const OnlineTotp = lazy(lazyRouteLoader("onlineTotp"));
 const Calendar = lazy(lazyRouteLoader("calendar"));
 const Statistics = lazy(lazyRouteLoader("statistics"));
 const Settings = lazy(lazyRouteLoader("settings"));
@@ -29,6 +30,7 @@ const Privacy = lazy(lazyRouteLoader("privacy"));
 const Terms = lazy(lazyRouteLoader("terms"));
 const PublicStatus = lazy(lazyRouteLoader("publicStatus"));
 const SharedInbox = lazy(lazyRouteLoader("sharedInbox"));
+const PublicOnlineTotp = lazy(lazyRouteLoader("publicOnlineTotp"));
 const AdminUsers = lazy(lazyRouteLoader("adminUsers"));
 const ForgotPassword = lazy(lazyRouteLoader("forgotPassword"));
 const ResetPassword = lazy(lazyRouteLoader("resetPassword"));
@@ -51,6 +53,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="sharing" element={<Sharing />} />
+            <Route path="online-2fa" element={<OnlineTotp />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="settings" element={<Settings />} />
@@ -63,6 +66,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/status/:token" element={<PublicStatus />} />
           <Route path="/s/:shortKey" element={<SharedInbox />} />
+          <Route path="/otp/:shareKey" element={<PublicOnlineTotp />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />

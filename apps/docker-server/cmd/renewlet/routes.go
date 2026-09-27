@@ -56,6 +56,7 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 			SetupEnabled:  demoModePolicy.SetupEnabled(),
 		})
 	})
+	api.GET("/api/online-totp/{shareKey}", func(e *core.RequestEvent) error { return handlePublicOnlineTotp(app, e) })
 	api.GET("/api/public/status/{token}", func(e *core.RequestEvent) error { return handlePublicStatusRead(app, e) })
 	api.GET("/api/public/status/{token}/assets/{assetId}", func(e *core.RequestEvent) error { return handlePublicStatusAssetRead(app, e) })
 	api.GET("/api/public/v1/me", func(e *core.RequestEvent) error { return handlePublicAPIMe(app, e) })
@@ -378,6 +379,11 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	auth.PUT("/sharing/accounts/{id}", func(e *core.RequestEvent) error { return handleSharingAccountUpdate(app, e) })
 	auth.GET("/sharing/accounts/{id}/credentials", func(e *core.RequestEvent) error { return handleSharingAccountCredentials(app, e) })
 	auth.PUT("/sharing/seats/{id}", func(e *core.RequestEvent) error { return handleSharingSeatUpdate(app, e) })
+	auth.GET("/online-totp/accounts", func(e *core.RequestEvent) error { return handleOnlineTotpAccountsList(app, e) })
+	auth.POST("/online-totp/accounts", func(e *core.RequestEvent) error { return handleOnlineTotpAccountCreate(app, e) })
+	auth.PUT("/online-totp/accounts/{id}", func(e *core.RequestEvent) error { return handleOnlineTotpAccountUpdate(app, e) })
+	auth.DELETE("/online-totp/accounts/{id}", func(e *core.RequestEvent) error { return handleOnlineTotpAccountDelete(app, e) })
+	auth.POST("/online-totp/accounts/{id}/share/reset", func(e *core.RequestEvent) error { return handleOnlineTotpShareReset(app, e) })
 	// 静态集合路由必须先于 {id} 详情路由注册，防止 index/analytics/calendar-feeds/facets/export 被解释成订阅 ID。
 	auth.GET("/subscriptions/index", func(e *core.RequestEvent) error { return handleSubscriptionsIndex(app, e) })
 	auth.GET("/subscriptions/analytics", func(e *core.RequestEvent) error { return handleSubscriptionsAnalytics(app, e) })
