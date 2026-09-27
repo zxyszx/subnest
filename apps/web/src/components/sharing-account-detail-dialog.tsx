@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarClock, CircleDollarSign, Copy, ExternalLink, Eye, EyeOff, KeyRound, Link2, Loader2, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
+import { CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
 
 import { useSharingAccountDetail, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -215,11 +215,6 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     value={detail.account.verificationLink ?? "-"}
                     copyLabel={inboxCopy.copy}
                     onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
-                    trailing={detail.account.verificationLink ? (
-                      <a href={detail.account.verificationLink} target="_blank" rel="noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("sharing.openVerificationLink")} title={t("sharing.openVerificationLink")}>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    ) : undefined}
                   />
                 </div>
               </section>

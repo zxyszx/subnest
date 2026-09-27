@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Eye, EyeOff, ExternalLink, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
+import { Copy, Eye, EyeOff, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -457,7 +457,7 @@ export function SubscriptionFamilySharingFields({
                     onChange={(event) => update("verificationLink", event.target.value)}
                     placeholder={t("subscription.familySharing.verificationLinkPlaceholder")}
                     aria-describedby={field.describedBy}
-                    className="border-border bg-secondary pr-32"
+                    className="border-border bg-secondary pr-20"
                   />
                   {value.verificationLink ? (
                     <div className="absolute right-0 top-0 flex h-full items-center">
@@ -473,9 +473,6 @@ export function SubscriptionFamilySharingFields({
                         aria-label={t("sharing.copyLink")}
                       >
                         <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-full w-11" onClick={() => window.open(value.verificationLink, "_blank", "noopener,noreferrer")} aria-label={t("sharing.openVerificationLink")} title={t("sharing.openVerificationLink")}>
-                        <ExternalLink className="h-4 w-4" />
                       </Button>
                       {!managedMailbox ? (
                         <Button type="button" variant="ghost" size="icon" className="h-full w-11" onClick={() => update("verificationLink", "")} aria-label={managedCopy.clear}>

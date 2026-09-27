@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { ExternalLink, LayoutDashboard, List, CalendarDays, BarChart3, Settings, ShieldCheck, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -150,9 +150,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
               title={t("nav.online2fa")}
               className={getHeaderDesktopNavLinkClass(false)}
             >
-              <ShieldCheck className={headerLayout.desktopNavIcon} />
               <span className={headerLayout.desktopNavLabel}>{t("nav.online2fa")}</span>
-              <ExternalLink className="h-3 w-3 opacity-60" />
             </a>
           </nav>
         </div>
@@ -204,10 +202,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             {t(item.labelKey)}
           </NavLink>
         ))}
-        <a href={onlineTwoFactorAdminUrl} target="_blank" rel="noreferrer" className={getHeaderMobileNavLinkClass(false)} title={t("nav.online2fa")}>
-          <ShieldCheck className={headerLayout.mobileNavIcon} />
-          {t("nav.online2fa")}
-        </a>
       </nav>
     </header>
   );
