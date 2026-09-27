@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarClock, CircleDollarSign, Copy, Pencil, ReceiptText, RotateCw, Settings2, UserRound } from "lucide-react";
+import { CalendarClock, CircleDollarSign, Copy, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
 
 import { useSharingAccountDetail, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -20,15 +20,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import type { SharingAccount, SharingSeat, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
-import Link from "@/components/router-link";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 
-const inboxCopy = { copy: "复制收件链接", manage: "管理共享收件箱", copied: "收件链接已复制", failed: "复制收件链接失败" };
+const inboxCopy = { copy: "复制收件链接", copied: "收件链接已复制", failed: "复制收件链接失败" };
+
+export type SharingAccountDetailMode = "account" | "seats";
 
 interface SharingAccountDetailDialogProps {
   account: SharingAccount | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: SharingAccountDetailMode;
 }
 
 const contactTypes = ["wechat", "telegram", "email", "phone", "other"] as const;
@@ -60,7 +62,7 @@ function statusVariant(status: SharingSeat["status"] | "pending" | "paid") {
   return "secondary" as const;
 }
 
-export function SharingAccountDetailDialog({ account, open, onOpenChange }: SharingAccountDetailDialogProps) {
+export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account" }: SharingAccountDetailDialogProps) {
   const { t, formatCurrency } = useI18n();
   const detailQuery = useSharingAccountDetail(open ? account?.id ?? null : null);
   const settingsQuery = useSettingsEnvelope();
@@ -132,12 +134,11 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                   <div className="mt-1 flex min-w-0 items-center gap-1">
                     <div className="min-w-0 flex-1 truncate font-medium text-foreground" title={detail.account.verificationLink ?? undefined}>{detail.account.verificationLink ?? "-"}</div>
                     {detail.account.verificationLink ? <Button type="button" size="icon" variant="ghost" aria-label={inboxCopy.copy} onClick={async () => { const result = await copyTextToClipboard(detail.account.verificationLink ?? ""); toast[result.ok ? "success" : "error"](result.ok ? inboxCopy.copied : inboxCopy.failed); }}><Copy className="h-4 w-4" /></Button> : null}
-                    {detail.account.verificationLink?.includes("/s/") ? <Button size="icon" variant="ghost" asChild aria-label={inboxCopy.manage}><Link href="/settings#settings-newszxcn"><Settings2 className="h-4 w-4" /></Link></Button> : null}
                   </div>
                 </div>
               </section>
 
-              <section>
+              {mode === "seats" ? <section>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
@@ -203,13 +204,13 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange }: Shar
                     </article>
                   ))}
                 </div>
-              </section>
+              </section> : null}
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {account && <SharingSeatDialog account={account} seat={selectedSeat} mode={seatDialogMode} open={Boolean(selectedSeat)} onOpenChange={(nextOpen) => !nextOpen && setSelectedSeat(null)} />}
+      {mode === "seats" && account ? <SharingSeatDialog account={account} seat={selectedSeat} mode={seatDialogMode} open={Boolean(selectedSeat)} onOpenChange={(nextOpen) => !nextOpen && setSelectedSeat(null)} /> : null}
     </>
   );
 }
