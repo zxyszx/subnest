@@ -136,6 +136,9 @@ export const sharingSeatUpdateSchema = z.object({
   contact: z.string().trim().max(320),
   contactType: z.union([z.literal(""), z.enum(SHARING_CONTACT_TYPES)]),
   monthlyPrice: z.union([z.literal(""), moneyStringSchema]),
+  // New clients send the exact amount for the whole selected period. Older clients
+  // remain compatible and let the server derive it from monthlyPrice.
+  billingAmount: z.union([z.literal(""), moneyStringSchema]).optional(),
   currency: z.string().regex(/^[A-Z]{3}$/),
   billingMonths: z.number().int().min(1).max(120),
   startDate: z.union([z.literal(""), dateInputSchema]),

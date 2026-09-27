@@ -591,8 +591,12 @@ export async function countAssetReferences(env: Env, userId: string, assetId: st
     .first<{ count: number }>();
   const subscriptionLogoCount = row?.count ?? 0;
   const paymentMethodIconCount = await countPaymentMethodIconReferences(env, userId, assetUrl);
+  const onlineTotpRow = await env.DB.prepare("SELECT COUNT(*) AS count FROM online_totp_accounts WHERE user_id = ? AND logo = ? LIMIT 1")
+    .bind(userId, assetUrl)
+    .first<{ count: number }>();
+  const onlineTotpLogoCount = onlineTotpRow?.count ?? 0;
   return {
-    usageCount: subscriptionLogoCount + paymentMethodIconCount,
+    usageCount: subscriptionLogoCount + paymentMethodIconCount + onlineTotpLogoCount,
     subscriptionLogoCount,
     paymentMethodIconCount,
   };

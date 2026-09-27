@@ -15,6 +15,19 @@ func TestSafeSharingVerificationLinkDoesNotExposeNewSzxcnToken(t *testing.T) {
 	}
 }
 
+func TestSharingSeatBillingAmountDerivesPreciseMonthlyPrice(t *testing.T) {
+	body := sharingSeatUpdateRequest{
+		MemberName: "Annual member", MonthlyPrice: "1.66", BillingAmount: "20", Currency: "CNY",
+		BillingMonths: 12, StartDate: "2026-01-01", ExpiresAt: "2027-01-01", Status: "active", PaymentStatus: "paid",
+	}
+	if err := normalizeSharingSeatUpdateRequest(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body.MonthlyPrice != "1.666667" {
+		t.Fatalf("monthly price = %q, want 1.666667", body.MonthlyPrice)
+	}
+}
+
 func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {

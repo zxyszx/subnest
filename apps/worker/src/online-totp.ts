@@ -94,7 +94,7 @@ export async function rotateOnlineTotpShare(request: Request, env: Env, id: stri
   const row = await ownedOnlineTotp(env, auth.user.id, id);
   if (!row) throw new HttpError(404, "TOTP_ACCOUNT_NOT_FOUND", "NOT_FOUND");
   const shareKey = randomToken(24);
-  await env.DB.prepare(`UPDATE online_totp_accounts SET share_key_hash=?,share_key_ciphertext=?,sharing_enabled=1,updated_at=? WHERE id=? AND user_id=?`)
+  await env.DB.prepare(`UPDATE online_totp_accounts SET share_key_hash=?,share_key_ciphertext=?,updated_at=? WHERE id=? AND user_id=?`)
     .bind(await sha256(shareKey), await encryptOnlineTotp(env, shareKey), nowIso(), id, auth.user.id).run();
   const updated = await ownedOnlineTotp(env, auth.user.id, id);
   return successJson(onlineTotpAccountPayloadSchema.parse({ account: await onlineTotpApi(env, updated!) }));

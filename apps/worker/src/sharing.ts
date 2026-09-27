@@ -5,7 +5,7 @@ import {
   sharingCredentialsPayloadSchema,
   sharingSeatUpdateSchema,
 } from "@renewlet/shared/schemas/sharing";
-import { addMoney, moneyFromNumber, moneyToNumber, multiplyMoney, subtractMoney } from "@renewlet/shared/money";
+import { addMoney, divideMoney, moneyFromNumber, moneyToNumber, multiplyMoney, subtractMoney } from "@renewlet/shared/money";
 import { toMonthlyAmount } from "@renewlet/shared/subscription-billing";
 import { requireAuth } from "./auth";
 import { decryptSharingCredential } from "./sharing-credential";
@@ -126,6 +126,7 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
     }
   }
   const timestamp = nowIso();
+  const billing = sharingBillingAmounts(body.monthlyPrice, body.billingAmount, body.billingMonths);
   const statements: D1PreparedStatement[] = [];
   if (body.status === "vacant") {
     statements.push(env.DB.prepare(`
@@ -138,13 +139,13 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
       UPDATE sharing_seats SET member_name = ?, contact = ?, contact_type = ?, monthly_price = ?, currency = ?,
         billing_months = ?, start_date = ?, expires_at = ?, status = ?, notes = ?, updated_at = ?
       WHERE id = ? AND user_id = ?
-    `).bind(body.memberName, body.contact || null, body.contactType || null, body.monthlyPrice, body.currency,
+    `).bind(body.memberName, body.contact || null, body.contactType || null, billing.monthlyPrice, body.currency,
       body.billingMonths, body.startDate, body.expiresAt, body.status, body.notes || null, timestamp, id, auth.user.id));
     const existing = await env.DB.prepare(`
       SELECT id FROM sharing_receivables WHERE user_id = ? AND seat_id = ? AND period_start = ? AND period_end = ? LIMIT 1
     `).bind(auth.user.id, id, body.startDate, body.expiresAt).first<{ id: string }>();
     const receivableId = existing?.id ?? newId("recv");
-    const amount = multiplyMoney(body.monthlyPrice, body.billingMonths);
+    const amount = billing.amount;
     const paid = body.paymentStatus === "paid";
     statements.push(env.DB.prepare(`
       INSERT INTO sharing_receivables (
@@ -158,6 +159,11 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
   }
   await env.DB.batch(statements);
   return readSharingAccountDetail(request, env, account.id);
+}
+
+export function sharingBillingAmounts(monthlyPrice: string, billingAmount: string | undefined, billingMonths: number) {
+  if (!billingAmount) return { monthlyPrice, amount: multiplyMoney(monthlyPrice, billingMonths) };
+  return { monthlyPrice: divideMoney(billingAmount, billingMonths), amount: billingAmount };
 }
 
 export async function rejectLegacySharingAccountMutation(request: Request, env: Env): Promise<Response> {

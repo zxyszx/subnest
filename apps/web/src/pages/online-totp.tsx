@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Copy, KeyRound, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { Header } from "@/components/header";
+import type { UploadStatus } from "@/components/logo-picker";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
 import { QueryErrorState } from "@/components/query-error-state";
 import { SubscriptionLogo } from "@/components/subscription-logo";
@@ -15,7 +16,6 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/sonner";
-import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useCreateOnlineTotpAccount, useDeleteOnlineTotpAccount, useOnlineTotpAccounts, useResetOnlineTotpShare, useUpdateOnlineTotpAccount } from "@/hooks/use-online-totp";
 import { useRouteReady } from "@/components/route-progress";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -25,11 +25,11 @@ import { onlineTotpCopy } from "@/pages/online-totp-copy";
 
 type AccountForm = OnlineTotpAccountCreate;
 const EMPTY_FORM: AccountForm = { platformName: "", serviceName: "", accountNumber: 1, account: "", logo: "", secret: "", enabled: true, sharingEnabled: true };
+const DeferredLogoPicker = lazy(() => import("@/components/logo-picker").then((module) => ({ default: module.LogoPicker })));
 
 export default function OnlineTotpPage() {
   const { t, locale } = useI18n();
   const text = onlineTotpCopy(locale);
-  const { config } = useCustomConfigState();
   const query = useOnlineTotpAccounts();
   const { refetch } = query;
   const createMutation = useCreateOnlineTotpAccount();
@@ -57,12 +57,6 @@ export default function OnlineTotpPage() {
     const needle = search.trim().toLocaleLowerCase();
     return !needle || [account.platformName, account.serviceName, account.account].some((value) => value.toLocaleLowerCase().includes(needle));
   });
-  const configuredPlatforms = (config.platforms ?? []).filter((item) => item.enabled !== false).map((item) => ({
-    name: item.value,
-    label: item.labels[locale],
-    logo: item.icon ?? "",
-  }));
-
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
     if (result.ok) toast.success(t("sharing.copySuccess"));
@@ -100,7 +94,7 @@ export default function OnlineTotpPage() {
           </div>
         )}
       </main>
-      <OnlineTotpDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} platforms={configuredPlatforms} createMutation={createMutation} onDelete={async (id) => { await deleteMutation.mutateAsync(id); setDialogOpen(false); toast.success(text.deleted); }} onReset={async (id) => { await resetMutation.mutateAsync(id); toast.success(text.linkReset); }} />
+      <OnlineTotpDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} createMutation={createMutation} onDelete={async (id) => { await deleteMutation.mutateAsync(id); setDialogOpen(false); toast.success(text.deleted); }} onReset={async (id) => { await resetMutation.mutateAsync(id); toast.success(text.linkReset); }} />
     </div>
   );
 }
@@ -115,18 +109,19 @@ function TotpCode({ account, onCopy }: { account: OnlineTotpAccount; onCopy: (va
   return <button type="button" onClick={() => void onCopy(account.code)} className="flex min-h-11 items-center gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-mono text-xl font-bold tabular-nums tracking-normal">{account.code.slice(0, 3)} {account.code.slice(3)}</span><span className="text-xs tabular-nums text-muted-foreground">{text.remaining(seconds)}</span></button>;
 }
 
-interface PlatformChoice { name: string; label: string; logo: string }
-function OnlineTotpDialog({ open, onOpenChange, account, platforms, createMutation, onDelete, onReset }: { open: boolean; onOpenChange: (open: boolean) => void; account: OnlineTotpAccount | null; platforms: PlatformChoice[]; createMutation: ReturnType<typeof useCreateOnlineTotpAccount>; onDelete: (id: string) => Promise<void>; onReset: (id: string) => Promise<void> }) {
+function OnlineTotpDialog({ open, onOpenChange, account, createMutation, onDelete, onReset }: { open: boolean; onOpenChange: (open: boolean) => void; account: OnlineTotpAccount | null; createMutation: ReturnType<typeof useCreateOnlineTotpAccount>; onDelete: (id: string) => Promise<void>; onReset: (id: string) => Promise<void> }) {
   const { t, locale } = useI18n();
   const text = onlineTotpCopy(locale);
   const updateMutation = useUpdateOnlineTotpAccount(account?.id ?? "");
   const [form, setForm] = useState<AccountForm>(EMPTY_FORM);
+  const [logoUploadStatus, setLogoUploadStatus] = useState<UploadStatus>("idle");
   const [confirm, setConfirm] = useState<"reset" | "delete" | null>(null);
   useEffect(() => {
     if (!open) return;
-    setForm(account ? { platformName: account.platformName, serviceName: account.serviceName, accountNumber: account.accountNumber, account: account.account, logo: account.logo ?? "", secret: "", enabled: account.enabled, sharingEnabled: account.sharingEnabled } : { ...EMPTY_FORM, platformName: platforms[0]?.name ?? "", logo: platforms[0]?.logo ?? "" });
-  }, [account, open, platforms]);
-  const pending = createMutation.isPending || updateMutation.isPending;
+    setLogoUploadStatus("idle");
+    setForm(account ? { platformName: account.platformName, serviceName: account.serviceName, accountNumber: account.accountNumber, account: account.account, logo: account.logo ?? "", secret: "", enabled: account.enabled, sharingEnabled: account.sharingEnabled } : { ...EMPTY_FORM });
+  }, [account, open]);
+  const pending = createMutation.isPending || updateMutation.isPending || logoUploadStatus === "uploading";
   const set = <K extends keyof AccountForm>(key: K, value: AccountForm[K]) => setForm((current) => ({ ...current, [key]: value }));
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -135,7 +130,6 @@ function OnlineTotpDialog({ open, onOpenChange, account, platforms, createMutati
       toast.success(text.saved); onOpenChange(false);
     } catch { toast.error(text.failed); }
   };
-  const choosePlatform = (name: string) => { const choice = platforms.find((item) => item.name === name); setForm((current) => ({ ...current, platformName: name, logo: choice?.logo || current.logo })); };
   const confirmAction = async () => {
     if (!account || !confirm) return;
     try {
@@ -150,15 +144,15 @@ function OnlineTotpDialog({ open, onOpenChange, account, platforms, createMutati
   return <>
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>{account ? text.editTitle : text.createTitle}</DialogTitle><DialogDescription className="sr-only">{t("nav.online2fa")}</DialogDescription></DialogHeader><form onSubmit={submit} className="space-y-5">
       <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[1fr_1fr_110px]">
-        <FormField id="otp-platform" label={t("subscription.field.platformName")}>{(field) => <><Input id={field.id} list="otp-platforms" required value={form.platformName} onChange={(event) => choosePlatform(event.target.value)} /><datalist id="otp-platforms">{platforms.map((item) => <option key={item.name} value={item.name}>{item.label}</option>)}</datalist></>}</FormField>
+        <FormField id="otp-platform" label={t("subscription.field.platformName")}>{(field) => <Input id={field.id} required maxLength={80} value={form.platformName} onChange={(event) => set("platformName", event.target.value)} placeholder={text.platformPlaceholder} />}</FormField>
         <FormField id="otp-service" label={t("subscription.field.name")}>{(field) => <Input id={field.id} value={form.serviceName} onChange={(event) => set("serviceName", event.target.value)} />}</FormField>
         <FormField id="otp-number" label={t("sharing.accountNumber")}>{(field) => <Input id={field.id} type="number" min={1} max={10000} required value={form.accountNumber} onChange={(event) => set("accountNumber", Number(event.target.value))} />}</FormField>
       </FormFieldRow>
+      <Suspense fallback={<div className="h-28 animate-pulse rounded-md border bg-secondary/30" aria-label={t("common.loading")} />}><DeferredLogoPicker value={form.logo || undefined} onChange={(logo) => set("logo", logo ?? "")} onUploadStatusChange={setLogoUploadStatus} serviceName={form.platformName || form.serviceName} /></Suspense>
       <div className="space-y-2"><Label htmlFor="otp-account">{t("sharing.loginAccount")}</Label><Input id="otp-account" required value={form.account} onChange={(event) => set("account", event.target.value)} /></div>
       <div className="space-y-2"><Label htmlFor="otp-secret">{text.secret}</Label><Input id="otp-secret" required={!account} autoComplete="off" value={form.secret} placeholder={account ? text.secretKeep : text.secretPlaceholder} onChange={(event) => set("secret", event.target.value)} /></div>
-      <div className="space-y-2"><Label htmlFor="otp-logo">{text.logo}</Label><Input id="otp-logo" value={form.logo} onChange={(event) => set("logo", event.target.value)} /></div>
-      <div className="grid gap-3 sm:grid-cols-2"><label className="flex min-h-14 items-center justify-between rounded-md border px-4"><span className="font-medium">{text.enabled}</span><Switch checked={form.enabled} onCheckedChange={(value) => set("enabled", value)} /></label><label className="flex min-h-14 items-center justify-between rounded-md border px-4"><span className="font-medium">{text.shareEnabled}</span><Switch checked={form.sharingEnabled} onCheckedChange={(value) => set("sharingEnabled", value)} /></label></div>
-      {account ? <div className="flex flex-wrap gap-2 border-t pt-4"><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("reset")}><RefreshCw className="h-4 w-4" />{text.resetLink}</Button><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("delete")}><Trash2 className="h-4 w-4" />{t("common.delete")}</Button></div> : null}
+      <div className="rounded-md border bg-secondary/20 p-4"><label className="flex min-h-10 items-center justify-between gap-4"><span><span className="block font-medium">{text.shareEnabled}</span><span className="mt-1 block text-sm text-muted-foreground">{form.sharingEnabled ? text.shareActiveHint : text.sharePausedHint}</span></span><Switch checked={form.sharingEnabled} onCheckedChange={(value) => set("sharingEnabled", value)} /></label>{account ? <div className="mt-4 flex flex-wrap gap-2 border-t pt-4"><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("reset")}><RefreshCw className="h-4 w-4" />{text.resetLink}</Button></div> : null}</div>
+      {account ? <div className="flex flex-wrap border-t pt-4"><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("delete")}><Trash2 className="h-4 w-4" />{t("common.delete")}</Button></div> : null}
       <DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button><Button type="submit" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</Button></DialogFooter>
     </form></DialogContent></Dialog>
     <AlertDialog open={confirm !== null} onOpenChange={(value) => !value && setConfirm(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{confirm === "delete" ? text.deleteConfirmTitle : text.resetConfirmTitle}</AlertDialogTitle><AlertDialogDescription>{confirm === "delete" ? text.deleteConfirmDescription : text.resetConfirmDescription}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => void confirmAction()}>{confirm === "delete" ? t("common.delete") : text.resetLink}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>

@@ -25,6 +25,7 @@ vi.mock("./smtp", () => ({
 interface AssetTestState {
   assets: AssetRow[];
   subscriptions: Pick<SubscriptionRow, "user_id" | "logo">[];
+  onlineTotpAccounts: Array<{ user_id: string; logo: string }>;
   customConfigs: Array<{ user_id: string; config_json: string }>;
   deletedMetadata: Array<{ userId: string; id: string }>;
 }
@@ -37,6 +38,7 @@ function createEnv(overrides: Partial<AssetTestState> = {}) {
   const state: AssetTestState = {
     assets: [],
     subscriptions: [],
+    onlineTotpAccounts: [],
     customConfigs: [],
     deletedMetadata: [],
     ...overrides,
@@ -84,6 +86,11 @@ class AssetTestStatement {
     if (this.sql.includes("FROM subscriptions")) {
       const [userId, logo] = this.values as [string, string];
       const count = this.state.subscriptions.filter((row) => row.user_id === userId && row.logo === logo).length;
+      return { count } as T;
+    }
+    if (this.sql.includes("FROM online_totp_accounts")) {
+      const [userId, logo] = this.values as [string, string];
+      const count = this.state.onlineTotpAccounts.filter((row) => row.user_id === userId && row.logo === logo).length;
       return { count } as T;
     }
     if (this.sql.includes("FROM custom_configs")) {
@@ -251,6 +258,26 @@ describe("Cloudflare uploaded assets", () => {
     expect(fixture.r2Delete).not.toHaveBeenCalled();
     expect(fixture.state.assets).toHaveLength(1);
     expect(fixture.state.deletedMetadata).toEqual([]);
+  });
+
+  it("blocks deletion while an online 2FA account still references the uploaded logo", async () => {
+    const fixture = createEnv({
+      assets: [assetRow()],
+      onlineTotpAccounts: [
+        { user_id: USER_ID, logo: "/api/app/assets/asset_logo" },
+        { user_id: "usr_other", logo: "/api/app/assets/asset_logo" },
+      ],
+    });
+
+    await expect(deleteAsset(requestFixture(), fixture.env, "asset_logo"))
+      .rejects.toMatchObject({
+        status: 409,
+        code: "ASSET_IN_USE",
+        details: { usageCount: 1, subscriptionLogoCount: 0, paymentMethodIconCount: 0 },
+      });
+
+    expect(fixture.r2Delete).not.toHaveBeenCalled();
+    expect(fixture.state.assets).toHaveLength(1);
   });
 
   it("reports mixed subscription and payment method references without counting other users", async () => {

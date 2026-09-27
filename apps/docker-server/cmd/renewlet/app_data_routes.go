@@ -73,6 +73,7 @@ type assetInUseDetails struct {
 	UsageCount             int64 `json:"usageCount"`
 	SubscriptionLogoCount  int64 `json:"subscriptionLogoCount"`
 	PaymentMethodIconCount int64 `json:"paymentMethodIconCount"`
+	OnlineTotpLogoCount    int64 `json:"-"`
 }
 
 type subscriptionWriteRequest struct {
@@ -537,10 +538,15 @@ func countAssetReferences(app core.App, userID string, assetID string) (assetInU
 	if err != nil {
 		return assetInUseDetails{}, err
 	}
+	onlineTotpLogoCount, err := app.CountRecords("online_totp_accounts", dbx.HashExp{"user": userID, "logo": assetURL})
+	if err != nil {
+		return assetInUseDetails{}, err
+	}
 	return assetInUseDetails{
-		UsageCount:             subscriptionLogoCount + paymentMethodIconCount,
+		UsageCount:             subscriptionLogoCount + paymentMethodIconCount + onlineTotpLogoCount,
 		SubscriptionLogoCount:  subscriptionLogoCount,
 		PaymentMethodIconCount: paymentMethodIconCount,
+		OnlineTotpLogoCount:    onlineTotpLogoCount,
 	}, nil
 }
 

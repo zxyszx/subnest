@@ -85,6 +85,9 @@ func validateOnlineTotpFields(locale appLocale, platformName, serviceName, accou
 		utf8.RuneCountInString(logo) > 2048 || utf8.RuneCountInString(secret) > 4096 || (secretRequired && secret == "") {
 		return errors.New(serverText(locale, "common.invalidRequestParameters"))
 	}
+	if err := validateOptionalLogoReference(logo); err != nil {
+		return errors.New(serverText(locale, "common.invalidRequestParameters"))
+	}
 	return nil
 }
 
@@ -231,7 +234,6 @@ func handleOnlineTotpShareReset(app core.App, e *core.RequestEvent) error {
 	}
 	record.Set("shareKeyHash", onlineTotpShareHash(shareKey))
 	record.Set("shareKeyCiphertext", ciphertext)
-	record.Set("sharingEnabled", true)
 	if err := app.Save(record); err != nil {
 		return e.InternalServerError(serverText(locale, "common.internalError"), err)
 	}

@@ -1,6 +1,17 @@
 import { z } from "zod";
 import { apiSuccessResponseSchema } from "./api";
 
+const privateAssetPathPattern = /^\/api\/app\/assets\/[A-Za-z0-9_-]+$/;
+const onlineTotpLogoSchema = z.string().trim().max(2048).refine((value) => {
+  if (!value || privateAssetPathPattern.test(value)) return true;
+  try {
+    const url = new URL(value);
+    return (url.protocol === "https:" || url.protocol === "http:") && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}, "Invalid logo URL");
+
 export const onlineTotpAccountSchema = z.object({
   id: z.string().min(1),
   platformName: z.string().min(1),
@@ -41,7 +52,7 @@ export const onlineTotpAccountCreateSchema = z.object({
   serviceName: z.string().trim().max(120),
   accountNumber: z.number().int().min(1).max(10000),
   account: z.string().trim().min(1).max(320),
-  logo: z.string().trim().max(2048),
+  logo: onlineTotpLogoSchema,
   secret: secretInputSchema,
   enabled: z.boolean(),
   sharingEnabled: z.boolean(),
@@ -52,7 +63,7 @@ export const onlineTotpAccountUpdateSchema = z.object({
   serviceName: z.string().trim().max(120),
   accountNumber: z.number().int().min(1).max(10000),
   account: z.string().trim().min(1).max(320),
-  logo: z.string().trim().max(2048),
+  logo: onlineTotpLogoSchema,
   secret: z.string().trim().max(4096),
   enabled: z.boolean(),
   sharingEnabled: z.boolean(),

@@ -102,4 +102,16 @@ func TestOnlineTotpRoutesProtectSecretsOwnershipAndShareRotation(t *testing.T) {
 	if newPublic.Code != http.StatusNotFound {
 		t.Fatalf("paused share link returned %d", newPublic.Code)
 	}
+	pausedResetResponse := serveTestRequest(t, app, http.MethodPost, "/api/app/online-totp/accounts/"+created.ID+"/share/reset", "", ownerToken)
+	if pausedResetResponse.Code != http.StatusOK {
+		t.Fatalf("paused reset returned %d: %s", pausedResetResponse.Code, pausedResetResponse.Body.String())
+	}
+	pausedReset := decodeAPISuccessDataForTest[onlineTotpAccountPayload](t, pausedResetResponse.Body.Bytes()).Account
+	if pausedReset.SharingEnabled {
+		t.Fatal("reset unexpectedly enabled a paused share link")
+	}
+	pausedResetPublic := serveTestRequest(t, app, http.MethodGet, "/api/online-totp/"+strings.TrimPrefix(pausedReset.SharePath, "/otp/"), "", "")
+	if pausedResetPublic.Code != http.StatusNotFound {
+		t.Fatalf("reset paused share link returned %d", pausedResetPublic.Code)
+	}
 }

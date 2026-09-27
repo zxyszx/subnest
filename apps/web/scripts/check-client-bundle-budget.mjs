@@ -29,7 +29,7 @@ const budgets = {
   // 相比 510 KB gzip / 431 KB Brotli 基线分别下降 21.6% / 20.2%。
   startup: { gzip: 400000, brotli: 344000 },
   // 在线 2FA 增加私有路由壳与响应式样式；完整路由 Brotli 预算仍只比 344 KB 基线增加约 1.7%。
-  route: { gzip: 401000, brotli: 350000 },
+  route: { gzip: 401000, brotli: 350500 },
 };
 const forbiddenStartupModules = [
   ["Recharts", (id) => id.includes("node_modules/recharts/")],

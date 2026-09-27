@@ -57,6 +57,7 @@ type sharingSeatUpdateRequest struct {
 	Contact       string `json:"contact"`
 	ContactType   string `json:"contactType"`
 	MonthlyPrice  string `json:"monthlyPrice"`
+	BillingAmount string `json:"billingAmount"`
 	Currency      string `json:"currency"`
 	BillingMonths int    `json:"billingMonths"`
 	StartDate     string `json:"startDate"`
@@ -127,6 +128,7 @@ func normalizeSharingSeatUpdateRequest(body *sharingSeatUpdateRequest) error {
 	body.Contact = strings.TrimSpace(body.Contact)
 	body.ContactType = strings.TrimSpace(body.ContactType)
 	body.MonthlyPrice = strings.TrimSpace(body.MonthlyPrice)
+	body.BillingAmount = strings.TrimSpace(body.BillingAmount)
 	body.Currency = strings.ToUpper(strings.TrimSpace(body.Currency))
 	body.StartDate = strings.TrimSpace(body.StartDate)
 	body.ExpiresAt = strings.TrimSpace(body.ExpiresAt)
@@ -158,7 +160,23 @@ func normalizeSharingSeatUpdateRequest(body *sharingSeatUpdateRequest) error {
 	if err != nil || priceUnits > maxMoneyUnits/int64(body.BillingMonths) {
 		return errors.New("sharing receivable amount is too large")
 	}
+	if body.BillingAmount != "" {
+		billingUnits, billingErr := moneyUnits(body.BillingAmount)
+		if billingErr != nil || billingUnits > maxMoneyUnits {
+			return errors.New("invalid sharing billing amount")
+		}
+		body.BillingAmount = moneyUnitsToString(billingUnits)
+		body.MonthlyPrice = moneyUnitsToString(roundMoneyUnits(billingUnits, int64(body.BillingMonths)))
+	}
 	return nil
+}
+
+func roundMoneyUnits(units, denominator int64) int64 {
+	quotient := units / denominator
+	if units%denominator*2 >= denominator {
+		return quotient + 1
+	}
+	return quotient
 }
 
 func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Record, body sharingSeatUpdateRequest) error {
@@ -221,6 +239,9 @@ func upsertSharingReceivable(app core.App, userID string, seat *core.Record, bod
 		return err
 	}
 	amount := moneyUnitsToString(priceUnits * int64(body.BillingMonths))
+	if body.BillingAmount != "" {
+		amount = body.BillingAmount
+	}
 	receivable.Set("periodStart", body.StartDate)
 	receivable.Set("periodEnd", body.ExpiresAt)
 	receivable.Set("dueDate", body.StartDate)
