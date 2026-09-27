@@ -149,7 +149,7 @@ function EditDialogHarness() {
 }
 
 describe("SubscriptionDialog lifecycle", () => {
-  it("hands data loading to the resolved form scaffold without replacing the dialog shell", () => {
+  it("rebuilds the edit form from the resolved detail without replacing the dialog shell", () => {
     const preview = makeSubscription();
     const { rerender } = render(
       <TooltipProvider delayDuration={0}>
@@ -184,10 +184,12 @@ describe("SubscriptionDialog lifecycle", () => {
     );
 
     expect(screen.getByRole("dialog", { name: "编辑订阅" })).toBe(dialog);
-    expect(dialog.querySelector("form")).toBe(form);
+    expect(dialog.querySelector("form")).not.toBe(form);
     expect(screen.queryByTestId("subscription-form-data-loading")).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "平台名称" })).toHaveTextContent("Original SaaS");
     expect(screen.getByLabelText("服务名称")).toHaveValue("Original SaaS");
+    expect(screen.getByRole("combobox", { name: "分类" })).toHaveTextContent("效率工具");
+    expect(screen.getByRole("combobox", { name: "支付方式" })).toHaveTextContent("支付宝");
   });
 
   it("clears an unsubmitted create draft after cancelling and reopening", async () => {

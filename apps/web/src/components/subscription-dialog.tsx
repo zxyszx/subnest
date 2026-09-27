@@ -43,6 +43,11 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
     : null;
   const isCloneCreateMode = Boolean(clonePreview);
   const modulePending = Content === null;
+  // An edit opened from an uncached route starts with no detail. Remount once the
+  // owned detail arrives so every controlled field initializes from one snapshot.
+  const contentSessionKey = props.mode === "edit"
+    ? `${sessionKey}:${props.subscription?.id ?? "loading"}`
+    : sessionKey;
 
   if (props.open && error) throw error;
 
@@ -87,7 +92,7 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
           <DialogModulePending label={t("common.loading")} className="min-h-0" />
         ) : (
           <Content
-            key={sessionKey}
+            key={contentSessionKey}
             {...props}
             onNestedDialogOpenChange={handleNestedDialogOpenChange}
             onRequestClose={handleRequestClose}

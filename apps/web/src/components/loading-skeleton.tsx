@@ -152,45 +152,29 @@ function DashboardContentSkeleton() {
           testId="dashboard-skeleton-stat-monthly-spend"
         />
         <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-active-subscriptions" />
-        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-upcoming-renewals" />
         <StatCardSkeleton
           dashboard
           className={dashboardStatLayout.trialCard}
           testId="dashboard-skeleton-stat-trials"
         />
-        <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-sharing-accounts" />
         <StatCardSkeleton dashboard testId="dashboard-skeleton-stat-sharing-income" />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="mb-5 flex items-center justify-between">
             <SkeletonBox className="h-6 w-28" />
             <SkeletonBox className="h-9 w-20 rounded-md" />
           </div>
           <div className="grid items-stretch gap-4 sm:grid-cols-2">
-            {range(8).map((index) => <SubscriptionCardSkeleton key={index} />)}
+            {range(6).map((index) => <SubscriptionCardSkeleton key={index} />)}
           </div>
         </div>
 
-        <div className="grid gap-6">
-          <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+        <div>
+          <div className="rounded-lg border border-border bg-card p-5 shadow-card">
             <SkeletonBox className="mb-3 h-6 w-32" />
             <SkeletonBox className="h-55 w-full rounded-lg" />
-          </div>
-          <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-            <SkeletonBox className="mb-4 h-6 w-28" />
-            <div className="grid gap-3">
-              {range(4).map((index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <SkeletonBox className="h-10 w-10 rounded-lg" />
-                  <div className="grid flex-1 gap-1">
-                    <SkeletonBox className="h-4 w-28" />
-                    <SkeletonBox className="h-3 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

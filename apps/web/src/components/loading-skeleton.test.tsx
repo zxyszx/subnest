@@ -34,11 +34,11 @@ describe("DashboardPageSkeleton", () => {
     const monthlySpend = screen.getByTestId("dashboard-skeleton-stat-monthly-spend");
     const trials = screen.getByTestId("dashboard-skeleton-stat-trials");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "md:grid-cols-3", "xl:grid-cols-6");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "xl:grid-cols-4");
     expect(monthlySpend).toHaveClass("p-4", "col-span-1");
     expect(trials).toHaveClass("p-4", "col-span-1");
-    expect(screen.getByTestId("dashboard-skeleton-stat-sharing-accounts")).toHaveClass("p-4");
     expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-4");
+    expect(screen.queryByTestId("dashboard-skeleton-stat-upcoming-renewals")).not.toBeInTheDocument();
   });
 });
 

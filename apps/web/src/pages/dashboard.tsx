@@ -27,7 +27,7 @@ import { DashboardPageSkeleton } from "@/components/loading-skeleton";
 import { QueryErrorState } from "@/components/query-error-state";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
-import { CreditCard, TrendingUp, Clock, Plus, Sparkles, CircleDollarSign, UsersRound } from "lucide-react";
+import { CreditCard, TrendingUp, Clock, Plus, Sparkles, CircleDollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
@@ -134,12 +134,32 @@ export default function Index() {
     );
   }
 
-  // 两列四行与右侧分析栏形成完整首屏，同时仍将完整列表留在 /subscriptions。
-  const displayedSubscriptions = subscriptions.slice(0, 8);
+  const displayedSubscriptions = subscriptions.slice(0, 6);
 
   return (
     <div className="app-page bg-background">
-      <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+      <Header
+        onAddSubscription={handleAddSubscription}
+        availableTags={availableTags}
+        pageActions={(
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="relative h-9 w-9"
+            onClick={() => setUpcomingDialogOpen(true)}
+            title={t("dashboard.upcomingRenewals")}
+            aria-label={t("dashboard.upcomingRenewals")}
+          >
+            <Clock className="h-4 w-4" />
+            {upcomingCount > 0 ? (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-semibold leading-none text-warning-foreground tabular-nums">
+                {upcomingCount > 99 ? "99+" : upcomingCount}
+              </span>
+            ) : null}
+          </Button>
+        )}
+      />
 
       <main className="app-main mx-auto max-w-7xl">
         {/* 统计网格 */}
@@ -167,17 +187,6 @@ export default function Index() {
             className="animate-fade-in [animation-delay:100ms]"
           />
           <StatCard
-            data-testid="dashboard-stat-upcoming-renewals"
-            title={t("dashboard.upcomingRenewals")}
-            value={upcomingCount}
-            subtitle={t("dashboard.next7Days")}
-            icon={<Clock className="h-6 w-6" />}
-            variant={upcomingCount > 0 ? "warning" : "default"}
-            density="dashboard"
-            onClick={() => setUpcomingDialogOpen(true)}
-            className="animate-fade-in [animation-delay:200ms]"
-          />
-          <StatCard
             data-testid="dashboard-stat-trials"
             title={t("dashboard.trials")}
             value={trialCount}
@@ -185,16 +194,7 @@ export default function Index() {
             icon={<Sparkles className="h-6 w-6" />}
             variant={trialCount > 0 ? "warning" : "default"}
             density="dashboard"
-            className={cn("animate-fade-in [animation-delay:300ms]", dashboardStatLayout.trialCard)}
-          />
-          <StatCard
-            data-testid="dashboard-stat-sharing-accounts"
-            title={t("sharing.title")}
-            value={sharingAccounts.length}
-            subtitle={t("sharing.accounts")}
-            icon={<UsersRound className="h-5 w-5" />}
-            density="dashboard"
-            className="animate-fade-in [animation-delay:400ms]"
+            className={cn("animate-fade-in [animation-delay:200ms]", dashboardStatLayout.trialCard)}
           />
           <StatCard
             data-testid="dashboard-stat-sharing-income"
@@ -204,12 +204,12 @@ export default function Index() {
             icon={<CircleDollarSign className="h-6 w-6" />}
             variant={sharingProfit >= 0 ? "primary" : "warning"}
             density="dashboard"
-            className="animate-fade-in [animation-delay:500ms]"
+            className="animate-fade-in [animation-delay:300ms]"
           />
         </div>
 
         {/* 主内容网格 */}
-        <div className="grid items-start gap-8 lg:grid-cols-3">
+        <div className="grid items-start gap-6 lg:grid-cols-3">
           {/* 订阅列表 */}
           <div className="lg:col-span-2">
             <div className="mb-5 flex items-center justify-between">
@@ -259,7 +259,7 @@ export default function Index() {
                 ))}
               </div>
             )}
-            {subscriptions.length > 8 && (
+            {subscriptions.length > 6 && (
               <div className="mt-4 text-center">
                 <Link href="/subscriptions">
                   <Button variant="outline" className="border-border">
@@ -271,9 +271,9 @@ export default function Index() {
           </div>
 
           {/* 侧边栏 */}
-          <div className="grid gap-6">
+          <div>
             {/* 支出图表 */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+            <div className="rounded-lg border border-border bg-card p-5 shadow-card">
               <h3 className="mb-3 text-lg font-semibold text-foreground">{t("dashboard.spendingDistribution")}</h3>
               <DeferredSpendingChart
                 subscriptions={subscriptions}
@@ -284,16 +284,6 @@ export default function Index() {
               />
             </div>
 
-            {/* 即将续费 */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-              <h3 className="mb-4 text-lg font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h3>
-              <UpcomingRenewals
-                subscriptions={subscriptions}
-                today={today}
-                notificationReminderDays={inheritedReminderDays}
-                includeExpired
-              />
-            </div>
           </div>
         </div>
       </main>

@@ -41,7 +41,7 @@ const mocks = vi.hoisted(() => ({
 const detailSubscriptions = new Map<string, Subscription>();
 
 vi.mock("@/components/header", () => ({
-  Header: () => <header data-testid="header" />,
+  Header: ({ pageActions }: { pageActions?: React.ReactNode }) => <header data-testid="header">{pageActions}</header>,
 }));
 
 vi.mock("@/components/router-link", () => ({
@@ -288,11 +288,7 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByTestId("subscription-card-reminder")).toHaveTextContent("5");
     expect(screen.getByTestId("subscription-card-reference")).toHaveTextContent("USD");
     expect(screen.getByTestId("subscription-card-today")).toHaveTextContent("2026-06-15");
-    expect(mocks.upcomingRenewalsCalls[mocks.upcomingRenewalsCalls.length - 1]).toEqual({
-      count: 1,
-      today: "2026-06-15",
-      notificationReminderDays: 5,
-    });
+    expect(mocks.upcomingRenewalsCalls).toHaveLength(0);
     expect(screen.getByTestId("spending-chart")).toHaveTextContent("1:CNY:2026-06-15:7");
     expect(screen.getByText("日均 ¥46.67 · 汇率加载中...")).toBeInTheDocument();
   });
@@ -327,10 +323,10 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByText("添加订阅后，这里会汇总支出、续费和提醒。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "添加第一个订阅" })).toBeInTheDocument();
     expect(screen.getByTestId("spending-chart")).toHaveTextContent("0:CNY:2026-06-15:7");
-    expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("0");
+    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
   });
 
-  it("uses a compact responsive six-card dashboard summary", () => {
+  it("uses a focused responsive four-card dashboard summary", () => {
     renderDashboard();
 
     const grid = screen.getByTestId("dashboard-stat-grid");
@@ -338,17 +334,17 @@ describe("Dashboard page loading state", () => {
     const activeSubscriptions = screen.getByTestId("dashboard-stat-active-subscriptions");
     const trials = screen.getByTestId("dashboard-stat-trials");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "md:grid-cols-3", "xl:grid-cols-6");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "xl:grid-cols-4");
     expect(monthlySpend).toHaveClass("p-4", "col-span-1");
     expect(activeSubscriptions).toHaveClass("p-4");
     expect(trials).toHaveClass("p-4", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
-    expect(screen.getByTestId("dashboard-stat-sharing-accounts")).toHaveTextContent("合租");
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-4");
+    expect(screen.queryByTestId("dashboard-stat-upcoming-renewals")).not.toBeInTheDocument();
     expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
   });
 
-  it("shows eight recent subscriptions before linking to the full list", () => {
+  it("shows six recent subscriptions before linking to the full list", () => {
     mocks.useSubscriptionAnalytics.mockReturnValue({
       data: Array.from({ length: 10 }, (_, index) => subscription({ id: `sub-${index + 1}`, name: `订阅 ${index + 1}` })),
       isPending: false,
@@ -356,9 +352,19 @@ describe("Dashboard page loading state", () => {
 
     renderDashboard();
 
-    expect(screen.getAllByTestId("subscription-card")).toHaveLength(8);
-    expect(screen.getByText("订阅 8")).toBeInTheDocument();
-    expect(screen.queryByText("订阅 9")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("subscription-card")).toHaveLength(6);
+    expect(screen.getByText("订阅 6")).toBeInTheDocument();
+    expect(screen.queryByText("订阅 7")).not.toBeInTheDocument();
+  });
+
+  it("opens upcoming renewals from the header action only when requested", async () => {
+    const user = userEvent.setup();
+
+    renderDashboard();
+
+    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "即将续费/到期" }));
+    expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("1");
   });
 
   it("opens subscription details from a recent subscription card", async () => {
