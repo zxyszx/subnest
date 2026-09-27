@@ -793,6 +793,7 @@ export const MESSAGE_KEYS = [
   "media.zoom",
   "nav.calendar",
   "nav.dashboard",
+  "nav.online2fa",
   "nav.settings",
   "nav.sharedInbox",
   "nav.sharing",

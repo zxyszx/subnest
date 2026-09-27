@@ -33,6 +33,8 @@ const AddSubscriptionDialog = lazy(async () => {
   return { default: module.AddSubscriptionDialog };
 });
 
+const onlineTwoFactorAdminUrl = "https://cloudotp.szxcn.qzz.io/admin";
+
 interface HeaderProps {
   /** 新增订阅回调（传入订阅主体数据，不包含 id）。不传则隐藏“新增订阅”按钮。 */
   onAddSubscription?: (submission: SubscriptionFormSubmission) => void;
@@ -141,6 +143,15 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
               </NavLink>
             ))}
+            <a
+              href={onlineTwoFactorAdminUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={t("nav.online2fa")}
+              className={getHeaderDesktopNavLinkClass(false)}
+            >
+              <span className={headerLayout.desktopNavLabel}>{t("nav.online2fa")}</span>
+            </a>
           </nav>
         </div>
 

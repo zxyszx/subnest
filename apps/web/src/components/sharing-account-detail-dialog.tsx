@@ -23,7 +23,7 @@ import type { SharingAccount, SharingSeat, SharingSeatUpdate } from "@renewlet/s
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { sharingService } from "@/services/sharing-service";
 
-const inboxCopy = { copy: "复制收件链接", copied: "收件链接已复制", failed: "复制收件链接失败" };
+const inboxCopy = { copy: "复制验证码链接", copied: "验证码链接已复制", failed: "复制验证码链接失败" };
 
 export type SharingAccountDetailMode = "account" | "seats";
 
@@ -151,8 +151,13 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[92dvh] max-w-5xl overflow-y-auto" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
-          <DialogHeader>
+        <DialogContent
+          layout="frame"
+          className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-6xl gap-3 overflow-hidden p-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:p-5"
+          dismissMode="explicit"
+          closeLabel={t("sharing.cancel")}
+        >
+          <DialogHeader className="shrink-0 pr-10">
             <DialogTitle>{account?.name ?? t("sharing.manageAccount")}</DialogTitle>
             <DialogDescription>{account ? `${account.subscription.name} #${account.accountNumber}` : t("sharing.accountSummary")}</DialogDescription>
           </DialogHeader>
@@ -162,7 +167,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           ) : detailQuery.isError || !detail ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadDetailFailed")}</div>
           ) : (
-            <div className="space-y-5">
+            <div className={mode === "seats" ? "flex min-h-0 flex-1 flex-col gap-3" : "min-h-0 flex-1 space-y-3 overflow-y-auto"}>
               <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden rounded-md border sm:grid-cols-2 lg:grid-cols-5">
                 <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
                 <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
@@ -171,16 +176,20 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 <SummaryMetric label={t("sharing.outstandingAmount")} value={formatCurrency(convertedTotals?.outstandingAmount ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.outstandingAmount ?? 0) > 0 ? "negative" : undefined} />
               </section>
 
-              <section aria-label={t("sharing.accountDetails")} className="overflow-hidden rounded-md border">
-                <div className="grid gap-x-6 gap-y-3 border-b bg-muted/20 p-4 text-sm sm:grid-cols-3">
-                <AccountDetail label={t("sharing.nextBillingDate")} value={detail.account.nextBillingDate} tabular />
-                <div className="min-w-0">
-                  <div className="text-xs text-muted-foreground">{t("sharing.paymentMethod")}</div>
-                  <div className="mt-1 font-medium text-foreground"><SharingPaymentSummary paymentMethod={detail.account.paymentMethod} cardLast4={null} />{detail.account.paymentMethod ? null : "-"}</div>
+              <section aria-label={t("sharing.accountDetails")} className="shrink-0 overflow-hidden rounded-md border">
+                <div className="grid items-center gap-x-5 gap-y-3 border-b bg-muted/20 px-3 py-2.5 text-sm sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
+                  <AccountDetail label={t("sharing.nextBillingDate")} value={detail.account.nextBillingDate} tabular />
+                  <div className="min-w-0">
+                    <div className="text-xs text-muted-foreground">{t("sharing.paymentMethod")}</div>
+                    <div className="mt-0.5 truncate font-medium text-foreground"><SharingPaymentSummary paymentMethod={detail.account.paymentMethod} cardLast4={null} />{detail.account.paymentMethod ? null : "-"}</div>
+                  </div>
+                  <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
+                  <Button type="button" variant="outline" className="sm:col-span-3 lg:col-span-1" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
+                    {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                    {t("sharing.copyAll")}
+                  </Button>
                 </div>
-                <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
-                </div>
-                <div className="divide-y">
+                <div className="grid lg:grid-cols-3 lg:divide-x">
                   <AccountCopyRow
                     icon={<UserRound />}
                     label={t("sharing.loginAccount")}
@@ -208,49 +217,41 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
                   />
                 </div>
-                <div className="flex justify-end border-t bg-muted/20 p-3">
-                  <Button type="button" variant="outline" className="w-full sm:w-auto" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
-                    {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
-                    {t("sharing.copyAll")}
-                  </Button>
-                </div>
               </section>
 
-              {mode === "seats" ? <section>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</p>
-                  </div>
+              {mode === "seats" ? <section className="flex min-h-0 flex-1 flex-col">
+                <div className="mb-2 flex shrink-0 items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
+                  <span className="text-xs tabular-nums text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</span>
                 </div>
-                <div className="hidden overflow-x-auto rounded-md border sm:block">
+                <div className="hidden min-h-0 flex-1 overflow-auto rounded-md border sm:block">
                   <table className="w-full min-w-200 text-left text-sm">
                     <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-3 font-medium">{t("sharing.seatNumber")}</th>
-                        <th className="px-4 py-3 font-medium">{t("sharing.memberName")}</th>
-                        <th className="px-4 py-3 font-medium">{t("sharing.status")}</th>
-                        <th className="px-4 py-3 font-medium">{t("sharing.monthlyPrice")}</th>
-                        <th className="px-4 py-3 font-medium">{t("sharing.expiresAt")}</th>
-                        <th className="px-4 py-3 font-medium">{t("sharing.paymentStatus")}</th>
-                        <th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.seatNumber")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.memberName")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.status")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.monthlyPrice")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.expiresAt")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 font-medium">{t("sharing.paymentStatus")}</th>
+                        <th className="sticky top-0 bg-muted px-3 py-2 text-right font-medium">{t("sharing.actions")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {detail.seats.map((seat) => (
                         <tr key={seat.id} className="hover:bg-muted/20">
-                          <td className="px-4 py-3 font-medium tabular-nums">#{seat.seatNumber}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2 font-medium tabular-nums">#{seat.seatNumber}</td>
+                          <td className="px-3 py-2">
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
                             {seat.contact && <button type="button" className="mt-0.5 flex max-w-56 items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                           </td>
-                          <td className="px-4 py-3"><Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
-                          <td className="px-4 py-3 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
-                          <td className="px-4 py-3 tabular-nums">{seat.expiresAt ?? "-"}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2"><Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
+                          <td className="px-3 py-2 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
+                          <td className="px-3 py-2 tabular-nums">{seat.expiresAt ?? "-"}</td>
+                          <td className="px-3 py-2">
                             {seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}
                           </td>
-                          <td className="px-4 py-3 text-right"><div className="flex justify-end gap-2">
+                          <td className="px-3 py-2 text-right"><div className="flex justify-end gap-2">
                             {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
                             <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                           </div></td>
@@ -259,7 +260,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     </tbody>
                   </table>
                 </div>
-                <div className="divide-y rounded-md border sm:hidden">
+                <div className="min-h-0 flex-1 divide-y overflow-y-auto rounded-md border sm:hidden">
                   {detail.seats.map((seat) => (
                     <article key={seat.id} className="space-y-3 p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -295,9 +296,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
 
 function SummaryMetric({ label, value, icon, emphasis }: { label: string; value: string; icon: ReactNode; emphasis?: "positive" | "negative" | undefined }) {
   return (
-    <div className="flex min-h-24 items-center gap-3 border-b px-4 py-3 last:border-b-0 sm:nth-last-[-n+2]:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
-      <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className={`mt-1 whitespace-normal break-words text-sm font-semibold leading-5 tabular-nums ${emphasis === "positive" ? "text-emerald-600 dark:text-emerald-400" : emphasis === "negative" ? "text-destructive" : "text-foreground"}`} title={value}>{value}</div></div>
+    <div className="flex min-h-16 items-center gap-2.5 border-b px-3 py-2 last:border-b-0 sm:nth-last-[-n+2]:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
+      <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className={`mt-0.5 whitespace-normal break-words text-sm font-semibold leading-5 tabular-nums ${emphasis === "positive" ? "text-emerald-600 dark:text-emerald-400" : emphasis === "negative" ? "text-destructive" : "text-foreground"}`} title={value}>{value}</div></div>
     </div>
   );
 }
@@ -306,7 +307,7 @@ function AccountDetail({ label, value, tabular = false }: { label: string; value
   return (
     <div className="min-w-0">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-1 truncate font-medium text-foreground ${tabular ? "tabular-nums" : ""}`} title={value}>{value}</div>
+      <div className={`mt-0.5 truncate font-medium text-foreground ${tabular ? "tabular-nums" : ""}`} title={value}>{value}</div>
     </div>
   );
 }
@@ -327,8 +328,8 @@ function AccountCopyRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div className="grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
+    <div className="grid min-h-14 grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2.5 border-b px-3 py-2 last:border-b-0 lg:border-b-0">
+      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
       <div className="min-w-0">
         <div className="text-xs text-muted-foreground">{label}</div>
         <div className="mt-0.5 truncate text-sm font-medium text-foreground" title={value}>{value}</div>
