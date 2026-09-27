@@ -115,8 +115,10 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
     expect(await screen.findByText("netflix16@newszxcn.com")).toBeInTheDocument();
     expect(await screen.findByText("Netflix")).toBeInTheDocument();
     const resetButton = await screen.findByRole("button", { name: "重置链接" });
+    expect(resetButton.closest("div")).toHaveTextContent("生成新的收件链接，旧链接会立即失效。");
+    expect(screen.getByRole("button", { name: "sharing.copyLink" })).toBeInTheDocument();
     await user.click(resetButton);
-    await user.click(screen.getByRole("button", { name: "确认" }));
+    await user.click(screen.getByRole("button", { name: "subscription.familySharing.confirmAction" }));
 
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link-old"));
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({

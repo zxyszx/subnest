@@ -34,6 +34,7 @@ import type { SubscriptionFormState } from "@/types/subscription-form";
 import { useI18n } from "@/i18n/I18nProvider";
 import { todayDateOnlyInTimeZone } from "@/lib/time/date-only";
 import { getSystemTimeZone } from "@/lib/time/time-zone";
+import { withCurrentSubscriptionFormOptions } from "@/lib/subscription-form-config";
 import type { SubscriptionDialogContentProps } from "@/components/subscription-dialog-types";
 
 type SubscriptionFormLoadingPreview = Subscription | SubscriptionCollectionItem | SubscriptionFormState | null;
@@ -132,6 +133,10 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     oneTimeMode: formData.oneTimeMode,
   });
   const collectionReminderEnabled = formData.costSharing?.collectionReminder?.enabled ?? false;
+  const formConfig = useMemo(
+    () => withCurrentSubscriptionFormOptions(config, formData),
+    [config, formData],
+  );
 
   useEffect(() => {
     if (collectionReminderAllowed || !collectionReminderEnabled) return;
@@ -251,7 +256,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
         <SubscriptionFormFields
           idPrefix={idPrefix}
           subscriptionId={editSubscription?.id}
-          config={config}
+          config={formConfig}
           formData={formData}
           setFormData={setFormData}
           currencyOptions={currencyOptions}

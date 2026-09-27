@@ -34,6 +34,7 @@ const managedCopy = {
   changeFolders: "更换文件夹",
   applyFolders: "保存文件夹范围",
   resetLink: "重置链接",
+  resetLinkHelp: "生成新的收件链接，旧链接会立即失效。",
 };
 
 const systemFolderNames: Record<string, string> = {
@@ -281,35 +282,37 @@ export function SubscriptionFamilySharingFields({
 
       {value.enabled ? (
         <div className="grid gap-4 border-t border-border pt-4">
-          <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>
-            {(field) => (
-              <Input
-                id={field.id}
-                value={value.loginAccount}
-                onChange={(event) => update("loginAccount", event.target.value)}
-                autoComplete="username"
-                required
-                aria-describedby={field.describedBy}
-                className="border-border bg-secondary"
-                list={mailboxes.length ? id("newszxcn-mailboxes") : undefined}
-              />
-            )}
-          </FormField>
-          <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>
-            {(field) => (
-              <Input
-                id={field.id}
-                type="number"
-                min={1}
-                max={100}
-                value={value.capacity}
-                onChange={(event) => update("capacity", event.target.value)}
-                required
-                aria-describedby={field.describedBy}
-                className="border-border bg-secondary"
-              />
-            )}
-          </FormField>
+          <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
+            <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>
+              {(field) => (
+                <Input
+                  id={field.id}
+                  value={value.loginAccount}
+                  onChange={(event) => update("loginAccount", event.target.value)}
+                  autoComplete="username"
+                  required
+                  aria-describedby={field.describedBy}
+                  className="border-border bg-secondary"
+                  list={mailboxes.length ? id("newszxcn-mailboxes") : undefined}
+                />
+              )}
+            </FormField>
+            <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>
+              {(field) => (
+                <Input
+                  id={field.id}
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={value.capacity}
+                  onChange={(event) => update("capacity", event.target.value)}
+                  required
+                  aria-describedby={field.describedBy}
+                  className="border-border bg-secondary"
+                />
+              )}
+            </FormField>
+          </FormFieldRow>
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
           {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
           {managedMailbox ? (
@@ -442,10 +445,10 @@ export function SubscriptionFamilySharingFields({
               </div>
             )}
           </FormField>
-          <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_10rem]">
-            <FormField id={id("familySharingVerificationLink")} label={managedMailbox ? managedCopy.link : t("subscription.familySharing.verificationLink")}>
-              {(field) => (
-                <div className="relative">
+          <FormField id={id("familySharingVerificationLink")} label={managedMailbox ? managedCopy.link : t("subscription.familySharing.verificationLink")}>
+            {(field) => (
+              <div className="grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div className="relative min-w-0">
                   <Input
                     id={field.id}
                     type="url"
@@ -453,23 +456,41 @@ export function SubscriptionFamilySharingFields({
                     onChange={(event) => update("verificationLink", event.target.value)}
                     placeholder={managedMailbox ? managedCopy.closed : t("subscription.familySharing.verificationLinkPlaceholder")}
                     aria-describedby={field.describedBy}
-                    className={managedMailbox ? "border-border bg-secondary pr-11" : "border-border bg-secondary pr-11"}
+                    className="border-border bg-secondary pr-11"
                     readOnly={Boolean(managedMailbox)}
                   />
-                  {!managedMailbox && value.verificationLink ? <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" onClick={() => update("verificationLink", "")} aria-label={managedCopy.clear}><X className="h-4 w-4" /></Button> : null}
+                  {value.verificationLink ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full w-11"
+                      onClick={async () => {
+                        if (!managedMailbox) {
+                          update("verificationLink", "");
+                          return;
+                        }
+                        const result = await copyTextToClipboard(value.verificationLink);
+                        toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed"));
+                      }}
+                      aria-label={managedMailbox ? t("sharing.copyLink") : managedCopy.clear}
+                    >
+                      {managedMailbox ? <Copy className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    </Button>
+                  ) : null}
                 </div>
-              )}
-            </FormField>
-            {managedMailbox && managedLink ? (
-              <div className="grid content-end gap-1.5">
-                <span className="text-sm font-medium text-foreground">{t("subscription.familySharing.linkActions")}</span>
-                <Button type="button" variant="ghost" className="min-h-11 justify-start px-0 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
-                  {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                  {managedCopy.resetLink}
-                </Button>
+                {managedMailbox && managedLink ? (
+                  <div className="flex min-w-0 flex-col gap-1.5 sm:max-w-56">
+                    <Button type="button" variant="outline" className="min-h-11 justify-center border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
+                      {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      {managedCopy.resetLink}
+                    </Button>
+                    <p className="text-xs leading-4 text-muted-foreground">{managedCopy.resetLinkHelp}</p>
+                  </div>
+                ) : null}
               </div>
-            ) : <span />}
-          </FormFieldRow>
+            )}
+          </FormField>
           <FieldError id={id("familySharing-error")} message={error} />
         </div>
       ) : null}

@@ -4,7 +4,7 @@ import { CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Sear
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
-import { SharingAccountDetailDialog, type SharingAccountDetailMode } from "@/components/sharing-account-detail-dialog";
+import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import Link from "@/components/router-link";
@@ -53,7 +53,6 @@ export default function Sharing() {
   const today = useZonedToday(settingsQuery.data?.settings.timezone ?? "UTC");
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
-  const [sharingDialogMode, setSharingDialogMode] = useState<SharingAccountDetailMode>("account");
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -173,9 +172,7 @@ export default function Sharing() {
             {account.accountNumber}
           </span>
         </button>
-        <button type="button" className="min-w-0 text-left" onClick={() => { setSharingDialogMode("account"); setSelectedAccount(account); }}>
-          <span className="block truncate font-medium text-foreground hover:text-primary">{platformName}</span>
-        </button>
+        <span className="min-w-0 truncate font-medium text-foreground">{platformName}</span>
       </div>
     );
   };
@@ -300,7 +297,7 @@ export default function Sharing() {
                       <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                       <Button type="button" size="icon" variant="outline" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
                       <Button type="button" size="sm" variant="outline" title={t("sharing.copyAll")} onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
-                      <Button type="button" size="sm" onClick={() => { setSharingDialogMode("seats"); setSelectedAccount(account); }}>{t("sharing.manageAccount")}</Button>
+                      <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
                   </tr>
                 ))}</tbody>
@@ -323,7 +320,7 @@ export default function Sharing() {
                   <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
-                    <Button type="button" className="min-w-0" onClick={() => { setSharingDialogMode("seats"); setSelectedAccount(account); }}>{t("sharing.manageAccount")}</Button>
+                    <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                   </div>
                   <Button type="button" className="w-full" variant="outline" onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
                 </article>
@@ -331,7 +328,7 @@ export default function Sharing() {
             </div>
           </section>
         )}
-        <SharingAccountDetailDialog account={selectedAccount} mode={sharingDialogMode} open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
+        <SharingAccountDetailDialog account={selectedAccount} mode="seats" open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
         <EditSubscriptionDialog
           subscription={editingSubscriptionQuery.data ?? null}
           loadingPreview={null}
@@ -367,7 +364,7 @@ export default function Sharing() {
                     <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums", daysUntilExpiry <= 1 ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning")}>
                       {daysUntilExpiry === 0 ? t("common.today") : t("upcoming.daysShort", { days: daysUntilExpiry })}
                     </span>
-                    <Button type="button" size="sm" variant="outline" onClick={() => { setRenewalsOpen(false); setSharingDialogMode("seats"); setSelectedAccount(account); }}>{t("sharing.manageAccount")}</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => { setRenewalsOpen(false); setSelectedAccount(account); }}>{t("sharing.manageAccount")}</Button>
                   </div>
                 );
               })}

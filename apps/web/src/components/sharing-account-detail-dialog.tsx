@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarClock, CircleDollarSign, Copy, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
+import { CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, Pencil, ReceiptText, RotateCw, UserRound } from "lucide-react";
 
 import { useSharingAccountDetail, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -21,6 +21,7 @@ import { toast } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import type { SharingAccount, SharingSeat, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
+import { sharingService } from "@/services/sharing-service";
 
 const inboxCopy = { copy: "复制收件链接", copied: "收件链接已复制", failed: "复制收件链接失败" };
 
@@ -70,7 +71,56 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
   const [selectedSeat, setSelectedSeat] = useState<SharingSeat | null>(null);
   const [seatDialogMode, setSeatDialogMode] = useState<"edit" | "renew">("edit");
+  const [password, setPassword] = useState<string | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const detail = detailQuery.data;
+  useEffect(() => {
+    setPassword(null);
+    setPasswordVisible(false);
+    setPasswordLoading(false);
+  }, [account?.id, open]);
+
+  const copyValue = async (value: string) => {
+    const result = await copyTextToClipboard(value);
+    toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed"));
+  };
+  const readPassword = async () => {
+    if (!account?.id) return null;
+    if (password !== null) return password;
+    setPasswordLoading(true);
+    try {
+      const value = await sharingService.password(account.id);
+      setPassword(value);
+      return value;
+    } catch {
+      toast.error(t("sharing.passwordUnavailable"));
+      return null;
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+  const copyPassword = async () => {
+    const value = await readPassword();
+    if (value !== null) await copyValue(value);
+  };
+  const togglePassword = async () => {
+    if (!passwordVisible && password === null) {
+      const value = await readPassword();
+      if (value === null) return;
+    }
+    setPasswordVisible((current) => !current);
+  };
+  const copyAll = async () => {
+    if (!detail) return;
+    const value = await readPassword();
+    if (value === null) return;
+    await copyValue(t("sharing.accountCopyTemplate", {
+      account: detail.account.loginAccount,
+      password: value,
+      link: detail.account.verificationLink ?? t("sharing.noVerificationLink"),
+    }));
+  };
   const convertedTotals = useMemo(() => {
     if (!detail) return null;
     const accountCurrency = detail.account.currency;
@@ -121,20 +171,48 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 <SummaryMetric label={t("sharing.outstandingAmount")} value={formatCurrency(convertedTotals?.outstandingAmount ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.outstandingAmount ?? 0) > 0 ? "negative" : undefined} />
               </section>
 
-              <section aria-label={t("sharing.accountDetails")} className="grid gap-x-6 gap-y-3 rounded-md border p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                <AccountDetail label={t("sharing.loginAccount")} value={detail.account.loginAccount} />
+              <section aria-label={t("sharing.accountDetails")} className="overflow-hidden rounded-md border">
+                <div className="grid gap-x-6 gap-y-3 border-b bg-muted/20 p-4 text-sm sm:grid-cols-3">
                 <AccountDetail label={t("sharing.nextBillingDate")} value={detail.account.nextBillingDate} tabular />
                 <div className="min-w-0">
                   <div className="text-xs text-muted-foreground">{t("sharing.paymentMethod")}</div>
                   <div className="mt-1 font-medium text-foreground"><SharingPaymentSummary paymentMethod={detail.account.paymentMethod} cardLast4={null} />{detail.account.paymentMethod ? null : "-"}</div>
                 </div>
                 <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
-                <div className="min-w-0 sm:col-span-2 lg:col-span-4">
-                  <div className="text-xs text-muted-foreground">{t("sharing.verificationLink")}</div>
-                  <div className="mt-1 flex min-w-0 items-center gap-1">
-                    <div className="min-w-0 flex-1 truncate font-medium text-foreground" title={detail.account.verificationLink ?? undefined}>{detail.account.verificationLink ?? "-"}</div>
-                    {detail.account.verificationLink ? <Button type="button" size="icon" variant="ghost" aria-label={inboxCopy.copy} onClick={async () => { const result = await copyTextToClipboard(detail.account.verificationLink ?? ""); toast[result.ok ? "success" : "error"](result.ok ? inboxCopy.copied : inboxCopy.failed); }}><Copy className="h-4 w-4" /></Button> : null}
-                  </div>
+                </div>
+                <div className="divide-y">
+                  <AccountCopyRow
+                    icon={<UserRound />}
+                    label={t("sharing.loginAccount")}
+                    value={detail.account.loginAccount}
+                    copyLabel={t("sharing.copyAccount")}
+                    onCopy={() => void copyValue(detail.account.loginAccount)}
+                  />
+                  <AccountCopyRow
+                    icon={<KeyRound />}
+                    label={t("sharing.password")}
+                    value={detail.account.hasPassword ? (passwordVisible && password !== null ? password : "••••••••") : "-"}
+                    copyLabel={t("sharing.copyPassword")}
+                    onCopy={detail.account.hasPassword ? () => void copyPassword() : undefined}
+                    trailing={detail.account.hasPassword ? (
+                      <Button type="button" size="icon" variant="ghost" disabled={passwordLoading} aria-label={t(passwordVisible ? "subscription.familySharing.hidePassword" : "subscription.familySharing.showPassword")} onClick={() => void togglePassword()}>
+                        {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    ) : undefined}
+                  />
+                  <AccountCopyRow
+                    icon={<Link2 />}
+                    label={t("sharing.verificationLink")}
+                    value={detail.account.verificationLink ?? "-"}
+                    copyLabel={inboxCopy.copy}
+                    onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
+                  />
+                </div>
+                <div className="flex justify-end border-t bg-muted/20 p-3">
+                  <Button type="button" variant="outline" className="w-full sm:w-auto" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
+                    {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                    {t("sharing.copyAll")}
+                  </Button>
                 </div>
               </section>
 
@@ -229,6 +307,40 @@ function AccountDetail({ label, value, tabular = false }: { label: string; value
     <div className="min-w-0">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className={`mt-1 truncate font-medium text-foreground ${tabular ? "tabular-nums" : ""}`} title={value}>{value}</div>
+    </div>
+  );
+}
+
+function AccountCopyRow({
+  icon,
+  label,
+  value,
+  copyLabel,
+  onCopy,
+  trailing,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  copyLabel: string;
+  onCopy?: (() => void) | undefined;
+  trailing?: ReactNode;
+}) {
+  return (
+    <div className="grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5">
+      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</div>
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="mt-0.5 truncate text-sm font-medium text-foreground" title={value}>{value}</div>
+      </div>
+      <div className="flex items-center gap-1">
+        {trailing}
+        {onCopy ? (
+          <Button type="button" size="icon" variant="ghost" aria-label={copyLabel} title={copyLabel} onClick={onCopy}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
