@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
+import { ExternalLink, LayoutDashboard, List, CalendarDays, BarChart3, Settings, ShieldCheck, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -32,6 +32,8 @@ const AddSubscriptionDialog = lazy(async () => {
   const module = await import('@/components/add-subscription-dialog');
   return { default: module.AddSubscriptionDialog };
 });
+
+const onlineTwoFactorAdminUrl = "https://cloudotp.szxcn.qzz.io/admin";
 
 interface HeaderProps {
   /** 新增订阅回调（传入订阅主体数据，不包含 id）。不传则隐藏“新增订阅”按钮。 */
@@ -141,6 +143,17 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
               </NavLink>
             ))}
+            <a
+              href={onlineTwoFactorAdminUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={t("nav.online2fa")}
+              className={getHeaderDesktopNavLinkClass(false)}
+            >
+              <ShieldCheck className={headerLayout.desktopNavIcon} />
+              <span className={headerLayout.desktopNavLabel}>{t("nav.online2fa")}</span>
+              <ExternalLink className="h-3 w-3 opacity-60" />
+            </a>
           </nav>
         </div>
 
@@ -191,6 +204,10 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             {t(item.labelKey)}
           </NavLink>
         ))}
+        <a href={onlineTwoFactorAdminUrl} target="_blank" rel="noreferrer" className={getHeaderMobileNavLinkClass(false)} title={t("nav.online2fa")}>
+          <ShieldCheck className={headerLayout.mobileNavIcon} />
+          {t("nav.online2fa")}
+        </a>
       </nav>
     </header>
   );

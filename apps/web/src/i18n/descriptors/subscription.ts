@@ -139,7 +139,7 @@ export const messages = [
   msg({ id: "subscription.familySharing.passwordCopied", message: "密码已复制" }),
   msg({ id: "subscription.familySharing.passwordCopyFailed", message: "复制密码失败" }),
   msg({ id: "subscription.familySharing.passwordUnavailable", message: "无法读取已保存的密码" }),
-  msg({ id: "subscription.familySharing.verificationLink", message: "邮箱验证码链接" }),
+  msg({ id: "subscription.familySharing.verificationLink", message: "验证码链接" }),
   msg({ id: "subscription.familySharing.verificationLinkPlaceholder", message: "https://" }),
   msg({ id: "subscription.familySharing.capacity", message: "车位数" }),
   msg({ id: "subscription.familySharing.matchingManagedMailbox", message: "正在匹配 NewSzxcn 邮箱..." }),

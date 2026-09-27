@@ -101,7 +101,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
 
     await user.click(screen.getByRole("button", { name: "sharing.copyAccount" }));
     await user.click(screen.getByRole("button", { name: "sharing.copyPassword" }));
-    await user.click(screen.getByRole("button", { name: "复制收件链接" }));
+    await user.click(screen.getByRole("button", { name: "复制验证码链接" }));
     await user.click(screen.getByRole("button", { name: "sharing.copyAll" }));
 
     await waitFor(() => expect(mocks.copyTextToClipboard).toHaveBeenCalledTimes(4));

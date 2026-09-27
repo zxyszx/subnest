@@ -23,7 +23,7 @@ vi.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-function Harness({ onPendingChange }: { onPendingChange: (pending: boolean) => void }) {
+function Harness({ onPendingChange, verificationLink = "" }: { onPendingChange: (pending: boolean) => void; verificationLink?: string }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }));
   const [value, setValue] = useState<FamilySharingFormState>({
     enabled: true,
@@ -31,7 +31,7 @@ function Harness({ onPendingChange }: { onPendingChange: (pending: boolean) => v
     password: "saved-password",
     hasPassword: true,
     passwordMask: "s***d",
-    verificationLink: "",
+    verificationLink,
     capacity: "5",
   });
   return (
@@ -127,5 +127,18 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
       windowMinutes: 60,
     }));
     expect(screen.getByDisplayValue("https://dingyue.xzys.me/s/new-link")).toBeInTheDocument();
+  });
+
+  it("keeps a manually supplied external 2FA link editable for a managed mailbox", async () => {
+    const user = userEvent.setup();
+    const externalLink = "https://cloudotp.szxcn.qzz.io/s/Vzh0pMa3cxMH";
+    mocks.links.mockResolvedValueOnce({ links: [] });
+    render(<Harness onPendingChange={vi.fn()} verificationLink={externalLink} />);
+
+    const linkInput = await screen.findByDisplayValue(externalLink);
+    expect(linkInput).not.toHaveAttribute("readonly");
+    await user.clear(linkInput);
+    await user.type(linkInput, "https://cloudotp.szxcn.qzz.io/admin");
+    expect(linkInput).toHaveValue("https://cloudotp.szxcn.qzz.io/admin");
   });
 });

@@ -42,6 +42,7 @@ export const messages = [
   msg({ id: "sharing.copyAccount", message: "复制账号" }),
   msg({ id: "sharing.copyPassword", message: "复制密码" }),
   msg({ id: "sharing.copyLink", message: "复制验证码链接" }),
+  msg({ id: "sharing.openVerificationLink", message: "打开验证码链接" }),
   msg({ id: "sharing.copyAll", message: "一键复制全部" }),
   msg({ id: "sharing.copySuccess", message: "已复制" }),
   msg({ id: "sharing.copyFailed", message: "复制失败" }),

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Eye, EyeOff, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
+import { Copy, Eye, EyeOff, ExternalLink, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -21,7 +21,7 @@ const managedCopy = {
   shared: "已开启只读分享",
   closed: "尚未开启分享",
   toggle: "开启共享收件箱",
-  link: "收件链接",
+  link: "验证码链接",
   clear: "清空收件链接",
   chooseFolders: "选择文件夹",
   viewFolders: "查看文件夹",
@@ -139,7 +139,8 @@ export function SubscriptionFamilySharingFields({
     return () => onShareSetupPendingChange?.(false);
   }, [managedLink, managedMailbox, onShareSetupPendingChange, shareIntent]);
   useEffect(() => {
-    if (managedLink && value.verificationLink !== managedLink.shortUrl) {
+    // 邮箱共享链接只是默认值；用户可能改用 CloudOTP 等外部验证码地址，不能覆盖已有手动输入。
+    if (managedLink && !value.verificationLink.trim()) {
       onChange({ ...value, verificationLink: managedLink.shortUrl });
       return;
     }
@@ -445,7 +446,7 @@ export function SubscriptionFamilySharingFields({
               </div>
             )}
           </FormField>
-          <FormField id={id("familySharingVerificationLink")} label={managedMailbox ? managedCopy.link : t("subscription.familySharing.verificationLink")}>
+          <FormField id={id("familySharingVerificationLink")} label={managedCopy.link}>
             {(field) => (
               <div className="grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="relative min-w-0">
@@ -454,29 +455,34 @@ export function SubscriptionFamilySharingFields({
                     type="url"
                     value={value.verificationLink}
                     onChange={(event) => update("verificationLink", event.target.value)}
-                    placeholder={managedMailbox ? managedCopy.closed : t("subscription.familySharing.verificationLinkPlaceholder")}
+                    placeholder={t("subscription.familySharing.verificationLinkPlaceholder")}
                     aria-describedby={field.describedBy}
-                    className="border-border bg-secondary pr-11"
-                    readOnly={Boolean(managedMailbox)}
+                    className="border-border bg-secondary pr-32"
                   />
                   {value.verificationLink ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full w-11"
-                      onClick={async () => {
-                        if (!managedMailbox) {
-                          update("verificationLink", "");
-                          return;
-                        }
-                        const result = await copyTextToClipboard(value.verificationLink);
-                        toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed"));
-                      }}
-                      aria-label={managedMailbox ? t("sharing.copyLink") : managedCopy.clear}
-                    >
-                      {managedMailbox ? <Copy className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                    </Button>
+                    <div className="absolute right-0 top-0 flex h-full items-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-full w-11"
+                        onClick={async () => {
+                          const result = await copyTextToClipboard(value.verificationLink);
+                          toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed"));
+                        }}
+                        aria-label={t("sharing.copyLink")}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-full w-11" onClick={() => window.open(value.verificationLink, "_blank", "noopener,noreferrer")} aria-label={t("sharing.openVerificationLink")} title={t("sharing.openVerificationLink")}>
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      {!managedMailbox ? (
+                        <Button type="button" variant="ghost" size="icon" className="h-full w-11" onClick={() => update("verificationLink", "")} aria-label={managedCopy.clear}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 {managedMailbox && managedLink ? (
