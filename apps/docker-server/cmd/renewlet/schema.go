@@ -46,6 +46,7 @@ var schemaAutodateCollections = []string{
 	"api_tokens",
 	"app_sessions",
 	"mfa_totp_credentials",
+	"online_totp_accounts",
 	"mfa_recovery_codes",
 	"mfa_auth_tickets",
 	"passkey_credentials",
@@ -86,7 +87,9 @@ func ensureCollectionsSchema(app core.App) error {
 	if err := ensureSharingCollections(app, users); err != nil {
 		return err
 	}
-	if err := ensureNewSzxcnCollections(app, users); err != nil { return err }
+	if err := ensureNewSzxcnCollections(app, users); err != nil {
+		return err
+	}
 	if err := ensureSubscriptionSchedulerStatesCollection(app, users); err != nil {
 		return err
 	}
@@ -121,6 +124,9 @@ func ensureCollectionsSchema(app core.App) error {
 		return err
 	}
 	if err := ensureAuthMFACollections(app, users); err != nil {
+		return err
+	}
+	if err := ensureOnlineTotpAccountsCollection(app, users); err != nil {
 		return err
 	}
 	if err := ensureTelegramBotBindingsCollection(app, users); err != nil {

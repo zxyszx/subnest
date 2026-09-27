@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -33,8 +33,6 @@ const AddSubscriptionDialog = lazy(async () => {
   return { default: module.AddSubscriptionDialog };
 });
 
-const onlineTwoFactorAdminUrl = "https://cloudotp.szxcn.qzz.io/admin";
-
 interface HeaderProps {
   /** 新增订阅回调（传入订阅主体数据，不包含 id）。不传则隐藏“新增订阅”按钮。 */
   onAddSubscription?: (submission: SubscriptionFormSubmission) => void;
@@ -48,10 +46,11 @@ interface HeaderProps {
 type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "calendar" | "statistics" | "settings";
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
-const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean }> = [
+const navItems: Array<{ path: string; labelKey: MessageKey; icon?: NavIconKey; adminOnly?: boolean }> = [
   { path: '/', labelKey: 'nav.dashboard', icon: "dashboard" },
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
   { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
+  { path: '/online-2fa', labelKey: 'nav.online2fa' },
   { path: '/calendar', labelKey: 'nav.calendar', icon: "calendar" },
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
@@ -139,19 +138,10 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 title={t(item.labelKey)}
                 className={({ isActive }) => getHeaderDesktopNavLinkClass(isActive)}
               >
-                {renderNavIcon(item.icon, headerLayout.desktopNavIcon)}
+                {item.icon ? renderNavIcon(item.icon, headerLayout.desktopNavIcon) : null}
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
               </NavLink>
             ))}
-            <a
-              href={onlineTwoFactorAdminUrl}
-              target="_blank"
-              rel="noreferrer"
-              title={t("nav.online2fa")}
-              className={getHeaderDesktopNavLinkClass(false)}
-            >
-              <span className={headerLayout.desktopNavLabel}>{t("nav.online2fa")}</span>
-            </a>
           </nav>
         </div>
 
@@ -198,7 +188,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             end={item.path === "/"}
             className={({ isActive }) => getHeaderMobileNavLinkClass(isActive)}
           >
-            {renderNavIcon(item.icon, headerLayout.mobileNavIcon)}
+            {item.icon ? renderNavIcon(item.icon, headerLayout.mobileNavIcon) : <ShieldCheck className={headerLayout.mobileNavIcon} />}
             {t(item.labelKey)}
           </NavLink>
         ))}

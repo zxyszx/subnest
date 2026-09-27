@@ -37,6 +37,7 @@ export function isPublicRoutePath(pathname: string): boolean {
     return true;
   }
   if (pathname.startsWith("/s/")) return true;
+  if (pathname.startsWith("/otp/")) return true;
 
   return false;
 }
