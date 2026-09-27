@@ -2,7 +2,7 @@ import type { Locale } from "@/i18n/locales";
 
 const copies = {
   "zh-CN": {
-    code: "验证码", copyCode: "复制验证码", account: "账号", sequence: "序号", shareLink: "分享链接", empty: "还没有 2FA 账号", createTitle: "添加 2FA 账号",
+    code: "验证码", copyCode: "复制验证码", copy: "复制", account: "账号", sequence: "序号", shareLink: "分享链接", empty: "还没有 2FA 账号", createTitle: "添加 2FA 账号",
     editTitle: "编辑 2FA 账号", paused: "已暂停", secret: "2FA 密钥", secretPlaceholder: "粘贴 Base32 密钥或 otpauth:// 链接",
     secretKeep: "留空则保留当前密钥", platformPlaceholder: "例如 Google、GitHub、Netflix", shareEnabled: "分享链接",
     shareActiveHint: "已启用，可复制链接分享给他人查看验证码。", sharePausedHint: "已暂停，已有分享链接暂时无法访问。",
@@ -14,7 +14,7 @@ const copies = {
     alreadyAdded: "该平台已添加此账号编号", remaining: (seconds: number) => `${seconds} 秒`,
   },
   "en-US": {
-    code: "Code", copyCode: "Copy code", account: "Account", sequence: "No.", shareLink: "Share link", empty: "No 2FA accounts yet", createTitle: "Add 2FA account",
+    code: "Code", copyCode: "Copy code", copy: "Copy", account: "Account", sequence: "No.", shareLink: "Share link", empty: "No 2FA accounts yet", createTitle: "Add 2FA account",
     editTitle: "Edit 2FA account", paused: "Paused", secret: "2FA secret", secretPlaceholder: "Paste a Base32 secret or otpauth:// URL",
     secretKeep: "Leave blank to keep the current secret", platformPlaceholder: "For example Google, GitHub, or Netflix", shareEnabled: "Share link",
     shareActiveHint: "Enabled. You can copy the link for others to view codes.", sharePausedHint: "Paused. Existing share links cannot be opened for now.",

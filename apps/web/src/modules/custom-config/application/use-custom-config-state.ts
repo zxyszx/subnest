@@ -86,7 +86,9 @@ export function useCustomConfigController() {
   );
 
   return {
-    config,
+    // Query 完成的同一渲染周期直接发布远端事实源，避免弹窗先用本地默认配置初始化，
+    // 随后出现分类和支付方式空白、必须关闭重开的竞态。
+    config: remoteConfig ?? config,
     pending: isPending,
     saveConfig,
   };

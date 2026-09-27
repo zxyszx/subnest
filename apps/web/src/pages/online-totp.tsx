@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Hash, Link2, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Check, ChevronDown, Copy, Link2, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { Header } from "@/components/header";
 import type { UploadStatus } from "@/components/logo-picker";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -24,8 +25,8 @@ import type { OnlineTotpAccount, OnlineTotpAccountCreate, OnlineTotpAccountUpdat
 import { onlineTotpCopy } from "@/pages/online-totp-copy";
 import { findOnlineTotpPlatform, onlineTotpAccountNumberExists } from "@/lib/online-totp-form";
 
-type AccountForm = OnlineTotpAccountCreate;
-const EMPTY_FORM: AccountForm = { platformName: "", serviceName: "", accountNumber: 1, account: "", logo: "", secret: "", enabled: true, sharingEnabled: true };
+type AccountForm = Omit<OnlineTotpAccountCreate, "accountNumber"> & { accountNumber: string };
+const EMPTY_FORM: AccountForm = { platformName: "", serviceName: "", accountNumber: "", account: "", logo: "", secret: "", enabled: true, sharingEnabled: true };
 const DeferredLogoPicker = lazy(() => import("@/components/logo-picker").then((module) => ({ default: module.LogoPicker })));
 
 export default function OnlineTotpPage() {
@@ -40,7 +41,6 @@ export default function OnlineTotpPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<OnlineTotpAccount | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   useRouteReady(query.isPending);
 
   const accounts = useMemo(() => query.data?.accounts ?? [], [query.data?.accounts]);
@@ -72,26 +72,23 @@ export default function OnlineTotpPage() {
     <div className="app-page bg-background">
       <Header pageActions={headerAction} />
       <main className="app-main mx-auto max-w-7xl">
-        <div className="mb-5 flex items-center justify-between gap-4"><h2 className="text-2xl font-bold text-foreground">{t("nav.online2fa")}</h2><Button className="gap-2 sm:hidden" onClick={openCreate}><Plus className="h-4 w-4" />{text.createTitle}</Button></div>
+        <div className="mb-4 flex justify-end sm:hidden"><Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" />{text.createTitle}</Button></div>
 
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center">
               <PlatformFilterBar platforms={platforms} value={selectedPlatform} onValueChange={setSelectedPlatform} allLabel={t("sharing.allPlatforms")} moreLabel={t("sharing.morePlatforms")} ariaLabel={t("sharing.platformFilter")} className="min-w-0 flex-1 border-0 px-0" />
               <div className="relative h-10 w-full shrink-0 sm:w-72">
-                <div className={`absolute left-0 top-0 h-10 overflow-hidden transition-[width] duration-200 ${searchOpen || search ? "w-full" : "w-10"}`}>
-                  <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input aria-label={t("sharing.searchPlaceholder")} value={search} onFocus={() => setSearchOpen(true)} onChange={(event) => setSearch(event.target.value)} onBlur={() => { if (!search) setSearchOpen(false); }} placeholder={t("sharing.searchPlaceholder")} className="h-10 w-full pl-9" />
-                </div>
+                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input aria-label={t("sharing.searchPlaceholder")} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("sharing.searchPlaceholder")} className="h-10 w-full pl-9" />
               </div>
             </div>
-            <div className="hidden grid-cols-[64px_minmax(180px,1.1fr)_minmax(230px,1.4fr)_200px_180px] gap-4 border-b bg-muted/35 px-5 py-3 text-sm font-medium text-muted-foreground md:grid">
-              <span>{text.sequence}</span><span>{t("subscription.field.platformName")}</span><span>{text.account}</span><span>{text.code}</span><span className="text-right">{t("sharing.actions")}</span>
+            <div className="hidden grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] gap-4 border-b bg-muted/35 px-5 py-3 text-sm font-medium text-muted-foreground md:grid">
+              <span>{t("subscription.field.platformName")}</span><span>{text.account}</span><span>{text.code}</span><span className="text-right">{t("sharing.actions")}</span>
             </div>
             {query.isPending ? <div className="py-20 text-center text-sm text-muted-foreground">{t("common.loading")}</div> : filtered.length === 0 ? <div className="py-20 text-center"><ShieldCheck className="mx-auto mb-3 h-9 w-9 text-muted-foreground" /><p className="text-sm text-muted-foreground">{accounts.length ? t("sharing.noSearchResults") : text.empty}</p></div> : filtered.map((account) => (
-              <div key={account.id} className="grid gap-3 border-b px-4 py-4 last:border-b-0 md:grid-cols-[64px_minmax(180px,1.1fr)_minmax(230px,1.4fr)_200px_180px] md:items-center md:gap-4 md:px-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><Hash className="h-4 w-4" /><span>#{account.accountNumber}</span></div>
-                <div className="flex min-w-0 items-center gap-3"><SubscriptionLogo name={account.platformName} logo={account.logo} size="sm" /><div className="min-w-0"><p className="truncate font-semibold">{account.platformName}</p>{account.serviceName ? <p className="truncate text-sm text-muted-foreground">{account.serviceName}</p> : null}</div></div>
+              <div key={account.id} className="grid gap-3 border-b px-4 py-4 last:border-b-0 md:grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] md:items-center md:gap-4 md:px-5">
+                <div className="flex min-w-0 items-center gap-3"><div className="relative shrink-0"><SubscriptionLogo name={account.platformName} logo={account.logo} size="sm" /><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">{account.accountNumber}</span></div><div className="min-w-0"><p className="truncate font-semibold">{account.platformName}</p>{account.serviceName && account.serviceName.trim().toLocaleLowerCase() !== account.platformName.trim().toLocaleLowerCase() ? <p className="truncate text-sm text-muted-foreground">{account.serviceName}</p> : null}</div></div>
                 <button type="button" className="flex min-h-12 min-w-0 items-center gap-3 rounded-md border bg-secondary/30 px-3 text-left transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => void copy(account.account)}><UserRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 truncate text-sm">{account.account}</span></button>
                 <TotpCode account={account} onCopy={copy} />
                 <div className="flex justify-start gap-2 md:justify-end"><Button variant="outline" className="h-10 gap-2 px-3" title={t("sharing.copyLink")} disabled={!account.sharingEnabled} onClick={() => void copy(`${window.location.origin}${account.sharePath}`)}><Link2 className="h-4 w-4" />{text.shareLink}</Button><Button variant="outline" size="icon" className="h-10 w-10" title={t("common.edit")} onClick={() => openEdit(account)}><Pencil className="h-4 w-4" /></Button></div>
@@ -115,6 +112,44 @@ function TotpCode({ account, onCopy }: { account: OnlineTotpAccount; onCopy: (va
   return <button type="button" onClick={() => void onCopy(account.code)} className="flex min-h-12 items-center gap-3 rounded-md border bg-primary/5 px-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" /><span className="font-mono text-lg font-bold tabular-nums tracking-normal">{account.code.slice(0, 3)} {account.code.slice(3)}</span><span className="text-xs tabular-nums text-muted-foreground">{text.remaining(seconds)}</span></button>;
 }
 
+function PlatformNameCombobox({ id, value, accounts, placeholder, onChange }: { id: string; value: string; accounts: readonly OnlineTotpAccount[]; placeholder: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [anchorWidth, setAnchorWidth] = useState<number>();
+  const options = useMemo(() => Array.from(accounts.reduce((items, account) => {
+    const normalized = account.platformName.trim().toLocaleLowerCase();
+    if (normalized && !items.has(normalized)) items.set(normalized, account);
+    return items;
+  }, new Map<string, OnlineTotpAccount>()).values()), [accounts]);
+  const visibleOptions = options.filter((option) => !value.trim() || option.platformName.toLocaleLowerCase().includes(value.trim().toLocaleLowerCase()));
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+    const measure = () => setAnchorWidth(anchor.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, []);
+
+  return <Popover open={open && options.length > 0} onOpenChange={setOpen}>
+    <PopoverAnchor asChild>
+      <div ref={anchorRef} className="relative">
+        <Input id={id} name="online-totp-platform" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" required maxLength={80} value={value} onFocus={() => setOpen(true)} onChange={(event) => { onChange(event.target.value); setOpen(true); }} placeholder={placeholder} className="pr-10" />
+        <button type="button" aria-label={placeholder} aria-expanded={open} className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => setOpen((current) => !current)}><ChevronDown className="h-4 w-4" /></button>
+      </div>
+    </PopoverAnchor>
+    <PopoverContent align="start" sideOffset={6} mobilePresentation="anchored" style={anchorWidth ? { width: anchorWidth } : undefined} className="min-w-0 border-border bg-popover p-1">
+      <div className="max-h-56 overflow-y-auto">
+        {visibleOptions.length ? visibleOptions.map((option) => {
+          const selected = option.platformName.trim().toLocaleLowerCase() === value.trim().toLocaleLowerCase();
+          return <button key={option.id} type="button" className="flex min-h-11 w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none" onClick={() => { onChange(option.platformName); setOpen(false); }}><SubscriptionLogo name={option.platformName} logo={option.logo} size="xs" /><span className="min-w-0 flex-1 truncate">{option.platformName}</span>{selected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}</button>;
+        }) : <p className="px-3 py-4 text-center text-sm text-muted-foreground">{placeholder}</p>}
+      </div>
+    </PopoverContent>
+  </Popover>;
+}
+
 function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutation, onDelete, onReset }: { open: boolean; onOpenChange: (open: boolean) => void; account: OnlineTotpAccount | null; accounts: readonly OnlineTotpAccount[]; createMutation: ReturnType<typeof useCreateOnlineTotpAccount>; onDelete: (id: string) => Promise<void>; onReset: (id: string) => Promise<void> }) {
   const { t, locale } = useI18n();
   const text = onlineTotpCopy(locale);
@@ -125,10 +160,13 @@ function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutatio
   useEffect(() => {
     if (!open) return;
     setLogoUploadStatus("idle");
-    setForm(account ? { platformName: account.platformName, serviceName: account.serviceName, accountNumber: account.accountNumber, account: account.account, logo: account.logo ?? "", secret: "", enabled: account.enabled, sharingEnabled: account.sharingEnabled } : { ...EMPTY_FORM });
+    setForm(account ? { platformName: account.platformName, serviceName: account.serviceName, accountNumber: String(account.accountNumber), account: account.account, logo: account.logo ?? "", secret: "", enabled: account.enabled, sharingEnabled: account.sharingEnabled } : { ...EMPTY_FORM });
   }, [account, open]);
   const pending = createMutation.isPending || updateMutation.isPending || logoUploadStatus === "uploading";
-  const duplicateAccountNumber = onlineTotpAccountNumberExists(accounts, form.platformName, form.accountNumber, account?.id);
+  const parsedAccountNumber = Number(form.accountNumber);
+  const duplicateAccountNumber = Number.isInteger(parsedAccountNumber) && parsedAccountNumber > 0
+    ? onlineTotpAccountNumberExists(accounts, form.platformName, parsedAccountNumber, account?.id)
+    : false;
   const set = <K extends keyof AccountForm>(key: K, value: AccountForm[K]) => setForm((current) => ({ ...current, [key]: value }));
   const setPlatformName = (platformName: string) => {
     const existingPlatform = findOnlineTotpPlatform(accounts, platformName);
@@ -142,7 +180,8 @@ function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutatio
     event.preventDefault();
     if (duplicateAccountNumber) return;
     try {
-      if (account) await updateMutation.mutateAsync(form as OnlineTotpAccountUpdate); else await createMutation.mutateAsync(form);
+      const payload = { ...form, accountNumber: parsedAccountNumber };
+      if (account) await updateMutation.mutateAsync(payload as OnlineTotpAccountUpdate); else await createMutation.mutateAsync(payload as OnlineTotpAccountCreate);
       toast.success(text.saved); onOpenChange(false);
     } catch { toast.error(text.failed); }
   };
@@ -160,16 +199,16 @@ function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutatio
   return <>
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>{account ? text.editTitle : text.createTitle}</DialogTitle><DialogDescription className="sr-only">{t("nav.online2fa")}</DialogDescription></DialogHeader><form onSubmit={submit} className="space-y-5">
       <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[1fr_1fr_110px]">
-        <FormField id="otp-platform" label={t("subscription.field.platformName")}>{(field) => <><Input id={field.id} name="online-totp-platform" list="online-totp-platforms" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" required maxLength={80} value={form.platformName} onChange={(event) => setPlatformName(event.target.value)} placeholder={text.platformPlaceholder} /><datalist id="online-totp-platforms">{Array.from(new Set(accounts.map((item) => item.platformName))).map((name) => <option key={name} value={name} />)}</datalist></>}</FormField>
+        <FormField id="otp-platform" label={t("subscription.field.platformName")}>{(field) => <PlatformNameCombobox id={field.id} value={form.platformName} accounts={accounts} placeholder={text.platformPlaceholder} onChange={setPlatformName} />}</FormField>
         <FormField id="otp-service" label={t("subscription.field.name")}>{(field) => <Input id={field.id} name="online-totp-service" autoComplete="off" data-1p-ignore="true" data-lpignore="true" value={form.serviceName} onChange={(event) => set("serviceName", event.target.value)} />}</FormField>
-        <FormField id="otp-number" label={t("sharing.accountNumber")} error={duplicateAccountNumber ? text.alreadyAdded : undefined}>{(field) => <Input id={field.id} name="online-totp-number" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" type="number" min={1} max={10000} required aria-invalid={duplicateAccountNumber || undefined} value={form.accountNumber} onChange={(event) => set("accountNumber", Number(event.target.value))} />}</FormField>
+        <FormField id="otp-number" label={t("sharing.accountNumber")} error={duplicateAccountNumber ? text.alreadyAdded : undefined}>{(field) => <Input id={field.id} name="online-totp-number" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" type="number" inputMode="numeric" min={1} max={10000} required aria-invalid={duplicateAccountNumber || undefined} value={form.accountNumber} onChange={(event) => set("accountNumber", event.target.value)} />}</FormField>
       </FormFieldRow>
-      <Suspense fallback={<div className="h-28 animate-pulse rounded-md border bg-secondary/30" aria-label={t("common.loading")} />}><DeferredLogoPicker value={form.logo || undefined} onChange={(logo) => set("logo", logo ?? "")} onUploadStatusChange={setLogoUploadStatus} serviceName={form.platformName || form.serviceName} /></Suspense>
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-md border bg-secondary/30" aria-label={t("common.loading")} />}><DeferredLogoPicker compact value={form.logo || undefined} onChange={(logo) => set("logo", logo ?? "")} onUploadStatusChange={setLogoUploadStatus} serviceName={form.platformName || form.serviceName} /></Suspense>
       <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
         <FormField id="otp-account" label={text.account}>{(field) => <Input id={field.id} name="online-totp-account" autoComplete="username" required value={form.account} onChange={(event) => set("account", event.target.value)} />}</FormField>
         <FormField id="otp-secret" label={text.secret}>{(field) => <Input id={field.id} name="online-totp-secret" autoComplete="new-password" data-1p-ignore="true" data-lpignore="true" required={!account} value={form.secret} placeholder={account ? text.secretKeep : text.secretPlaceholder} onChange={(event) => set("secret", event.target.value)} />}</FormField>
       </FormFieldRow>
-      <div className="rounded-lg border bg-secondary/20 p-4"><label className="flex min-h-10 items-center justify-between gap-4"><span><span className="block font-medium">{text.shareEnabled}</span><span className="mt-1 block text-sm text-muted-foreground">{form.sharingEnabled ? text.shareActiveHint : text.sharePausedHint}</span></span><Switch checked={form.sharingEnabled} onCheckedChange={(value) => set("sharingEnabled", value)} /></label>{account ? <div className="mt-4 flex flex-wrap gap-2 border-t pt-4"><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("reset")}><RefreshCw className="h-4 w-4" />{text.resetLink}</Button></div> : null}</div>
+      <div className="rounded-lg border bg-secondary/20 p-4"><label className="flex min-h-11 items-center justify-between gap-4"><span><span className="block font-medium">{text.shareEnabled}</span><span className="mt-1 block text-sm text-muted-foreground">{form.sharingEnabled ? text.shareActiveHint : text.sharePausedHint}</span></span><Switch checked={form.sharingEnabled} onCheckedChange={(value) => set("sharingEnabled", value)} /></label>{account ? <div className="mt-4 grid gap-2 border-t pt-4 sm:grid-cols-2"><Button type="button" variant="outline" className="justify-start gap-2" disabled={!form.sharingEnabled} onClick={() => void copyTextToClipboard(`${window.location.origin}${account.sharePath}`).then((result) => toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed")))}><Copy className="h-4 w-4" />{text.shareLink}</Button><Button type="button" variant="outline" className="justify-start gap-2 text-destructive" onClick={() => setConfirm("reset")}><RefreshCw className="h-4 w-4" />{text.resetLink}</Button></div> : null}</div>
       {account ? <div className="flex flex-wrap border-t pt-4"><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={() => setConfirm("delete")}><Trash2 className="h-4 w-4" />{t("common.delete")}</Button></div> : null}
       <DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button><Button type="submit" disabled={pending || duplicateAccountNumber}>{pending ? t("common.saving") : t("common.save")}</Button></DialogFooter>
     </form></DialogContent></Dialog>

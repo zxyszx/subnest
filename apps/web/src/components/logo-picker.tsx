@@ -56,6 +56,8 @@ interface LogoPickerProps {
   serviceName?: string | undefined;
   /** 订阅网站 URL；Logo 搜索会优先用它生成网站 favicon 备用候选。 */
   website?: string | undefined;
+  /** 紧凑工具栏布局，用于信息密度较高的 2FA 表单。 */
+  compact?: boolean | undefined;
 }
 
 /** LogoPicker 组件。 */
@@ -65,6 +67,7 @@ export function LogoPicker({
   onUploadStatusChange,
   serviceName = '',
   website,
+  compact = false,
 }: LogoPickerProps) {
   const { t } = useI18n();
   const uploadedLogos = useUploadedLogoAssets();
@@ -125,13 +128,14 @@ export function LogoPicker({
     <>
     <div className="grid gap-2">
       <Label>{t("media.logo")}</Label>
-      <div className="flex flex-wrap items-center gap-3" data-testid="logo-picker-control-row">
-        <div className="group relative h-16 w-16 shrink-0 overflow-visible">
+      <div className={cn("flex flex-wrap items-center gap-3", compact && "rounded-lg border bg-secondary/20 p-3")} data-testid="logo-picker-control-row">
+        <div className={cn("group relative shrink-0 overflow-visible", compact ? "h-14 w-14" : "h-16 w-16")}>
           <button
             type="button"
             aria-label={displayedLogo ? t("media.changeLogo") : t("media.uploadLogoImage")}
             className={cn(
-              "relative flex h-16 w-16 items-center justify-center rounded-xl border-2 border-border transition-colors",
+              "relative flex items-center justify-center rounded-lg border-2 border-border transition-colors",
+              compact ? "h-14 w-14" : "h-16 w-16 rounded-xl",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               displayedLogo ? "media-thumbnail-canvas overflow-hidden hover:border-primary" : "border-dashed bg-secondary/50 hover:bg-secondary/80",
             )}
@@ -177,12 +181,12 @@ export function LogoPicker({
           />
         </div>
 
-        <div className="grid min-w-0 w-fit max-w-full gap-2">
+        <div className={cn("min-w-0 max-w-full gap-2", compact ? "flex flex-1 flex-wrap items-center" : "grid w-fit")}>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="w-full gap-2 text-primary border-primary/30 hover:border-primary hover:bg-primary/10"
+            className={cn("gap-2 text-primary border-primary/30 hover:border-primary hover:bg-primary/10", compact ? "h-9 w-fit px-3" : "w-full")}
             onClick={() => fileInputRef.current?.click()}
             onFocus={preloadImageCropDialog}
             onPointerEnter={preloadImageCropDialog}
@@ -196,14 +200,14 @@ export function LogoPicker({
             {t("media.uploadLogo")}
           </Button>
 
-          <div className="flex w-max max-w-full flex-wrap items-center justify-start gap-2" data-testid="logo-picker-secondary-actions">
+          <div className={cn("flex max-w-full flex-wrap items-center justify-start gap-2", compact ? "w-auto" : "w-max")} data-testid="logo-picker-secondary-actions">
             <Popover open={uploadedLogosOpen} onOpenChange={handleUploadedLogosOpenChange}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 w-fit max-w-full shrink-0 gap-1.5 border-border px-3 text-xs"
+                  className={cn("w-fit max-w-full shrink-0 gap-1.5 border-border px-3", compact ? "h-9 text-sm" : "h-8 text-xs")}
                 >
                   <Images className="w-3.5 h-3.5" />
                   <span className="min-w-0 truncate">{t("media.uploaded")}</span>
@@ -332,7 +336,7 @@ export function LogoPicker({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 w-fit max-w-full shrink-0 gap-1.5 border-border px-3 text-xs"
+                  className={cn("w-fit max-w-full shrink-0 gap-1.5 border-border px-3", compact ? "h-9 text-sm" : "h-8 text-xs")}
                 >
                   <Search className="w-3.5 h-3.5" />
                   <span className="min-w-0 truncate">{t("media.search")}</span>
@@ -375,7 +379,7 @@ export function LogoPicker({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 w-fit max-w-full shrink-0 gap-1.5 border-border px-3 text-xs"
+                  className={cn("w-fit max-w-full shrink-0 gap-1.5 border-border px-3", compact ? "h-9 text-sm" : "h-8 text-xs")}
                 >
                   <Link className="w-3.5 h-3.5" />
                   <span className="min-w-0 truncate">{t("media.link")}</span>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CUSTOM_CONFIG, type ConfigItem, type CustomConfig } from "@/types/config";
 import { useCustomConfigController } from "./use-custom-config-state";
@@ -69,5 +69,16 @@ describe("useCustomConfigController", () => {
     const cachedConfig = queryClient.getQueryData<CustomConfig>(CUSTOM_CONFIG_QUERY_KEY);
     if (!cachedConfig) throw new Error("saveConfig did not update custom config query cache");
     expect(firstCurrencyValues(cachedConfig)).toEqual(["PHP", "AED", "CNY", "USD"]);
+  });
+
+  it("publishes the remote config as soon as the initial query settles", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const remoteConfig = customCurrencyConfig(["AED", "PHP", "USD", "CNY"]);
+    mocks.getCustomConfig.mockResolvedValue(remoteConfig);
+
+    const { result } = renderHook(() => useCustomConfigController(), { wrapper: createWrapper(queryClient) });
+
+    await waitFor(() => expect(result.current.pending).toBe(false));
+    expect(firstCurrencyValues(result.current.config)).toEqual(["AED", "PHP", "USD", "CNY"]);
   });
 });
