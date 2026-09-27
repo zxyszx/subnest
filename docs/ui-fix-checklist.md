@@ -76,4 +76,4 @@
 | ✅ | 全部检查通过 | 前端、Worker、Docker、迁移、部署检查与生产构建均通过 |
 | ✅ | 生成发布说明 | 已生成 `docs/release-notes/v0.3.51-zh.md` |
 | ✅ | 执行 release preflight | Node 24.21 环境下通过，Docker 发布包已生成 |
-| ❌ | 提交、推送、创建 GitHub Release | 全部检查通过后自动执行 |
+| ✅ | 提交、推送、创建 GitHub Release | `main` 与 `v0.3.51` 已推送；Release Publish 全流程通过，发布附件已核对 |
