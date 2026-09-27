@@ -61,6 +61,8 @@ export const messages = [
   msg({ id: "sharing.contact", message: "联系方式" }),
   msg({ id: "sharing.copyContact", message: "复制联系方式" }),
   msg({ id: "sharing.monthlyPrice", message: "每月收费" }),
+  msg({ id: "sharing.periodCharge", message: "本期收费" }),
+  msg({ id: "sharing.monthlyEquivalent", message: "折合每月" }),
   msg({ id: "sharing.billingMonths", message: "收费月数" }),
   msg({ id: "sharing.billingCycle", message: "收费周期" }),
   msg({ id: "sharing.monthly", message: "月付" }),
