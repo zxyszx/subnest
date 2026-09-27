@@ -330,7 +330,7 @@ export function SubscriptionFamilySharingFields({
                     aria-expanded={folderPickerOpen}
                   >
                     {foldersLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
-                    {managedLink ? managedCopy.changeFolders : managedCopy.chooseFolders}
+                    {managedLink ? t("subscription.familySharing.changeFolders") : managedCopy.chooseFolders}
                   </Button>
                   {shareLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label={t("subscription.familySharing.updatingManagedShare")} /> : null}
                   <Switch checked={shareIntent ?? Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} />
@@ -371,7 +371,7 @@ export function SubscriptionFamilySharingFields({
                     <>
                       <p className="text-xs leading-5 text-muted-foreground">{managedCopy.activeHelp}</p>
                       <Button type="button" size="sm" className="justify-self-end" disabled={shareLoading || draftFolderIds.length === 0 || draftFolderIds.join(",") === folderIds.join(",")} onClick={() => setConfirmation("folders")}>
-                        {managedCopy.applyFolders}
+                        {t("subscription.familySharing.applyFolders")}
                       </Button>
                     </>
                   ) : (
@@ -462,7 +462,7 @@ export function SubscriptionFamilySharingFields({
             </FormField>
             {managedMailbox && managedLink ? (
               <div className="grid content-end gap-1.5">
-                <span className="text-sm font-medium text-foreground">链接操作</span>
+                <span className="text-sm font-medium text-foreground">{t("subscription.familySharing.linkActions")}</span>
                 <Button type="button" variant="ghost" className="min-h-11 justify-start px-0 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
                   {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   {managedCopy.resetLink}
@@ -477,14 +477,14 @@ export function SubscriptionFamilySharingFields({
     <AlertDialog open={confirmation !== null} onOpenChange={(open) => !open && setConfirmation(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{confirmation === "folders" ? "确认更换共享文件夹？" : "确认重置收件链接？"}</AlertDialogTitle>
+          <AlertDialogTitle>{confirmation === "folders" ? t("subscription.familySharing.confirmChangeFoldersTitle") : t("subscription.familySharing.confirmResetLinkTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {confirmation === "folders" ? "原共享范围将立即失效，邮箱保持不变，系统会按新的文件夹范围生成链接。" : "旧链接将立即失效，邮箱和已绑定文件夹不会改变。"}
+            {confirmation === "folders" ? t("subscription.familySharing.confirmChangeFoldersDescription") : t("subscription.familySharing.confirmResetLinkDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction onClick={() => void confirmManagedAction()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">确认</AlertDialogAction>
+          <AlertDialogCancel>{t("subscription.familySharing.cancelAction")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void confirmManagedAction()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("subscription.familySharing.confirmAction")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

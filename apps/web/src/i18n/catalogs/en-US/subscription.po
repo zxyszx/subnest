@@ -3682,3 +3682,39 @@ msgstr "Default reminder: {days} days before"
 #: src/i18n/descriptors/subscription.ts:311
 msgid "subscriptions.sort.default"
 msgstr "Default order"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.linkActions"
+msgstr "Link actions"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.changeFolders"
+msgstr "Change folders"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.applyFolders"
+msgstr "Save folder scope"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmChangeFoldersTitle"
+msgstr "Confirm changing shared folders?"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmResetLinkTitle"
+msgstr "Confirm resetting the inbox link?"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmChangeFoldersDescription"
+msgstr "The old shared scope will stop working immediately. The mailbox stays the same and a new link will be generated for the selected folders."
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmResetLinkDescription"
+msgstr "The old link will stop working immediately. The mailbox and selected folders will not change."
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.cancelAction"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmAction"
+msgstr "Confirm"

@@ -3682,3 +3682,39 @@ msgstr "默认提醒：提前 {days} 天"
 #: src/i18n/descriptors/subscription.ts:311
 msgid "subscriptions.sort.default"
 msgstr "默认顺序"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.linkActions"
+msgstr "链接操作"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.changeFolders"
+msgstr "更换文件夹"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.applyFolders"
+msgstr "保存文件夹范围"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmChangeFoldersTitle"
+msgstr "确认更换共享文件夹？"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmResetLinkTitle"
+msgstr "确认重置收件链接？"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmChangeFoldersDescription"
+msgstr "原共享范围将立即失效，邮箱保持不变，系统会按新的文件夹范围生成链接。"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmResetLinkDescription"
+msgstr "旧链接将立即失效，邮箱和已绑定文件夹不会改变。"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.cancelAction"
+msgstr "取消"
+
+#. js-lingui-explicit-id
+msgid "subscription.familySharing.confirmAction"
+msgstr "确认"
