@@ -18,4 +18,4 @@
 | ✅ | 类型检查、ESLint 与生产构建 | `typecheck:all`、`lint`、`build:client` 均通过，CSP 与包体预算检查通过 |
 | ✅ | 桌面与移动端浏览器回归 | 真实初始化登录链路与主要页面通过；Pixel 5 视口无横向溢出，浏览器及服务端诊断无警告/错误 |
 | ✅ | Release preflight | v0.3.53 版本、双语目录、部署配置与 Docker 发布包检查通过；本机无 Docker Compose v2，脚本按既定逻辑跳过 Compose 解析 |
-| ❌ | 提交、推送并发布 v0.3.53 | 待完成 |
+| ✅ | 提交、推送并发布 v0.3.53 | `main` 与标签已推送；Release、Docker 镜像、Linux 双架构附件及 Cloudflare 部署全部成功 |
