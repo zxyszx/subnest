@@ -2,7 +2,7 @@ import { effectiveReminderDays } from "@renewlet/shared/runtime";
 import { daysBetweenDateOnly, type DateOnly } from "@/lib/time/date-only";
 import { isOneTimeBuyout } from "@/lib/subscription-billing";
 import type { SubscriptionCollectionItem } from "@/types/subscription";
-import { isEffectivelyActiveSubscription } from "./subscription-status";
+import { getEffectiveSubscriptionStatus, isEffectivelyActiveSubscription } from "./subscription-status";
 
 export type UpcomingReminderKind = "renewal" | "expiry";
 
@@ -17,6 +17,8 @@ interface BuildUpcomingReminderItemsInput {
   subscriptions: readonly SubscriptionCollectionItem[];
   notificationReminderDays: number;
   today: DateOnly | string;
+  /** 是否把已经过期但尚未更新日期的订阅也列入首页提醒。 */
+  includeExpired?: boolean;
 }
 
 /** 构建首页“即将续费/到期”提醒窗口条目。 */
@@ -24,10 +26,17 @@ export function buildUpcomingReminderItems({
   subscriptions,
   notificationReminderDays,
   today,
+  includeExpired = false,
 }: BuildUpcomingReminderItemsInput): UpcomingReminderItem[] {
   const items: UpcomingReminderItem[] = [];
 
   for (const subscription of subscriptions) {
+    const effectiveStatus = getEffectiveSubscriptionStatus(subscription, today);
+    if (includeExpired && effectiveStatus === "expired" && !isOneTimeBuyout(subscription)) {
+      const daysUntil = daysBetweenDateOnly(today, subscription.nextBillingDate);
+      items.push({ subscription, kind: "expiry", daysUntil, reminderDays: 0 });
+      continue;
+    }
     if (!isEffectivelyActiveSubscription(subscription, today)) continue;
     if (isOneTimeBuyout(subscription)) continue;
 

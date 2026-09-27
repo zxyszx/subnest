@@ -59,7 +59,7 @@ const Calendar = () => {
   if (!hasCalendarData && subscriptionsQuery.isPending) {
     return (
       <div className="app-page bg-background">
-        <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+        <Header />
         <main className="app-main mx-auto max-w-7xl">
           <CalendarPageSkeleton withPageShell={false} />
         </main>
@@ -70,7 +70,7 @@ const Calendar = () => {
   if (!hasCalendarData && subscriptionsQuery.error) {
     return (
       <div className="app-page bg-background">
-        <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+        <Header />
         <main className="app-main mx-auto max-w-7xl">
           <QueryErrorState error={subscriptionsQuery.error} onRetry={subscriptionsQuery.refetch} />
         </main>
@@ -80,7 +80,7 @@ const Calendar = () => {
 
   return (
     <div className="app-page bg-background">
-      <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+      <Header />
 
       <main
         className="app-main mx-auto max-w-7xl"

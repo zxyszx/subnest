@@ -42,7 +42,7 @@ export function buildDashboardStats({
     );
   }, 0);
   const totalDaily = toDailyAmountFromMonthly(totalMonthly);
-  const upcomingCount = buildUpcomingReminderItems({ subscriptions, notificationReminderDays, today }).length;
+  const upcomingCount = buildUpcomingReminderItems({ subscriptions, notificationReminderDays, today, includeExpired: true }).length;
   // 试用数量也按有效状态统计：过期 trial 应归入 expired，而不是继续提醒用户关注转付费。
   const trialCount = subscriptions.filter((subscription) => getEffectiveSubscriptionStatus(subscription, today) === "trial").length;
 

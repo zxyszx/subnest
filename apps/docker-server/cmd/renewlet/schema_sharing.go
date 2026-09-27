@@ -123,7 +123,7 @@ func ensureSharingSeatsCollection(app core.App, users, accounts *core.Collection
 			&core.NumberField{Name: "seatNumber", Required: true, OnlyInt: true, Min: &minOne},
 			&core.TextField{Name: "memberName", Max: 120},
 			&core.TextField{Name: "contact", Max: 320},
-			&core.SelectField{Name: "contactType", Values: []string{"wechat", "telegram", "email", "phone", "other"}},
+			&core.SelectField{Name: "contactType", Values: []string{"wechat", "telegram", "ns", "xianyu", "email", "phone", "other"}},
 			sharingMoneyField("monthlyPrice", false),
 			&core.TextField{Name: "currency", Max: 8, Pattern: `^$|^[A-Z]{3}$`},
 			&core.NumberField{Name: "billingMonths", OnlyInt: true, Min: &minOne, Max: &maxBillingMonths},

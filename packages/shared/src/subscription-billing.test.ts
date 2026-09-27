@@ -17,6 +17,8 @@ describe("subscription-billing", () => {
     expect(toMonthlyAmount(90, "quarterly")).toBe(30);
     expect(toMonthlyAmount(180, "semi-annual")).toBe(30);
     expect(toMonthlyAmount(360, "annual")).toBe(30);
+    expect(toMonthlyAmount(4.98, "quarterly")).toBe(1.66);
+    expect(toMonthlyAmount(9.96, "semi-annual")).toBe(1.66);
   });
 
   it("converts custom cycle units to monthly amounts", () => {
@@ -135,6 +137,8 @@ describe("subscription-billing", () => {
 
   it("uses date-only renewal semantics for next billing and one-time term end dates", () => {
     expect(calculateNextBillingDate("2026-01-31", "monthly")).toBe("2026-02-28");
+    expect(calculateNextBillingDate("2026-01-31", "quarterly")).toBe("2026-04-30");
+    expect(calculateNextBillingDate("2026-01-31", "semi-annual")).toBe("2026-07-31");
     expect(calculateNextBillingDate("2024-02-29", "annual")).toBe("2025-02-28");
     expect(calculateNextBillingDate("2025-03-20", "monthly", undefined, "2026-05-17")).toBe("2026-05-20");
     expect(calculateOneTimeTermEndDate("2026-01-31", 1, "month")).toBe("2026-02-28");

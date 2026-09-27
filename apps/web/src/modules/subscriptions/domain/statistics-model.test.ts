@@ -513,7 +513,7 @@ describe("subscription statistics models", () => {
     ]);
   });
 
-  it("dashboard excludes effective expired subscriptions from active counts and upcoming renewals", () => {
+  it("dashboard excludes effective expired subscriptions from active counts but surfaces them in reminders", () => {
     const stats = buildDashboardStats({
       subscriptions: [
         subscription({ id: "active", status: "active", nextBillingDate: assertDateOnly("2026-01-05"), reminderDays: 4 }),
@@ -525,7 +525,7 @@ describe("subscription statistics models", () => {
       today: assertDateOnly("2026-01-01"),
     });
 
-    expect(stats.upcomingCount).toBe(1);
+    expect(stats.upcomingCount).toBe(3);
     expect(stats.activeSubscriptions.map((item) => item.id)).toEqual(["active"]);
     expect(stats.totalMonthly).toBe(10);
   });

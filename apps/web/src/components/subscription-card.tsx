@@ -390,6 +390,7 @@ function SubscriptionCardComponent({
         viewMode === "list" ? "h-full p-5" : "p-4 sm:p-5",
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
+        isExpired && "border-destructive/45 bg-linear-to-br from-destructive/12 via-card to-card hover:from-destructive/18",
         renewalTone === "warning" && "border-warning/50 animate-renewal-warning",
         renewalTone === "danger" && "border-destructive/50 animate-renewal-danger",
         isTrialEndingSoon && "animate-pulse-glow"

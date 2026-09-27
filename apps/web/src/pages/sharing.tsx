@@ -21,6 +21,7 @@ import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
 import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
@@ -47,6 +48,7 @@ function currencyMetric(formatted: string, currency: string) {
 
 export default function Sharing() {
   const { t, formatCurrency, formatDateOnly } = useI18n();
+  const { pending: customConfigPending } = useCustomConfigState();
   const accountsQuery = useSharingAccounts();
   const settingsQuery = useSettingsEnvelope();
   const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
@@ -336,7 +338,7 @@ export default function Sharing() {
           onOpenChange={(open) => !open && setEditingSubscriptionId(null)}
           onSave={saveSubscription}
           platformSuggestions={platformOptions}
-          loading={editingSubscriptionQuery.isPending}
+          loading={customConfigPending || editingSubscriptionQuery.isPending || editingSubscriptionQuery.isFetching}
         />
         <Dialog open={renewalsOpen} onOpenChange={setRenewalsOpen}>
           <DialogContent className="max-w-2xl bg-card" closeLabel={t("common.close")}>

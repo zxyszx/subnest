@@ -17,6 +17,7 @@ interface StatCardProps {
   density?: "default" | "compact" | "dashboard";
   className?: string;
   valueClassName?: string;
+  onClick?: () => void;
   "data-testid"?: string;
 }
 
@@ -29,6 +30,7 @@ export function StatCard({
   density = "default",
   className,
   valueClassName,
+  onClick,
   "data-testid": dataTestId,
 }: StatCardProps) {
   const compact = density === "compact";
@@ -37,10 +39,15 @@ export function StatCard({
   return (
     <div
       data-testid={dataTestId}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onClick(); } } : undefined}
       className={cn(
         "relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
         dashboard ? "p-4" : compact ? "p-4 lg:p-6" : "p-6",
         className,
+        onClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       )}
     >
       <div className={cn("flex items-start justify-between", (compact || dashboard) && "gap-3")}>

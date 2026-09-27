@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { SHARING_BILLING_MONTH_PRESETS, sharingExpiryDate, sharingRenewalDates } from "@/lib/sharing-billing";
+import { rescaleSharingBillingAmount, SHARING_BILLING_MONTH_PRESETS, sharingExpiryDate, sharingRenewalDates } from "@/lib/sharing-billing";
 
 describe("sharingExpiryDate", () => {
   it("includes one- and two-month renewal presets", () => {
     expect(SHARING_BILLING_MONTH_PRESETS).toEqual([1, 2, 3, 6, 12]);
+  });
+
+  it("treats the initial amount as one month and rescales it across billing periods", () => {
+    expect(rescaleSharingBillingAmount("15", 1, 3)).toBe("45");
+    expect(rescaleSharingBillingAmount("45", 3, 12)).toBe("180");
+    expect(rescaleSharingBillingAmount("180", 12, 6)).toBe("90");
+    expect(rescaleSharingBillingAmount("", 1, 3)).toBe("");
   });
 
   it("renews from the current expiry date instead of today", () => {

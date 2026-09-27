@@ -35,7 +35,7 @@ export function useCustomConfigController() {
   const queryClient = useQueryClient();
   const saveVersionRef = useRef(0);
 
-  const { data: remoteConfig } = useQuery<CustomConfig | null>({
+  const { data: remoteConfig, isPending } = useQuery<CustomConfig | null>({
     queryKey: CUSTOM_CONFIG_QUERY_KEY,
     queryFn: ({ signal }) => customConfigService.get(signal),
     retry: false,
@@ -87,6 +87,7 @@ export function useCustomConfigController() {
 
   return {
     config,
+    pending: isPending,
     saveConfig,
   };
 }

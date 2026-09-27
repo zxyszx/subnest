@@ -20,12 +20,16 @@ interface UpcomingRenewalsProps {
   today: DateOnly | string;
   /** 设置页默认提前提醒天数，用于解析继承型订阅。 */
   notificationReminderDays: number;
+  /** 列表上限；弹窗可传入较大的值展示完整提醒集合。 */
+  limit?: number;
+  /** 首页需要同时追踪已经过期、等待处理的订阅。 */
+  includeExpired?: boolean;
 }
 
 /** 即将续费列表组件。 */
-export function UpcomingRenewals({ subscriptions, today, notificationReminderDays }: UpcomingRenewalsProps) {
+export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false }: UpcomingRenewalsProps) {
   const { t, formatCurrency, locale } = useI18n();
-  const upcoming = buildUpcomingReminderItems({ subscriptions, today, notificationReminderDays }).slice(0, 5);
+  const upcoming = buildUpcomingReminderItems({ subscriptions, today, notificationReminderDays, includeExpired }).slice(0, limit);
 
   if (upcoming.length === 0) {
     return (
@@ -40,16 +44,20 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
           key={item.subscription.id}
           className={cn(
             "col-span-3 grid min-w-0 grid-cols-subgrid items-center rounded-lg border border-border bg-secondary/50 p-4 transition-colors hover:bg-secondary",
-            item.daysUntil <= 3 && "border-warning/30 bg-warning/5"
+            item.daysUntil < 0
+              ? "border-destructive/30 bg-linear-to-br from-destructive/10 via-card to-card"
+              : item.daysUntil <= 3 && "border-warning/30 bg-warning/5"
           )}
         >
           <div className={cn(
             "flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold",
-            item.daysUntil <= 3
+            item.daysUntil < 0
+              ? "bg-destructive/10 text-destructive"
+              : item.daysUntil <= 3
               ? "bg-warning/20 text-warning"
               : "bg-muted text-muted-foreground"
           )}>
-            {item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
+            {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
           </div>
           <div className="min-w-0">
             <p className="min-w-0 wrap-break-word font-medium text-foreground">{item.subscription.name}</p>

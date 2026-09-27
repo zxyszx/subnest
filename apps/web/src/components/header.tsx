@@ -41,6 +41,8 @@ interface HeaderProps {
   platformSuggestions?: readonly { name: string; logo?: string | null | undefined }[] | undefined;
   /** 订阅页专属快捷动作，渲染在“新增订阅”旁边。 */
   subscriptionActions?: ReactNode;
+  /** 当前页面的主操作，渲染在主题与退出等全局工具之前。 */
+  pageActions?: ReactNode;
 }
 
 type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "calendar" | "statistics" | "settings";
@@ -74,7 +76,7 @@ function renderNavIcon(icon: NavIconKey, className: string) {
 }
 
 /** Header 组件：全局导航 + 主题切换 + 新增订阅入口。 */
-export function Header({ onAddSubscription, availableTags, platformSuggestions, subscriptionActions }: HeaderProps) {
+export function Header({ onAddSubscription, availableTags, platformSuggestions, subscriptionActions, pageActions }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
@@ -146,6 +148,15 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
         </div>
 
         <div className={headerLayout.actions} data-testid="app-header-actions">
+          {onAddSubscription ? (
+            <Suspense fallback={null}>
+              <AddSubscriptionDialog onAdd={onAddSubscription} availableTags={availableTags} platformSuggestions={platformSuggestions} />
+            </Suspense>
+          ) : null}
+          {onAddSubscription ? subscriptionActions : null}
+
+          {pageActions}
+
           <Button
             variant="ghost"
             size="icon"
@@ -156,15 +167,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">{t("header.toggleTheme")}</span>
           </Button>
-          
-          {onAddSubscription && (
-            <>
-              <Suspense fallback={null}>
-                <AddSubscriptionDialog onAdd={onAddSubscription} availableTags={availableTags} platformSuggestions={platformSuggestions} />
-              </Suspense>
-              {subscriptionActions}
-            </>
-          )}
 
           <Button
             variant="ghost"

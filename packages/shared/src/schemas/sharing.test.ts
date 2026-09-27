@@ -21,6 +21,11 @@ describe("sharing seat billing contract", () => {
     expect(sharingSeatUpdateSchema.parse({ ...legacyInput, billingAmount: "020.000000" }).billingAmount).toBe("20");
   });
 
+  it("accepts forum and marketplace contact types", () => {
+    expect(sharingSeatUpdateSchema.parse({ ...legacyInput, contactType: "ns" }).contactType).toBe("ns");
+    expect(sharingSeatUpdateSchema.parse({ ...legacyInput, contactType: "xianyu" }).contactType).toBe("xianyu");
+  });
+
   it("keeps older clients compatible", () => {
     expect(sharingSeatUpdateSchema.parse(legacyInput).billingAmount).toBeUndefined();
   });

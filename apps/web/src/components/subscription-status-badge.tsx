@@ -6,7 +6,7 @@ import { STATUS_LABELS, type SubscriptionStatus } from "@/types/subscription";
 const subscriptionStatusBadgeClassNames = {
   trial: "border-warning/20 bg-warning/10 text-warning",
   active: "border-success/20 bg-success/10 text-success",
-  expired: "border-muted bg-muted text-muted-foreground",
+  expired: "border-destructive/25 bg-destructive/10 text-destructive",
   paused: "border-muted bg-muted text-muted-foreground",
   cancelled: "border-muted bg-muted text-muted-foreground",
 } satisfies Record<SubscriptionStatus, string>;

@@ -5,7 +5,7 @@ import { moneyStringSchema } from "../money";
 
 export const SHARING_ACCOUNT_STATUSES = ["active", "paused", "archived"] as const;
 export const SHARING_SEAT_STATUSES = ["vacant", "active", "paused", "archived"] as const;
-export const SHARING_CONTACT_TYPES = ["wechat", "telegram", "email", "phone", "other"] as const;
+export const SHARING_CONTACT_TYPES = ["wechat", "telegram", "ns", "xianyu", "email", "phone", "other"] as const;
 export const SHARING_PAYMENT_STATUSES = ["pending", "paid"] as const;
 
 export const sharingSubscriptionSummarySchema = z.object({

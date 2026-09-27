@@ -93,6 +93,8 @@ export const messages = [
   msg({ id: "sharing.loadDetailFailed", message: "无法加载账号详情" }),
   msg({ id: "sharing.wechat", message: "微信" }),
   msg({ id: "sharing.telegram", message: "Telegram" }),
+  msg({ id: "sharing.ns", message: "NS 论坛" }),
+  msg({ id: "sharing.xianyu", message: "闲鱼" }),
   msg({ id: "sharing.email", message: "邮箱" }),
   msg({ id: "sharing.phone", message: "电话" }),
   msg({ id: "sharing.other", message: "其他" }),

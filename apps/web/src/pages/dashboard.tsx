@@ -12,7 +12,7 @@
  * - 首页统计由 `useDashboardStats` 生成，CRUD 弹窗状态由 `useSubscriptionCrud` 管理。
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from '@/components/router-link';
 import type { Subscription, SubscriptionCollectionItem } from "@/types/subscription";
 import { Header } from "@/components/header";
@@ -29,6 +29,7 @@ import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
 import { CreditCard, TrendingUp, Clock, Plus, Sparkles, CircleDollarSign, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
 import { useSubscriptionAnalytics, useSubscriptionFacets } from "@/hooks/use-subscriptions";
 import { useSettings } from "@/hooks/use-settings";
@@ -60,6 +61,7 @@ export default function Index() {
   const settings = settingsQuery.data;
   const { config } = useCustomConfigState();
   const { t, locale, formatCurrency } = useI18n();
+  const [upcomingDialogOpen, setUpcomingDialogOpen] = useState(false);
   const exchangeRateProvider = settings?.exchangeRateProvider;
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useReportExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
@@ -172,6 +174,7 @@ export default function Index() {
             icon={<Clock className="h-6 w-6" />}
             variant={upcomingCount > 0 ? "warning" : "default"}
             density="dashboard"
+            onClick={() => setUpcomingDialogOpen(true)}
             className="animate-fade-in [animation-delay:200ms]"
           />
           <StatCard
@@ -206,7 +209,7 @@ export default function Index() {
         </div>
 
         {/* 主内容网格 */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid items-start gap-8 lg:grid-cols-3">
           {/* 订阅列表 */}
           <div className="lg:col-span-2">
             <div className="mb-5 flex items-center justify-between">
@@ -288,6 +291,7 @@ export default function Index() {
                 subscriptions={subscriptions}
                 today={today}
                 notificationReminderDays={inheritedReminderDays}
+                includeExpired
               />
             </div>
           </div>
@@ -322,6 +326,21 @@ export default function Index() {
         loadingPreview={calendarDialog.collectionItem}
         loading={calendarDialog.pending}
       />
+      <Dialog open={upcomingDialogOpen} onOpenChange={setUpcomingDialogOpen}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("dashboard.upcomingRenewals")}</DialogTitle>
+            <DialogDescription>{t("dashboard.next7Days")}</DialogDescription>
+          </DialogHeader>
+          <UpcomingRenewals
+            subscriptions={subscriptions}
+            today={today}
+            notificationReminderDays={inheritedReminderDays}
+            limit={50}
+            includeExpired
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

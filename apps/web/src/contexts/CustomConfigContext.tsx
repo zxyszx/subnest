@@ -4,6 +4,7 @@ import type { CustomConfig } from "@/types/config";
 
 interface CustomConfigStateValue {
   config: CustomConfig;
+  pending: boolean;
 }
 
 interface CustomConfigActionsValue {
@@ -15,8 +16,8 @@ const CustomConfigActionsContext = createContext<CustomConfigActionsValue | null
 
 /** 配置数据与写动作分开发布，保存状态变化不会让所有只读卡片重新渲染。 */
 export function CustomConfigProvider({ children }: { children: ReactNode }) {
-  const { config, saveConfig } = useCustomConfigController();
-  const stateValue = useMemo(() => ({ config }), [config]);
+  const { config, pending, saveConfig } = useCustomConfigController();
+  const stateValue = useMemo(() => ({ config, pending }), [config, pending]);
   const actionsValue = useMemo(() => ({ saveConfig }), [saveConfig]);
 
   return (

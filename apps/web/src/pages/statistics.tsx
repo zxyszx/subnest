@@ -176,7 +176,7 @@ const Statistics = () => {
   if (subscriptionsQuery.isPending || settingsQuery.isPending) {
     return (
       <div className="app-page bg-background">
-        <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+        <Header />
         <main className="app-main mx-auto max-w-7xl">
           <StatisticsPageSkeleton withPageShell={false} />
         </main>
@@ -187,7 +187,7 @@ const Statistics = () => {
   if (subscriptionsQuery.error) {
     return (
       <div className="app-page bg-background">
-        <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+        <Header />
         <main className="app-main mx-auto max-w-7xl">
           <QueryErrorState error={subscriptionsQuery.error} onRetry={subscriptionsQuery.refetch} />
         </main>
@@ -197,7 +197,7 @@ const Statistics = () => {
 
   return (
     <div className="app-page bg-background">
-      <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
+      <Header />
 
       <main className="app-main mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
