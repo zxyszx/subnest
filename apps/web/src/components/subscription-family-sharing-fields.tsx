@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, EyeOff, FolderOpen, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FieldError } from "@/components/ui/field-error";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,9 @@ const managedCopy = {
   selectRequired: "请至少选择一个文件夹，再开启分享。",
   activeHelp: "需要更改范围时，请先关闭分享，再重新选择文件夹。",
   openShare: "开启分享",
+  changeFolders: "更换文件夹",
+  applyFolders: "保存文件夹范围",
+  resetLink: "重置链接",
 };
 
 const systemFolderNames: Record<string, string> = {
@@ -73,6 +77,8 @@ export function SubscriptionFamilySharingFields({
   const [folders, setFolders] = useState<NewSzxcnFolder[]>([]);
   const [folderIds, setFolderIds] = useState<string[]>([]);
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
+  const [draftFolderIds, setDraftFolderIds] = useState<string[]>([]);
+  const [confirmation, setConfirmation] = useState<"reset" | "folders" | null>(null);
   const [foldersLoading, setFoldersLoading] = useState(false);
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => {
     onChange({ ...value, [key]: next });
@@ -122,7 +128,10 @@ export function SubscriptionFamilySharingFields({
     return () => { cancelled = true; };
   }, [managedMailbox]);
   useEffect(() => {
-    if (managedLink) setFolderIds(managedLink.folderIds);
+    if (managedLink) {
+      setFolderIds(managedLink.folderIds);
+      setDraftFolderIds(managedLink.folderIds);
+    }
   }, [managedLink]);
   useEffect(() => {
     onShareSetupPendingChange?.(Boolean(managedMailbox && shareIntent && !managedLink));
@@ -184,8 +193,8 @@ export function SubscriptionFamilySharingFields({
       setShareLoading(false);
     }
   };
-  const resetManagedShare = async () => {
-    if (!managedMailbox || !managedLink || folderIds.length === 0) return;
+  const resetManagedShare = async (nextFolderIds = folderIds) => {
+    if (!managedMailbox || !managedLink || nextFolderIds.length === 0) return;
     setShareLoading(true);
     try {
       await newszxcnService.revoke(managedLink.id);
@@ -193,7 +202,7 @@ export function SubscriptionFamilySharingFields({
       update("verificationLink", "");
       const result = await newszxcnService.create({
         mailboxId: managedMailbox.id,
-        folderIds,
+        folderIds: nextFolderIds,
         windowMinutes: managedLink.windowMinutes,
       });
       setManagedLinks((current) => [result.link, ...current]);
@@ -203,6 +212,16 @@ export function SubscriptionFamilySharingFields({
       toast.error(error instanceof Error ? error.message : "重置收件链接失败");
     } finally {
       setShareLoading(false);
+    }
+  };
+  const confirmManagedAction = async () => {
+    const action = confirmation;
+    setConfirmation(null);
+    if (action === "reset") await resetManagedShare();
+    if (action === "folders") {
+      await resetManagedShare(draftFolderIds);
+      setFolderIds(draftFolderIds);
+      setFolderPickerOpen(false);
     }
   };
   const readSavedPassword = async () => {
@@ -243,6 +262,7 @@ export function SubscriptionFamilySharingFields({
   };
 
   return (
+    <>
     <section className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -275,13 +295,28 @@ export function SubscriptionFamilySharingFields({
               />
             )}
           </FormField>
+          <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>
+            {(field) => (
+              <Input
+                id={field.id}
+                type="number"
+                min={1}
+                max={100}
+                value={value.capacity}
+                onChange={(event) => update("capacity", event.target.value)}
+                required
+                aria-describedby={field.describedBy}
+                className="border-border bg-secondary"
+              />
+            )}
+          </FormField>
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
           {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
           {managedMailbox ? (
             <div className="grid gap-3 rounded-md border border-border bg-background p-3" aria-busy={shareLoading}>
               <div className="flex min-h-11 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">{managedCopy.title}</p>
+                  <p className="text-sm font-medium">{managedMailbox.address}</p>
                   <p className={managedLink ? "text-xs text-emerald-600" : "text-xs text-muted-foreground"}>{managedLink ? managedCopy.shared : managedCopy.closed}</p>
                 </div>
                 <div className="flex items-center justify-between gap-2 sm:justify-end">
@@ -290,17 +325,27 @@ export function SubscriptionFamilySharingFields({
                     variant="ghost"
                     size="sm"
                     className="min-h-11"
-                    onClick={() => setFolderPickerOpen((current) => !current)}
+                    onClick={() => { setDraftFolderIds(folderIds); setFolderPickerOpen((current) => !current); }}
                     disabled={foldersLoading}
                     aria-expanded={folderPickerOpen}
                   >
                     {foldersLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
-                    {managedLink ? managedCopy.viewFolders : managedCopy.chooseFolders}
+                    {managedLink ? managedCopy.changeFolders : managedCopy.chooseFolders}
                   </Button>
                   {shareLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label={t("subscription.familySharing.updatingManagedShare")} /> : null}
                   <Switch checked={shareIntent ?? Boolean(managedLink)} disabled={shareLoading} onCheckedChange={(checked) => void toggleManagedShare(checked)} aria-label={managedCopy.toggle} />
                 </div>
               </div>
+              {managedLink && !folderPickerOpen ? (
+                <div className="flex flex-wrap gap-2 border-t border-border pt-3" aria-label={managedCopy.folders}>
+                  {folders.filter((folder) => folderIds.includes(folder.id)).map((folder) => (
+                    <span key={folder.id} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-sm">
+                      <FolderOpen className="h-4 w-4 text-primary" />{folderLabel(folder)}
+                    </span>
+                  ))}
+                  {folderIds.length === 0 ? <span className="text-sm text-muted-foreground">{managedCopy.noFolders}</span> : null}
+                </div>
+              ) : null}
               {folderPickerOpen ? (
                 <div className="grid gap-2 border-t border-border pt-3">
                   <Label>{managedCopy.folders}</Label>
@@ -312,9 +357,9 @@ export function SubscriptionFamilySharingFields({
                         <label key={folder.id} className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 text-sm">
                           <input
                             type="checkbox"
-                            checked={folderIds.includes(folder.id)}
-                            disabled={Boolean(managedLink) || shareLoading}
-                            onChange={(event) => setFolderIds((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))}
+                            checked={(managedLink ? draftFolderIds : folderIds).includes(folder.id)}
+                            disabled={shareLoading}
+                            onChange={(event) => (managedLink ? setDraftFolderIds : setFolderIds)((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))}
                           />
                           <span className="min-w-0 flex-1 truncate">{folderLabel(folder)}</span>
                           <span className="text-xs text-muted-foreground">{folder.totalCount ?? 0} {managedCopy.mailUnit}</span>
@@ -323,7 +368,12 @@ export function SubscriptionFamilySharingFields({
                     </div>
                   )}
                   {managedLink ? (
-                    <p className="text-xs leading-5 text-muted-foreground">{managedCopy.activeHelp}</p>
+                    <>
+                      <p className="text-xs leading-5 text-muted-foreground">{managedCopy.activeHelp}</p>
+                      <Button type="button" size="sm" className="justify-self-end" disabled={shareLoading || draftFolderIds.length === 0 || draftFolderIds.join(",") === folderIds.join(",")} onClick={() => setConfirmation("folders")}>
+                        {managedCopy.applyFolders}
+                      </Button>
+                    </>
                   ) : (
                     <>
                       {folderIds.length === 0 && shareIntent ? <p role="alert" className="text-xs text-destructive">{managedCopy.selectRequired}</p> : null}
@@ -392,7 +442,7 @@ export function SubscriptionFamilySharingFields({
               </div>
             )}
           </FormField>
-          <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
+          <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_10rem]">
             <FormField id={id("familySharingVerificationLink")} label={managedMailbox ? managedCopy.link : t("subscription.familySharing.verificationLink")}>
               {(field) => (
                 <div className="relative">
@@ -403,46 +453,41 @@ export function SubscriptionFamilySharingFields({
                     onChange={(event) => update("verificationLink", event.target.value)}
                     placeholder={managedMailbox ? managedCopy.closed : t("subscription.familySharing.verificationLinkPlaceholder")}
                     aria-describedby={field.describedBy}
-                    className={managedMailbox ? "border-border bg-secondary pr-22" : "border-border bg-secondary pr-11"}
+                    className={managedMailbox ? "border-border bg-secondary pr-11" : "border-border bg-secondary pr-11"}
                     readOnly={Boolean(managedMailbox)}
                   />
-                  {managedMailbox && managedLink ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-11 top-0 h-full w-11"
-                      onClick={() => void resetManagedShare()}
-                      disabled={shareLoading}
-                      aria-label={t("subscription.familySharing.resetVerificationLink")}
-                      title={t("subscription.familySharing.resetVerificationLink")}
-                    >
-                      {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    </Button>
-                  ) : null}
                   {!managedMailbox && value.verificationLink ? <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" onClick={() => update("verificationLink", "")} aria-label={managedCopy.clear}><X className="h-4 w-4" /></Button> : null}
                 </div>
               )}
             </FormField>
-            <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>
-              {(field) => (
-                <Input
-                  id={field.id}
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={value.capacity}
-                  onChange={(event) => update("capacity", event.target.value)}
-                  required
-                  aria-describedby={field.describedBy}
-                  className="border-border bg-secondary"
-                />
-              )}
-            </FormField>
+            {managedMailbox && managedLink ? (
+              <div className="grid content-end gap-1.5">
+                <span className="text-sm font-medium text-foreground">链接操作</span>
+                <Button type="button" variant="ghost" className="min-h-11 justify-start px-0 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
+                  {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {managedCopy.resetLink}
+                </Button>
+              </div>
+            ) : <span />}
           </FormFieldRow>
           <FieldError id={id("familySharing-error")} message={error} />
         </div>
       ) : null}
     </section>
+    <AlertDialog open={confirmation !== null} onOpenChange={(open) => !open && setConfirmation(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{confirmation === "folders" ? "确认更换共享文件夹？" : "确认重置收件链接？"}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {confirmation === "folders" ? "原共享范围将立即失效，邮箱保持不变，系统会按新的文件夹范围生成链接。" : "旧链接将立即失效，邮箱和已绑定文件夹不会改变。"}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void confirmManagedAction()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">确认</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -112,8 +112,11 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
     }] });
     render(<Harness onPendingChange={vi.fn()} />);
 
-    const resetButton = await screen.findByRole("button", { name: "subscription.familySharing.resetVerificationLink" });
+    expect(await screen.findByText("netflix16@newszxcn.com")).toBeInTheDocument();
+    expect(await screen.findByText("Netflix")).toBeInTheDocument();
+    const resetButton = await screen.findByRole("button", { name: "重置链接" });
     await user.click(resetButton);
+    await user.click(screen.getByRole("button", { name: "确认" }));
 
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link-old"));
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({
