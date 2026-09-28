@@ -269,10 +269,12 @@ export function sortSubscriptions<T extends SubscriptionCollectionItem>(
     : null;
   const decorated = subscriptions.map((subscription, index) => {
     const inactive = isEffectivelyInactiveSubscription(subscription, today);
+    const effectiveStatus = getEffectiveSubscriptionStatus(subscription, today);
     return {
       subscription,
       index,
       inactive,
+      renewalInactive: effectiveStatus === "paused" || effectiveStatus === "cancelled",
       attentionDate: sortsByAttentionDate ? nextAttentionDate(subscription, today, inactive) : null,
       monthlyCost:
         sortOption === "monthly_cost_asc" || sortOption === "monthly_cost_desc"
@@ -287,7 +289,12 @@ export function sortSubscriptions<T extends SubscriptionCollectionItem>(
       if (pinnedComparison !== 0) return pinnedComparison;
 
       // 置顶是用户的人工覆盖意图；只在同一置顶组内按生命周期分组，不能把置顶的非活跃项压到未置顶项之后。
-      if (left.inactive !== right.inactive) return left.inactive ? 1 : -1;
+      // “到期最近”让已过期记录参与真实日期排序，但已暂停/已取消仍放在待处理项目之后。
+      if (sortOption === "renewal_asc") {
+        if (left.renewalInactive !== right.renewalInactive) return left.renewalInactive ? 1 : -1;
+      } else if (left.inactive !== right.inactive) {
+        return left.inactive ? 1 : -1;
+      }
 
       let comparison = 0;
 

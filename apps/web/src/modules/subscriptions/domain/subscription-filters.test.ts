@@ -134,10 +134,26 @@ describe("subscription sorting", () => {
       ["legacy-overdue", 3],
       ["explicit-expired-future", 3],
     ]);
-    for (const sortOption of SUBSCRIPTION_SORT_OPTIONS) {
+    for (const sortOption of SUBSCRIPTION_SORT_OPTIONS.filter((option) => option !== "renewal_asc")) {
       const ranks = sortIds(subscriptions, sortOption).map((id) => groupRank.get(id));
       expect(ranks, sortOption).toEqual([...ranks].sort((left, right) => (left ?? 0) - (right ?? 0)));
     }
+  });
+
+  it("puts overdue subscriptions first when sorting by the nearest renewal date", () => {
+    const subscriptions = [
+      subscription({ id: "future", status: "active", nextBillingDate: assertDateOnly("2026-01-10") }),
+      subscription({ id: "expired", status: "expired", nextBillingDate: assertDateOnly("2025-12-31") }),
+      subscription({ id: "legacy-overdue", status: "active", nextBillingDate: assertDateOnly("2025-12-30") }),
+      subscription({ id: "paused", status: "paused", nextBillingDate: assertDateOnly("2025-12-01") }),
+    ];
+
+    expect(sortIds(subscriptions, "renewal_asc")).toEqual([
+      "legacy-overdue",
+      "expired",
+      "future",
+      "paused",
+    ]);
   });
 
   it("sorts by renewal date while preserving tie order", () => {

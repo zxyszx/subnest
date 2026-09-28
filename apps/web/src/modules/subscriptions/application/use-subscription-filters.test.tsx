@@ -14,6 +14,13 @@ const options = {
 afterEach(() => vi.restoreAllMocks());
 
 describe("subscription filtering ownership", () => {
+  it("defaults every subscription view to the nearest renewal date", () => {
+    const { result } = renderHook(() => useSubscriptionFilters(options));
+
+    expect(result.current.sortOption).toBe("renewal_asc");
+    expect(result.current.needsCollectionIndex).toBe(true);
+  });
+
   it.each(domain.SUBSCRIPTION_SORT_OPTIONS)("preserves %s ordering for both page and index input without mutating either", (sortOption) => {
     const index = subscriptionPerformanceCollectionItems(100);
     const page = index.slice(0, 50);

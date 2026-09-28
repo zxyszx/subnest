@@ -18,7 +18,7 @@ describe.each(subscriptionPerformanceFixture.scenarios)("subscription sorting wo
 
     for (let sample = 0; sample < 10; sample += 1) {
       const { result, unmount } = renderHook(() => useSubscriptionFilters(filterOptions));
-      expect(result.current.needsCollectionIndex).toBe(false);
+      expect(result.current.needsCollectionIndex).toBe(true);
       act(() => result.current.setSortOption("name_asc"));
       expect(result.current.needsCollectionIndex).toBe(true);
       sort.mockClear();

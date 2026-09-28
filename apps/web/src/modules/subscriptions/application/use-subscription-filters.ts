@@ -42,7 +42,7 @@ export function useSubscriptionFilters(
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<SubscriptionPaymentTypeFilter>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<SubscriptionAdvancedFilterState>(DEFAULT_SUBSCRIPTION_ADVANCED_FILTERS);
-  const [sortOption, setSortOption] = useState<SubscriptionSortOption>("default");
+  const [sortOption, setSortOption] = useState<SubscriptionSortOption>("renewal_asc");
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filters: SubscriptionFilterState = useMemo(

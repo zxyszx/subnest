@@ -297,11 +297,11 @@ describe("Subscriptions page sorting", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
-  it("renders a recoverable error instead of an empty state when the first page fails", async () => {
+  it("renders a recoverable error instead of an empty state when the default renewal index fails", async () => {
     const user = userEvent.setup();
     const refetch = vi.fn();
-    mocks.useInfiniteSubscriptions.mockReturnValue({
-      subscriptions: [],
+    mocks.useSubscriptionIndex.mockReturnValue({
+      data: { subscriptions: [], total: 0 },
       isPending: false,
       error: new Error(),
       refetch,
@@ -644,7 +644,7 @@ describe("Subscriptions page mobile tag filters", () => {
     const mobileSelects = screen.getAllByRole("combobox");
     expect(mobileSelects[0]).toHaveTextContent("所有状态");
     expect(mobileSelects[1]).toHaveTextContent("所有付费类型");
-    expect(within(paymentTypeSortRow).getByRole("combobox", { name: "排序" })).toHaveTextContent("默认顺序");
+    expect(within(paymentTypeSortRow).getByRole("combobox", { name: "排序" })).toHaveTextContent("到期最近");
     expect(within(advancedTagRow).getByRole("button", { name: "标签" })).toBeInTheDocument();
     expect(visibleSubscriptionNames()).toEqual(["Tagged Cloud", "Docs Notes", "Design Suite", "Plain Service"]);
     await user.click(within(advancedTagRow).getByRole("button", { name: "标签" }));
@@ -758,6 +758,8 @@ describe("Subscriptions page virtualization", () => {
     };
     mocks.useInfiniteSubscriptions.mockImplementation(() => queryState);
     const { rerenderSubscriptionsPage } = renderSubscriptionsPage();
+    await user.click(screen.getByRole("combobox", { name: "排序" }));
+    await user.click(await screen.findByRole("option", { name: "默认顺序" }));
     const virtualizedList = screen.getByTestId("virtualized-subscription-list");
     const loadMoreRow = screen.getByTestId("subscriptions-load-more-row");
 

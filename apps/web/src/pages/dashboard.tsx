@@ -12,7 +12,7 @@
  * - 首页统计由 `useDashboardStats` 生成，CRUD 弹窗状态由 `useSubscriptionCrud` 管理。
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import Link from '@/components/router-link';
 import type { Subscription, SubscriptionCollectionItem } from "@/types/subscription";
 import { Header } from "@/components/header";
@@ -27,9 +27,8 @@ import { DashboardPageSkeleton } from "@/components/loading-skeleton";
 import { QueryErrorState } from "@/components/query-error-state";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
-import { CreditCard, TrendingUp, Clock, Plus, Sparkles, CircleDollarSign } from "lucide-react";
+import { CreditCard, TrendingUp, Plus, Sparkles, CircleDollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
 import { useSubscriptionAnalytics, useSubscriptionFacets } from "@/hooks/use-subscriptions";
 import { useSettings } from "@/hooks/use-settings";
@@ -61,7 +60,6 @@ export default function Index() {
   const settings = settingsQuery.data;
   const { config } = useCustomConfigState();
   const { t, locale, formatCurrency } = useI18n();
-  const [upcomingDialogOpen, setUpcomingDialogOpen] = useState(false);
   const exchangeRateProvider = settings?.exchangeRateProvider;
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useReportExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
@@ -86,7 +84,7 @@ export default function Index() {
     handleDetailDialogOpenChange,
   } = useSubscriptionDetailDialog(subscriptions);
   const calendarDialog = useSubscriptionCalendarDialog(subscriptions);
-  const { activeSubscriptions, totalMonthly, totalDaily, upcomingCount, trialCount } = useDashboardStats(
+  const { activeSubscriptions, totalMonthly, totalDaily, trialCount } = useDashboardStats(
     subscriptions,
     defaultCurrency,
     convert,
@@ -138,28 +136,7 @@ export default function Index() {
 
   return (
     <div className="app-page bg-background">
-      <Header
-        onAddSubscription={handleAddSubscription}
-        availableTags={availableTags}
-        pageActions={(
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="relative h-9 w-9"
-            onClick={() => setUpcomingDialogOpen(true)}
-            title={t("dashboard.upcomingRenewals")}
-            aria-label={t("dashboard.upcomingRenewals")}
-          >
-            <Clock className="h-4 w-4" />
-            {upcomingCount > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-semibold leading-none text-warning-foreground tabular-nums">
-                {upcomingCount > 99 ? "99+" : upcomingCount}
-              </span>
-            ) : null}
-          </Button>
-        )}
-      />
+      <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
 
       <main className="app-main mx-auto max-w-7xl">
         {/* 统计网格 */}
@@ -271,7 +248,7 @@ export default function Index() {
           </div>
 
           {/* 侧边栏 */}
-          <div>
+          <div className="grid gap-6">
             {/* 支出图表 */}
             <div className="rounded-lg border border-border bg-card p-5 shadow-card">
               <h3 className="mb-3 text-lg font-semibold text-foreground">{t("dashboard.spendingDistribution")}</h3>
@@ -284,6 +261,16 @@ export default function Index() {
               />
             </div>
 
+            {/* 即将续费/到期 */}
+            <div className="rounded-lg border border-border bg-card p-5 shadow-card">
+              <h3 className="mb-4 text-lg font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h3>
+              <UpcomingRenewals
+                subscriptions={subscriptions}
+                today={today}
+                notificationReminderDays={inheritedReminderDays}
+                includeExpired
+              />
+            </div>
           </div>
         </div>
       </main>
@@ -316,21 +303,6 @@ export default function Index() {
         loadingPreview={calendarDialog.collectionItem}
         loading={calendarDialog.pending}
       />
-      <Dialog open={upcomingDialogOpen} onOpenChange={setUpcomingDialogOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t("dashboard.upcomingRenewals")}</DialogTitle>
-            <DialogDescription>{t("dashboard.next7Days")}</DialogDescription>
-          </DialogHeader>
-          <UpcomingRenewals
-            subscriptions={subscriptions}
-            today={today}
-            notificationReminderDays={inheritedReminderDays}
-            limit={50}
-            includeExpired
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -374,6 +374,12 @@ describe("Subscriptions page category filters", () => {
       ...subscriptionFacetsQueryFixture(page.subscriptions ?? []),
       data: { ...subscriptionFacetsQueryFixture(page.subscriptions ?? []).data, total: 120 },
     });
+    mocks.useSubscriptionIndex.mockImplementation((filters) => {
+      const result = subscriptionIndexQueryFixture(page.subscriptions ?? [], filters);
+      return filters
+        ? result
+        : { ...result, data: { ...result.data, total: 120 } };
+    });
     mockMobileTagFilterMatch(false);
     renderSubscriptionsPage();
 

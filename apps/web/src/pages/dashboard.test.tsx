@@ -288,7 +288,11 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByTestId("subscription-card-reminder")).toHaveTextContent("5");
     expect(screen.getByTestId("subscription-card-reference")).toHaveTextContent("USD");
     expect(screen.getByTestId("subscription-card-today")).toHaveTextContent("2026-06-15");
-    expect(mocks.upcomingRenewalsCalls).toHaveLength(0);
+    expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({
+      count: 1,
+      today: "2026-06-15",
+      notificationReminderDays: 5,
+    });
     expect(screen.getByTestId("spending-chart")).toHaveTextContent("1:CNY:2026-06-15:7");
     expect(screen.getByText("日均 ¥46.67 · 汇率加载中...")).toBeInTheDocument();
   });
@@ -323,7 +327,7 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByText("添加订阅后，这里会汇总支出、续费和提醒。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "添加第一个订阅" })).toBeInTheDocument();
     expect(screen.getByTestId("spending-chart")).toHaveTextContent("0:CNY:2026-06-15:7");
-    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
+    expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("0");
   });
 
   it("uses a focused responsive four-card dashboard summary", () => {
@@ -357,14 +361,12 @@ describe("Dashboard page loading state", () => {
     expect(screen.queryByText("订阅 7")).not.toBeInTheDocument();
   });
 
-  it("opens upcoming renewals from the header action only when requested", async () => {
-    const user = userEvent.setup();
-
+  it("keeps upcoming renewals visible below the spending distribution", () => {
     renderDashboard();
 
-    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "即将续费/到期" }));
     expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("1");
+    expect(screen.getByText("支出分布").compareDocumentPosition(screen.getByText("即将续费/到期")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "即将续费/到期" })).not.toBeInTheDocument();
   });
 
   it("opens subscription details from a recent subscription card", async () => {
