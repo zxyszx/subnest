@@ -49,7 +49,7 @@ msgid "locale.enUS"
 msgstr "English"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:121
+#: src/i18n/descriptors/common.ts:124
 msgid "theme.hexColor"
 msgstr "Hex color"
 
@@ -79,12 +79,12 @@ msgid "locale.zhCN"
 msgstr "中文"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:118
+#: src/i18n/descriptors/common.ts:121
 msgid "theme.variant"
 msgstr "Theme style"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:124
+#: src/i18n/descriptors/common.ts:127
 msgid "theme.lightness"
 msgstr "Lightness (L)"
 
@@ -99,9 +99,14 @@ msgid "nav.dashboard"
 msgstr "Dashboard"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:141
+#: src/i18n/descriptors/common.ts:144
 msgid "theme.lavender.description"
 msgstr "Elegant romantic purple tones"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:53
+msgid "nav.sharing"
+msgstr "Sharing"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:16
@@ -219,11 +224,6 @@ msgid "system.badgeUpdate"
 msgstr "Update to v{version}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:53
-msgid "nav.sharing"
-msgstr "Sharing"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:32
 msgid "common.enable"
 msgstr "Enable"
@@ -247,6 +247,11 @@ msgstr "Copy failed"
 #: src/i18n/descriptors/common.ts:41
 msgid "rawErrorResponse.copy"
 msgstr "Copy error details"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:119
+msgid "header.themeDark"
+msgstr "Night"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:30
@@ -289,7 +294,7 @@ msgid "rawErrorResponse.responseUnavailable"
 msgstr "This error does not include a response body."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:125
+#: src/i18n/descriptors/common.ts:128
 msgid "theme.quickPick"
 msgstr "Quick pick"
 
@@ -329,9 +334,14 @@ msgid "nav.calendar"
 msgstr "Calendar"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:138
+#: src/i18n/descriptors/common.ts:141
 msgid "theme.sunset.name"
 msgstr "Sunset"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:118
+msgid "header.themeLight"
+msgstr "Day"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:109
@@ -414,7 +424,7 @@ msgid "system.warningTitle"
 msgstr "Check warning"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:127
+#: src/i18n/descriptors/common.ts:130
 msgid "theme.color.orange"
 msgstr "Orange"
 
@@ -439,7 +449,7 @@ msgid "exchangeRates.failedWithFallback"
 msgstr "Could not fetch exchange rates. Fallback rates are currently being used. {error}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:137
+#: src/i18n/descriptors/common.ts:140
 msgid "theme.ocean.description"
 msgstr "Calm elegant ocean blue"
 
@@ -454,7 +464,7 @@ msgid "theme.light"
 msgstr "Light"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:136
+#: src/i18n/descriptors/common.ts:139
 msgid "theme.ocean.name"
 msgstr "Ocean"
 
@@ -464,12 +474,12 @@ msgid "theme.dark"
 msgstr "Dark"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:135
+#: src/i18n/descriptors/common.ts:138
 msgid "theme.emerald.description"
 msgstr "Fresh natural emerald tones"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:139
+#: src/i18n/descriptors/common.ts:142
 msgid "theme.sunset.description"
 msgstr "Warm energetic sunset color"
 
@@ -484,7 +494,7 @@ msgid "system.checkFailedTitle"
 msgstr "Version check failed"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:142
+#: src/i18n/descriptors/common.ts:145
 msgid "theme.rose.name"
 msgstr "Rose"
 
@@ -504,12 +514,12 @@ msgid "system.restartNow"
 msgstr "Restart now"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:133
+#: src/i18n/descriptors/common.ts:136
 msgid "theme.color.pink"
 msgstr "Pink"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:143
+#: src/i18n/descriptors/common.ts:146
 msgid "theme.rose.description"
 msgstr "Soft refined rose color"
 
@@ -519,12 +529,12 @@ msgid "system.updateTitle"
 msgstr "System update"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:126
+#: src/i18n/descriptors/common.ts:129
 msgid "theme.color.red"
 msgstr "Red"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:132
+#: src/i18n/descriptors/common.ts:135
 msgid "theme.color.purple"
 msgstr "Purple"
 
@@ -534,7 +544,7 @@ msgid "nav.statistics"
 msgstr "Statistics"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:129
+#: src/i18n/descriptors/common.ts:132
 msgid "theme.color.green"
 msgstr "Green"
 
@@ -544,27 +554,27 @@ msgid "common.edit"
 msgstr "Edit"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:134
+#: src/i18n/descriptors/common.ts:137
 msgid "theme.emerald.name"
 msgstr "Emerald"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:119
+#: src/i18n/descriptors/common.ts:122
 msgid "theme.custom"
 msgstr "Custom"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:122
+#: src/i18n/descriptors/common.ts:125
 msgid "theme.hue"
 msgstr "Hue (H)"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:131
+#: src/i18n/descriptors/common.ts:134
 msgid "theme.color.blue"
 msgstr "Blue"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:140
+#: src/i18n/descriptors/common.ts:143
 msgid "theme.lavender.name"
 msgstr "Lavender"
 
@@ -609,6 +619,11 @@ msgid "locale.auto"
 msgstr "Follow this device"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:120
+msgid "header.themeSystem"
+msgstr "Follow system"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:117
 msgid "theme.system"
 msgstr "System"
@@ -644,7 +659,7 @@ msgid "header.logout"
 msgstr "Log out"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:120
+#: src/i18n/descriptors/common.ts:123
 msgid "theme.customDescription"
 msgstr "Choose your favorite color"
 
@@ -679,7 +694,7 @@ msgid "rawErrorResponse.title"
 msgstr "Error response details"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:130
+#: src/i18n/descriptors/common.ts:133
 msgid "theme.color.cyan"
 msgstr "Cyan"
 
@@ -699,11 +714,11 @@ msgid "notFound.title"
 msgstr "Page not found"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:123
+#: src/i18n/descriptors/common.ts:126
 msgid "theme.saturation"
 msgstr "Saturation (S)"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:128
+#: src/i18n/descriptors/common.ts:131
 msgid "theme.color.yellow"
 msgstr "Yellow"

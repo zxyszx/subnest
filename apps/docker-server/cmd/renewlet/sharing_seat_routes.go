@@ -138,7 +138,7 @@ func normalizeSharingSeatUpdateRequest(body *sharingSeatUpdateRequest) error {
 	if len(body.MemberName) > 120 || len(body.Contact) > 320 || len(body.Notes) > sharingNotesMaxLength {
 		return errors.New("sharing seat text is too long")
 	}
-	if body.ContactType != "" && body.ContactType != "wechat" && body.ContactType != "telegram" && body.ContactType != "email" && body.ContactType != "phone" && body.ContactType != "other" {
+	if body.ContactType != "" && body.ContactType != "wechat" && body.ContactType != "telegram" && body.ContactType != "ns" && body.ContactType != "xianyu" && body.ContactType != "email" && body.ContactType != "phone" && body.ContactType != "other" {
 		return errors.New("invalid sharing contact type")
 	}
 	if body.Status != "vacant" && body.Status != "active" && body.Status != "paused" && body.Status != "archived" {

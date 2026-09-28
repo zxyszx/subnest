@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, Monitor, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -87,14 +87,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const isAuthenticated = Boolean(sessionData?.user);
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
 
-  /**
-   * Header 是全局快捷开关，只写本机偏好；账户级外观草稿必须从 Settings 页外观控件产生。
-   */
-  const handleToggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-  };
-
   /** 退出登录：清理本地认证会话并回到 /login。 */
   const handleLogout = async () => {
     try {
@@ -162,8 +154,8 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggleTheme}
-            className="h-9 w-9"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="h-9 w-9 lg:hidden"
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -174,12 +166,47 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className="h-9 w-9 text-muted-foreground hover:text-destructive"
+            className="h-9 w-9 text-muted-foreground hover:text-destructive lg:hidden"
             title={t("header.logout")}
           >
             <LogOut className="h-4 w-4" />
             <span className="sr-only">{t("header.logout")}</span>
           </Button>
+
+          <div className="hidden w-full space-y-3 lg:block">
+            <div className="grid grid-cols-3 rounded-lg border border-border bg-secondary/60 p-1" aria-label={t("header.toggleTheme")}>
+              {([
+                { value: "system", label: t("header.themeSystem"), Icon: Monitor },
+                { value: "light", label: t("header.themeLight"), Icon: Sun },
+                { value: "dark", label: t("header.themeDark"), Icon: Moon },
+              ] as const).map(({ value, label, Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={theme === value}
+                  onClick={() => setTheme(value)}
+                  className={cn(
+                    "flex min-h-9 items-center justify-center gap-1 rounded-md px-1 text-xs transition-colors",
+                    theme === value ? "bg-card font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start gap-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              {t("header.logout")}
+            </Button>
+          </div>
         </div>
       </div>
 

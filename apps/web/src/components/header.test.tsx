@@ -55,14 +55,20 @@ vi.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
-        "app.tagline": "订阅与合租管理",
+        "app.tagline": "订阅与会员共享管理",
         "header.logout": "退出登录",
+        "header.themeSystem": "跟随系统",
+        "header.themeLight": "日间",
+        "header.themeDark": "夜间",
         "header.toggleTheme": "切换主题",
+        "theme.system": "跟随系统",
+        "theme.light": "日间",
+        "theme.dark": "夜间",
         "nav.calendar": "日历",
         "nav.dashboard": "仪表盘",
         "nav.online2fa": "在线 2FA",
         "nav.settings": "设置",
-        "nav.sharing": "合租",
+        "nav.sharing": "会员共享",
         "nav.statistics": "统计",
         "nav.subscriptions": "订阅",
         "system.badgeUpdate": "可更新到 v{version}",
@@ -201,7 +207,7 @@ describe("Header system version entry", () => {
     const updateButton = screen.getByRole("button", { name: "打开系统更新" });
     expect(screen.getAllByRole("button", { name: "打开系统更新" })).toHaveLength(1);
     expect(updateButton.closest("a")).toBeNull();
-    expect(screen.queryByText("订阅与合租管理")).not.toBeInTheDocument();
+    expect(screen.queryByText("订阅与会员共享管理")).not.toBeInTheDocument();
 
     await user.click(updateButton);
 
@@ -276,6 +282,21 @@ describe("Header system version entry", () => {
 
     expect(mocks.setTheme).toHaveBeenCalledWith("light");
     expect(mocks.writeAppearancePendingToStorage).not.toHaveBeenCalled();
+  });
+
+  it("offers explicit system, day and night choices in the desktop utility area", async () => {
+    mocks.useSession.mockReturnValue(adminSession("user"));
+    const user = userEvent.setup();
+
+    renderHeader();
+
+    await user.click(screen.getByRole("button", { name: "跟随系统" }));
+    await user.click(screen.getByRole("button", { name: "日间" }));
+    await user.click(screen.getByRole("button", { name: "夜间" }));
+
+    expect(mocks.setTheme).toHaveBeenNthCalledWith(1, "system");
+    expect(mocks.setTheme).toHaveBeenNthCalledWith(2, "light");
+    expect(mocks.setTheme).toHaveBeenNthCalledWith(3, "dark");
   });
 
   it("uses the shared responsive header layout contract", () => {

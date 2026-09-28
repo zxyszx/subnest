@@ -49,7 +49,7 @@ msgid "locale.enUS"
 msgstr "English"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:121
+#: src/i18n/descriptors/common.ts:124
 msgid "theme.hexColor"
 msgstr "Hex 颜色"
 
@@ -79,12 +79,12 @@ msgid "locale.zhCN"
 msgstr "中文"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:118
+#: src/i18n/descriptors/common.ts:121
 msgid "theme.variant"
 msgstr "主题风格"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:124
+#: src/i18n/descriptors/common.ts:127
 msgid "theme.lightness"
 msgstr "亮度 (L)"
 
@@ -99,9 +99,14 @@ msgid "nav.dashboard"
 msgstr "仪表盘"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:141
+#: src/i18n/descriptors/common.ts:144
 msgid "theme.lavender.description"
 msgstr "优雅浪漫的紫色调"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:53
+msgid "nav.sharing"
+msgstr "会员共享"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:16
@@ -219,11 +224,6 @@ msgid "system.badgeUpdate"
 msgstr "可更新到 v{version}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:53
-msgid "nav.sharing"
-msgstr "合租"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:32
 msgid "common.enable"
 msgstr "启用"
@@ -247,6 +247,11 @@ msgstr "复制失败"
 #: src/i18n/descriptors/common.ts:41
 msgid "rawErrorResponse.copy"
 msgstr "复制错误详情"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:119
+msgid "header.themeDark"
+msgstr "夜间"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:30
@@ -289,7 +294,7 @@ msgid "rawErrorResponse.responseUnavailable"
 msgstr "当前错误没有可回显的响应正文。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:125
+#: src/i18n/descriptors/common.ts:128
 msgid "theme.quickPick"
 msgstr "快速选择"
 
@@ -329,9 +334,14 @@ msgid "nav.calendar"
 msgstr "日历"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:138
+#: src/i18n/descriptors/common.ts:141
 msgid "theme.sunset.name"
 msgstr "日落橙"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:118
+msgid "header.themeLight"
+msgstr "日间"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:109
@@ -414,7 +424,7 @@ msgid "system.warningTitle"
 msgstr "检查提示"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:127
+#: src/i18n/descriptors/common.ts:130
 msgid "theme.color.orange"
 msgstr "橙"
 
@@ -439,7 +449,7 @@ msgid "exchangeRates.failedWithFallback"
 msgstr "汇率获取失败，当前使用备用汇率。{error}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:137
+#: src/i18n/descriptors/common.ts:140
 msgid "theme.ocean.description"
 msgstr "沉稳优雅的海洋蓝"
 
@@ -454,7 +464,7 @@ msgid "theme.light"
 msgstr "浅色"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:136
+#: src/i18n/descriptors/common.ts:139
 msgid "theme.ocean.name"
 msgstr "深海蓝"
 
@@ -464,12 +474,12 @@ msgid "theme.dark"
 msgstr "深色"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:135
+#: src/i18n/descriptors/common.ts:138
 msgid "theme.emerald.description"
 msgstr "清新自然的翡翠色调"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:139
+#: src/i18n/descriptors/common.ts:142
 msgid "theme.sunset.description"
 msgstr "温暖活力的日落色"
 
@@ -484,7 +494,7 @@ msgid "system.checkFailedTitle"
 msgstr "版本检查失败"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:142
+#: src/i18n/descriptors/common.ts:145
 msgid "theme.rose.name"
 msgstr "玫瑰粉"
 
@@ -504,12 +514,12 @@ msgid "system.restartNow"
 msgstr "立即重启"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:133
+#: src/i18n/descriptors/common.ts:136
 msgid "theme.color.pink"
 msgstr "粉"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:143
+#: src/i18n/descriptors/common.ts:146
 msgid "theme.rose.description"
 msgstr "精致柔和的玫瑰色"
 
@@ -519,12 +529,12 @@ msgid "system.updateTitle"
 msgstr "系统更新"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:126
+#: src/i18n/descriptors/common.ts:129
 msgid "theme.color.red"
 msgstr "红"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:132
+#: src/i18n/descriptors/common.ts:135
 msgid "theme.color.purple"
 msgstr "紫"
 
@@ -534,7 +544,7 @@ msgid "nav.statistics"
 msgstr "统计"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:129
+#: src/i18n/descriptors/common.ts:132
 msgid "theme.color.green"
 msgstr "绿"
 
@@ -544,34 +554,34 @@ msgid "common.edit"
 msgstr "编辑"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:134
+#: src/i18n/descriptors/common.ts:137
 msgid "theme.emerald.name"
 msgstr "翡翠绿"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:119
+#: src/i18n/descriptors/common.ts:122
 msgid "theme.custom"
 msgstr "自定义"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:122
+#: src/i18n/descriptors/common.ts:125
 msgid "theme.hue"
 msgstr "色相 (H)"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:131
+#: src/i18n/descriptors/common.ts:134
 msgid "theme.color.blue"
 msgstr "蓝"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:140
+#: src/i18n/descriptors/common.ts:143
 msgid "theme.lavender.name"
 msgstr "薰衣草紫"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:5
 msgid "app.tagline"
-msgstr "订阅与合租管理"
+msgstr "订阅与会员共享管理"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:52
@@ -609,6 +619,11 @@ msgid "locale.auto"
 msgstr "跟随当前设备"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:120
+msgid "header.themeSystem"
+msgstr "跟随系统"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/common.ts:117
 msgid "theme.system"
 msgstr "跟随系统"
@@ -644,7 +659,7 @@ msgid "header.logout"
 msgstr "退出登录"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:120
+#: src/i18n/descriptors/common.ts:123
 msgid "theme.customDescription"
 msgstr "选择你喜欢的颜色"
 
@@ -679,7 +694,7 @@ msgid "rawErrorResponse.title"
 msgstr "错误响应详情"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:130
+#: src/i18n/descriptors/common.ts:133
 msgid "theme.color.cyan"
 msgstr "青"
 
@@ -699,11 +714,11 @@ msgid "notFound.title"
 msgstr "页面未找到"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:123
+#: src/i18n/descriptors/common.ts:126
 msgid "theme.saturation"
 msgstr "饱和度 (S)"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/common.ts:128
+#: src/i18n/descriptors/common.ts:131
 msgid "theme.color.yellow"
 msgstr "黄"

@@ -36,11 +36,14 @@ import { cn } from "@/lib/utils";
 import { useRouteReady } from "@/components/route-progress";
 import { useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
 import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
+import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
+import { useState } from "react";
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
 /** 仪表盘页面组件。 */
 export default function Index() {
+  const [taskFilter, setTaskFilter] = useState<"all" | "subscriptions" | "members">("all");
   const subscriptionsQuery = useSubscriptionAnalytics();
   const subscriptions = subscriptionsQuery.data ?? EMPTY_SUBSCRIPTIONS;
   const facetsQuery = useSubscriptionFacets();
@@ -78,6 +81,12 @@ export default function Index() {
     true,
   );
   const sharingRenewalsPending = sharingDetailQueries.some((query) => query.isPending);
+  const subscriptionRenewalCount = buildUpcomingReminderItems({
+    subscriptions,
+    today,
+    notificationReminderDays: inheritedReminderDays,
+    includeExpired: true,
+  }).length;
 
   // 只有页面主数据还没有首屏结果时才展示骨架屏。
   // 汇率刷新期间保留已有内容，并在统计卡片副标题里提示加载状态，避免整页闪回 loading。
@@ -149,19 +158,32 @@ export default function Index() {
           />
         </div>
 
-        <div className="grid items-start gap-6 lg:grid-cols-2">
-          <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
-            <div className="mb-4 flex min-h-11 items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h2>
-              <Link href="/subscriptions">
-                <Button variant="ghost" size="sm" className="min-h-11 gap-2 text-muted-foreground hover:text-foreground">
-                  {t("dashboard.viewAll", { count: subscriptions.length })}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+        <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <div className="mb-5 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t("dashboard.taskCenter")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.taskCenterDescription")}</p>
+            </div>
+            <div className="grid grid-cols-3 rounded-lg bg-secondary p-1" aria-label={t("dashboard.taskCenter")}>
+              {([
+                ["all", t("dashboard.taskAll"), subscriptionRenewalCount + sharingRenewals.length],
+                ["subscriptions", t("dashboard.taskSubscriptions"), subscriptionRenewalCount],
+                ["members", t("dashboard.taskMembers"), sharingRenewals.length],
+              ] as const).map(([value, label, count]) => (
+                <button key={value} type="button" aria-pressed={taskFilter === value} onClick={() => setTaskFilter(value)} className={cn("min-h-9 rounded-md px-3 text-xs font-medium transition-colors", taskFilter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  {label} <span className="tabular-nums">{count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {taskFilter !== "members" ? <div className="min-w-0">
+            <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
+              <h3 className="font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h3>
+              <Link href="/subscriptions"><Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
             </div>
             {subscriptions.length === 0 ? (
-              <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-8 text-center">
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-8 text-center">
                 <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("dashboard.emptyDescription")}</p>
                 <AddSubscriptionDialog
@@ -184,22 +206,20 @@ export default function Index() {
                 limit={6}
               />
             )}
-          </section>
+          </div> : null}
 
-          <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
-            <div className="mb-4 flex min-h-11 items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-foreground">{t("sharing.upcomingRenewals")}</h2>
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold tabular-nums text-muted-foreground">
-                {sharingRenewals.length}
-              </span>
+          {taskFilter !== "subscriptions" ? <div className={cn("min-w-0", taskFilter === "all" && "mt-6 border-t border-border pt-5")}>
+            <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
+              <h3 className="font-semibold text-foreground">{t("sharing.upcomingRenewals")}</h3>
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold tabular-nums text-muted-foreground">{sharingRenewals.length}</span>
             </div>
             <SharingUpcomingRenewals
               items={sharingRenewals}
               pending={sharingRenewalsPending}
               limit={6}
             />
-          </section>
-        </div>
+          </div> : null}
+        </section>
       </main>
     </div>
   );

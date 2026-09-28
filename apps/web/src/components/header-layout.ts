@@ -16,7 +16,7 @@ export const headerLayout = {
   desktopNavLabel: "whitespace-nowrap",
   desktopNavSkeletonLabel: "h-4 w-16",
   actions:
-    "flex min-w-0 shrink-0 items-center justify-end gap-2 lg:flex-wrap lg:justify-start lg:border-t lg:border-border lg:pt-4",
+    "flex min-w-0 shrink-0 items-center justify-end gap-2 lg:grid lg:w-full lg:grid-cols-1 lg:border-t lg:border-border lg:pt-4",
   mobileNav: "flex overflow-x-auto overscroll-x-contain border-t border-border lg:hidden",
   mobileNavIcon: "h-5 w-5",
 } as const;

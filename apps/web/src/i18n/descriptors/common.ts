@@ -2,7 +2,7 @@
 import { msg } from "@lingui/core/macro";
 
 export const messages = [
-  msg({ id: "app.tagline", message: "订阅与合租管理" }),
+  msg({ id: "app.tagline", message: "订阅与会员共享管理" }),
   msg({ id: "exchangeRates.refreshing", message: "刷新中..." }),
   msg({ id: "exchangeRates.updated", message: "最新汇率数据已获取" }),
   msg({ id: "exchangeRates.failedWithFallback", message: "汇率获取失败，当前使用备用汇率。{error}" }),
@@ -50,7 +50,7 @@ export const messages = [
   msg({ id: "common.backToTop", message: "回到顶部" }),
   msg({ id: "nav.dashboard", message: "仪表盘" }),
   msg({ id: "nav.subscriptions", message: "订阅列表" }),
-  msg({ id: "nav.sharing", message: "合租" }),
+  msg({ id: "nav.sharing", message: "会员共享" }),
   msg({ id: "nav.online2fa", message: "在线 2FA" }),
   msg({ id: "nav.sharedInbox", message: "共享收件箱" }),
   msg({ id: "nav.calendar", message: "日历" }),
@@ -115,6 +115,9 @@ export const messages = [
   msg({ id: "theme.light", message: "浅色" }),
   msg({ id: "theme.dark", message: "深色" }),
   msg({ id: "theme.system", message: "跟随系统" }),
+  msg({ id: "header.themeLight", message: "日间" }),
+  msg({ id: "header.themeDark", message: "夜间" }),
+  msg({ id: "header.themeSystem", message: "跟随系统" }),
   msg({ id: "theme.variant", message: "主题风格" }),
   msg({ id: "theme.custom", message: "自定义" }),
   msg({ id: "theme.customDescription", message: "选择你喜欢的颜色" }),

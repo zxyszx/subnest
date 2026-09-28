@@ -126,7 +126,6 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
     }
   }
   const timestamp = nowIso();
-  const billing = sharingBillingAmounts(body.monthlyPrice, body.billingAmount, body.billingMonths);
   const statements: D1PreparedStatement[] = [];
   if (body.status === "vacant") {
     statements.push(env.DB.prepare(`
@@ -135,6 +134,7 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
       WHERE id = ? AND user_id = ?
     `).bind(timestamp, id, auth.user.id));
   } else {
+    const billing = sharingBillingAmounts(body.monthlyPrice, body.billingAmount, body.billingMonths);
     statements.push(env.DB.prepare(`
       UPDATE sharing_seats SET member_name = ?, contact = ?, contact_type = ?, monthly_price = ?, currency = ?,
         billing_months = ?, start_date = ?, expires_at = ?, status = ?, notes = ?, updated_at = ?

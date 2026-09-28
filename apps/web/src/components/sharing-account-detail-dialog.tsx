@@ -24,6 +24,7 @@ import type { SharingAccount, SharingSeat, SharingSeatUpdate } from "@renewlet/s
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { sharingService } from "@/services/sharing-service";
 import { divideMoney } from "@renewlet/shared/money";
+import { getDisplayErrorMessage } from "@/lib/display-error";
 
 const inboxCopy = { copy: "复制验证码链接", copied: "验证码链接已复制", failed: "复制验证码链接失败" };
 
@@ -392,6 +393,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
   const { config } = useCustomConfigState();
   const updateSeat = useUpdateSharingSeat(account.id);
   const [draft, setDraft] = useState<SharingSeatDraft | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Partial<Record<"member" | "amount" | "dates", string>>>({});
   const currencyOptions = useManagedCurrencyOptions({
     currencies: config.currencies,
     includeDisabledCurrent: draft?.currency ?? "CNY",
@@ -400,6 +402,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
   useEffect(() => {
     setDraft(seat ? emptySeatDraft(seat, mode) : null);
+    setValidationErrors({});
   }, [mode, seat]);
 
   const calculatedReceivable = useMemo(() => {
@@ -428,13 +431,26 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
   } : current);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (draft.status !== "vacant") {
+      const errors: typeof validationErrors = {};
+      if (!draft.memberName.trim()) errors.member = t("sharing.memberRequired");
+      if (!draft.billingAmount.trim() || !Number.isFinite(Number(draft.billingAmount)) || Number(draft.billingAmount) < 0) errors.amount = t("sharing.periodChargeRequired");
+      if (!draft.startDate || !draft.expiresAt) errors.dates = t("sharing.datesRequired");
+      else if (draft.expiresAt < draft.startDate) errors.dates = t("sharing.dateRangeInvalid");
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        toast.error(t("sharing.seatSaveFailed"), { description: Object.values(errors)[0] });
+        return;
+      }
+    }
+    setValidationErrors({});
     try {
       const monthlyPrice = draft.billingAmount ? divideMoney(draft.billingAmount, draft.billingMonths) : "";
       await updateSeat.mutateAsync({ seatId: seat.id, input: { ...draft, monthlyPrice } });
       toast.success(t("sharing.seatSaved"));
       onOpenChange(false);
-    } catch {
-      toast.error(t("sharing.seatSaveFailed"));
+    } catch (error) {
+      toast.error(t("sharing.seatSaveFailed"), { description: getDisplayErrorMessage(error) });
     }
   };
 
@@ -447,22 +463,26 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
             <DialogDescription>{mode === "renew" ? t("sharing.renewSeatDescription") : account.name}</DialogDescription>
           </DialogHeader>
 
-          <section className="space-y-3">
+          <FormField id="sharing-seat-status" label={t("sharing.status")} description={draft.status === "vacant" ? t("sharing.vacantClearsSeat") : undefined}>
+            {(field) => <div id={field.id} aria-describedby={field.describedBy} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {seatStatuses.map((status) => <Button key={status} type="button" variant={draft.status === status ? "default" : "outline"} aria-pressed={draft.status === status} onClick={() => update("status", status)}>{t(seatStatusLabelKeys[status])}</Button>)}
+            </div>}
+          </FormField>
+
+          {draft.status !== "vacant" ? <>
+          <section className="space-y-3 rounded-lg border border-border/80 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold"><UserRound className="h-4 w-4" />{t("sharing.memberDetails")}</div>
-            <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-              <FormField id="sharing-seat-status" label={t("sharing.status")}>{(field) => <Select value={draft.status} onValueChange={(value) => update("status", value as SharingSeatUpdate["status"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{seatStatuses.map((status) => <SelectItem key={status} value={status}>{t(seatStatusLabelKeys[status])}</SelectItem>)}</SelectContent></Select>}</FormField>
-              <FormField id="sharing-seat-member" label={t("sharing.memberName")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-alias" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} required={draft.status !== "vacant"} />}</FormField>
-            </FormFieldRow>
+            <FormField id="sharing-seat-member" label={t("sharing.memberName")} error={validationErrors.member}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-alias" aria-describedby={field.describedBy} aria-invalid={field.invalid} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} />}</FormField>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
               <FormField id="sharing-seat-contact-type" label={t("sharing.contactType")}>{(field) => <Select value={draft.contactType || "other"} onValueChange={(value) => update("contactType", value as SharingSeatUpdate["contactType"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{contactTypes.map((type) => <SelectItem key={type} value={type}><span className="flex items-center gap-2"><ContactTypeIcon type={type} />{t(contactTypeLabelKeys[type])}</span></SelectItem>)}</SelectContent></Select>}</FormField>
               <FormField id="sharing-seat-contact" label={t("sharing.contact")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-contact" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.contact} onChange={(event) => update("contact", event.target.value)} />}</FormField>
             </FormFieldRow>
           </section>
 
-          <section className="space-y-3 border-t pt-4">
+          <section className="space-y-3 rounded-lg border border-border/80 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold"><ReceiptText className="h-4 w-4" />{t("sharing.billingDetails")}</div>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-              <FormField id="sharing-seat-price" label={t("sharing.periodCharge")} description={draft.billingAmount ? `${t("sharing.monthlyEquivalent")} ${formatCurrency(Number(divideMoney(draft.billingAmount, draft.billingMonths)), draft.currency)}` : undefined}>{(field) => <Input className="bg-secondary" id={field.id} aria-describedby={field.describedBy} type="text" inputMode="decimal" value={draft.billingAmount} onChange={(event) => update("billingAmount", event.target.value)} required={draft.status !== "vacant"} />}</FormField>
+              <FormField id="sharing-seat-price" label={t("sharing.periodCharge")} error={validationErrors.amount} description={draft.billingAmount ? `${t("sharing.monthlyEquivalent")} ${formatCurrency(Number(divideMoney(draft.billingAmount, draft.billingMonths)), draft.currency)}` : undefined}>{(field) => <Input className="bg-secondary" id={field.id} aria-describedby={field.describedBy} aria-invalid={field.invalid} type="text" inputMode="decimal" value={draft.billingAmount} placeholder={t("sharing.periodChargePlaceholder")} onChange={(event) => update("billingAmount", event.target.value)} />}</FormField>
               <FormField id="sharing-seat-currency" label={t("sharing.currency")}>{(field) => <SearchableSelect id={field.id} aria-describedby={field.describedBy} value={draft.currency} onValueChange={(value) => update("currency", value)} options={currencyOptions} className="bg-secondary" aria-label={t("sharing.currency")} />}</FormField>
             </FormFieldRow>
             <FormField id="sharing-seat-cycle" label={t("sharing.billingCycle")}>
@@ -473,13 +493,14 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
                 <Input className="bg-secondary" aria-label={t("sharing.customMonths")} title={t("sharing.customMonths")} type="number" min={1} max={120} value={SHARING_BILLING_MONTH_PRESETS.includes(draft.billingMonths as (typeof SHARING_BILLING_MONTH_PRESETS)[number]) ? "" : draft.billingMonths} placeholder={t("sharing.customMonths")} onChange={(event) => { if (event.target.value !== "") updateBillingMonths(Number(event.target.value)); }} />
               </div>}
             </FormField>
-            <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
+            <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2" errors={[{ id: "sharing-seat-dates-error", message: validationErrors.dates }]}>
               <FormField id="sharing-seat-start" label={t("sharing.startDate")}>{(field) => <DateOnlyPickerField id={field.id} value={draft.startDate || undefined} onChange={(value) => updateStartDate(value ?? "")} placeholder={t("sharing.startDate")} describedBy={field.describedBy} buttonClassName="bg-secondary" />}</FormField>
               <FormField id="sharing-seat-expiry" label={t("sharing.expiresAt")} description={t("sharing.expiryAutoHint")}>{(field) => <DateOnlyPickerField id={field.id} value={draft.expiresAt || undefined} onChange={(value) => update("expiresAt", value ?? "")} placeholder={t("sharing.expiresAt")} describedBy={field.describedBy} defaultMonth={draft.startDate || undefined} buttonClassName="bg-secondary" />}</FormField>
             </FormFieldRow>
             <FormField id="sharing-seat-payment" label={t("sharing.paymentStatus")}>{(field) => <Select value={draft.paymentStatus} onValueChange={(value) => update("paymentStatus", value as SharingSeatUpdate["paymentStatus"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pending">{t("sharing.pending")}</SelectItem><SelectItem value="paid">{t("sharing.paid")}</SelectItem></SelectContent></Select>}</FormField>
             <div className="flex items-center justify-between rounded-md bg-muted/50 px-4 py-3 text-sm"><span className="text-muted-foreground">{t("sharing.calculatedReceivable")}</span><strong className="tabular-nums">{formatCurrency(calculatedReceivable, draft.currency)}</strong></div>
           </section>
+          </> : null}
 
           <FormField id="sharing-seat-notes" label={t("sharing.notes")}>{(field) => <Textarea className="bg-secondary" id={field.id} aria-describedby={field.describedBy} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />}</FormField>
 

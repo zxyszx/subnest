@@ -28,6 +28,19 @@ func TestSharingSeatBillingAmountDerivesPreciseMonthlyPrice(t *testing.T) {
 	}
 }
 
+func TestSharingSeatAcceptsEveryClientContactType(t *testing.T) {
+	for _, contactType := range []string{"wechat", "telegram", "ns", "xianyu", "email", "phone", "other"} {
+		body := sharingSeatUpdateRequest{
+			MemberName: "Member", Contact: "member-id", ContactType: contactType,
+			MonthlyPrice: "15", BillingAmount: "15", Currency: "CNY", BillingMonths: 1,
+			StartDate: "2026-09-01", ExpiresAt: "2026-10-01", Status: "active", PaymentStatus: "paid",
+		}
+		if err := normalizeSharingSeatUpdateRequest(&body); err != nil {
+			t.Errorf("contact type %q should match the client contract: %v", contactType, err)
+		}
+	}
+}
+
 func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {

@@ -366,13 +366,13 @@ describe("Statistics page", () => {
     renderStatistics();
 
     const cashflow = screen.getByTestId("statistics-cashflow-overview");
-    expect(within(cashflow).getByRole("heading", { name: "续费与合租" })).toBeInTheDocument();
+    expect(within(cashflow).getByRole("heading", { name: "续费与共享" })).toBeInTheDocument();
     expect(within(cashflow).getByText("本月订阅续费")).toBeInTheDocument();
-    expect(within(cashflow).getByText("合租月收入")).toBeInTheDocument();
-    expect(within(cashflow).getByText("合租月净利润")).toBeInTheDocument();
+    expect(within(cashflow).getByText("共享月收入")).toBeInTheDocument();
+    expect(within(cashflow).getByText("共享月净利润")).toBeInTheDocument();
     expect(screen.getAllByText("本月订阅续费")).toHaveLength(1);
-    expect(screen.getAllByText("合租月收入")).toHaveLength(1);
-    expect(screen.getAllByText("合租月净利润")).toHaveLength(1);
+    expect(screen.getAllByText("共享月收入")).toHaveLength(1);
+    expect(screen.getAllByText("共享月净利润")).toHaveLength(1);
   });
 
   it("uses compact placeholders for empty breakdown charts", () => {

@@ -181,8 +181,10 @@ export default function Sharing() {
     updateSubscription.mutate(
       { id: editingSubscriptionId, changes },
       {
-        onSuccess: () => {
-          void queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all });
+        onSuccess: async () => {
+          // A preferred-inbox change can regenerate this account's public link.
+          // Keep the dialog open until the active list has the new projection.
+          await queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all, refetchType: "active" });
           setEditingSubscriptionId(null);
         },
       },
