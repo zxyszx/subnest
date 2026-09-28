@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { assertDateOnly } from "@/lib/time/date-only";
-import { sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
-import type { SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
+import { sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
 
 describe("sharingUpcomingRenewalCount", () => {
   it("counts renewals from today through the next seven days", () => {
@@ -34,6 +34,21 @@ describe("sharingUpcomingSeatRenewals", () => {
       { seat: { id: "seat-7" }, daysUntilExpiry: 7 },
     ]);
   });
+
+  it("can include overdue seats for dashboard follow-up", () => {
+    const detail = {
+      account: { id: "account-1", accountNumber: 1 },
+      seats: [
+        { id: "seat-overdue", seatNumber: 1, memberName: "Overdue", expiresAt: "2026-09-22", status: "active" },
+        { id: "seat-upcoming", seatNumber: 2, memberName: "Upcoming", expiresAt: "2026-09-25", status: "active" },
+      ],
+    } as SharingAccountDetail;
+
+    expect(sharingUpcomingSeatRenewals([detail], assertDateOnly("2026-09-24"), 7, true)).toMatchObject([
+      { seat: { id: "seat-overdue" }, daysUntilExpiry: -2 },
+      { seat: { id: "seat-upcoming" }, daysUntilExpiry: 1 },
+    ]);
+  });
 });
 
 describe("sharingNearestSeatExpiry", () => {
@@ -52,5 +67,45 @@ describe("sharingNearestSeatExpiry", () => {
       daysUntilExpiry: 7,
       memberCount: 2,
     });
+  });
+});
+
+describe("sortSharingAccountsByNearestSeatExpiry", () => {
+  it("orders expired and upcoming accounts by their nearest assigned seat expiry", () => {
+    const accounts = [
+      { id: "future", accountNumber: 1, name: "Future" },
+      { id: "missing", accountNumber: 2, name: "Missing" },
+      { id: "expired", accountNumber: 3, name: "Expired" },
+      { id: "same-date-later-number", accountNumber: 4, name: "Same date" },
+    ] as SharingAccount[];
+    const details = new Map<string, SharingAccountDetail>([
+      ["future", { seats: [{ seatNumber: 1, memberName: "Future", expiresAt: "2026-10-10", status: "active" }] } as SharingAccountDetail],
+      ["expired", { seats: [{ seatNumber: 1, memberName: "Expired", expiresAt: "2026-09-25", status: "active" }] } as SharingAccountDetail],
+      ["same-date-later-number", { seats: [{ seatNumber: 1, memberName: "Same", expiresAt: "2026-10-10", status: "active" }] } as SharingAccountDetail],
+      ["missing", { seats: [{ seatNumber: 1, memberName: null, expiresAt: null, status: "vacant" }] } as SharingAccountDetail],
+    ]);
+
+    expect(sortSharingAccountsByNearestSeatExpiry(
+      accounts,
+      details,
+      assertDateOnly("2026-09-28"),
+    ).map((account) => account.id)).toEqual([
+      "expired",
+      "future",
+      "same-date-later-number",
+      "missing",
+    ]);
+
+    expect(sortSharingAccountsByNearestSeatExpiry(
+      accounts,
+      details,
+      assertDateOnly("2026-09-28"),
+      "desc",
+    ).map((account) => account.id)).toEqual([
+      "future",
+      "same-date-later-number",
+      "expired",
+      "missing",
+    ]);
   });
 });

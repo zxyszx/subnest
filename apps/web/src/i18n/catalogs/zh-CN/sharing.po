@@ -139,11 +139,6 @@ msgid "sharing.cardLast4"
 msgstr "卡尾号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:13
-msgid "sharing.upcomingRenewals"
-msgstr "即将续费"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:33
 msgid "sharing.cancel"
 msgstr "取消"
@@ -559,6 +554,11 @@ msgstr "车友到期"
 #: src/i18n/descriptors/sharing.ts:59
 msgid "sharing.memberName"
 msgstr "车友名称"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:13
+msgid "sharing.upcomingRenewals"
+msgstr "车友续费/收费"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:89

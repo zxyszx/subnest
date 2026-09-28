@@ -60,6 +60,7 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "header.toggleTheme": "切换主题",
         "nav.calendar": "日历",
         "nav.dashboard": "仪表盘",
+        "nav.online2fa": "在线 2FA",
         "nav.settings": "设置",
         "nav.sharing": "合租",
         "nav.statistics": "统计",
@@ -282,22 +283,25 @@ describe("Header system version entry", () => {
 
     renderHeader();
 
-    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
-    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3");
-    expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end");
+    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80", "lg:fixed", "lg:w-64", "lg:border-r");
+    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3", "lg:h-full", "lg:flex-col");
+    expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end", "lg:border-t", "lg:pt-4");
 
     const desktopNav = screen.getByTestId("app-header-desktop-nav");
     const mobileNav = screen.getByTestId("app-header-mobile-nav");
-    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex");
+    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "lg:flex-col", "lg:flex-1");
     expect(mobileNav).toHaveClass("flex", "overflow-x-auto", "overscroll-x-contain", "border-t", "lg:hidden");
 
     const subscriptionLink = within(desktopNav).getByRole("link", { name: "订阅" });
     expect(subscriptionLink).toHaveAttribute("title", "订阅");
-    expect(subscriptionLink).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-3", "xl:px-4");
-    expect(subscriptionLink).not.toHaveClass("lg:w-10", "lg:px-0");
+    expect(subscriptionLink).toHaveClass("h-11", "w-full", "justify-start", "gap-3", "px-3");
     const subscriptionLabel = within(subscriptionLink).getByText("订阅");
     expect(subscriptionLabel).toHaveClass("whitespace-nowrap");
     expect(subscriptionLabel).not.toHaveClass("sr-only", "xl:not-sr-only");
+
+    const settingsLink = within(desktopNav).getByRole("link", { name: "设置" });
+    expect(settingsLink).toHaveClass("lg:mt-auto");
+    expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
   });
 
   it("uses the shared brand mark contract in the header", () => {

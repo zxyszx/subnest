@@ -2,50 +2,40 @@
  * 仪表盘首页（/）。
  *
  * 展示内容：
- * - 汇总统计：月度支出/活跃订阅/即将续费/试用中
- * - 近期订阅卡片
- * - 支出分布图（按分类/币种换算）
- * - 即将续费列表
+ * - 财务摘要：月均支出/合租月收入/合租月净利润
+ * - 需要处理的订阅续费
+ * - 需要处理的车友续费与收费
  *
  * 架构位置：
  * - 页面只做数据 hook 装配和布局。
- * - 首页统计由 `useDashboardStats` 生成，CRUD 弹窗状态由 `useSubscriptionCrud` 管理。
+ * - 首页统计由 `useDashboardStats` 生成，新增入口由 `useSubscriptionCrud` 管理。
  */
 
-import { useCallback, useMemo } from "react";
 import Link from '@/components/router-link';
-import type { Subscription, SubscriptionCollectionItem } from "@/types/subscription";
+import type { SubscriptionCollectionItem } from "@/types/subscription";
 import { Header } from "@/components/header";
 import { dashboardStatLayout } from "@/components/dashboard-stat-layout";
 import { StatCard } from "@/components/ui/stat-card";
-import { SubscriptionCard } from "@/components/subscription-card";
-import { SubscriptionDetailDialog } from "@/components/subscription-detail-dialog";
-import { AddToCalendarDialog } from "@/components/add-to-calendar-dialog";
-import { DeferredSpendingChart } from "@/components/spending-chart-loader";
 import { UpcomingRenewals } from "@/components/upcoming-renewals";
+import { SharingUpcomingRenewals } from "@/components/sharing-upcoming-renewals";
 import { DashboardPageSkeleton } from "@/components/loading-skeleton";
 import { QueryErrorState } from "@/components/query-error-state";
-import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
-import { CreditCard, TrendingUp, Plus, Sparkles, CircleDollarSign } from "lucide-react";
+import { CreditCard, Plus, CircleDollarSign, ReceiptText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
 import { useSubscriptionAnalytics, useSubscriptionFacets } from "@/hooks/use-subscriptions";
 import { useSettings } from "@/hooks/use-settings";
-import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useDashboardStats } from "@/modules/subscriptions/application/use-dashboard-stats";
 import { useSubscriptionCrud } from "@/modules/subscriptions/application/use-subscription-crud";
-import { resolveSubscriptionPriceReferenceCurrency } from "@/modules/subscriptions/domain/subscription-price-reference";
 import { useI18n } from "@/i18n/I18nProvider";
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS } from "@/types/subscription";
-import { useSubscriptionDetailDialog } from "@/hooks/use-subscription-detail-dialog";
-import { useSubscriptionCalendarDialog } from "@/hooks/use-subscription-calendar-dialog";
 import { useZonedToday } from "@/hooks/use-zoned-today";
 import { formatCompactCurrencyAmount } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { useRouteReady } from "@/components/route-progress";
-import { useSharingAccounts } from "@/hooks/use-sharing";
-import { sharingMonthlyProfit, sharingMonthlyRevenue } from "@/lib/sharing-financials";
+import { useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
+import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
@@ -56,35 +46,22 @@ export default function Index() {
   const facetsQuery = useSubscriptionFacets();
   const settingsQuery = useSettings();
   const sharingQuery = useSharingAccounts();
-  useRouteReady(subscriptionsQuery.isPending || settingsQuery.isPending);
+  useRouteReady(subscriptionsQuery.isPending || settingsQuery.isPending || sharingQuery.isPending);
   const settings = settingsQuery.data;
-  const { config } = useCustomConfigState();
   const { t, locale, formatCurrency } = useI18n();
   const exchangeRateProvider = settings?.exchangeRateProvider;
-  const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useReportExchangeRates(exchangeRateProvider);
-  const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
+  const { convert, loading: ratesLoading } = useReportExchangeRates(exchangeRateProvider);
   const defaultCurrency = settings?.defaultCurrency ?? "CNY";
   const sharingAccounts = sharingQuery.data?.accounts ?? [];
+  const sharingDetailQueries = useSharingAccountDetails(sharingAccounts.map((account) => account.id));
   const sharingIncome = sharingAccounts.reduce((total, account) => total + sharingMonthlyRevenue(account, defaultCurrency, convert), 0);
   const sharingProfit = sharingAccounts.reduce((total, account) => total + sharingMonthlyProfit(account, defaultCurrency, convert), 0);
-  const priceReferenceCurrency = settings ? resolveSubscriptionPriceReferenceCurrency(settings) : null;
   const timeZone = settings?.timezone ?? "UTC";
   const inheritedReminderDays = settings?.notificationReminderDays ?? DEFAULT_NOTIFICATION_REMINDER_DAYS;
-  const categoryByValue = useMemo(() => new Map(config.categories.map((category) => [category.value, category])), [config.categories]);
-  const paymentMethodByValue = useMemo(() => new Map(config.paymentMethods.map((method) => [method.value, method])), [config.paymentMethods]);
   const availableTags = facetsQuery.data?.tags ?? [];
   // 页面级 today 是 Dashboard 全部日期派生的单一时钟，账号午夜到达时卡片、统计和提醒一起刷新。
   const today = useZonedToday(timeZone);
-  const {
-    detailDialogOpen,
-    selectedDetailSubscription,
-    selectedDetailCollectionItem,
-    detailPending,
-    handleViewDetails,
-    handleDetailDialogOpenChange,
-  } = useSubscriptionDetailDialog(subscriptions);
-  const calendarDialog = useSubscriptionCalendarDialog(subscriptions);
-  const { activeSubscriptions, totalMonthly, totalDaily, trialCount } = useDashboardStats(
+  const { totalMonthly, totalDaily } = useDashboardStats(
     subscriptions,
     defaultCurrency,
     convert,
@@ -92,25 +69,19 @@ export default function Index() {
     inheritedReminderDays,
   );
   const {
-    editingSubscription,
-    editingCollectionItem,
-    editDialogOpen,
-    editDetailPending,
     handleAddSubscription,
-    handleDeleteSubscription,
-    handleEditSubscription,
-    handleTogglePublicHiddenSubscription,
-    handleSaveSubscription,
-    handleEditDialogOpenChange,
-    handlePrefetchSubscription,
   } = useSubscriptionCrud(subscriptions);
-  const handleEditFromDetail = useCallback((subscription: Subscription) => {
-    handleEditSubscription(subscription.id);
-  }, [handleEditSubscription]);
+  const sharingRenewals = sharingUpcomingSeatRenewals(
+    sharingDetailQueries.flatMap((query) => query.data ? [query.data] : []),
+    today,
+    7,
+    true,
+  );
+  const sharingRenewalsPending = sharingDetailQueries.some((query) => query.isPending);
 
   // 只有页面主数据还没有首屏结果时才展示骨架屏。
   // 汇率刷新期间保留已有内容，并在统计卡片副标题里提示加载状态，避免整页闪回 loading。
-  if (subscriptionsQuery.isPending || settingsQuery.isPending) {
+  if (subscriptionsQuery.isPending || settingsQuery.isPending || sharingQuery.isPending) {
     return (
       <div className="app-page bg-background">
         <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
@@ -121,18 +92,22 @@ export default function Index() {
     );
   }
 
-  if (subscriptionsQuery.error) {
+  if (subscriptionsQuery.error || sharingQuery.error) {
     return (
       <div className="app-page bg-background">
         <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
         <main className="app-main mx-auto max-w-7xl">
-          <QueryErrorState error={subscriptionsQuery.error} onRetry={subscriptionsQuery.refetch} />
+          <QueryErrorState
+            error={subscriptionsQuery.error ?? sharingQuery.error}
+            onRetry={() => {
+              void subscriptionsQuery.refetch();
+              void sharingQuery.refetch();
+            }}
+          />
         </main>
       </div>
     );
   }
-
-  const displayedSubscriptions = subscriptions.slice(0, 6);
 
   return (
     <div className="app-page bg-background">
@@ -155,50 +130,38 @@ export default function Index() {
             className={cn("animate-fade-in", dashboardStatLayout.primaryCard)}
           />
           <StatCard
-            data-testid="dashboard-stat-active-subscriptions"
-            title={t("dashboard.activeSubscriptions")}
-            value={activeSubscriptions.length}
-            subtitle={t("dashboard.totalSubscriptions", { count: facetsQuery.data?.total ?? subscriptions.length })}
-            icon={<TrendingUp className="h-6 w-6" />}
+            data-testid="dashboard-stat-sharing-income"
+            title={t("dashboard.sharingIncome")}
+            value={formatCurrency(sharingIncome, defaultCurrency)}
+            icon={<CircleDollarSign className="h-6 w-6" />}
+            variant="primary"
             density="dashboard"
             className="animate-fade-in [animation-delay:100ms]"
           />
           <StatCard
-            data-testid="dashboard-stat-trials"
-            title={t("dashboard.trials")}
-            value={trialCount}
-            subtitle={t("dashboard.trialsNeedAttention")}
-            icon={<Sparkles className="h-6 w-6" />}
-            variant={trialCount > 0 ? "warning" : "default"}
-            density="dashboard"
-            className={cn("animate-fade-in [animation-delay:200ms]", dashboardStatLayout.trialCard)}
-          />
-          <StatCard
-            data-testid="dashboard-stat-sharing-income"
-            title={t("dashboard.sharingIncome")}
-            value={formatCurrency(sharingIncome, defaultCurrency)}
-            subtitle={t("dashboard.sharingProfit", { amount: formatCurrency(sharingProfit, defaultCurrency) })}
-            icon={<CircleDollarSign className="h-6 w-6" />}
+            data-testid="dashboard-stat-sharing-profit"
+            title={t("statistics.sharingProfit")}
+            value={formatCurrency(sharingProfit, defaultCurrency)}
+            icon={<ReceiptText className="h-6 w-6" />}
             variant={sharingProfit >= 0 ? "primary" : "warning"}
             density="dashboard"
-            className="animate-fade-in [animation-delay:300ms]"
+            className="animate-fade-in [animation-delay:200ms]"
           />
         </div>
 
-        {/* 主内容网格 */}
-        <div className="grid items-start gap-6 lg:grid-cols-3">
-          {/* 订阅列表 */}
-          <div className="lg:col-span-2">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">{t("dashboard.recentSubscriptions")}</h2>
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+            <div className="mb-4 flex min-h-11 items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h2>
               <Link href="/subscriptions">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" className="min-h-11 gap-2 text-muted-foreground hover:text-foreground">
                   {t("dashboard.viewAll", { count: subscriptions.length })}
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
             {subscriptions.length === 0 ? (
-              <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-10 text-center">
+              <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-8 text-center">
                 <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("dashboard.emptyDescription")}</p>
                 <AddSubscriptionDialog
@@ -213,96 +176,31 @@ export default function Index() {
                 />
               </div>
             ) : (
-              <div className="grid items-stretch gap-4 sm:grid-cols-2">
-                {displayedSubscriptions.map((sub, index) => (
-                  <div key={sub.id} className="h-full animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
-                    <SubscriptionCard
-                      subscription={sub}
-                      today={today}
-                      inheritedReminderDays={inheritedReminderDays}
-                      currencyConvert={convert}
-                      currencyRatesReady={currencyRatesReady}
-                      priceReferenceCurrency={priceReferenceCurrency}
-                      categoryByValue={categoryByValue}
-                      paymentMethodByValue={paymentMethodByValue}
-                      onEdit={handleEditSubscription}
-                      onDelete={handleDeleteSubscription}
-                      onTogglePublicHidden={handleTogglePublicHiddenSubscription}
-                      onViewDetails={handleViewDetails}
-                      onAddToCalendar={calendarDialog.show}
-                      onPrefetchDetails={handlePrefetchSubscription}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-            {subscriptions.length > 6 && (
-              <div className="mt-4 text-center">
-                <Link href="/subscriptions">
-                  <Button variant="outline" className="border-border">
-                    {t("dashboard.viewAllSubscriptions", { count: subscriptions.length })}
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* 侧边栏 */}
-          <div className="grid gap-6">
-            {/* 支出图表 */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-card">
-              <h3 className="mb-3 text-lg font-semibold text-foreground">{t("dashboard.spendingDistribution")}</h3>
-              <DeferredSpendingChart
-                subscriptions={subscriptions}
-                categories={config.categories}
-                defaultCurrency={defaultCurrency}
-                today={today}
-                convert={convert}
-              />
-            </div>
-
-            {/* 即将续费/到期 */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-card">
-              <h3 className="mb-4 text-lg font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h3>
               <UpcomingRenewals
                 subscriptions={subscriptions}
                 today={today}
                 notificationReminderDays={inheritedReminderDays}
                 includeExpired
+                limit={6}
               />
+            )}
+          </section>
+
+          <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
+            <div className="mb-4 flex min-h-11 items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">{t("sharing.upcomingRenewals")}</h2>
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold tabular-nums text-muted-foreground">
+                {sharingRenewals.length}
+              </span>
             </div>
-          </div>
+            <SharingUpcomingRenewals
+              items={sharingRenewals}
+              pending={sharingRenewalsPending}
+              limit={6}
+            />
+          </section>
         </div>
       </main>
-
-      <EditSubscriptionDialog
-        subscription={editingSubscription}
-        loadingPreview={editingCollectionItem}
-        open={editDialogOpen}
-        onOpenChange={handleEditDialogOpenChange}
-        onSave={handleSaveSubscription}
-        availableTags={availableTags}
-        loading={editDetailPending}
-      />
-      <SubscriptionDetailDialog
-        open={detailDialogOpen}
-        onOpenChange={handleDetailDialogOpenChange}
-        subscription={selectedDetailSubscription}
-        loadingPreview={selectedDetailCollectionItem}
-        onEditSubscription={handleEditFromDetail}
-        today={today}
-        currencyConvert={convert}
-        currencyRatesReady={currencyRatesReady}
-        priceReferenceCurrency={priceReferenceCurrency}
-        loading={detailPending}
-      />
-      <AddToCalendarDialog
-        open={calendarDialog.open}
-        onOpenChange={calendarDialog.onOpenChange}
-        subscription={calendarDialog.subscription}
-        loadingPreview={calendarDialog.collectionItem}
-        loading={calendarDialog.pending}
-      />
     </div>
   );
 }

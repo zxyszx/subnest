@@ -1,5 +1,5 @@
 /**
- * 顶部导航栏（桌面）+ 底部导航栏（移动端）。
+ * 侧边导航栏（桌面）+ 顶部/底部导航栏（移动端）。
  *
  * 作用：
  * - 提供全局导航（仪表盘/订阅/日历/统计/设置）
@@ -45,14 +45,14 @@ interface HeaderProps {
   pageActions?: ReactNode;
 }
 
-type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "calendar" | "statistics" | "settings";
+type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "online2fa" | "calendar" | "statistics" | "settings";
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
-const navItems: Array<{ path: string; labelKey: MessageKey; icon?: NavIconKey; adminOnly?: boolean }> = [
+const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean }> = [
   { path: '/', labelKey: 'nav.dashboard', icon: "dashboard" },
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
   { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
-  { path: '/online-2fa', labelKey: 'nav.online2fa' },
+  { path: '/online-2fa', labelKey: 'nav.online2fa', icon: "online2fa" },
   { path: '/calendar', labelKey: 'nav.calendar', icon: "calendar" },
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
@@ -66,6 +66,8 @@ function renderNavIcon(icon: NavIconKey, className: string) {
       return <List className={className} />;
     case "sharing":
       return <UsersRound className={className} />;
+    case "online2fa":
+      return <ShieldCheck className={className} />;
     case "calendar":
       return <CalendarDays className={className} />;
     case "statistics":
@@ -138,9 +140,9 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 href={item.path}
                 end={item.path === "/"}
                 title={t(item.labelKey)}
-                className={({ isActive }) => getHeaderDesktopNavLinkClass(isActive)}
+                className={({ isActive }) => cn(getHeaderDesktopNavLinkClass(isActive), item.path === "/settings" && "lg:mt-auto")}
               >
-                {item.icon ? renderNavIcon(item.icon, headerLayout.desktopNavIcon) : null}
+                {renderNavIcon(item.icon, headerLayout.desktopNavIcon)}
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
               </NavLink>
             ))}
@@ -190,7 +192,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             end={item.path === "/"}
             className={({ isActive }) => getHeaderMobileNavLinkClass(isActive)}
           >
-            {item.icon ? renderNavIcon(item.icon, headerLayout.mobileNavIcon) : <ShieldCheck className={headerLayout.mobileNavIcon} />}
+            {renderNavIcon(item.icon, headerLayout.mobileNavIcon)}
             {t(item.labelKey)}
           </NavLink>
         ))}

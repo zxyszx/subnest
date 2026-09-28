@@ -46,6 +46,8 @@ export interface SharingNearestSeatExpiry {
   memberCount: number;
 }
 
+export type SharingExpirySortDirection = "asc" | "desc";
+
 export function sharingNearestSeatExpiry(
   detail: SharingAccountDetail | undefined,
   today: DateOnly,
@@ -63,15 +65,37 @@ export function sharingNearestSeatExpiry(
   };
 }
 
+export function sortSharingAccountsByNearestSeatExpiry(
+  accounts: readonly SharingAccount[],
+  detailsByAccountId: ReadonlyMap<string, SharingAccountDetail>,
+  today: DateOnly,
+  direction: SharingExpirySortDirection = "asc",
+): SharingAccount[] {
+  return [...accounts].sort((left, right) => {
+    const leftExpiry = sharingNearestSeatExpiry(detailsByAccountId.get(left.id), today)?.expiresAt;
+    const rightExpiry = sharingNearestSeatExpiry(detailsByAccountId.get(right.id), today)?.expiresAt;
+
+    if (leftExpiry && rightExpiry && leftExpiry !== rightExpiry) {
+      const comparison = leftExpiry.localeCompare(rightExpiry);
+      return direction === "asc" ? comparison : -comparison;
+    }
+    if (leftExpiry !== rightExpiry) return leftExpiry ? -1 : 1;
+    return left.accountNumber - right.accountNumber
+      || left.name.localeCompare(right.name)
+      || left.id.localeCompare(right.id);
+  });
+}
+
 export function sharingUpcomingSeatRenewals(
   details: readonly SharingAccountDetail[],
   today: DateOnly,
   windowDays = 7,
+  includeExpired = false,
 ): SharingUpcomingSeatRenewal[] {
   return details.flatMap((detail) => detail.seats.flatMap((seat) => {
     if (!seat.expiresAt || !seat.memberName || seat.status === "vacant" || seat.status === "archived") return [];
     const daysUntilExpiry = daysBetweenDateOnly(today, seat.expiresAt);
-    if (daysUntilExpiry < 0 || daysUntilExpiry > windowDays) return [];
+    if ((!includeExpired && daysUntilExpiry < 0) || daysUntilExpiry > windowDays) return [];
     return [{ account: detail.account, seat, daysUntilExpiry }];
   })).sort((left, right) => left.daysUntilExpiry - right.daysUntilExpiry
     || left.seat.expiresAt!.localeCompare(right.seat.expiresAt!)

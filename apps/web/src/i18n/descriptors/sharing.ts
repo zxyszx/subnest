@@ -10,7 +10,7 @@ export const messages = [
   msg({ id: "sharing.occupiedSeats", message: "已占车位" }),
   msg({ id: "sharing.availableSeats", message: "空闲车位" }),
   msg({ id: "sharing.outstanding", message: "代收金额" }),
-  msg({ id: "sharing.upcomingRenewals", message: "即将续费" }),
+  msg({ id: "sharing.upcomingRenewals", message: "车友续费/收费" }),
   msg({ id: "sharing.nextSevenDays", message: "7 天内" }),
   msg({ id: "sharing.emptyTitle", message: "还没有合租账号" }),
   msg({ id: "sharing.emptyDescription", message: "先在订阅列表创建平台订阅，再从这里添加该订阅下的合租账号。" }),

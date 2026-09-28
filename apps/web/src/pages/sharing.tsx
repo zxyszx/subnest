@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { ArrowUpDown, CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
@@ -11,6 +11,7 @@ import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
@@ -24,7 +25,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
-import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
+import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry, type SharingExpirySortDirection } from "@/lib/sharing-financials";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
@@ -46,6 +47,34 @@ function currencyMetric(formatted: string, currency: string) {
   );
 }
 
+interface ExpirySortMenuProps {
+  value: SharingExpirySortDirection;
+  onValueChange: (value: SharingExpirySortDirection) => void;
+  label: string;
+  ascendingLabel: string;
+  descendingLabel: string;
+  className?: string;
+}
+
+function ExpirySortMenu({ value, onValueChange, label, ascendingLabel, descendingLabel, className }: ExpirySortMenuProps) {
+  const currentLabel = value === "asc" ? ascendingLabel : descendingLabel;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" className={cn("h-8 w-8", className)} aria-label={label} title={`${label}：${currentLabel}`}>
+          <ArrowUpDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-40">
+        <DropdownMenuRadioGroup value={value} onValueChange={(nextValue) => onValueChange(nextValue as SharingExpirySortDirection)}>
+          <DropdownMenuRadioItem value="asc">{ascendingLabel}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="desc">{descendingLabel}</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function Sharing() {
   const { t, formatCurrency, formatDateOnly } = useI18n();
   const { pending: customConfigPending } = useCustomConfigState();
@@ -58,6 +87,7 @@ export default function Sharing() {
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expirySortDirection, setExpirySortDirection] = useState<SharingExpirySortDirection>("asc");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
   const updateSubscription = useUpdateSubscription();
@@ -81,7 +111,7 @@ export default function Sharing() {
     accounts: { id: string; accountNumber: number }[];
   }>()).values());
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
-  const visibleAccounts = accounts
+  const filteredAccounts = accounts
     .filter((account) => !selectedPlatform || subscriptionPlatformName(account.subscription) === selectedPlatform)
     .filter((account) => {
       if (!normalizedSearch) return true;
@@ -92,11 +122,12 @@ export default function Sharing() {
         || `${platformName}${accountNumber}`.includes(normalizedSearch.replaceAll(" ", ""));
     })
     .sort((left, right) => left.accountNumber - right.accountNumber || left.name.localeCompare(right.name));
-  const accountDetailQueries = useSharingAccountDetails(visibleAccounts.map((account) => account.id));
-  const accountDetails = new Map(visibleAccounts.flatMap((account, index) => {
+  const accountDetailQueries = useSharingAccountDetails(filteredAccounts.map((account) => account.id));
+  const accountDetails = new Map(filteredAccounts.flatMap((account, index) => {
     const detail = accountDetailQueries[index]?.data;
     return detail ? [[account.id, detail] as const] : [];
   }));
+  const visibleAccounts = sortSharingAccountsByNearestSeatExpiry(filteredAccounts, accountDetails, today, expirySortDirection);
   const upcomingSeatRenewals = sharingUpcomingSeatRenewals(
     accountDetailQueries.flatMap((query) => query.data ? [query.data] : []),
     today,
@@ -245,15 +276,25 @@ export default function Sharing() {
               ariaLabel={t("sharing.platformFilter")}
               className="min-w-0 flex-1 border-0 px-2"
             />
-            <div className="relative mx-2 mb-2 shrink-0 sm:mb-0 sm:ml-0 sm:w-64">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={t("sharing.searchPlaceholder")}
-                aria-label={t("sharing.searchPlaceholder")}
-                className="h-9 bg-secondary pl-9"
+            <div className="mx-2 mb-2 flex shrink-0 items-center gap-1 sm:mb-0 sm:ml-0">
+              <div className="relative min-w-0 flex-1 sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={t("sharing.searchPlaceholder")}
+                  aria-label={t("sharing.searchPlaceholder")}
+                  className="h-9 bg-secondary pl-9"
+                />
+              </div>
+              <ExpirySortMenu
+                value={expirySortDirection}
+                onValueChange={setExpirySortDirection}
+                label={t("subscriptions.sort.label")}
+                ascendingLabel={t("subscriptions.sort.renewalAsc")}
+                descendingLabel={t("subscriptions.sort.renewalDesc")}
+                className="sm:hidden"
               />
             </div>
           </div>
@@ -278,7 +319,7 @@ export default function Sharing() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-3 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                  <th className="px-4 py-2 font-medium"><span className="flex items-center gap-1"><span>{t("subscription.field.platformName")}</span><ExpirySortMenu value={expirySortDirection} onValueChange={setExpirySortDirection} label={t("subscriptions.sort.label")} ascendingLabel={t("subscriptions.sort.renewalAsc")} descendingLabel={t("subscriptions.sort.renewalDesc")} /></span></th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>

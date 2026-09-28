@@ -139,11 +139,6 @@ msgid "sharing.cardLast4"
 msgstr "Card ending"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:13
-msgid "sharing.upcomingRenewals"
-msgstr "Upcoming renewals"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:33
 msgid "sharing.cancel"
 msgstr "Cancel"
@@ -559,6 +554,11 @@ msgstr "Member expiry"
 #: src/i18n/descriptors/sharing.ts:59
 msgid "sharing.memberName"
 msgstr "Member name"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:13
+msgid "sharing.upcomingRenewals"
+msgstr "Member renewals / charges"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:89

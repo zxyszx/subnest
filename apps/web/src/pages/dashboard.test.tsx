@@ -5,11 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { assertDateOnly } from "@/lib/time/date-only";
 import { DEFAULT_CUSTOM_CONFIG } from "@/types/config";
-import type {
-  RecurringCycleSubscriptionCollectionItem,
-  Subscription,
-  SubscriptionCollectionItem,
-} from "@/types/subscription";
+import type { RecurringCycleSubscriptionCollectionItem, SubscriptionCollectionItem } from "@/types/subscription";
+import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
 import Dashboard from "./dashboard";
 
 interface MockSubscriptionAnalyticsResult {
@@ -17,12 +14,6 @@ interface MockSubscriptionAnalyticsResult {
   isPending: boolean;
   error?: unknown;
   refetch?: () => void;
-}
-
-interface MockSubscriptionDetailResult {
-  data: Subscription | undefined;
-  error: unknown | null;
-  isPending: boolean;
 }
 
 const mocks = vi.hoisted(() => ({
@@ -33,12 +24,12 @@ const mocks = vi.hoisted(() => ({
   handleTogglePublicHiddenSubscription: vi.fn(),
   handleSaveSubscription: vi.fn(),
   ratesLoading: false,
+  sharingAccounts: [] as SharingAccount[],
+  sharingDetailQueries: [] as Array<{ data?: SharingAccountDetail; isPending: boolean }>,
   upcomingRenewalsCalls: [] as Array<{ count: number; today: string; notificationReminderDays: number }>,
   useSettings: vi.fn(),
   useSubscriptionAnalytics: vi.fn<() => MockSubscriptionAnalyticsResult>(),
-  useSubscriptionDetail: vi.fn<(id: string | null) => MockSubscriptionDetailResult>(),
 }));
-const detailSubscriptions = new Map<string, Subscription>();
 
 vi.mock("@/components/header", () => ({
   Header: ({ pageActions }: { pageActions?: React.ReactNode }) => <header data-testid="header">{pageActions}</header>,
@@ -52,63 +43,6 @@ vi.mock("@/components/router-link", () => ({
 
 vi.mock("@/components/loading-skeleton", () => ({
   DashboardPageSkeleton: () => <div data-testid="dashboard-skeleton" />,
-}));
-
-vi.mock("@/components/subscription-card", () => ({
-  SubscriptionCard: ({
-    subscription,
-    today,
-    inheritedReminderDays,
-    priceReferenceCurrency,
-    onTogglePublicHidden,
-    onViewDetails,
-  }: {
-    subscription: SubscriptionCollectionItem;
-    today: string;
-    inheritedReminderDays: number;
-    priceReferenceCurrency: string | null;
-    onTogglePublicHidden?: (id: string) => void;
-    onViewDetails?: (id: string) => void;
-  }) => (
-    <article data-testid="subscription-card">
-      {subscription.name}
-      <span data-testid="subscription-card-reminder">{inheritedReminderDays}</span>
-      <span data-testid="subscription-card-reference">{priceReferenceCurrency ?? "off"}</span>
-      <span data-testid="subscription-card-today">{today}</span>
-      <button type="button" onClick={() => onViewDetails?.(subscription.id)}>
-        查看 {subscription.name} 的详情
-      </button>
-      <button type="button" onClick={() => onTogglePublicHidden?.(subscription.id)}>
-        公开切换 {subscription.name}
-      </button>
-    </article>
-  ),
-}));
-
-vi.mock("@/components/subscription-detail-dialog", () => ({
-  SubscriptionDetailDialog: ({ open, subscription, today, priceReferenceCurrency }: { open: boolean; subscription: Subscription | null; today: string; priceReferenceCurrency: string | null }) => (
-    <div data-testid="subscription-detail-dialog">
-      {open && subscription ? <span>{subscription.name} 详情 {priceReferenceCurrency ?? "off"} {today}</span> : null}
-    </div>
-  ),
-}));
-
-vi.mock("@/components/spending-chart-loader", () => ({
-  DeferredSpendingChart: ({
-    subscriptions,
-    defaultCurrency,
-    today,
-    convert,
-  }: {
-    subscriptions: SubscriptionCollectionItem[];
-    defaultCurrency: string;
-    today: string;
-    convert: (amount: number | string, fromCurrency: string, toCurrency: string) => number;
-  }) => (
-    <div data-testid="spending-chart">
-      {subscriptions.length}:{defaultCurrency}:{today}:{convert("1", "USD", "CNY")}
-    </div>
-  ),
 }));
 
 vi.mock("@/components/upcoming-renewals", () => ({
@@ -153,7 +87,13 @@ vi.mock("@/hooks/use-settings", () => ({
 }));
 
 vi.mock("@/hooks/use-sharing", () => ({
-  useSharingAccounts: () => ({ data: { accounts: [], total: 0 }, isPending: false }),
+  useSharingAccounts: () => ({
+    data: { accounts: mocks.sharingAccounts, total: mocks.sharingAccounts.length },
+    isPending: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+  useSharingAccountDetails: () => mocks.sharingDetailQueries,
 }));
 
 vi.mock("@/hooks/use-zoned-today", () => ({
@@ -163,7 +103,6 @@ vi.mock("@/hooks/use-zoned-today", () => ({
 vi.mock("@/hooks/use-subscriptions", () => ({
   prefetchSubscriptionDetail: vi.fn(),
   useSubscriptionAnalytics: mocks.useSubscriptionAnalytics,
-  useSubscriptionDetail: mocks.useSubscriptionDetail,
   useSubscriptionFacets: () => ({
     data: { total: 1, categoryCounts: { productivity: 1 }, tags: [], visibleCount: 1, hiddenCount: 0 },
   }),
@@ -218,16 +157,57 @@ function subscription(
   };
 }
 
-function toSubscriptionDetail(item: SubscriptionCollectionItem): Subscription {
+function sharingAccount(): SharingAccount {
   return {
-    ...item,
-    website: undefined,
-    notes: undefined,
-    tags: [],
-    repeatReminderEnabled: false,
-    repeatReminderInterval: "1h",
-    repeatReminderWindow: "72h",
-    extra: {},
+    id: "sharing-1",
+    subscription: { id: "netflix", name: "Netflix", platformName: "Netflix", logo: null },
+    name: "Netflix",
+    accountNumber: 2,
+    loginAccount: "netflix@example.com",
+    hasPassword: true,
+    verificationLink: null,
+    monthlyCost: "40",
+    currency: "CNY",
+    nextBillingDate: assertDateOnly("2026-07-01"),
+    paymentMethod: null,
+    cardLast4: null,
+    capacity: 5,
+    occupiedSeats: 1,
+    monthlyRevenue: "60",
+    monthlyRevenueByCurrency: { CNY: "60" },
+    outstandingAmount: "15",
+    monthlyProfit: 20,
+    status: "active",
+    notes: null,
+    createdAt: "2026-01-01T00:00:00Z",
+  };
+}
+
+function sharingDetail(account: SharingAccount): SharingAccountDetail {
+  return {
+    account,
+    seats: [{
+      id: "seat-1",
+      seatNumber: 3,
+      memberName: "Alice",
+      contact: "alice",
+      contactType: "wechat",
+      monthlyPrice: "15",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: assertDateOnly("2026-05-14"),
+      expiresAt: assertDateOnly("2026-06-14"),
+      status: "active",
+      notes: null,
+      currentReceivable: null,
+    }],
+    totals: {
+      monthlyRevenue: "60",
+      contractedRevenue: "60",
+      collectedRevenue: "45",
+      outstandingAmount: "15",
+      monthlyProfit: 20,
+    },
   };
 }
 
@@ -262,19 +242,11 @@ function mockResolvedDashboardData() {
 
 describe("Dashboard page loading state", () => {
   beforeEach(() => {
-    detailSubscriptions.clear();
     mocks.ratesLoading = false;
+    mocks.sharingAccounts = [];
+    mocks.sharingDetailQueries = [];
     mocks.upcomingRenewalsCalls = [];
     mockResolvedDashboardData();
-    mocks.useSubscriptionDetail.mockImplementation((id: string | null) => {
-      const item = id
-        ? mocks.useSubscriptionAnalytics().data?.find((subscriptionItem: SubscriptionCollectionItem) => subscriptionItem.id === id)
-        : undefined;
-      if (item && !detailSubscriptions.has(item.id)) {
-        detailSubscriptions.set(item.id, toSubscriptionDetail(item));
-      }
-      return { data: id ? detailSubscriptions.get(id) : undefined, error: null, isPending: false };
-    });
   });
 
   it("keeps dashboard content visible while exchange rates are loading", () => {
@@ -283,17 +255,14 @@ describe("Dashboard page loading state", () => {
     renderDashboard();
 
     expect(screen.queryByTestId("dashboard-skeleton")).not.toBeInTheDocument();
-    expect(screen.getByText("近期订阅")).toBeInTheDocument();
-    expect(screen.getByText("Codex Pro")).toBeInTheDocument();
-    expect(screen.getByTestId("subscription-card-reminder")).toHaveTextContent("5");
-    expect(screen.getByTestId("subscription-card-reference")).toHaveTextContent("USD");
-    expect(screen.getByTestId("subscription-card-today")).toHaveTextContent("2026-06-15");
+    expect(screen.getByText("即将续费/到期")).toBeInTheDocument();
+    expect(screen.getByText("车友续费/收费")).toBeInTheDocument();
     expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({
       count: 1,
       today: "2026-06-15",
       notificationReminderDays: 5,
     });
-    expect(screen.getByTestId("spending-chart")).toHaveTextContent("1:CNY:2026-06-15:7");
+    expect(screen.queryByText("支出分布")).not.toBeInTheDocument();
     expect(screen.getByText("日均 ¥46.67 · 汇率加载中...")).toBeInTheDocument();
   });
 
@@ -326,67 +295,46 @@ describe("Dashboard page loading state", () => {
     expect(screen.getAllByRole("heading", { name: "从第一个订阅开始" })).toHaveLength(1);
     expect(screen.getByText("添加订阅后，这里会汇总支出、续费和提醒。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "添加第一个订阅" })).toBeInTheDocument();
-    expect(screen.getByTestId("spending-chart")).toHaveTextContent("0:CNY:2026-06-15:7");
-    expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("0");
+    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
+    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
   });
 
-  it("uses a focused responsive four-card dashboard summary", () => {
+  it("uses a focused responsive three-card financial summary", () => {
     renderDashboard();
 
     const grid = screen.getByTestId("dashboard-stat-grid");
     const monthlySpend = screen.getByTestId("dashboard-stat-monthly-spend");
-    const activeSubscriptions = screen.getByTestId("dashboard-stat-active-subscriptions");
-    const trials = screen.getByTestId("dashboard-stat-trials");
+    const sharingProfit = screen.getByTestId("dashboard-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "xl:grid-cols-4");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-3");
     expect(monthlySpend).toHaveClass("p-4", "col-span-1");
-    expect(activeSubscriptions).toHaveClass("p-4");
-    expect(trials).toHaveClass("p-4", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-4");
-    expect(screen.queryByTestId("dashboard-stat-upcoming-renewals")).not.toBeInTheDocument();
+    expect(sharingProfit).toHaveClass("p-4");
     expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
   });
 
-  it("shows six recent subscriptions before linking to the full list", () => {
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: Array.from({ length: 10 }, (_, index) => subscription({ id: `sub-${index + 1}`, name: `订阅 ${index + 1}` })),
-      isPending: false,
-    });
-
-    renderDashboard();
-
-    expect(screen.getAllByTestId("subscription-card")).toHaveLength(6);
-    expect(screen.getByText("订阅 6")).toBeInTheDocument();
-    expect(screen.queryByText("订阅 7")).not.toBeInTheDocument();
-  });
-
-  it("keeps upcoming renewals visible below the spending distribution", () => {
+  it("shows subscription and sharing renewal worklists without a spending chart", () => {
     renderDashboard();
 
     expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("1");
-    expect(screen.getByText("支出分布").compareDocumentPosition(screen.getByText("即将续费/到期")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "即将续费/到期" })).not.toBeInTheDocument();
+    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
+    expect(screen.queryByText("支出分布")).not.toBeInTheDocument();
   });
 
-  it("opens subscription details from a recent subscription card", async () => {
-    const user = userEvent.setup();
+  it("keeps overdue sharing members visible with their account and charge", () => {
+    const account = sharingAccount();
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
 
     renderDashboard();
 
-    await user.click(screen.getByRole("button", { name: "查看 Codex Pro 的详情" }));
-
-    expect(screen.getByText("Codex Pro 详情 USD 2026-06-15")).toBeInTheDocument();
-  });
-
-  it("wires public visibility toggles from recent subscription cards", async () => {
-    const user = userEvent.setup();
-
-    renderDashboard();
-
-    await user.click(screen.getByRole("button", { name: "公开切换 Codex Pro" }));
-
-    expect(mocks.handleTogglePublicHiddenSubscription).toHaveBeenCalledWith("codex-pro");
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Netflix #2 · 车位 #3")).toBeInTheDocument();
+    expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
+    expect(screen.getByText("¥15 CNY")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60 CNY");
+    expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20 CNY");
   });
 
   it.each([

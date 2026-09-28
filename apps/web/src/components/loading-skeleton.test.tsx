@@ -7,20 +7,19 @@ describe("HeaderSkeleton", () => {
   it("shares the real header responsive layout contract", () => {
     render(<DashboardPageSkeleton />);
 
-    expect(screen.getByTestId("app-header-skeleton")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
+    expect(screen.getByTestId("app-header-skeleton")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80", "lg:fixed", "lg:w-64");
     expect(screen.getByTestId("route-progress")).toHaveClass("absolute", "bottom-0", "h-0.5", "opacity-0");
-    expect(screen.getByTestId("app-header-skeleton-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3");
-    expect(screen.getByTestId("app-header-actions-skeleton")).toHaveClass("min-w-0", "shrink-0", "justify-end");
+    expect(screen.getByTestId("app-header-skeleton-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3", "lg:h-full", "lg:flex-col");
+    expect(screen.getByTestId("app-header-actions-skeleton")).toHaveClass("min-w-0", "shrink-0", "justify-end", "lg:border-t");
 
     const desktopNav = screen.getByTestId("app-header-desktop-nav-skeleton");
     const mobileNav = screen.getByTestId("app-header-mobile-nav-skeleton");
     const firstDesktopItem = desktopNav.firstElementChild;
     const firstDesktopLabel = firstDesktopItem?.lastElementChild;
 
-    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex");
+    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "lg:flex-col", "lg:flex-1");
     expect(mobileNav).toHaveClass("flex", "border-t", "lg:hidden");
-    expect(firstDesktopItem).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-3", "xl:px-4");
-    expect(firstDesktopItem).not.toHaveClass("lg:w-10", "lg:px-0");
+    expect(firstDesktopItem).toHaveClass("h-11", "w-full", "justify-start", "gap-3", "px-3");
     expect(firstDesktopLabel).toHaveClass("h-4", "w-16");
     expect(firstDesktopLabel).not.toHaveClass("hidden", "xl:block");
   });
@@ -32,13 +31,12 @@ describe("DashboardPageSkeleton", () => {
 
     const grid = screen.getByTestId("dashboard-skeleton-stat-grid");
     const monthlySpend = screen.getByTestId("dashboard-skeleton-stat-monthly-spend");
-    const trials = screen.getByTestId("dashboard-skeleton-stat-trials");
+    const sharingProfit = screen.getByTestId("dashboard-skeleton-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-2", "xl:grid-cols-4");
+    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-3");
     expect(monthlySpend).toHaveClass("p-4", "col-span-1");
-    expect(trials).toHaveClass("p-4", "col-span-1");
     expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-4");
-    expect(screen.queryByTestId("dashboard-skeleton-stat-upcoming-renewals")).not.toBeInTheDocument();
+    expect(sharingProfit).toHaveClass("p-4");
   });
 });
 
