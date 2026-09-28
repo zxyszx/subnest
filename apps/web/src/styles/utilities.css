@@ -26,14 +26,6 @@
     overflow-x: clip;
   }
 
-  /* 桌面主导航固定在左侧；只有直接包含应用 Header 的页面才为侧栏预留空间。 */
-  @media (min-width: 1024px) {
-    .app-page:has(> [data-testid="app-header"]),
-    .app-page:has(> [data-testid="app-header-skeleton"]) {
-      padding-left: 16rem;
-    }
-  }
-
   /* 主内容区叠加 safe area，避免浏览器底部工具栏或异形屏遮挡操作区。 */
   .app-main {
     padding: 1.5rem calc(1rem + env(safe-area-inset-right))

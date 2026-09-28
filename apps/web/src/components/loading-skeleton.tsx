@@ -33,7 +33,7 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
           </div>
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav-skeleton">
             {range(7).map((index) => (
-              <div key={index} className={cn(getHeaderDesktopNavSkeletonItemClass(), index === 6 && "lg:mt-auto")}>
+              <div key={index} className={getHeaderDesktopNavSkeletonItemClass()}>
                 <SkeletonBox className="h-4 w-4 rounded" />
                 <SkeletonBox className={headerLayout.desktopNavSkeletonLabel} />
               </div>

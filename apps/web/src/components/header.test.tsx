@@ -284,44 +284,28 @@ describe("Header system version entry", () => {
     expect(mocks.writeAppearancePendingToStorage).not.toHaveBeenCalled();
   });
 
-  it("offers explicit system, day and night choices in the desktop utility area", async () => {
-    mocks.useSession.mockReturnValue(adminSession("user"));
-    const user = userEvent.setup();
-
-    renderHeader();
-
-    await user.click(screen.getByRole("button", { name: "跟随系统" }));
-    await user.click(screen.getByRole("button", { name: "日间" }));
-    await user.click(screen.getByRole("button", { name: "夜间" }));
-
-    expect(mocks.setTheme).toHaveBeenNthCalledWith(1, "system");
-    expect(mocks.setTheme).toHaveBeenNthCalledWith(2, "light");
-    expect(mocks.setTheme).toHaveBeenNthCalledWith(3, "dark");
-  });
-
   it("uses the shared responsive header layout contract", () => {
     mocks.useSession.mockReturnValue(adminSession("user"));
 
     renderHeader();
 
-    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80", "lg:fixed", "lg:w-64", "lg:border-r");
-    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3", "lg:h-full", "lg:flex-col");
-    expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end", "lg:border-t", "lg:pt-4");
+    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
+    expect(screen.getByTestId("app-header")).not.toHaveClass("lg:fixed", "lg:w-64", "lg:border-r");
+    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3");
+    expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end");
 
     const desktopNav = screen.getByTestId("app-header-desktop-nav");
     const mobileNav = screen.getByTestId("app-header-mobile-nav");
-    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "lg:flex-col", "lg:flex-1");
+    expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "items-center", "gap-1");
     expect(mobileNav).toHaveClass("flex", "overflow-x-auto", "overscroll-x-contain", "border-t", "lg:hidden");
 
     const subscriptionLink = within(desktopNav).getByRole("link", { name: "订阅" });
     expect(subscriptionLink).toHaveAttribute("title", "订阅");
-    expect(subscriptionLink).toHaveClass("h-11", "w-full", "justify-start", "gap-3", "px-3");
+    expect(subscriptionLink).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-3", "xl:px-4");
     const subscriptionLabel = within(subscriptionLink).getByText("订阅");
     expect(subscriptionLabel).toHaveClass("whitespace-nowrap");
     expect(subscriptionLabel).not.toHaveClass("sr-only", "xl:not-sr-only");
 
-    const settingsLink = within(desktopNav).getByRole("link", { name: "设置" });
-    expect(settingsLink).toHaveClass("lg:mt-auto");
     expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
   });
 

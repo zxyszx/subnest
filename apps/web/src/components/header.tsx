@@ -1,5 +1,5 @@
 /**
- * 侧边导航栏（桌面）+ 顶部/底部导航栏（移动端）。
+ * 顶部导航栏（桌面）+ 底部导航栏（移动端）。
  *
  * 作用：
  * - 提供全局导航（仪表盘/订阅/日历/统计/设置）
@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, Monitor, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -25,7 +25,6 @@ import { SystemUpdateDialog } from '@/components/system-update-dialog';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { MessageKey } from '@/i18n/messages';
 import { RouteProgress } from '@/components/route-progress';
-import { cn } from '@/lib/utils';
 import { PRODUCT_NAME } from '@/lib/product-brand';
 
 const AddSubscriptionDialog = lazy(async () => {
@@ -87,6 +86,11 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const isAuthenticated = Boolean(sessionData?.user);
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
 
+  /** Header 快捷开关只写本机偏好；账户级外观仍由设置页保存。 */
+  const handleToggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   /** 退出登录：清理本地认证会话并回到 /login。 */
   const handleLogout = async () => {
     try {
@@ -132,7 +136,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 href={item.path}
                 end={item.path === "/"}
                 title={t(item.labelKey)}
-                className={({ isActive }) => cn(getHeaderDesktopNavLinkClass(isActive), item.path === "/settings" && "lg:mt-auto")}
+                className={({ isActive }) => getHeaderDesktopNavLinkClass(isActive)}
               >
                 {renderNavIcon(item.icon, headerLayout.desktopNavIcon)}
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
@@ -154,8 +158,8 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="h-9 w-9 lg:hidden"
+            onClick={handleToggleTheme}
+            className="h-9 w-9"
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -166,47 +170,13 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className="h-9 w-9 text-muted-foreground hover:text-destructive lg:hidden"
+            className="h-9 w-9 text-muted-foreground hover:text-destructive"
             title={t("header.logout")}
           >
             <LogOut className="h-4 w-4" />
             <span className="sr-only">{t("header.logout")}</span>
           </Button>
 
-          <div className="hidden w-full space-y-3 lg:block">
-            <div className="grid grid-cols-3 rounded-lg border border-border bg-secondary/60 p-1" aria-label={t("header.toggleTheme")}>
-              {([
-                { value: "system", label: t("header.themeSystem"), Icon: Monitor },
-                { value: "light", label: t("header.themeLight"), Icon: Sun },
-                { value: "dark", label: t("header.themeDark"), Icon: Moon },
-              ] as const).map(({ value, label, Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  title={label}
-                  aria-label={label}
-                  aria-pressed={theme === value}
-                  onClick={() => setTheme(value)}
-                  className={cn(
-                    "flex min-h-9 items-center justify-center gap-1 rounded-md px-1 text-xs transition-colors",
-                    theme === value ? "bg-card font-medium text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleLogout}
-              className="w-full justify-start gap-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-              {t("header.logout")}
-            </Button>
-          </div>
         </div>
       </div>
 
