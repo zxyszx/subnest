@@ -101,6 +101,7 @@ const apiCollectionItem = {
   nextBillingDate: apiSubscription.nextBillingDate,
   autoRenew: apiSubscription.autoRenew,
   autoCalculateNextBillingDate: apiSubscription.autoCalculateNextBillingDate,
+  tags: apiSubscription.tags,
   reminderDays: apiSubscription.reminderDays,
 } satisfies ApiSubscriptionCollectionItem;
 

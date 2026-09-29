@@ -204,6 +204,7 @@ function subscription(overrides: SubscriptionOverrides): SubscriptionCollectionI
     price: "10",
     currency: "CNY",
     category: "productivity",
+    tags: [],
     status: "active",
     paymentMethod: undefined,
     startDate: assertDateOnly("2026-01-01"),

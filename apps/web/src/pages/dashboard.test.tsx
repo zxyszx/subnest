@@ -168,6 +168,7 @@ function subscription(
     trialEndDate: undefined,
     reminderDays: 3,
     ...overrides,
+    tags: overrides.tags ?? [],
   };
 }
 

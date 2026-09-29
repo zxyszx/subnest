@@ -40,6 +40,7 @@ function subscription(): SubscriptionCollectionItem {
     currency: "USD",
     billingCycle: "monthly",
     category: "productivity",
+    tags: [],
     status: "active",
     pinned: false,
     publicHidden: false,
