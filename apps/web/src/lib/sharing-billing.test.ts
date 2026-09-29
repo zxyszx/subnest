@@ -3,7 +3,7 @@ import { rescaleSharingBillingAmount, SHARING_BILLING_MONTH_PRESETS, sharingExpi
 
 describe("sharingExpiryDate", () => {
   it("includes one- and two-month renewal presets", () => {
-    expect(SHARING_BILLING_MONTH_PRESETS).toEqual([1, 2, 3, 6, 12]);
+    expect(SHARING_BILLING_MONTH_PRESETS).toEqual([1, 3, 6, 12]);
   });
 
   it("treats the initial amount as one month and rescales it across billing periods", () => {

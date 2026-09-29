@@ -19,11 +19,14 @@ interface SharingUpcomingRenewalsProps {
   pending?: boolean;
   limit?: number;
   showFooter?: boolean;
+  /** 仪表盘卡片使用紧凑密度；弹窗保留默认密度。 */
+  density?: "default" | "compact";
 }
 
-export function SharingUpcomingRenewals({ items, pending = false, limit = 5, showFooter = true }: SharingUpcomingRenewalsProps) {
+export function SharingUpcomingRenewals({ items, pending = false, limit = 5, showFooter = true, density = "default" }: SharingUpcomingRenewalsProps) {
   const { t, locale, formatCurrency } = useI18n();
   const visibleItems = items.slice(0, limit);
+  const compact = density === "compact";
 
   if (pending) {
     return (
@@ -49,7 +52,8 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
         <div
           key={seat.id}
           className={cn(
-            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-3 first:pt-0 last:pb-0",
+            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center first:pt-0 last:pb-0",
+            compact ? "gap-2 py-2" : "gap-3 py-3",
             daysUntilExpiry < 0
               ? "text-destructive"
               : daysUntilExpiry <= 3 && "text-warning",
@@ -60,11 +64,20 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               platformName={subscriptionPlatformName(account.subscription)}
               logo={account.subscription.logo ?? undefined}
               accountNumber={account.accountNumber}
+              size={compact ? "xs" : "sm"}
             />
-            <p className="mt-1 truncate pl-11 text-xs text-foreground">{seat.memberName}</p>
-            <p className="truncate pl-11 text-xs text-muted-foreground">
-              {t("sharing.seatNumber")} #{seat.seatNumber} · {t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(seat.expiresAt!, locale) })}
-            </p>
+            {compact ? (
+              <p className="mt-0.5 truncate pl-6.5 text-xs text-muted-foreground">
+                <span>{seat.memberName}</span><span aria-hidden="true"> · </span><span>{t("sharing.seatNumber")} #{seat.seatNumber} · {t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(seat.expiresAt!, locale) })}</span>
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 truncate pl-11 text-xs text-foreground">{seat.memberName}</p>
+                <p className="truncate pl-11 text-xs text-muted-foreground">
+                  {t("sharing.seatNumber")} #{seat.seatNumber} · {t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(seat.expiresAt!, locale) })}
+                </p>
+              </>
+            )}
           </div>
           <div className="text-right">
             <p className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 3 ? "text-warning" : "text-muted-foreground")}>
@@ -74,7 +87,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   ? t("upcoming.todayShort")
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
             </p>
-            <p className="mt-0.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-foreground">
+            <p className={cn("whitespace-nowrap text-right font-semibold tabular-nums text-foreground", compact ? "text-xs leading-4" : "mt-0.5 text-sm")}>
               {seat.currentReceivable && seat.currency
                 ? formatCurrency(seat.currentReceivable.amount, seat.currentReceivable.currency)
                 : seat.monthlyPrice && seat.currency
@@ -84,7 +97,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground" aria-label={t("subscription.moreActions")}>
+              <Button type="button" variant="ghost" size="icon" className={cn("shrink-0 text-muted-foreground", compact ? "h-11 w-11 sm:h-8 sm:w-8" : "h-9 w-9")} aria-label={t("subscription.moreActions")}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

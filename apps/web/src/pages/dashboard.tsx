@@ -59,7 +59,7 @@ export default function Index() {
   const sharingQuery = useSharingAccounts();
   useRouteReady(subscriptionsQuery.isPending || settingsQuery.isPending || sharingQuery.isPending);
   const settings = settingsQuery.data;
-  const { t, locale, formatCurrency } = useI18n();
+  const { t, locale } = useI18n();
   const exchangeRateProvider = settings?.exchangeRateProvider;
   const { convert, loading: ratesLoading } = useReportExchangeRates(exchangeRateProvider);
   const defaultCurrency = settings?.defaultCurrency ?? "CNY";
@@ -132,13 +132,13 @@ export default function Index() {
     <div className="app-page bg-background">
       <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
 
-      <main className="app-main mx-auto max-w-[1504px] lg:flex lg:flex-col lg:!pt-2.5 xl:px-7 xl:pb-4">
+      <main className="app-main mx-auto max-w-376 lg:flex lg:flex-col lg:pt-2.5! xl:px-7 xl:pb-4">
         {/* 统计网格 */}
         <div className={cn("mb-2.5", dashboardStatLayout.grid)} data-testid="dashboard-stat-grid">
           <StatCard
             data-testid="dashboard-stat-monthly-spend"
             title={t("dashboard.monthlySpend")}
-            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(totalMonthly, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(totalMonthly, defaultCurrency)}</span></>}
+            value={formatCompactCurrencyAmount(totalMonthly, defaultCurrency, locale)}
             subtitle={t("dashboard.monthlySpendSubtitle", {
               amount: formatCompactCurrencyAmount(totalDaily, defaultCurrency, locale),
               rates: ratesLoading ? t("dashboard.ratesLoading") : t("dashboard.realTimeRates", { currency: defaultCurrency }),
@@ -151,7 +151,7 @@ export default function Index() {
           <StatCard
             data-testid="dashboard-stat-sharing-income"
             title={t("dashboard.sharingIncome")}
-            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(sharingIncome, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(sharingIncome, defaultCurrency)}</span></>}
+            value={formatCompactCurrencyAmount(sharingIncome, defaultCurrency, locale)}
             icon={<CircleDollarSign className="h-6 w-6" />}
             variant="primary"
             density="dashboard"
@@ -160,7 +160,7 @@ export default function Index() {
           <StatCard
             data-testid="dashboard-stat-sharing-profit"
             title={t("statistics.sharingProfit")}
-            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(sharingProfit, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(sharingProfit, defaultCurrency)}</span></>}
+            value={formatCompactCurrencyAmount(sharingProfit, defaultCurrency, locale)}
             icon={<ReceiptText className="h-6 w-6" />}
             variant={sharingProfit >= 0 ? "primary" : "warning"}
             density="dashboard"
@@ -202,7 +202,7 @@ export default function Index() {
 
         {isCompactRenewalLayout ? <section className="mt-2.5" aria-label={t("dashboard.renewalTasks")}>
           <Tabs value={renewalTaskTab} onValueChange={(value) => setRenewalTaskTab(value as "subscriptions" | "members")}>
-            <article className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card">
+            <article className="min-w-0 rounded-xl border border-border bg-card p-3 shadow-card">
               <div className="mb-2">
                 <TabsList className="grid h-9 w-full grid-cols-2 rounded-md border border-border bg-secondary/60 p-0.5 sm:w-80">
                   <TabsTrigger value="subscriptions" className="h-8 gap-1.5 rounded-[5px] px-2 text-xs shadow-none data-[state=active]:bg-card data-[state=active]:shadow-none sm:text-sm">
@@ -245,6 +245,7 @@ export default function Index() {
                     windowDays={7}
                     limit={5}
                     onRenew={handleRenewSubscription}
+                    density="compact"
                   />
                 )}
               </TabsContent>
@@ -259,13 +260,14 @@ export default function Index() {
                   pending={sharingRenewalsPending}
                   limit={5}
                   showFooter={false}
+                  density="compact"
                 />
               </TabsContent>
             </article>
           </Tabs>
         </section> : (
           <section className="mt-2.5 grid items-stretch gap-2.5 lg:grid-cols-2" aria-label={t("dashboard.renewalTasks")}>
-            <article id="dashboard-subscription-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 shadow-card">
+            <article id="dashboard-subscription-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 shadow-card">
               <h2 className="font-semibold text-foreground">{t("dashboard.subscriptionRenewals")}</h2>
               <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
@@ -296,12 +298,13 @@ export default function Index() {
                     windowDays={7}
                     limit={5}
                     onRenew={handleRenewSubscription}
+                    density="compact"
                   />
                 )}
               </div>
             </article>
 
-            <article id="dashboard-member-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 shadow-card">
+            <article id="dashboard-member-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 shadow-card">
               <h2 className="font-semibold text-foreground">{t("dashboard.memberRenewals")}</h2>
               <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
@@ -313,6 +316,7 @@ export default function Index() {
                   pending={sharingRenewalsPending}
                   limit={5}
                   showFooter={false}
+                  density="compact"
                 />
               </div>
             </article>

@@ -351,6 +351,49 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByRole("button", { name: "2025年11月" })).toBeInTheDocument();
   });
 
+  it("recalculates calendar spend, sharing income, and profit for the selected month", async () => {
+    const user = userEvent.setup();
+    const juneAccount = sharingAccount();
+    const juneDetail = sharingDetail(juneAccount);
+    juneDetail.seats[0] = {
+      ...juneDetail.seats[0]!,
+      monthlyPrice: "150",
+      expiresAt: assertDateOnly("2026-06-20"),
+    };
+    const julyAccount = { ...sharingAccount(), id: "sharing-2" };
+    const julyDetail = sharingDetail(julyAccount);
+    julyDetail.seats[0] = {
+      ...julyDetail.seats[0]!,
+      id: "seat-2",
+      monthlyPrice: "25",
+      expiresAt: assertDateOnly("2026-07-04"),
+    };
+    mocks.sharingAccounts = [juneAccount, julyAccount];
+    mocks.sharingDetailQueries = [
+      { data: juneDetail, isPending: false },
+      { data: julyDetail, isPending: false },
+    ];
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [
+        subscription({ id: "june-subscription", price: "100", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-18") }),
+        subscription({ id: "july-subscription", price: "40", currency: "CNY", nextBillingDate: assertDateOnly("2026-07-03") }),
+      ],
+      isPending: false,
+    });
+
+    renderDashboard();
+
+    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥100");
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥150");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥50");
+
+    await user.click(screen.getByRole("button", { name: "下个月" }));
+
+    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥40");
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥-15");
+  });
+
   it("counts only subscriptions and members due within the next seven days", async () => {
     const user = userEvent.setup();
     const account = sharingAccount();
@@ -383,8 +426,8 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByText("车位 #3 · 6月14日 到期")).toBeInTheDocument();
     expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
     expect(screen.getAllByText("¥15 CNY").length).toBeGreaterThan(0);
-    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60 CNY");
-    expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20 CNY");
+    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60");
+    expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20");
   });
 
   it("combines renewal worklists into switchable tabs on compact screens", async () => {

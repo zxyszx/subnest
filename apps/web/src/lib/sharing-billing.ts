@@ -1,7 +1,7 @@
 import { addDateOnly, isValidDateOnly } from "@/lib/time/date-only";
 import { divideMoney, multiplyMoney } from "@renewlet/shared/money";
 
-export const SHARING_BILLING_MONTH_PRESETS = [1, 2, 3, 6, 12] as const;
+export const SHARING_BILLING_MONTH_PRESETS = [1, 3, 6, 12] as const;
 
 export function rescaleSharingBillingAmount(amount: string, previousMonths: number, nextMonths: number): string {
   if (!amount || !Number.isInteger(previousMonths) || previousMonths < 1) return "";

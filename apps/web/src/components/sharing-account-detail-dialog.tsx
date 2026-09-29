@@ -41,7 +41,6 @@ const contactTypes = ["wechat", "telegram", "ns", "xianyu", "email", "phone", "o
 const seatStatuses = ["active", "vacant", "paused", "archived"] as const;
 const billingPresetLabelKeys: Record<(typeof SHARING_BILLING_MONTH_PRESETS)[number], MessageKey> = {
   1: "sharing.monthly",
-  2: "sharing.twoMonths",
   3: "sharing.quarterly",
   6: "sharing.semiAnnual",
   12: "sharing.annual",
@@ -393,6 +392,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
   const { config } = useCustomConfigState();
   const updateSeat = useUpdateSharingSeat(account.id);
   const [draft, setDraft] = useState<SharingSeatDraft | null>(null);
+  const [customBillingOpen, setCustomBillingOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<Record<"member" | "amount" | "dates", string>>>({});
   const currencyOptions = useManagedCurrencyOptions({
     currencies: config.currencies,
@@ -402,6 +402,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
   useEffect(() => {
     setDraft(seat ? emptySeatDraft(seat, mode) : null);
+    setCustomBillingOpen(Boolean(seat && !SHARING_BILLING_MONTH_PRESETS.includes((seat.billingMonths ?? 1) as (typeof SHARING_BILLING_MONTH_PRESETS)[number])));
     setValidationErrors({});
   }, [mode, seat]);
 
@@ -486,11 +487,46 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
               <FormField id="sharing-seat-currency" label={t("sharing.currency")}>{(field) => <SearchableSelect id={field.id} aria-describedby={field.describedBy} value={draft.currency} onValueChange={(value) => update("currency", value)} options={currencyOptions} className="bg-secondary" aria-label={t("sharing.currency")} />}</FormField>
             </FormFieldRow>
             <FormField id="sharing-seat-cycle" label={t("sharing.billingCycle")}>
-              {(field) => <div id={field.id} aria-describedby={field.describedBy} className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                {SHARING_BILLING_MONTH_PRESETS.map((months) => {
-                  return <Button key={months} type="button" variant={draft.billingMonths === months ? "default" : "outline"} aria-pressed={draft.billingMonths === months} onClick={() => updateBillingMonths(months)}>{t(billingPresetLabelKeys[months])}</Button>;
-                })}
-                <Input className="bg-secondary" aria-label={t("sharing.customMonths")} title={t("sharing.customMonths")} type="number" min={1} max={120} value={SHARING_BILLING_MONTH_PRESETS.includes(draft.billingMonths as (typeof SHARING_BILLING_MONTH_PRESETS)[number]) ? "" : draft.billingMonths} placeholder={t("sharing.customMonths")} onChange={(event) => { if (event.target.value !== "") updateBillingMonths(Number(event.target.value)); }} />
+              {(field) => <div id={field.id} aria-describedby={field.describedBy} className="space-y-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {SHARING_BILLING_MONTH_PRESETS.map((months) => (
+                    <Button
+                      key={months}
+                      type="button"
+                      className="min-w-0 px-2"
+                      variant={!customBillingOpen && draft.billingMonths === months ? "default" : "outline"}
+                      aria-pressed={!customBillingOpen && draft.billingMonths === months}
+                      onClick={() => {
+                        setCustomBillingOpen(false);
+                        updateBillingMonths(months);
+                      }}
+                    >
+                      {t(billingPresetLabelKeys[months])}
+                    </Button>
+                  ))}
+                  <Button
+                    type="button"
+                    className="min-w-0 px-2"
+                    variant={customBillingOpen ? "default" : "outline"}
+                    aria-pressed={customBillingOpen}
+                    onClick={() => setCustomBillingOpen(true)}
+                  >
+                    {t("sharing.custom")}
+                  </Button>
+                </div>
+                {customBillingOpen ? (
+                  <Input
+                    className="bg-secondary sm:max-w-44"
+                    aria-label={t("sharing.customMonths")}
+                    title={t("sharing.customMonths")}
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={SHARING_BILLING_MONTH_PRESETS.includes(draft.billingMonths as (typeof SHARING_BILLING_MONTH_PRESETS)[number]) ? "" : draft.billingMonths}
+                    placeholder={t("sharing.customMonths")}
+                    onChange={(event) => { if (event.target.value !== "") updateBillingMonths(Number(event.target.value)); }}
+                  />
+                ) : null}
               </div>}
             </FormField>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2" errors={[{ id: "sharing-seat-dates-error", message: validationErrors.dates }]}>

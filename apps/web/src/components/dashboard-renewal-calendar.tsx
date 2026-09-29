@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
+import { formatCompactCurrencyAmount } from "@/lib/currency";
 import { dateOnlyToLocalDate, type DateOnly } from "@/lib/time/date-only";
 import { getSubscriptionCalendarRange } from "@/modules/subscriptions/domain/subscription-calendar-range";
 import { isOneTimeBuyout } from "@/lib/subscription-billing";
@@ -36,7 +37,7 @@ const EMPTY_DAY: DayFinancials = {
 };
 
 export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today, defaultCurrency, convert }: DashboardRenewalCalendarProps) {
-  const { t, formatCurrency, formatDateTime } = useI18n();
+  const { t, formatCurrency, formatDateTime, locale } = useI18n();
   const [currentMonth, setCurrentMonth] = useState(() => dateOnlyToLocalDate(today));
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
@@ -78,6 +79,47 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
 
     return values;
   }, [convert, defaultCurrency, sharingDetails, subscriptions]);
+
+  const monthlyFinancials = useMemo(() => {
+    const monthPrefix = format(currentMonth, "yyyy-MM-");
+    let subscriptionSpend = 0;
+    let memberIncome = 0;
+
+    financialsByDate.forEach((financials, date) => {
+      if (!date.startsWith(monthPrefix)) return;
+      subscriptionSpend += financials.subscriptionSpend;
+      memberIncome += financials.memberIncome;
+    });
+
+    return {
+      subscriptionSpend,
+      memberIncome,
+      netProfit: memberIncome - subscriptionSpend,
+    };
+  }, [currentMonth, financialsByDate]);
+
+  const monthlySummary = [
+    {
+      testId: "dashboard-calendar-monthly-spend",
+      label: t("dashboard.calendarMonthlySpend"),
+      value: monthlyFinancials.subscriptionSpend,
+      valueClassName: "text-destructive",
+    },
+    {
+      testId: "dashboard-calendar-monthly-income",
+      label: t("dashboard.calendarMonthlyIncome"),
+      value: monthlyFinancials.memberIncome,
+      valueClassName: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      testId: "dashboard-calendar-monthly-profit",
+      label: t("dashboard.calendarMonthlyProfit"),
+      value: monthlyFinancials.netProfit,
+      valueClassName: monthlyFinancials.netProfit >= 0
+        ? "text-emerald-600 dark:text-emerald-400"
+        : "text-destructive",
+    },
+  ] as const;
 
   return (
     <section className="rounded-xl border border-border bg-card p-3 shadow-card sm:p-4" aria-labelledby="dashboard-calendar-title">
@@ -235,11 +277,17 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
           const date = format(day, "yyyy-MM-dd");
           const financials = financialsByDate.get(date) ?? EMPTY_DAY;
           const hasActivity = financials.subscriptionCount > 0 || financials.memberCount > 0;
+          const spendLabel = financials.subscriptionCount > 0
+            ? formatCompactCurrencyAmount(financials.subscriptionSpend, defaultCurrency, locale)
+            : "";
+          const incomeLabel = financials.memberCount > 0
+            ? formatCompactCurrencyAmount(financials.memberIncome, defaultCurrency, locale)
+            : "";
           return (
             <div
               key={date}
               className={cn(
-                "min-h-10 bg-card p-1 text-center sm:min-h-8 sm:p-1.5",
+                "min-h-10 min-w-0 overflow-hidden bg-card p-1 text-center sm:min-h-8 sm:px-1 sm:py-1.5",
                 !isSameMonth(day, currentMonth) && "bg-muted/20 text-muted-foreground/50",
               )}
             >
@@ -247,14 +295,27 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
                 <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold tabular-nums", isToday(day) && "bg-primary text-primary-foreground")}>{format(day, "d")}</span>
               </div>
               {hasActivity ? (
-                <div className="mt-1 grid grid-cols-2 gap-0.5 text-[10px] font-semibold leading-3 sm:text-xs">
-                  <p className="min-w-0 truncate text-left text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{financials.subscriptionCount > 0 ? `-${formatCurrency(financials.subscriptionSpend, defaultCurrency)}` : ""}</p>
-                  <p className="min-w-0 truncate text-right text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{financials.memberCount > 0 ? `+${formatCurrency(financials.memberIncome, defaultCurrency)}` : ""}</p>
+                <div className="mt-0.5 grid min-w-0 grid-cols-2 gap-1 overflow-hidden text-[9px] font-semibold leading-3 sm:text-[10px]">
+                  <p className="min-w-0 truncate text-left tabular-nums text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{spendLabel ? `-${spendLabel}` : ""}</p>
+                  <p className="min-w-0 truncate text-right tabular-nums text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{incomeLabel ? `+${incomeLabel}` : ""}</p>
                 </div>
               ) : null}
             </div>
           );
         })}
+      </div>
+      <div className="mt-2 grid grid-cols-3 divide-x divide-border border-t border-border pt-2">
+        {monthlySummary.map((item) => (
+          <div key={item.testId} data-testid={item.testId} className="min-w-0 px-2 first:pl-0 last:pr-0 sm:px-3">
+            <p className="truncate text-[10px] text-muted-foreground sm:text-xs">{item.label}</p>
+            <p
+              className={cn("mt-0.5 truncate text-xs font-semibold tabular-nums sm:text-sm", item.valueClassName)}
+              title={formatCurrency(item.value, defaultCurrency)}
+            >
+              {formatCompactCurrencyAmount(item.value, defaultCurrency, locale)}
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   );

@@ -38,11 +38,14 @@ interface UpcomingRenewalsProps {
   windowDays?: number;
   /** 复用订阅列表的续订弹窗。 */
   onRenew?: (id: string) => void;
+  /** 仪表盘卡片使用紧凑密度；弹窗保留默认密度。 */
+  density?: "default" | "compact";
 }
 
 /** 即将续费列表组件。 */
-export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false, windowDays, onRenew }: UpcomingRenewalsProps) {
+export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false, windowDays, onRenew, density = "default" }: UpcomingRenewalsProps) {
   const { t, formatCurrency, locale } = useI18n();
+  const compact = density === "compact";
   const upcoming = buildUpcomingReminderItems({
     subscriptions,
     today,
@@ -63,7 +66,8 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
         <div
           key={item.subscription.id}
           className={cn(
-            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-3 py-3 first:pt-0 last:pb-0",
+            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center first:pt-0 last:pb-0",
+            compact ? "gap-2 py-2" : "gap-3 py-3",
             item.daysUntil < 0
               ? "text-destructive"
               : item.daysUntil <= 3 && "text-warning"
@@ -74,26 +78,27 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
               platformName={item.subscription.platformName || item.subscription.name}
               logo={item.subscription.logo}
               accountNumber={item.subscription.accountNumber ?? 1}
+              size={compact ? "xs" : "sm"}
             />
             {item.subscription.platformName && item.subscription.platformName !== item.subscription.name ? (
-              <p className="mt-1 truncate pl-11 text-xs text-muted-foreground">{item.subscription.name}</p>
+              <p className={cn("truncate text-xs text-muted-foreground", compact ? "mt-0.5 pl-6.5" : "mt-1 pl-11")}>{item.subscription.name}</p>
             ) : null}
           </div>
           <div className="hidden text-right sm:block">
-            <p className="text-xs text-muted-foreground">{t("calendar.nextBilling")}</p>
-            <p className="mt-0.5 whitespace-nowrap text-sm tabular-nums text-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)}</p>
+            <p className={cn("text-muted-foreground", compact ? "text-[10px] leading-3" : "text-xs")}>{t("calendar.nextBilling")}</p>
+            <p className={cn("whitespace-nowrap tabular-nums text-foreground", compact ? "text-xs leading-4" : "mt-0.5 text-sm")}>{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)}</p>
           </div>
           <div className="text-right">
             <p className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", item.daysUntil < 0 ? "text-destructive" : item.daysUntil <= 3 ? "text-warning" : "text-muted-foreground")}>
               {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
             </p>
-            <p className="mt-0.5 whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
+            <p className={cn("whitespace-nowrap font-semibold tabular-nums text-foreground", compact ? "text-xs leading-4" : "mt-0.5 text-sm")}>
             {formatCurrency(item.subscription.price, item.subscription.currency)}
             </p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground" aria-label={t("subscription.moreActions")}>
+              <Button type="button" variant="ghost" size="icon" className={cn("shrink-0 text-muted-foreground", compact ? "h-11 w-11 sm:h-8 sm:w-8" : "h-9 w-9")} aria-label={t("subscription.moreActions")}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

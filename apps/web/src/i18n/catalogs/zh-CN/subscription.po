@@ -49,7 +49,7 @@ msgid "statistics.subscriptionCountHint"
 msgstr "(订阅数量)"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:751
+#: src/i18n/descriptors/subscription.ts:752
 msgid "calendar.renewalCount"
 msgstr "{count} 个事件"
 
@@ -99,7 +99,7 @@ msgid "statistics.trendItemSingleDate"
 msgstr "{date}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:761
+#: src/i18n/descriptors/subscription.ts:762
 msgid "calendar.dayRenewalCount"
 msgstr "{date} {count} 个事件"
 
@@ -109,17 +109,17 @@ msgid "statistics.trendItemSingleDateCount"
 msgstr "{date} ×{count}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:740
+#: src/i18n/descriptors/subscription.ts:741
 msgid "upcoming.expiresOn"
 msgstr "{date} 到期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:739
+#: src/i18n/descriptors/subscription.ts:740
 msgid "upcoming.renewsOn"
 msgstr "{date} 续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:760
+#: src/i18n/descriptors/subscription.ts:761
 msgid "calendar.dayRenewals"
 msgstr "{date} 续费/到期"
 
@@ -134,7 +134,7 @@ msgid "subscription.card.renewsInDays"
 msgstr "{days} 天后续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:738
+#: src/i18n/descriptors/subscription.ts:739
 msgid "upcoming.daysShort"
 msgstr "{days}天"
 
@@ -204,7 +204,7 @@ msgid "subscriptions.advanced.previewOverflow"
 msgstr "+{count}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:749
+#: src/i18n/descriptors/subscription.ts:750
 msgid "calendar.more"
 msgstr "+{count} 更多"
 
@@ -219,12 +219,12 @@ msgid "dashboard.withinSevenDays"
 msgstr "7 天内"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:723
+#: src/i18n/descriptors/subscription.ts:724
 msgid "dashboard.subscriptionRenewalDialogTitle"
 msgstr "7 天内订阅续费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:725
+#: src/i18n/descriptors/subscription.ts:726
 msgid "dashboard.memberRenewalDialogTitle"
 msgstr "7 天内车友续费"
 
@@ -484,7 +484,7 @@ msgid "subscription.field.oneTimeMode"
 msgstr "一次性购买类型"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:746
+#: src/i18n/descriptors/subscription.ts:747
 msgid "calendar.previousMonth"
 msgstr "上个月"
 
@@ -494,7 +494,7 @@ msgid "subscription.costSharing.memberJoinedDate"
 msgstr "上车日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:747
+#: src/i18n/descriptors/subscription.ts:748
 msgid "calendar.nextMonth"
 msgstr "下个月"
 
@@ -504,7 +504,7 @@ msgid "subscription.detail.nextBilling"
 msgstr "下次扣费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:756
+#: src/i18n/descriptors/subscription.ts:757
 msgid "calendar.nextBilling"
 msgstr "下次扣费"
 
@@ -599,7 +599,7 @@ msgid "subscriptions.advanced.pinnedOnly"
 msgstr "仅置顶"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:737
+#: src/i18n/descriptors/subscription.ts:738
 msgid "upcoming.todayShort"
 msgstr "今"
 
@@ -629,7 +629,7 @@ msgid "subscription.publicHide"
 msgstr "从公开页隐藏"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:734
+#: src/i18n/descriptors/subscription.ts:735
 msgid "dashboard.emptyTitle"
 msgstr "从第一个订阅开始"
 
@@ -659,12 +659,12 @@ msgid "subscription.oneTimeTermHelp"
 msgstr "价格会按整段服务期摊入月均和年化支出，到期日可提醒但不视为自动续费。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:721
+#: src/i18n/descriptors/subscription.ts:722
 msgid "dashboard.renewalListDescription"
 msgstr "优先处理逾期和 7 天内到期的订阅"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:722
+#: src/i18n/descriptors/subscription.ts:723
 msgid "dashboard.memberRenewalListDescription"
 msgstr "优先处理逾期和 7 天内到期的车友"
 
@@ -829,7 +829,7 @@ msgid "dashboard.totalSubscriptions"
 msgstr "共 {count} 个订阅"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:729
+#: src/i18n/descriptors/subscription.ts:730
 msgid "statistics.sharingProfit"
 msgstr "共享月净利润"
 
@@ -839,7 +839,7 @@ msgid "dashboard.sharingIncome"
 msgstr "共享月收入"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:728
+#: src/i18n/descriptors/subscription.ts:729
 msgid "statistics.sharingIncome"
 msgstr "共享月收入"
 
@@ -904,7 +904,7 @@ msgid "subscriptions.csv.category"
 msgstr "分类"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:755
+#: src/i18n/descriptors/subscription.ts:756
 msgid "calendar.category"
 msgstr "分类"
 
@@ -1594,7 +1594,7 @@ msgid "subscriptions.csv.startDate"
 msgstr "开始日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:757
+#: src/i18n/descriptors/subscription.ts:758
 msgid "calendar.startDate"
 msgstr "开始日期"
 
@@ -1604,7 +1604,7 @@ msgid "subscription.field.startDateOptional"
 msgstr "开始日期（可选）"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:766
+#: src/i18n/descriptors/subscription.ts:767
 msgid "subscription.addToCalendarFeedUrlCopyFailedDescription"
 msgstr "当前一键复制不可用，请手动选择并复制本次 URL。"
 
@@ -1619,7 +1619,7 @@ msgid "subscription.familySharing.passwordKeepHint"
 msgstr "当前密码已保存，留空表示保持不变。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:744
+#: src/i18n/descriptors/subscription.ts:745
 msgid "calendar.sharingExpiriesHelp"
 msgstr "当前日历范围内的车友续费与到期日期"
 
@@ -1634,7 +1634,7 @@ msgid "import.previewFilterEmpty"
 msgstr "当前筛选没有记录"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:745
+#: src/i18n/descriptors/subscription.ts:746
 msgid "calendar.noSharingExpiries"
 msgstr "当前范围内没有车友到期"
 
@@ -1819,12 +1819,12 @@ msgid "import.wallosGuideValueLowConfidence"
 msgstr "按内容匹配"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:726
+#: src/i18n/descriptors/subscription.ts:727
 msgid "dashboard.memberRenewalDialogDescription"
 msgstr "按到期时间排序，查看需要续费或收费的车友。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:724
+#: src/i18n/descriptors/subscription.ts:725
 msgid "dashboard.subscriptionRenewalDialogDescription"
 msgstr "按到期时间排序，点击续订可直接处理。"
 
@@ -1909,7 +1909,7 @@ msgid "subscription.detail.reminder"
 msgstr "提前提醒"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:758
+#: src/i18n/descriptors/subscription.ts:759
 msgid "calendar.reminder"
 msgstr "提前提醒"
 
@@ -2014,7 +2014,7 @@ msgid "statistics.paymentView"
 msgstr "支付方式视图"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:733
+#: src/i18n/descriptors/subscription.ts:734
 msgid "dashboard.spendingDistribution"
 msgstr "支出分布"
 
@@ -2194,7 +2194,7 @@ msgid "statistics.noSubscriptionData"
 msgstr "暂无订阅数据"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:736
+#: src/i18n/descriptors/subscription.ts:737
 msgid "upcoming.noneNextTwoWeeks"
 msgstr "暂无进入提醒窗口的续费或到期"
 
@@ -2259,7 +2259,7 @@ msgid "statistics.trendDetailsMonthLabel"
 msgstr "月份"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:727
+#: src/i18n/descriptors/subscription.ts:728
 msgid "dashboard.sharingProfit"
 msgstr "月净利润 {amount}"
 
@@ -2364,17 +2364,27 @@ msgid "import.wallosGuideValueLocalLogo"
 msgstr "本地文件"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:750
+#: src/i18n/descriptors/subscription.ts:751
 msgid "calendar.monthlyRenewals"
 msgstr "本月事件"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:763
+#: src/i18n/descriptors/subscription.ts:720
+msgid "dashboard.calendarMonthlyProfit"
+msgstr "本月净利润"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:719
+msgid "dashboard.calendarMonthlyIncome"
+msgstr "本月合租收入"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:764
 msgid "calendar.mobileAgendaEmpty"
 msgstr "本月暂无续费或到期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:762
+#: src/i18n/descriptors/subscription.ts:763
 msgid "calendar.mobileAgendaTitle"
 msgstr "本月续费/到期明细"
 
@@ -2392,11 +2402,6 @@ msgstr "本月续费支出"
 #: src/i18n/descriptors/subscription.ts:655
 msgid "statistics.thisMonthDue"
 msgstr "本月订阅续费"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:719
-msgid "dashboard.calendarMonthlyIncome"
-msgstr "本月预计收入"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:31
@@ -2429,7 +2434,7 @@ msgid "subscription.detailDescription"
 msgstr "查看 {name} 的价格、周期、日期、标签、网站和备注。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:753
+#: src/i18n/descriptors/subscription.ts:754
 msgid "calendar.detailDescription"
 msgstr "查看 {name} 的价格、周期、日期、标签、网站和备注。"
 
@@ -2449,12 +2454,12 @@ msgid "dashboard.openMemberRenewals"
 msgstr "查看 7 天内需要续费的车友"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:731
+#: src/i18n/descriptors/subscription.ts:732
 msgid "dashboard.viewAll"
 msgstr "查看全部 ({count})"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:732
+#: src/i18n/descriptors/subscription.ts:733
 msgid "dashboard.viewAllSubscriptions"
 msgstr "查看全部 {count} 个订阅"
 
@@ -2464,7 +2469,7 @@ msgid "import.wallosGuideExpand"
 msgstr "查看差异"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:742
+#: src/i18n/descriptors/subscription.ts:743
 msgid "calendar.pageSubtitle"
 msgstr "查看订阅续费、固定服务期到期和本月预计支出"
 
@@ -2474,7 +2479,7 @@ msgid "subscription.detailFallbackDescription"
 msgstr "查看订阅详情。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:754
+#: src/i18n/descriptors/subscription.ts:755
 msgid "calendar.detailFallbackDescription"
 msgstr "查看订阅详情。"
 
@@ -2519,7 +2524,7 @@ msgid "aiRecognition.imageOptimizing"
 msgstr "正在优化"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:767
+#: src/i18n/descriptors/subscription.ts:768
 msgid "subscription.addToCalendarFeedStatusLoading"
 msgstr "正在加载订阅链接状态..."
 
@@ -2529,7 +2534,7 @@ msgid "subscription.familySharing.matchingManagedMailbox"
 msgstr "正在匹配 NewSzxcn 邮箱..."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:771
+#: src/i18n/descriptors/subscription.ts:772
 msgid "subscription.addToCalendarOpenSystemLoading"
 msgstr "正在打开系统日历..."
 
@@ -2554,12 +2559,12 @@ msgid "import.loading"
 msgstr "正在解析和生成预览..."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:770
+#: src/i18n/descriptors/subscription.ts:771
 msgid "subscription.addToCalendarFeedStatusRetrying"
 msgstr "正在重新加载..."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:772
+#: src/i18n/descriptors/subscription.ts:773
 msgid "subscription.addToCalendarRegenerateLoading"
 msgstr "正在重新生成..."
 
@@ -2689,7 +2694,7 @@ msgid "subscription.dialogCreateSubmit"
 msgstr "添加订阅"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:735
+#: src/i18n/descriptors/subscription.ts:736
 msgid "dashboard.emptyDescription"
 msgstr "添加订阅后，这里会汇总支出、续费和提醒。"
 
@@ -2749,7 +2754,7 @@ msgid "aiRecognition.imageDropDescription"
 msgstr "点击、拖拽或粘贴添加 PNG、JPG、WebP 图片，最多 {count} 张。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:748
+#: src/i18n/descriptors/subscription.ts:749
 msgid "calendar.viewDetails"
 msgstr "点击查看详情"
 
@@ -3024,7 +3029,7 @@ msgid "subscription.renew.mode"
 msgstr "续订方式"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:741
+#: src/i18n/descriptors/subscription.ts:742
 msgid "calendar.title"
 msgstr "续费/到期日历"
 
@@ -3044,7 +3049,7 @@ msgid "subscription.addToCalendarRenewalEvent"
 msgstr "续费事件"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:720
+#: src/i18n/descriptors/subscription.ts:721
 msgid "dashboard.renewalTasks"
 msgstr "续费处理"
 
@@ -3269,7 +3274,7 @@ msgid "subscription.addToCalendarRevokeFailed"
 msgstr "订阅链接撤销失败"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:768
+#: src/i18n/descriptors/subscription.ts:769
 msgid "subscription.addToCalendarFeedStatusFailed"
 msgstr "订阅链接状态加载失败"
 
@@ -3284,7 +3289,7 @@ msgid "subscription.addToCalendarRegenerateFailed"
 msgstr "订阅链接重新生成失败"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:759
+#: src/i18n/descriptors/subscription.ts:760
 msgid "calendar.visit"
 msgstr "访问"
 
@@ -3494,7 +3499,7 @@ msgid "subscription.familySharing.capacity"
 msgstr "车位数"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:743
+#: src/i18n/descriptors/subscription.ts:744
 msgid "calendar.sharingExpiries"
 msgstr "车友到期"
 
@@ -3529,7 +3534,7 @@ msgid "subscription.familySharing.passwordPlaceholder"
 msgstr "输入登录密码"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:730
+#: src/i18n/descriptors/subscription.ts:731
 msgid "dashboard.recentSubscriptions"
 msgstr "近期订阅"
 
@@ -3589,7 +3594,7 @@ msgid "import.stepSelect"
 msgstr "选择"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:764
+#: src/i18n/descriptors/subscription.ts:765
 msgid "calendar.dayListDescription"
 msgstr "选择 {date} 要查看的订阅。"
 
@@ -3604,7 +3609,7 @@ msgid "subscription.platformSelectPlaceholder"
 msgstr "选择平台（可留空）"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:765
+#: src/i18n/descriptors/subscription.ts:766
 msgid "calendar.dayListFallbackDescription"
 msgstr "选择当天要查看的订阅。"
 
@@ -3679,7 +3684,7 @@ msgid "subscription.repeatReminderWindow"
 msgstr "重复范围"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:769
+#: src/i18n/descriptors/subscription.ts:770
 msgid "subscription.addToCalendarFeedStatusRetry"
 msgstr "重新加载"
 
@@ -3804,7 +3809,7 @@ msgid "import.previewTitle"
 msgstr "预览结果"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:752
+#: src/i18n/descriptors/subscription.ts:753
 msgid "calendar.estimatedSpend"
 msgstr "预计支出"
 

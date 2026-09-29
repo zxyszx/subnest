@@ -154,6 +154,13 @@ describe("SharingAccountDetailDialog account credentials", () => {
     );
 
     await user.click(screen.getAllByRole("button", { name: "sharing.editSeat" })[0]!);
+    expect(screen.getByRole("button", { name: "sharing.monthly" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.quarterly" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.semiAnnual" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.annual" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.custom" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "sharing.twoMonths" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("spinbutton", { name: "sharing.customMonths" })).not.toBeInTheDocument();
     await user.clear(screen.getByRole("textbox", { name: "sharing.periodCharge" }));
     await user.type(screen.getByRole("textbox", { name: "sharing.periodCharge" }), "15");
     await user.click(screen.getByRole("button", { name: "sharing.quarterly" }));
