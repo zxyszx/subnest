@@ -39,7 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } from '@/types/subscription';
 import { BILLING_CYCLES, CYCLE_LABELS, DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, SlidersHorizontal, ChevronUp } from 'lucide-react';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -319,20 +319,12 @@ const Subscriptions = () => {
       : statusFilter;
   const paymentTypeFilterLabel = t(PAYMENT_TYPE_FILTER_LABEL_KEYS[paymentTypeFilter]);
   const sortOptionLabel = t(SORT_OPTION_LABEL_KEYS[sortOption]);
-  const mobileFilterGroupCount = [
-    selectedPlatform !== null,
-    selectedCategories.length > 0,
-    statusFilter !== "all",
-    paymentTypeFilter !== "all",
-    sortOption !== "default",
-    selectedTags.length > 0,
-    hasActiveFilters
-      && selectedCategories.length === 0
-      && statusFilter === "all"
-      && paymentTypeFilter === "all"
-      && sortOption === "default"
-      && selectedTags.length === 0,
-  ].filter(Boolean).length;
+  const paymentTypeFilterItems = Object.entries(PAYMENT_TYPE_FILTER_LABEL_KEYS).map(([value, key]) => (
+    <SelectItem key={value} value={value}>{t(key)}</SelectItem>
+  ));
+  const sortOptionItems = Object.entries(SORT_OPTION_LABEL_KEYS).map(([value, key]) => (
+    <SelectItem key={value} value={value}>{t(key)}</SelectItem>
+  ));
   const removeSelectedTag = useCallback((tag: string) => {
     setSelectedTags((current) => current.filter((item) => item !== tag));
   }, [setSelectedTags]);
@@ -478,19 +470,13 @@ const Subscriptions = () => {
                 <Button
                   type="button"
                   variant={mobileFiltersExpanded ? "secondary" : "outline"}
-                  className="h-11 shrink-0 gap-2 border-border px-3"
+                  className="h-11 w-11 shrink-0 border-border p-0"
                   aria-label={t(mobileFiltersExpanded ? "subscriptions.mobileFilters.collapse" : "subscriptions.mobileFilters.open")}
                   aria-expanded={mobileFiltersExpanded}
                   aria-controls="mobile-subscription-filters"
                   onClick={() => setMobileFiltersExpanded((expanded) => !expanded)}
                 >
-                  {mobileFiltersExpanded ? <ChevronUp className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
-                  <span>{mobileFiltersExpanded ? t("subscriptions.mobileFilters.collapse") : t("subscriptions.mobileFilters.open")}</span>
-                  {mobileFilterGroupCount > 0 ? (
-                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-primary-foreground">
-                      {mobileFilterGroupCount}
-                    </span>
-                  ) : null}
+                  <Funnel className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -541,11 +527,7 @@ const Subscriptions = () => {
                     <SelectValue placeholder={t("subscriptions.paymentTypeFilter.label")} />
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.paymentTypeFilter.label")}>
-                    <SelectItem value="all">{t("subscriptions.paymentTypeFilter.all")}</SelectItem>
-                    <SelectItem value="auto">{t("subscriptions.paymentTypeFilter.auto")}</SelectItem>
-                    <SelectItem value="manual">{t("subscriptions.paymentTypeFilter.manual")}</SelectItem>
-                    <SelectItem value="one-time-buyout">{t("subscriptions.paymentTypeFilter.buyout")}</SelectItem>
-                    <SelectItem value="one-time-fixed-term">{t("subscriptions.paymentTypeFilter.fixedTerm")}</SelectItem>
+                    {paymentTypeFilterItems}
                   </SelectContent>
                 </Select>
 
@@ -558,15 +540,7 @@ const Subscriptions = () => {
                     <SelectValue placeholder={t("subscriptions.sort.label")} />
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-                    <SelectItem value="default">{t("subscriptions.sort.default")}</SelectItem>
-                    <SelectItem value="renewal_asc">{t("subscriptions.sort.renewalAsc")}</SelectItem>
-                    <SelectItem value="renewal_desc">{t("subscriptions.sort.renewalDesc")}</SelectItem>
-                    <SelectItem value="monthly_cost_desc">{t("subscriptions.sort.monthlyCostDesc")}</SelectItem>
-                    <SelectItem value="monthly_cost_asc">{t("subscriptions.sort.monthlyCostAsc")}</SelectItem>
-                    <SelectItem value="price_desc">{t("subscriptions.sort.priceDesc")}</SelectItem>
-                    <SelectItem value="price_asc">{t("subscriptions.sort.priceAsc")}</SelectItem>
-                    <SelectItem value="name_asc">{t("subscriptions.sort.nameAsc")}</SelectItem>
-                    <SelectItem value="name_desc">{t("subscriptions.sort.nameDesc")}</SelectItem>
+                    {sortOptionItems}
                   </SelectContent>
                 </Select>
                   </div>
@@ -652,11 +626,7 @@ const Subscriptions = () => {
                     <SelectValue placeholder={t("subscriptions.paymentTypeFilter.label")} />
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.paymentTypeFilter.label")}>
-                    <SelectItem value="all">{t("subscriptions.paymentTypeFilter.all")}</SelectItem>
-                    <SelectItem value="auto">{t("subscriptions.paymentTypeFilter.auto")}</SelectItem>
-                    <SelectItem value="manual">{t("subscriptions.paymentTypeFilter.manual")}</SelectItem>
-                    <SelectItem value="one-time-buyout">{t("subscriptions.paymentTypeFilter.buyout")}</SelectItem>
-                    <SelectItem value="one-time-fixed-term">{t("subscriptions.paymentTypeFilter.fixedTerm")}</SelectItem>
+                    {paymentTypeFilterItems}
                   </SelectContent>
                 </Select>
 
@@ -669,15 +639,7 @@ const Subscriptions = () => {
                     <SelectValue placeholder={t("subscriptions.sort.label")} />
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-                    <SelectItem value="default">{t("subscriptions.sort.default")}</SelectItem>
-                    <SelectItem value="renewal_asc">{t("subscriptions.sort.renewalAsc")}</SelectItem>
-                    <SelectItem value="renewal_desc">{t("subscriptions.sort.renewalDesc")}</SelectItem>
-                    <SelectItem value="monthly_cost_desc">{t("subscriptions.sort.monthlyCostDesc")}</SelectItem>
-                    <SelectItem value="monthly_cost_asc">{t("subscriptions.sort.monthlyCostAsc")}</SelectItem>
-                    <SelectItem value="price_desc">{t("subscriptions.sort.priceDesc")}</SelectItem>
-                    <SelectItem value="price_asc">{t("subscriptions.sort.priceAsc")}</SelectItem>
-                    <SelectItem value="name_asc">{t("subscriptions.sort.nameAsc")}</SelectItem>
-                    <SelectItem value="name_desc">{t("subscriptions.sort.nameDesc")}</SelectItem>
+                    {sortOptionItems}
                   </SelectContent>
                 </Select>
 
