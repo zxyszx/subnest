@@ -106,7 +106,7 @@ export function SettingsScreen() {
       <Header />
 
       <main className={cn("flex-1", hasUnsavedChanges && "h5-bottom-bar-space")} data-testid="settings-main">
-        <div className="app-main mx-auto max-w-7xl">
+        <div className="app-main mx-auto max-w-[120rem]">
           <div className={settingsLayout.pageGrid} data-testid="settings-page-layout">
             <aside className="hidden lg:block" data-testid="settings-section-nav-aside">
               <DesktopSettingsSectionNav
@@ -243,7 +243,7 @@ export function SettingsScreen() {
           className="h5-bottom-bar fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-sm"
           data-testid="settings-save-bar"
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-auto flex max-w-[120rem] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-foreground">{t("settings.unsavedChanges")}</p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button

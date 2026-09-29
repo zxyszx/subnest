@@ -10,7 +10,7 @@ describe("HeaderSkeleton", () => {
     expect(screen.getByTestId("app-header-skeleton")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
     expect(screen.getByTestId("app-header-skeleton")).not.toHaveClass("lg:fixed", "lg:w-64");
     expect(screen.getByTestId("route-progress")).toHaveClass("absolute", "bottom-0", "h-0.5", "opacity-0");
-    expect(screen.getByTestId("app-header-skeleton-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3");
+    expect(screen.getByTestId("app-header-skeleton-inner")).toHaveClass("max-w-[120rem]", "justify-between", "gap-3");
     expect(screen.getByTestId("app-header-actions-skeleton")).toHaveClass("min-w-0", "shrink-0", "justify-end");
 
     const desktopNav = screen.getByTestId("app-header-desktop-nav-skeleton");
@@ -34,10 +34,12 @@ describe("DashboardPageSkeleton", () => {
     const monthlySpend = screen.getByTestId("dashboard-skeleton-stat-monthly-spend");
     const sharingProfit = screen.getByTestId("dashboard-skeleton-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-3");
-    expect(monthlySpend).toHaveClass("p-4", "col-span-1");
-    expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-4");
-    expect(sharingProfit).toHaveClass("p-4");
+    expect(grid).toHaveClass("grid", "grid-cols-5", "gap-1", "sm:grid-cols-2", "sm:gap-3", "lg:grid-cols-5");
+    expect(monthlySpend).toHaveClass("p-1.5", "sm:p-4", "col-span-1");
+    expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-1.5", "sm:p-4");
+    expect(sharingProfit).toHaveClass("p-1.5", "sm:p-4");
+    expect(screen.getByTestId("dashboard-skeleton-stat-subscription-renewals")).toHaveClass("p-1.5", "sm:p-4");
+    expect(screen.getByTestId("dashboard-skeleton-stat-member-renewals")).toHaveClass("p-1.5", "sm:p-4");
   });
 });
 

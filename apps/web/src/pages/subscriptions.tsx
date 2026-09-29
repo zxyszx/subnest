@@ -39,7 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } from '@/types/subscription';
 import { BILLING_CYCLES, CYCLE_LABELS, DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles } from 'lucide-react';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, SlidersHorizontal, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -161,6 +161,7 @@ const Subscriptions = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const isMobileTagFilter = useMediaQuery("(max-width: 767px)");
   const {
     searchQuery,
@@ -318,6 +319,20 @@ const Subscriptions = () => {
       : statusFilter;
   const paymentTypeFilterLabel = t(PAYMENT_TYPE_FILTER_LABEL_KEYS[paymentTypeFilter]);
   const sortOptionLabel = t(SORT_OPTION_LABEL_KEYS[sortOption]);
+  const mobileFilterGroupCount = [
+    selectedPlatform !== null,
+    selectedCategories.length > 0,
+    statusFilter !== "all",
+    paymentTypeFilter !== "all",
+    sortOption !== "default",
+    selectedTags.length > 0,
+    hasActiveFilters
+      && selectedCategories.length === 0
+      && statusFilter === "all"
+      && paymentTypeFilter === "all"
+      && sortOption === "default"
+      && selectedTags.length === 0,
+  ].filter(Boolean).length;
   const removeSelectedTag = useCallback((tag: string) => {
     setSelectedTags((current) => current.filter((item) => item !== tag));
   }, [setSelectedTags]);
@@ -358,7 +373,7 @@ const Subscriptions = () => {
     return (
       <div className="app-page bg-background">
         <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <SubscriptionsPageSkeleton withPageShell={false} />
         </main>
       </div>
@@ -369,7 +384,7 @@ const Subscriptions = () => {
     <div className="app-page bg-background">
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[120rem]">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{t("subscriptions.title")}</h1>
@@ -426,7 +441,7 @@ const Subscriptions = () => {
           </div>
         </div>
 
-        {platformOptions.length > 0 ? (
+        {!isMobileTagFilter && platformOptions.length > 0 ? (
           <Suspense fallback={<div className="h-12 rounded-t-lg border border-b-0 bg-card" />}>
             <PlatformFilterBar
               platforms={platformOptions}
@@ -442,25 +457,60 @@ const Subscriptions = () => {
 
         <div className={cn(
           "mb-6 border border-border bg-card p-5",
-          platformOptions.length > 0 ? "rounded-b-xl rounded-t-none border-t-0" : "rounded-xl",
-          isMobileTagFilter ? "grid gap-3" : "grid gap-4",
+          !isMobileTagFilter && platformOptions.length > 0 ? "rounded-b-xl rounded-t-none border-t-0" : "rounded-xl",
+          isMobileTagFilter ? "grid gap-3 p-3" : "grid gap-4",
         )}>
           {isMobileTagFilter ? (
             <>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  name="subscription-search"
-                  type="search"
-                  enterKeyHint="search"
-                  placeholder={t("subscriptions.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-11 border-border bg-secondary pl-10"
-                />
+              <div className="flex min-w-0 items-center gap-2" data-testid="mobile-compact-filter-toolbar">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    name="subscription-search"
+                    type="search"
+                    enterKeyHint="search"
+                    placeholder={t("subscriptions.searchPlaceholder")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-11 border-border bg-secondary pl-10"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant={mobileFiltersExpanded ? "secondary" : "outline"}
+                  className="h-11 shrink-0 gap-2 border-border px-3"
+                  aria-label={t(mobileFiltersExpanded ? "subscriptions.mobileFilters.collapse" : "subscriptions.mobileFilters.open")}
+                  aria-expanded={mobileFiltersExpanded}
+                  aria-controls="mobile-subscription-filters"
+                  onClick={() => setMobileFiltersExpanded((expanded) => !expanded)}
+                >
+                  {mobileFiltersExpanded ? <ChevronUp className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
+                  <span>{mobileFiltersExpanded ? t("subscriptions.mobileFilters.collapse") : t("subscriptions.mobileFilters.open")}</span>
+                  {mobileFilterGroupCount > 0 ? (
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-primary-foreground">
+                      {mobileFilterGroupCount}
+                    </span>
+                  ) : null}
+                </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {mobileFiltersExpanded ? (
+                <div id="mobile-subscription-filters" className="grid gap-3 border-t border-border pt-3" data-testid="mobile-expanded-filters">
+                  {platformOptions.length > 0 ? (
+                    <Suspense fallback={<div className="h-11 rounded-lg bg-secondary" />}>
+                      <PlatformFilterBar
+                        platforms={platformOptions}
+                        value={selectedPlatform}
+                        onValueChange={setSelectedPlatform}
+                        allLabel={t("subscriptions.allPlatforms")}
+                        moreLabel={t("subscriptions.morePlatforms")}
+                        ariaLabel={t("subscriptions.platformFilter")}
+                        className="rounded-lg border bg-secondary/50 px-1"
+                      />
+                    </Suspense>
+                  ) : null}
+
+                  <div className="grid grid-cols-2 gap-3">
                 <SubscriptionCategoryFilter
                   categories={config.categories}
                   selectedCategories={selectedCategories}
@@ -483,9 +533,9 @@ const Subscriptions = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3" data-testid="mobile-payment-type-sort-row">
+                  <div className="grid grid-cols-2 gap-3" data-testid="mobile-payment-type-sort-row">
                 <Select value={paymentTypeFilter} onValueChange={(v) => setPaymentTypeFilter(v as SubscriptionPaymentTypeFilter)}>
                   <SelectTrigger className="h-11 min-w-0 border-border bg-secondary" tooltipContent={paymentTypeFilterLabel}>
                     <SelectValue placeholder={t("subscriptions.paymentTypeFilter.label")} />
@@ -519,9 +569,9 @@ const Subscriptions = () => {
                     <SelectItem value="name_desc">{t("subscriptions.sort.nameDesc")}</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+                  </div>
 
-              <div className="flex min-w-0 items-center gap-3" data-testid="mobile-advanced-tag-row">
+                  <div className="flex min-w-0 items-center gap-3" data-testid="mobile-advanced-tag-row">
                 <SubscriptionAdvancedFilter
                   filters={advancedFilters}
                   onChange={setAdvancedFilters}
@@ -539,9 +589,9 @@ const Subscriptions = () => {
                     onApply={setSelectedTags}
                   />
                 )}
-              </div>
+                  </div>
 
-              <SubscriptionFilterFeedback
+                  <SubscriptionFilterFeedback
                 selectedTags={selectedTags}
                 onRemoveTag={removeSelectedTag}
                 filters={advancedFilters}
@@ -554,7 +604,9 @@ const Subscriptions = () => {
                 tagTestId="mobile-selected-tags"
                 advancedTestId="mobile-selected-advanced-filters"
                 testId="mobile-filter-feedback"
-              />
+                  />
+                </div>
+              ) : null}
             </>
           ) : (
             <>

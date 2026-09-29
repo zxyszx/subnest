@@ -60,7 +60,7 @@ const Calendar = () => {
     return (
       <div className="app-page bg-background">
         <Header />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <CalendarPageSkeleton withPageShell={false} />
         </main>
       </div>
@@ -71,7 +71,7 @@ const Calendar = () => {
     return (
       <div className="app-page bg-background">
         <Header />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <QueryErrorState error={subscriptionsQuery.error} onRetry={subscriptionsQuery.refetch} />
         </main>
       </div>
@@ -83,7 +83,7 @@ const Calendar = () => {
       <Header />
 
       <main
-        className="app-main mx-auto max-w-7xl"
+        className="app-main mx-auto max-w-[120rem]"
         aria-busy={subscriptionsQuery.isFetching ? true : undefined}
       >
         <div className="mb-6">

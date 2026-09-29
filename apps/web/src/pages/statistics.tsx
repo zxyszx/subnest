@@ -177,7 +177,7 @@ const Statistics = () => {
     return (
       <div className="app-page bg-background">
         <Header />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <StatisticsPageSkeleton withPageShell={false} />
         </main>
       </div>
@@ -188,7 +188,7 @@ const Statistics = () => {
     return (
       <div className="app-page bg-background">
         <Header />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <QueryErrorState error={subscriptionsQuery.error} onRetry={subscriptionsQuery.refetch} />
         </main>
       </div>
@@ -199,7 +199,7 @@ const Statistics = () => {
     <div className="app-page bg-background">
       <Header />
 
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[120rem]">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-foreground">{t("statistics.title")}</h1>

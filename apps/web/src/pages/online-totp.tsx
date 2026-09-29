@@ -71,7 +71,7 @@ export default function OnlineTotpPage() {
   return (
     <div className="app-page bg-background">
       <Header pageActions={headerAction} />
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[120rem]">
         <div className="mb-4 flex justify-end sm:hidden"><Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" />{text.createTitle}</Button></div>
 
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (

@@ -93,7 +93,7 @@ export function sharingUpcomingSeatRenewals(
   includeExpired = false,
 ): SharingUpcomingSeatRenewal[] {
   return details.flatMap((detail) => detail.seats.flatMap((seat) => {
-    if (!seat.expiresAt || !seat.memberName || seat.status === "vacant" || seat.status === "archived") return [];
+    if (!seat.expiresAt || !seat.memberName || seat.status !== "active") return [];
     const daysUntilExpiry = daysBetweenDateOnly(today, seat.expiresAt);
     if ((!includeExpired && daysUntilExpiry < 0) || daysUntilExpiry > windowDays) return [];
     return [{ account: detail.account, seat, daysUntilExpiry }];

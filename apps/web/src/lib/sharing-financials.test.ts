@@ -35,6 +35,15 @@ describe("sharingUpcomingSeatRenewals", () => {
     ]);
   });
 
+  it("excludes paused seats from the seven-day renewal workload", () => {
+    const detail = {
+      account: { id: "account-1", accountNumber: 1 },
+      seats: [{ id: "seat-paused", seatNumber: 1, memberName: "Paused", expiresAt: "2026-09-27", status: "paused" }],
+    } as SharingAccountDetail;
+
+    expect(sharingUpcomingSeatRenewals([detail], assertDateOnly("2026-09-24"), 7)).toEqual([]);
+  });
+
   it("can include overdue seats for dashboard follow-up", () => {
     const detail = {
       account: { id: "account-1", accountNumber: 1 },

@@ -479,6 +479,8 @@ describe("Subscriptions page sorting", () => {
     expect(searchInput).toHaveAttribute("type", "search");
     expect(searchInput).toHaveAttribute("name", "subscription-search");
     expect(searchInput).toHaveAttribute("enterkeyhint", "search");
+    expect(screen.queryByTestId("mobile-expanded-filters")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "筛选" }));
     expect(within(screen.getByTestId("mobile-payment-type-sort-row")).getByRole("combobox", { name: "排序" }).compareDocumentPosition(within(screen.getByTestId("mobile-advanced-tag-row")).getByRole("button", { name: "更多筛选" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
@@ -635,6 +637,7 @@ describe("Subscriptions page mobile tag filters", () => {
     const user = userEvent.setup();
     renderSubscriptionsPage();
 
+    await user.click(screen.getByRole("button", { name: "筛选" }));
     expect(screen.getByTestId("mobile-tag-filter")).toBeInTheDocument();
     expect(screen.queryByTestId("desktop-tag-filter")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Security" })).not.toBeInTheDocument();
@@ -671,6 +674,7 @@ describe("Subscriptions page mobile tag filters", () => {
     const user = userEvent.setup();
     renderSubscriptionsPage();
 
+    await user.click(screen.getByRole("button", { name: "筛选" }));
     await user.click(screen.getByRole("button", { name: "标签" }));
     await user.click(await screen.findByRole("button", { name: "Docs" }));
     await user.click(screen.getByRole("button", { name: "确定" }));

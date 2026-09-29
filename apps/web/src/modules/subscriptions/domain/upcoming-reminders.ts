@@ -19,6 +19,8 @@ interface BuildUpcomingReminderItemsInput {
   today: DateOnly | string;
   /** 是否把已经过期但尚未更新日期的订阅也列入首页提醒。 */
   includeExpired?: boolean;
+  /** 固定业务窗口（例如仪表盘 7 天）不受单条提醒开关影响。 */
+  ignoreSubscriptionReminder?: boolean;
 }
 
 /** 构建首页“即将续费/到期”提醒窗口条目。 */
@@ -27,6 +29,7 @@ export function buildUpcomingReminderItems({
   notificationReminderDays,
   today,
   includeExpired = false,
+  ignoreSubscriptionReminder = false,
 }: BuildUpcomingReminderItemsInput): UpcomingReminderItem[] {
   const items: UpcomingReminderItem[] = [];
 
@@ -41,7 +44,9 @@ export function buildUpcomingReminderItems({
     if (isOneTimeBuyout(subscription)) continue;
 
     // 首页可视窗口复用 reminderDays 的哨兵契约，但这里只决定是否展示，不代表 Cron 发送时刻。
-    const reminderDays = effectiveReminderDays(subscription.reminderDays, notificationReminderDays);
+    const reminderDays = ignoreSubscriptionReminder
+      ? notificationReminderDays
+      : effectiveReminderDays(subscription.reminderDays, notificationReminderDays);
     if (reminderDays === undefined) continue;
 
     const daysUntil = daysBetweenDateOnly(today, subscription.nextBillingDate);

@@ -122,8 +122,8 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                   onOpenChange={setSystemDialogOpen}
                   canManageUpdates={sessionData?.user.role === "admin"}
                   contentAlign="start"
-                  triggerClassName="w-fit"
-                  badgeClassName="h-6 max-w-23 px-2 min-[380px]:max-w-32 sm:h-7 sm:max-w-none sm:px-2.5"
+                  triggerClassName="absolute left-0 top-7 w-fit"
+                  badgeClassName="h-4 max-w-24 rounded px-1.5 text-[10px] min-[380px]:max-w-32 sm:max-w-none"
                 />
               ) : null}
             </div>

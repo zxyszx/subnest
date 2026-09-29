@@ -21,7 +21,7 @@ import { SharingUpcomingRenewals } from "@/components/sharing-upcoming-renewals"
 import { DashboardPageSkeleton } from "@/components/loading-skeleton";
 import { QueryErrorState } from "@/components/query-error-state";
 import { AddSubscriptionDialog } from "@/components/add-subscription-dialog";
-import { CreditCard, Plus, CircleDollarSign, ReceiptText, ArrowRight } from "lucide-react";
+import { CreditCard, Plus, CircleDollarSign, ReceiptText, ArrowRight, CalendarClock, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReportExchangeRates } from "@/hooks/use-report-exchange-rates";
 import { useSubscriptionAnalytics, useSubscriptionFacets } from "@/hooks/use-subscriptions";
@@ -38,12 +38,20 @@ import { useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharin
 import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
 import { useState } from "react";
+import { DashboardRenewalCalendar } from "@/components/dashboard-renewal-calendar";
+import { DeferredRenewSubscriptionDialog } from "@/components/renew-subscription-dialog-loader";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
 /** 仪表盘页面组件。 */
 export default function Index() {
-  const [taskFilter, setTaskFilter] = useState<"all" | "subscriptions" | "members">("all");
+  const [subscriptionRenewalsOpen, setSubscriptionRenewalsOpen] = useState(false);
+  const [memberRenewalsOpen, setMemberRenewalsOpen] = useState(false);
+  const [renewalTaskTab, setRenewalTaskTab] = useState<"subscriptions" | "members">("subscriptions");
+  const isCompactRenewalLayout = useMediaQuery("(max-width: 1023px)");
   const subscriptionsQuery = useSubscriptionAnalytics();
   const subscriptions = subscriptionsQuery.data ?? EMPTY_SUBSCRIPTIONS;
   const facetsQuery = useSubscriptionFacets();
@@ -71,9 +79,8 @@ export default function Index() {
     today,
     inheritedReminderDays,
   );
-  const {
-    handleAddSubscription,
-  } = useSubscriptionCrud(subscriptions);
+  const subscriptionCrud = useSubscriptionCrud(subscriptions);
+  const { handleAddSubscription, handleRenewSubscription } = subscriptionCrud;
   const sharingRenewals = sharingUpcomingSeatRenewals(
     sharingDetailQueries.flatMap((query) => query.data ? [query.data] : []),
     today,
@@ -81,12 +88,15 @@ export default function Index() {
     true,
   );
   const sharingRenewalsPending = sharingDetailQueries.some((query) => query.isPending);
-  const subscriptionRenewalCount = buildUpcomingReminderItems({
+  const subscriptionRenewals = buildUpcomingReminderItems({
     subscriptions,
     today,
-    notificationReminderDays: inheritedReminderDays,
-    includeExpired: true,
-  }).length;
+    notificationReminderDays: 7,
+    ignoreSubscriptionReminder: true,
+  });
+  const subscriptionRenewalCount = subscriptionRenewals.length;
+  const memberRenewalCount = sharingRenewals.filter((item) => item.daysUntilExpiry >= 0).length;
+  const sharingDetails = sharingDetailQueries.flatMap((query) => query.data ? [query.data] : []);
 
   // 只有页面主数据还没有首屏结果时才展示骨架屏。
   // 汇率刷新期间保留已有内容，并在统计卡片副标题里提示加载状态，避免整页闪回 loading。
@@ -94,7 +104,7 @@ export default function Index() {
     return (
       <div className="app-page bg-background">
         <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <DashboardPageSkeleton withPageShell={false} />
         </main>
       </div>
@@ -105,7 +115,7 @@ export default function Index() {
     return (
       <div className="app-page bg-background">
         <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
-        <main className="app-main mx-auto max-w-7xl">
+        <main className="app-main mx-auto max-w-[120rem]">
           <QueryErrorState
             error={subscriptionsQuery.error ?? sharingQuery.error}
             onRetry={() => {
@@ -122,13 +132,13 @@ export default function Index() {
     <div className="app-page bg-background">
       <Header onAddSubscription={handleAddSubscription} availableTags={availableTags} />
 
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[1504px] lg:flex lg:flex-col lg:!pt-2.5 xl:px-7 xl:pb-4">
         {/* 统计网格 */}
-        <div className={cn("mb-8", dashboardStatLayout.grid)} data-testid="dashboard-stat-grid">
+        <div className={cn("mb-2.5", dashboardStatLayout.grid)} data-testid="dashboard-stat-grid">
           <StatCard
             data-testid="dashboard-stat-monthly-spend"
             title={t("dashboard.monthlySpend")}
-            value={formatCurrency(totalMonthly, defaultCurrency)}
+            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(totalMonthly, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(totalMonthly, defaultCurrency)}</span></>}
             subtitle={t("dashboard.monthlySpendSubtitle", {
               amount: formatCompactCurrencyAmount(totalDaily, defaultCurrency, locale),
               rates: ratesLoading ? t("dashboard.ratesLoading") : t("dashboard.realTimeRates", { currency: defaultCurrency }),
@@ -141,7 +151,7 @@ export default function Index() {
           <StatCard
             data-testid="dashboard-stat-sharing-income"
             title={t("dashboard.sharingIncome")}
-            value={formatCurrency(sharingIncome, defaultCurrency)}
+            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(sharingIncome, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(sharingIncome, defaultCurrency)}</span></>}
             icon={<CircleDollarSign className="h-6 w-6" />}
             variant="primary"
             density="dashboard"
@@ -150,77 +160,202 @@ export default function Index() {
           <StatCard
             data-testid="dashboard-stat-sharing-profit"
             title={t("statistics.sharingProfit")}
-            value={formatCurrency(sharingProfit, defaultCurrency)}
+            value={<><span className="sm:hidden">{formatCompactCurrencyAmount(sharingProfit, defaultCurrency, locale)}</span><span className="hidden sm:inline">{formatCurrency(sharingProfit, defaultCurrency)}</span></>}
             icon={<ReceiptText className="h-6 w-6" />}
             variant={sharingProfit >= 0 ? "primary" : "warning"}
             density="dashboard"
             className="animate-fade-in [animation-delay:200ms]"
           />
+          <StatCard
+            data-testid="dashboard-stat-subscription-renewals"
+            title={t("dashboard.subscriptionRenewals")}
+            value={subscriptionRenewalCount}
+            subtitle={t("dashboard.withinSevenDays")}
+            icon={<CalendarClock />}
+            aria-label={t("dashboard.openSubscriptionRenewals")}
+            onClick={() => setSubscriptionRenewalsOpen(true)}
+            variant={subscriptionRenewalCount > 0 ? "warning" : "default"}
+            density="dashboard"
+            className="animate-fade-in [animation-delay:300ms]"
+          />
+          <StatCard
+            data-testid="dashboard-stat-member-renewals"
+            title={t("dashboard.memberRenewals")}
+            value={memberRenewalCount}
+            subtitle={t("dashboard.withinSevenDays")}
+            icon={<UsersRound />}
+            aria-label={t("dashboard.openMemberRenewals")}
+            onClick={() => setMemberRenewalsOpen(true)}
+            variant={memberRenewalCount > 0 ? "warning" : "default"}
+            density="dashboard"
+            className="animate-fade-in [animation-delay:400ms]"
+          />
         </div>
 
-        <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{t("dashboard.taskCenter")}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.taskCenterDescription")}</p>
-            </div>
-            <div className="grid grid-cols-3 rounded-lg bg-secondary p-1" aria-label={t("dashboard.taskCenter")}>
-              {([
-                ["all", t("dashboard.taskAll"), subscriptionRenewalCount + sharingRenewals.length],
-                ["subscriptions", t("dashboard.taskSubscriptions"), subscriptionRenewalCount],
-                ["members", t("dashboard.taskMembers"), sharingRenewals.length],
-              ] as const).map(([value, label, count]) => (
-                <button key={value} type="button" aria-pressed={taskFilter === value} onClick={() => setTaskFilter(value)} className={cn("min-h-9 rounded-md px-3 text-xs font-medium transition-colors", taskFilter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-                  {label} <span className="tabular-nums">{count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+        <DashboardRenewalCalendar
+          subscriptions={subscriptions}
+          sharingDetails={sharingDetails}
+          today={today}
+          defaultCurrency={defaultCurrency}
+          convert={convert}
+        />
 
-          {taskFilter !== "members" ? <div className="min-w-0">
-            <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
-              <h3 className="font-semibold text-foreground">{t("dashboard.upcomingRenewals")}</h3>
-              <Link href="/subscriptions"><Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
-            </div>
-            {subscriptions.length === 0 ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-8 text-center">
-                <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
-                <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("dashboard.emptyDescription")}</p>
-                <AddSubscriptionDialog
-                  onAdd={handleAddSubscription}
-                  availableTags={availableTags}
-                  trigger={(
-                    <Button className="mt-5 gap-2">
-                      <Plus className="h-4 w-4" />
-                      {t("subscriptions.addFirst")}
-                    </Button>
-                  )}
+        {isCompactRenewalLayout ? <section className="mt-2.5" aria-label={t("dashboard.renewalTasks")}>
+          <Tabs value={renewalTaskTab} onValueChange={(value) => setRenewalTaskTab(value as "subscriptions" | "members")}>
+            <article className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card">
+              <div className="mb-2">
+                <TabsList className="grid h-9 w-full grid-cols-2 rounded-md border border-border bg-secondary/60 p-0.5 sm:w-80">
+                  <TabsTrigger value="subscriptions" className="h-8 gap-1.5 rounded-[5px] px-2 text-xs shadow-none data-[state=active]:bg-card data-[state=active]:shadow-none sm:text-sm">
+                    {t("dashboard.subscriptionRenewals")}
+                    <span className="tabular-nums text-muted-foreground">{subscriptionRenewals.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="members" className="h-8 gap-1.5 rounded-[5px] px-2 text-xs shadow-none data-[state=active]:bg-card data-[state=active]:shadow-none sm:text-sm">
+                    {t("dashboard.memberRenewals")}
+                    <span className="tabular-nums text-muted-foreground">{sharingRenewals.length}</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent id="dashboard-subscription-renewals" value="subscriptions" className="mt-0">
+                <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                  <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
+                  <Link href="/subscriptions"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                </div>
+                {subscriptions.length === 0 ? (
+                  <div className="flex min-h-36 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center">
+                    <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("dashboard.emptyDescription")}</p>
+                    <AddSubscriptionDialog
+                      onAdd={handleAddSubscription}
+                      availableTags={availableTags}
+                      trigger={(
+                        <Button className="mt-4 gap-2">
+                          <Plus className="h-4 w-4" />
+                          {t("subscriptions.addFirst")}
+                        </Button>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <UpcomingRenewals
+                    subscriptions={subscriptions}
+                    today={today}
+                    notificationReminderDays={inheritedReminderDays}
+                    includeExpired
+                    windowDays={7}
+                    limit={5}
+                    onRenew={handleRenewSubscription}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent id="dashboard-member-renewals" value="members" className="mt-0">
+                <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                  <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
+                  <Link href="/sharing"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                </div>
+                <SharingUpcomingRenewals
+                  items={sharingRenewals}
+                  pending={sharingRenewalsPending}
+                  limit={5}
+                  showFooter={false}
+                />
+              </TabsContent>
+            </article>
+          </Tabs>
+        </section> : (
+          <section className="mt-2.5 grid items-stretch gap-2.5 lg:grid-cols-2" aria-label={t("dashboard.renewalTasks")}>
+            <article id="dashboard-subscription-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 shadow-card">
+              <h2 className="font-semibold text-foreground">{t("dashboard.subscriptionRenewals")}</h2>
+              <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
+                <Link href="/subscriptions"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+              </div>
+              <div className="flex flex-1 flex-col">
+                {subscriptions.length === 0 ? (
+                  <div className="flex min-h-36 flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center">
+                    <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("dashboard.emptyDescription")}</p>
+                    <AddSubscriptionDialog
+                      onAdd={handleAddSubscription}
+                      availableTags={availableTags}
+                      trigger={(
+                        <Button className="mt-4 gap-2">
+                          <Plus className="h-4 w-4" />
+                          {t("subscriptions.addFirst")}
+                        </Button>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <UpcomingRenewals
+                    subscriptions={subscriptions}
+                    today={today}
+                    notificationReminderDays={inheritedReminderDays}
+                    includeExpired
+                    windowDays={7}
+                    limit={5}
+                    onRenew={handleRenewSubscription}
+                  />
+                )}
+              </div>
+            </article>
+
+            <article id="dashboard-member-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 shadow-card">
+              <h2 className="font-semibold text-foreground">{t("dashboard.memberRenewals")}</h2>
+              <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
+                <Link href="/sharing"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+              </div>
+              <div className="flex flex-1 flex-col">
+                <SharingUpcomingRenewals
+                  items={sharingRenewals}
+                  pending={sharingRenewalsPending}
+                  limit={5}
+                  showFooter={false}
                 />
               </div>
-            ) : (
-              <UpcomingRenewals
-                subscriptions={subscriptions}
-                today={today}
-                notificationReminderDays={inheritedReminderDays}
-                includeExpired
-                limit={6}
-              />
-            )}
-          </div> : null}
-
-          {taskFilter !== "subscriptions" ? <div className={cn("min-w-0", taskFilter === "all" && "mt-6 border-t border-border pt-5")}>
-            <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
-              <h3 className="font-semibold text-foreground">{t("sharing.upcomingRenewals")}</h3>
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold tabular-nums text-muted-foreground">{sharingRenewals.length}</span>
-            </div>
-            <SharingUpcomingRenewals
-              items={sharingRenewals}
-              pending={sharingRenewalsPending}
-              limit={6}
-            />
-          </div> : null}
-        </section>
+            </article>
+          </section>
+        )}
       </main>
+
+      <Dialog open={subscriptionRenewalsOpen} onOpenChange={setSubscriptionRenewalsOpen}>
+        <DialogContent className="max-w-2xl bg-card" closeLabel={t("common.close")}>
+          <DialogHeader>
+            <DialogTitle>{t("dashboard.subscriptionRenewalDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("dashboard.subscriptionRenewalDialogDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60dvh] overflow-y-auto pr-1">
+            <UpcomingRenewals subscriptions={subscriptions} today={today} notificationReminderDays={inheritedReminderDays} windowDays={7} limit={100} onRenew={(id) => { setSubscriptionRenewalsOpen(false); handleRenewSubscription(id); }} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={memberRenewalsOpen} onOpenChange={setMemberRenewalsOpen}>
+        <DialogContent className="max-w-2xl bg-card" closeLabel={t("common.close")}>
+          <DialogHeader>
+            <DialogTitle>{t("dashboard.memberRenewalDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("dashboard.memberRenewalDialogDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60dvh] overflow-y-auto pr-1">
+            <SharingUpcomingRenewals items={sharingRenewals.filter((item) => item.daysUntilExpiry >= 0)} pending={sharingRenewalsPending} limit={100} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <DeferredRenewSubscriptionDialog
+        subscription={subscriptionCrud.renewingSubscription}
+        loadingPreview={subscriptionCrud.renewingCollectionItem}
+        open={subscriptionCrud.renewDialogOpen}
+        today={today}
+        submitting={subscriptionCrud.renewSubmitting}
+        error={subscriptionCrud.renewError instanceof Error ? subscriptionCrud.renewError.message : null}
+        restoreFocusRef={subscriptionCrud.renewRestoreFocusRef}
+        onOpenChange={subscriptionCrud.handleRenewDialogOpenChange}
+        onSubmit={subscriptionCrud.handleSubmitRenewSubscription}
+        loading={subscriptionCrud.renewDetailPending}
+      />
     </div>
   );
 }

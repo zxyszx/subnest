@@ -291,7 +291,7 @@ describe("Header system version entry", () => {
 
     expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
     expect(screen.getByTestId("app-header")).not.toHaveClass("lg:fixed", "lg:w-64", "lg:border-r");
-    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-7xl", "justify-between", "gap-3");
+    expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-[120rem]", "justify-between", "gap-3");
     expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end");
 
     const desktopNav = screen.getByTestId("app-header-desktop-nav");

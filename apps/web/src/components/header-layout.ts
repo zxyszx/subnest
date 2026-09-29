@@ -2,13 +2,13 @@ import { cn } from "@/lib/utils";
 
 export const headerLayout = {
   shell: "sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-xl relative",
-  inner: "mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4",
+  inner: "mx-auto flex max-w-[120rem] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-2.5",
   primaryCluster: "flex min-w-0 items-center gap-3 lg:gap-5 xl:gap-8",
-  brandCluster: "flex min-w-0 items-center gap-3",
-  brandTextGroup: "grid min-w-0 gap-1",
+  brandCluster: "flex min-w-0 items-start gap-3",
+  brandTextGroup: "relative h-10 min-w-0",
   brandTitleLink:
-    "block min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-  brandTitle: "truncate text-xl font-extrabold tracking-tight text-foreground",
+    "flex h-9 min-w-0 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  brandTitle: "truncate text-xl font-extrabold leading-none tracking-tight text-foreground",
   desktopNav: "hidden min-w-0 items-center gap-1 lg:flex",
   desktopNavIcon: "h-4 w-4 shrink-0",
   desktopNavLabel: "whitespace-nowrap",

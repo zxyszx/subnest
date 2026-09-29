@@ -103,7 +103,7 @@ function useNoIndexMeta() {
 function PublicStatusFrame({ children }: { children: ReactNode }) {
   return (
     <div className="app-page bg-background">
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[120rem]">
         {children}
       </main>
     </div>

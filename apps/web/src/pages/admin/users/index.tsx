@@ -433,7 +433,7 @@ export default function AdminUsersPage() {
   return (
     <div className="app-page bg-background">
       <Header />
-      <main className="app-main mx-auto max-w-7xl">
+      <main className="app-main mx-auto max-w-[120rem]">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Shield className="h-7 w-7 text-primary" />

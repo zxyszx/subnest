@@ -79,7 +79,7 @@ describe("UpcomingRenewals", () => {
       />,
     );
 
-    expect(screen.getByText("Netflix")).toBeInTheDocument();
+    expect(screen.getAllByText("Netflix")).toHaveLength(1);
     expect(screen.getByText("30天")).toBeInTheDocument();
     expect(screen.getByText("USD 10")).toBeInTheDocument();
   });
@@ -94,7 +94,7 @@ describe("UpcomingRenewals", () => {
     );
 
     const name = screen.getByText("AnExtremelyLongSubscriptionNameWithoutNaturalBreaks");
-    const details = name.parentElement;
+    const details = name.parentElement?.parentElement;
     const row = details?.parentElement;
     const list = row?.parentElement;
     if (!details || !row || !list) {
@@ -102,13 +102,12 @@ describe("UpcomingRenewals", () => {
     }
 
     const price = screen.getByText("USD 10");
-    expect(list).toHaveClass("grid", "min-w-0", "grid-cols-[max-content_minmax(0,1fr)_max-content]");
-    expect(row).toHaveClass("col-span-3", "grid", "min-w-0", "grid-cols-subgrid");
-    expect(row.children[1]).toBe(details);
-    expect(row.children[2]).toBe(price);
+    expect(list).toHaveClass("min-w-0", "divide-y", "divide-border");
+    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_auto_auto_auto]");
+    expect(row.children[0]).toBe(details);
     expect(details).toHaveClass("min-w-0");
-    expect(name).toHaveClass("min-w-0", "wrap-break-word");
-    expect(price).toHaveClass("whitespace-nowrap", "text-right", "tabular-nums");
+    expect(name).toHaveClass("min-w-0", "truncate");
+    expect(price).toHaveClass("whitespace-nowrap", "tabular-nums");
   });
 
   it("uses the reminder-window empty state instead of the old two-week copy", () => {

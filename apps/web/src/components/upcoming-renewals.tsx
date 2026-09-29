@@ -12,6 +12,16 @@ import { cn } from '@/lib/utils';
 import { formatDateOnlyMonthDay, type DateOnly } from '@/lib/time/date-only';
 import { useI18n } from '@/i18n/I18nProvider';
 import { buildUpcomingReminderItems } from '@/modules/subscriptions/domain/upcoming-reminders';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { CalendarClock, MoreHorizontal, RotateCw } from 'lucide-react';
+import { CalendarAccountIdentity } from '@/components/calendar-account-identity';
+import { isManualRenewEligible } from '@renewlet/shared/subscription-renewal';
 
 interface UpcomingRenewalsProps {
   /** 订阅列表（前端 domain 类型）。 */
@@ -24,12 +34,22 @@ interface UpcomingRenewalsProps {
   limit?: number;
   /** 首页需要同时追踪已经过期、等待处理的订阅。 */
   includeExpired?: boolean;
+  /** 仪表盘固定观察窗口；传入后不读取每条订阅的提醒天数。 */
+  windowDays?: number;
+  /** 复用订阅列表的续订弹窗。 */
+  onRenew?: (id: string) => void;
 }
 
 /** 即将续费列表组件。 */
-export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false }: UpcomingRenewalsProps) {
+export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false, windowDays, onRenew }: UpcomingRenewalsProps) {
   const { t, formatCurrency, locale } = useI18n();
-  const upcoming = buildUpcomingReminderItems({ subscriptions, today, notificationReminderDays, includeExpired }).slice(0, limit);
+  const upcoming = buildUpcomingReminderItems({
+    subscriptions,
+    today,
+    notificationReminderDays: windowDays ?? notificationReminderDays,
+    includeExpired,
+    ignoreSubscriptionReminder: windowDays !== undefined,
+  }).slice(0, limit);
 
   if (upcoming.length === 0) {
     return (
@@ -38,38 +58,59 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
   }
 
   return (
-    <div className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3">
+    <div className="min-w-0 divide-y divide-border">
       {upcoming.map((item) => (
         <div
           key={item.subscription.id}
           className={cn(
-            "col-span-3 grid min-w-0 grid-cols-subgrid items-center rounded-lg border border-border bg-secondary/50 p-4 transition-colors hover:bg-secondary",
+            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-3 py-3 first:pt-0 last:pb-0",
             item.daysUntil < 0
-              ? "border-destructive/30 bg-linear-to-br from-destructive/10 via-card to-card"
-              : item.daysUntil <= 3 && "border-warning/30 bg-warning/5"
+              ? "text-destructive"
+              : item.daysUntil <= 3 && "text-warning"
           )}
         >
-          <div className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold",
-            item.daysUntil < 0
-              ? "bg-destructive/10 text-destructive"
-              : item.daysUntil <= 3
-              ? "bg-warning/20 text-warning"
-              : "bg-muted text-muted-foreground"
-          )}>
-            {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
-          </div>
           <div className="min-w-0">
-            <p className="min-w-0 wrap-break-word font-medium text-foreground">{item.subscription.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {item.kind === "expiry"
-                ? t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale) })
-                : t("upcoming.renewsOn", { date: formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale) })}
+            <CalendarAccountIdentity
+              platformName={item.subscription.platformName || item.subscription.name}
+              logo={item.subscription.logo}
+              accountNumber={item.subscription.accountNumber ?? 1}
+            />
+            {item.subscription.platformName && item.subscription.platformName !== item.subscription.name ? (
+              <p className="mt-1 truncate pl-11 text-xs text-muted-foreground">{item.subscription.name}</p>
+            ) : null}
+          </div>
+          <div className="hidden text-right sm:block">
+            <p className="text-xs text-muted-foreground">{t("calendar.nextBilling")}</p>
+            <p className="mt-0.5 whitespace-nowrap text-sm tabular-nums text-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)}</p>
+          </div>
+          <div className="text-right">
+            <p className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", item.daysUntil < 0 ? "text-destructive" : item.daysUntil <= 3 ? "text-warning" : "text-muted-foreground")}>
+              {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
+            </p>
+            <p className="mt-0.5 whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
+            {formatCurrency(item.subscription.price, item.subscription.currency)}
             </p>
           </div>
-          <p className="whitespace-nowrap text-right font-semibold tabular-nums text-foreground">
-            {formatCurrency(item.subscription.price, item.subscription.currency)}
-          </p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground" aria-label={t("subscription.moreActions")}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onRenew && isManualRenewEligible(item.subscription) ? (
+                <DropdownMenuItem onClick={() => onRenew(item.subscription.id)}>
+                  <RotateCw className="h-4 w-4" />
+                  {t("subscription.renew")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem disabled>
+                  <CalendarClock className="h-4 w-4" />
+                  {item.kind === "expiry" ? t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale) }) : t("upcoming.renewsOn", { date: formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale) })}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ))}
     </div>

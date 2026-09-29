@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, CalendarClock, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { ArrowUpDown, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
@@ -21,6 +21,7 @@ import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscr
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useZonedToday } from "@/hooks/use-zoned-today";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,8 @@ export default function Sharing() {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expirySortDirection, setExpirySortDirection] = useState<SharingExpirySortDirection>("asc");
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
   const updateSubscription = useUpdateSubscription();
@@ -248,13 +251,13 @@ export default function Sharing() {
   return (
     <div className="app-page bg-background">
       <Header />
-      <main className="app-main mx-auto max-w-7xl">
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" aria-label={t("sharing.title")}>
+      <main className="app-main mx-auto max-w-[120rem]">
+        <section className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
           <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
-          <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-sm 2xl:text-base" className="animate-fade-in [animation-delay:200ms]" />
-          <StatCard title={t("sharing.outstanding")} value={currencyMetric(formatCurrency(outstanding, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-sm 2xl:text-base" className="animate-fade-in [animation-delay:300ms]" />
-          <StatCard title={t("sharing.monthlyProfit")} value={currencyMetric(formatCurrency(monthlyProfit, defaultCurrency), defaultCurrency)} icon={<TrendingUp />} density="dashboard" variant={monthlyProfit < 0 ? "warning" : "primary"} valueClassName="flex items-baseline gap-1 whitespace-nowrap text-sm 2xl:text-base" className="animate-fade-in [animation-delay:400ms]" />
+          <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
+          <StatCard title={t("sharing.outstanding")} value={currencyMetric(formatCurrency(outstanding, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:300ms]" />
+          <StatCard title={t("sharing.monthlyProfit")} value={currencyMetric(formatCurrency(monthlyProfit, defaultCurrency), defaultCurrency)} icon={<TrendingUp />} density="dashboard" variant={monthlyProfit < 0 ? "warning" : "primary"} valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:400ms]" />
           <StatCard
             title={t("sharing.upcomingRenewals")}
             value={upcomingRenewals}
@@ -268,37 +271,84 @@ export default function Sharing() {
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-6 flex flex-col rounded-t-lg border border-b-0 bg-card sm:flex-row sm:items-center">
-            <PlatformFilterBar
-              platforms={platformOptions}
-              value={selectedPlatform}
-              onValueChange={setSelectedPlatform}
-              allLabel={t("sharing.allPlatforms")}
-              moreLabel={t("sharing.morePlatforms")}
-              ariaLabel={t("sharing.platformFilter")}
-              className="min-w-0 flex-1 border-0 px-2"
-            />
-            <div className="mx-2 mb-2 flex shrink-0 items-center gap-1 sm:mb-0 sm:ml-0">
-              <div className="relative min-w-0 flex-1 sm:w-64">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t("sharing.searchPlaceholder")}
-                  aria-label={t("sharing.searchPlaceholder")}
-                  className="h-9 bg-secondary pl-9"
+          <div className="mt-6 rounded-t-lg border border-b-0 bg-card p-2 sm:flex sm:items-center sm:p-0">
+            {isMobile ? (
+              <>
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={t("sharing.searchPlaceholder")}
+                      aria-label={t("sharing.searchPlaceholder")}
+                      className="h-11 bg-secondary pl-9"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant={mobileFiltersExpanded ? "secondary" : "outline"}
+                    className="h-11 shrink-0 gap-2 border-border px-3"
+                    aria-label={t(mobileFiltersExpanded ? "subscriptions.mobileFilters.collapse" : "subscriptions.mobileFilters.open")}
+                    aria-expanded={mobileFiltersExpanded}
+                    aria-controls="mobile-sharing-filters"
+                    onClick={() => setMobileFiltersExpanded((expanded) => !expanded)}
+                  >
+                    {mobileFiltersExpanded ? <ChevronUp className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
+                    <span>{mobileFiltersExpanded ? t("subscriptions.mobileFilters.collapse") : t("subscriptions.mobileFilters.open")}</span>
+                    {selectedPlatform ? <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-primary-foreground">1</span> : null}
+                  </Button>
+                </div>
+                {mobileFiltersExpanded ? (
+                  <div id="mobile-sharing-filters" className="mt-2 grid gap-2 border-t border-border pt-2">
+                    <PlatformFilterBar
+                      platforms={platformOptions}
+                      value={selectedPlatform}
+                      onValueChange={setSelectedPlatform}
+                      allLabel={t("sharing.allPlatforms")}
+                      moreLabel={t("sharing.morePlatforms")}
+                      ariaLabel={t("sharing.platformFilter")}
+                      className="rounded-lg border bg-secondary/50 px-1"
+                    />
+                    <div className="flex justify-end">
+                      <ExpirySortMenu
+                        value={expirySortDirection}
+                        onValueChange={setExpirySortDirection}
+                        label={t("subscriptions.sort.label")}
+                        ascendingLabel={t("subscriptions.sort.renewalAsc")}
+                        descendingLabel={t("subscriptions.sort.renewalDesc")}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <PlatformFilterBar
+                  platforms={platformOptions}
+                  value={selectedPlatform}
+                  onValueChange={setSelectedPlatform}
+                  allLabel={t("sharing.allPlatforms")}
+                  moreLabel={t("sharing.morePlatforms")}
+                  ariaLabel={t("sharing.platformFilter")}
+                  className="min-w-0 flex-1 border-0 px-2"
                 />
-              </div>
-              <ExpirySortMenu
-                value={expirySortDirection}
-                onValueChange={setExpirySortDirection}
-                label={t("subscriptions.sort.label")}
-                ascendingLabel={t("subscriptions.sort.renewalAsc")}
-                descendingLabel={t("subscriptions.sort.renewalDesc")}
-                className="sm:hidden"
-              />
-            </div>
+                <div className="mx-2 mb-2 flex shrink-0 items-center gap-1 sm:mb-0 sm:ml-0">
+                  <div className="relative min-w-0 flex-1 sm:w-64">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={t("sharing.searchPlaceholder")}
+                      aria-label={t("sharing.searchPlaceholder")}
+                      className="h-9 bg-secondary pl-9"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
 

@@ -23,6 +23,8 @@ const mocks = vi.hoisted(() => ({
   handleEditSubscription: vi.fn(),
   handleTogglePublicHiddenSubscription: vi.fn(),
   handleSaveSubscription: vi.fn(),
+  handleRenewSubscription: vi.fn(),
+  compactRenewalLayout: false,
   ratesLoading: false,
   sharingAccounts: [] as SharingAccount[],
   sharingDetailQueries: [] as Array<{ data?: SharingAccountDetail; isPending: boolean }>,
@@ -100,6 +102,10 @@ vi.mock("@/hooks/use-zoned-today", () => ({
   useZonedToday: () => "2026-06-15",
 }));
 
+vi.mock("@/hooks/use-media-query", () => ({
+  useMediaQuery: () => mocks.compactRenewalLayout,
+}));
+
 vi.mock("@/hooks/use-subscriptions", () => ({
   prefetchSubscriptionDetail: vi.fn(),
   useSubscriptionAnalytics: mocks.useSubscriptionAnalytics,
@@ -124,6 +130,14 @@ vi.mock("@/modules/subscriptions/application/use-subscription-crud", () => ({
     handleEditSubscription: mocks.handleEditSubscription,
     handleTogglePublicHiddenSubscription: mocks.handleTogglePublicHiddenSubscription,
     handleSaveSubscription: mocks.handleSaveSubscription,
+    handleRenewSubscription: mocks.handleRenewSubscription,
+    handleSubmitRenewSubscription: vi.fn(),
+    handleRenewDialogOpenChange: vi.fn(),
+    renewDialogOpen: false,
+    renewSubmitting: false,
+    renewDetailPending: false,
+    renewError: null,
+    renewRestoreFocusRef: { current: null },
   }),
 }));
 
@@ -243,6 +257,7 @@ function mockResolvedDashboardData() {
 describe("Dashboard page loading state", () => {
   beforeEach(() => {
     mocks.ratesLoading = false;
+    mocks.compactRenewalLayout = false;
     mocks.sharingAccounts = [];
     mocks.sharingDetailQueries = [];
     mocks.upcomingRenewalsCalls = [];
@@ -255,8 +270,8 @@ describe("Dashboard page loading state", () => {
     renderDashboard();
 
     expect(screen.queryByTestId("dashboard-skeleton")).not.toBeInTheDocument();
-    expect(screen.getByText("即将续费/到期")).toBeInTheDocument();
-    expect(screen.getByText("车友续费/收费")).toBeInTheDocument();
+    expect(screen.getAllByText("订阅续费").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("车友续费").length).toBeGreaterThan(0);
     expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({
       count: 1,
       today: "2026-06-15",
@@ -299,18 +314,20 @@ describe("Dashboard page loading state", () => {
     expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
   });
 
-  it("uses a focused responsive three-card financial summary", () => {
+  it("keeps the three financial cards and adds two seven-day renewal cards", () => {
     renderDashboard();
 
     const grid = screen.getByTestId("dashboard-stat-grid");
     const monthlySpend = screen.getByTestId("dashboard-stat-monthly-spend");
     const sharingProfit = screen.getByTestId("dashboard-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-1", "gap-3", "sm:grid-cols-3");
-    expect(monthlySpend).toHaveClass("p-4", "col-span-1");
+    expect(grid).toHaveClass("grid", "grid-cols-5", "gap-3", "sm:grid-cols-2", "sm:gap-3", "lg:grid-cols-5");
+    expect(monthlySpend).toHaveClass("p-1.5", "sm:p-3", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
-    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-4");
-    expect(sharingProfit).toHaveClass("p-4");
+    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-1.5", "sm:p-3");
+    expect(sharingProfit).toHaveClass("p-1.5", "sm:p-3");
+    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveClass("p-1.5", "sm:p-3");
+    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveClass("p-1.5", "sm:p-3");
     expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
   });
 
@@ -322,6 +339,38 @@ describe("Dashboard page loading state", () => {
     expect(screen.queryByText("支出分布")).not.toBeInTheDocument();
   });
 
+  it("jumps directly to a selected year and month from the dashboard calendar", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(screen.getByRole("button", { name: "2026年6月" }));
+    await user.click(screen.getByRole("button", { name: "2026年", expanded: false }));
+    await user.click(screen.getByRole("button", { name: "2025" }));
+    await user.click(screen.getByRole("button", { name: "11月" }));
+
+    expect(screen.getByRole("button", { name: "2025年11月" })).toBeInTheDocument();
+  });
+
+  it("counts only subscriptions and members due within the next seven days", async () => {
+    const user = userEvent.setup();
+    const account = sharingAccount();
+    const detail = sharingDetail(account);
+    detail.seats[0] = { ...detail.seats[0]!, expiresAt: assertDateOnly("2026-06-20") };
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })],
+      isPending: false,
+    });
+
+    renderDashboard();
+
+    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveTextContent("1");
+    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveTextContent("1");
+    await user.click(screen.getByRole("button", { name: "查看 7 天内需要续费的订阅" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("7 天内订阅续费");
+  });
+
   it("keeps overdue sharing members visible with their account and charge", () => {
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
@@ -330,11 +379,24 @@ describe("Dashboard page loading state", () => {
     renderDashboard();
 
     expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.getByText("Netflix #2 · 车位 #3")).toBeInTheDocument();
+    expect(screen.getByTitle("账号编号 2")).toBeInTheDocument();
+    expect(screen.getByText("车位 #3 · 6月14日 到期")).toBeInTheDocument();
     expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
-    expect(screen.getByText("¥15 CNY")).toBeInTheDocument();
+    expect(screen.getAllByText("¥15 CNY").length).toBeGreaterThan(0);
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60 CNY");
     expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20 CNY");
+  });
+
+  it("combines renewal worklists into switchable tabs on compact screens", async () => {
+    const user = userEvent.setup();
+    mocks.compactRenewalLayout = true;
+    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [], isPending: false });
+
+    renderDashboard();
+
+    expect(screen.getByRole("tab", { name: /订阅续费/ })).toHaveAttribute("data-state", "active");
+    await user.click(screen.getByRole("tab", { name: /车友续费/ }));
+    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
   });
 
   it.each([
