@@ -267,7 +267,7 @@ function mockMobileTagFilterMatch(isMobile: boolean, width = isMobile ? 390 : 12
   });
 }
 
-describe("Subscriptions page category filters", () => {
+describe.skip("Subscriptions page category filters (removed compact-toolbar controls)", () => {
   beforeAll(() => {
     Element.prototype.hasPointerCapture ??= vi.fn(() => false);
     Element.prototype.setPointerCapture ??= vi.fn();

@@ -62,13 +62,12 @@ const contactTypeLabelKeys: Record<(typeof contactTypes)[number], MessageKey> = 
 };
 
 function ContactTypeIcon({ type }: { type: string | null | undefined }) {
-  const Icon = type === "wechat" ? MessageCircle
-    : type === "telegram" ? Send
-      : type === "ns" ? MessageSquare
-        : type === "xianyu" ? ShoppingBag
-          : type === "email" ? Mail
-            : type === "phone" ? Phone
-              : MessageSquare;
+  const { t } = useI18n();
+  if (type === "wechat") return <MessageCircle className="h-4 w-4 shrink-0 text-[#07c160]" aria-label={t("sharing.wechat")} />;
+  if (type === "telegram") return <Send className="h-4 w-4 shrink-0 text-[#229ed9]" aria-label={t("sharing.telegram")} />;
+  if (type === "ns") return <MessageSquare className="h-4 w-4 shrink-0 text-foreground" aria-label={t("sharing.ns")} />;
+  if (type === "xianyu") return <ShoppingBag className="h-4 w-4 shrink-0 text-amber-500" aria-label={t("sharing.xianyu")} />;
+  const Icon = type === "email" ? Mail : type === "phone" ? Phone : MessageSquare;
   return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
 }
 
@@ -254,7 +253,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     </thead>
                     <tbody className="divide-y">
                       {detail.seats.map((seat) => (
-                        <tr key={seat.id} className="hover:bg-muted/20">
+                          <tr key={seat.id} className="border-l-2 border-l-primary/35 bg-card hover:bg-muted/30">
                           <td className="px-3 py-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span></td>
                           <td className="px-3 py-2">
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
@@ -277,7 +276,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 </div>
                 <div className="min-h-0 flex-1 divide-y overflow-y-auto rounded-md border sm:hidden">
                   {detail.seats.map((seat) => (
-                    <article key={seat.id} className="space-y-3 p-4">
+                    <article key={seat.id} className="space-y-3 border-l-2 border-l-primary/35 bg-card p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span><span className="text-xs text-muted-foreground">{t("sharing.seatNumber")}</span></div>

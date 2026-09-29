@@ -46,7 +46,7 @@ describe("subscription collection query plan", () => {
     expect(plan.sql).not.toContain("SELECT idx.*");
     expect(plan.sql).toContain("sub.auto_calculate_next_billing_date");
     expect(plan.sql).not.toContain("sub.notes");
-    expect(plan.sql).not.toContain("sub.tags_json");
+    expect(plan.sql).toContain("sub.tags_json");
     expect(plan.sql).not.toContain("sub.extra_json");
     expect(plan.params).toEqual([
       "2999-07-30",

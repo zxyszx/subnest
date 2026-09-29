@@ -389,8 +389,8 @@ export default function Sharing() {
                       </dl>
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1.5">
-                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
+                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
+                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} className={cn("border-border", account.verificationLink ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
                       <Button type="button" size="sm" variant="outline" title={t("sharing.copyAll")} onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
                       <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
@@ -413,8 +413,8 @@ export default function Sharing() {
                     <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
                   </dl>
                   <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
-                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
+                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
+                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} className={cn(account.verificationLink ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
                     <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                   </div>
                   <Button type="button" className="w-full" variant="outline" onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>

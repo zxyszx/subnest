@@ -4,14 +4,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { SharingUpcomingSeatRenewal } from "@/lib/sharing-financials";
 import { formatDateOnlyMonthDay } from "@/lib/time/date-only";
 import { cn } from "@/lib/utils";
-import { ArrowRight, MoreHorizontal, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { CalendarAccountIdentity } from "@/components/calendar-account-identity";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 
 interface SharingUpcomingRenewalsProps {
@@ -53,7 +47,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
           key={seat.id}
           className={cn(
             "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center first:pt-0 last:pb-0",
-            compact ? "gap-2 py-2" : "gap-3 py-3",
+            "gap-3 py-3",
             daysUntilExpiry < 0
               ? "text-destructive"
               : daysUntilExpiry <= 3 && "text-warning",
@@ -64,7 +58,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               platformName={subscriptionPlatformName(account.subscription)}
               logo={account.subscription.logo ?? undefined}
               accountNumber={account.accountNumber}
-              size={compact ? "xs" : "sm"}
+              size="sm"
             />
             {compact ? (
               <p className="mt-0.5 truncate pl-6.5 text-xs text-muted-foreground">
@@ -87,7 +81,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   ? t("upcoming.todayShort")
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
             </p>
-            <p className={cn("whitespace-nowrap text-right font-semibold tabular-nums text-foreground", compact ? "text-xs leading-4" : "mt-0.5 text-sm")}>
+            <p className="mt-0.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-foreground">
               {seat.currentReceivable && seat.currency
                 ? formatCurrency(seat.currentReceivable.amount, seat.currentReceivable.currency)
                 : seat.monthlyPrice && seat.currency
@@ -95,21 +89,9 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   : "-"}
             </p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className={cn("shrink-0 text-muted-foreground", compact ? "h-11 w-11 sm:h-8 sm:w-8" : "h-9 w-9")} aria-label={t("subscription.moreActions")}>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/sharing">
-                  <Users className="h-4 w-4" />
-                  {t("sharing.manageAccount")}
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button asChild type="button" variant="outline" size="sm" className="shrink-0 gap-1.5">
+            <Link href="/sharing"><Users className="h-4 w-4" />{t("sharing.manageAccount")}</Link>
+          </Button>
         </div>
       ))}
       {showFooter ? <div className="flex justify-end">

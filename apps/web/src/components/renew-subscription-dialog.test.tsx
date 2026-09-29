@@ -75,6 +75,7 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "subscription.renew.modeRestartShort": "把新日期写成开始日。",
         "subscription.renew.restartSubmit": "重新开始订阅",
         "subscription.renew.submit": "确认续订",
+        "subscription.renew.confirmSubmit": "确认已续费",
         "subscription.renew.title": `续订「${String(values?.["name"] ?? "")}」`,
         "subscription.renew.validation.startDateRequired": "请选择新的开始日期",
         "subscription.search.currency": "搜索货币、代码或符号...",
@@ -257,6 +258,7 @@ describe("RenewSubscriptionDialog", () => {
     await user.click(screen.getByRole("combobox", { name: "货币" }));
     await user.click(within(screen.getByRole("listbox")).getByText("€ 欧元 (EUR)"));
     await user.click(screen.getByRole("button", { name: "确认续订" }));
+    await user.click(screen.getByRole("button", { name: "确认已续费" }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({
       mode: "continue",
@@ -280,6 +282,7 @@ describe("RenewSubscriptionDialog", () => {
     await user.click(screen.getByRole("button", { name: /到期日期 2026-09-12/ }));
     await user.click(within(screen.getByRole("gridcell", { name: "15" })).getByRole("button"));
     await user.click(screen.getByRole("button", { name: "重新开始订阅" }));
+    await user.click(screen.getByRole("button", { name: "确认已续费" }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       mode: "restart",

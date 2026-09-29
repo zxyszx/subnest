@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addMonths, eachDayOfInterval, format, isSameMonth, isToday, setMonth, setYear, subMonths } from "date-fns";
+import { addMonths, eachDayOfInterval, format, isSameMonth, isToday, setMonth, setYear, subMonths, subWeeks, subYears } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
 import type { SubscriptionCollectionItem } from "@/types/subscription";
@@ -8,9 +8,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { formatCompactCurrencyAmount } from "@/lib/currency";
-import { dateOnlyToLocalDate, type DateOnly } from "@/lib/time/date-only";
+import { compareDateOnly, dateOnlyToLocalDate, type DateOnly } from "@/lib/time/date-only";
 import { getSubscriptionCalendarRange } from "@/modules/subscriptions/domain/subscription-calendar-range";
 import { isOneTimeBuyout } from "@/lib/subscription-billing";
+import { addBillingCycles } from "@renewlet/shared/subscription-renewal";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type CurrencyConvert = (amount: number | string, fromCurrency: string, toCurrency: string) => number;
 
@@ -27,6 +29,7 @@ interface DayFinancials {
   subscriptionSpend: number;
   memberCount: number;
   memberIncome: number;
+  items: Array<{ id: string; label: string; amount: number; kind: "spend" | "income" }>;
 }
 
 const EMPTY_DAY: DayFinancials = {
@@ -34,7 +37,23 @@ const EMPTY_DAY: DayFinancials = {
   subscriptionSpend: 0,
   memberCount: 0,
   memberIncome: 0,
+  items: [],
 };
+
+const MAX_PROJECTED_OCCURRENCES = 500;
+
+function subtractBillingCycle(date: DateOnly, cycle: SubscriptionCollectionItem["billingCycle"], customDays?: number | null, customCycleUnit?: SubscriptionCollectionItem["customCycleUnit"]): DateOnly {
+  if (cycle === "weekly") return format(subWeeks(dateOnlyToLocalDate(date), 1), "yyyy-MM-dd") as DateOnly;
+  if (cycle === "monthly") return format(subMonths(dateOnlyToLocalDate(date), 1), "yyyy-MM-dd") as DateOnly;
+  if (cycle === "quarterly") return format(subMonths(dateOnlyToLocalDate(date), 3), "yyyy-MM-dd") as DateOnly;
+  if (cycle === "semi-annual") return format(subMonths(dateOnlyToLocalDate(date), 6), "yyyy-MM-dd") as DateOnly;
+  if (cycle === "annual") return format(subYears(dateOnlyToLocalDate(date), 1), "yyyy-MM-dd") as DateOnly;
+  if (cycle === "custom" && customDays && customDays > 0) {
+    const days = customCycleUnit === "week" ? customDays * 7 : customCycleUnit === "month" ? customDays * 30 : customDays;
+    return format(new Date(dateOnlyToLocalDate(date).getTime() - days * 86400000), "yyyy-MM-dd") as DateOnly;
+  }
+  return date;
+}
 
 export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today, defaultCurrency, convert }: DashboardRenewalCalendarProps) {
   const { t, formatCurrency, formatDateTime, locale } = useI18n();
@@ -42,6 +61,7 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [yearRangeStart, setYearRangeStart] = useState(() => dateOnlyToLocalDate(today).getFullYear() - 5);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const range = useMemo(() => getSubscriptionCalendarRange(currentMonth), [currentMonth]);
   const calendarDays = useMemo(() => eachDayOfInterval({
     start: dateOnlyToLocalDate(range.from),
@@ -58,27 +78,58 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
     const values = new Map<string, DayFinancials>();
     const getDay = (date: string) => values.get(date) ?? { ...EMPTY_DAY };
 
+    const addSubscriptionOccurrence = (subscription: SubscriptionCollectionItem, date: string) => {
+      const day = getDay(date);
+      const amount = convert(subscription.price, subscription.currency, defaultCurrency);
+      day.subscriptionCount += 1;
+      day.subscriptionSpend += amount;
+      day.items.push({ id: `subscription:${subscription.id}:${date}`, label: subscription.platformName || subscription.name, amount, kind: "spend" });
+      values.set(date, day);
+    };
+
     subscriptions.forEach((subscription) => {
       if (subscription.status === "paused" || subscription.status === "cancelled" || isOneTimeBuyout(subscription)) return;
-      const day = getDay(subscription.nextBillingDate);
-      day.subscriptionCount += 1;
-      day.subscriptionSpend += convert(subscription.price, subscription.currency, defaultCurrency);
-      values.set(subscription.nextBillingDate, day);
+      let dueDate = subscription.nextBillingDate;
+      // 以保存的下一次续费日为锚点向前补齐可见范围，切换到历史月份时金额仍能落在正确日期。
+      const previousDates: DateOnly[] = [];
+      let previousDate = subtractBillingCycle(dueDate, subscription.billingCycle, subscription.customDays, subscription.customCycleUnit);
+      for (let occurrence = 0; compareDateOnly(previousDate, range.from) >= 0 && occurrence < MAX_PROJECTED_OCCURRENCES; occurrence += 1) {
+        previousDates.push(previousDate);
+        const nextPreviousDate = subtractBillingCycle(previousDate, subscription.billingCycle, subscription.customDays, subscription.customCycleUnit);
+        if (compareDateOnly(nextPreviousDate, previousDate) >= 0) break;
+        previousDate = nextPreviousDate;
+      }
+      previousDates.reverse().forEach((date) => addSubscriptionOccurrence(subscription, date));
+      for (let occurrence = 0; compareDateOnly(dueDate, range.to) <= 0 && occurrence < MAX_PROJECTED_OCCURRENCES; occurrence += 1) {
+        if (compareDateOnly(dueDate, range.from) >= 0) addSubscriptionOccurrence(subscription, dueDate);
+        const nextDate = addBillingCycles(dueDate, subscription.billingCycle, 1, subscription.customDays, subscription.customCycleUnit);
+        if (compareDateOnly(nextDate, dueDate) <= 0) break;
+        dueDate = nextDate;
+      }
     });
 
     sharingDetails.forEach((detail) => detail.seats.forEach((seat) => {
       if (!seat.expiresAt || !seat.memberName || !seat.currency || seat.status !== "active") return;
-      const day = getDay(seat.expiresAt);
       const periodAmount = seat.currentReceivable
         ? Number(seat.currentReceivable.amount)
         : Number(seat.monthlyPrice ?? 0) * (seat.billingMonths ?? 1);
-      day.memberCount += 1;
-      day.memberIncome += convert(periodAmount, seat.currency, defaultCurrency);
-      values.set(seat.expiresAt, day);
+      const amount = convert(periodAmount, seat.currency, defaultCurrency);
+      let dueDate = seat.expiresAt;
+      const months = Math.max(1, seat.billingMonths ?? 1);
+      for (let occurrence = 0; compareDateOnly(dueDate, range.to) <= 0 && occurrence < MAX_PROJECTED_OCCURRENCES; occurrence += 1) {
+        if (compareDateOnly(dueDate, range.from) >= 0) {
+          const day = getDay(dueDate);
+          day.memberCount += 1;
+          day.memberIncome += amount;
+          day.items.push({ id: `seat:${seat.id}:${dueDate}`, label: seat.memberName, amount, kind: "income" });
+          values.set(dueDate, day);
+        }
+        dueDate = format(addMonths(dateOnlyToLocalDate(dueDate), months), "yyyy-MM-dd") as DateOnly;
+      }
     }));
 
     return values;
-  }, [convert, defaultCurrency, sharingDetails, subscriptions]);
+  }, [convert, defaultCurrency, range.from, range.to, sharingDetails, subscriptions]);
 
   const monthlyFinancials = useMemo(() => {
     const monthPrefix = format(currentMonth, "yyyy-MM-");
@@ -276,7 +327,8 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         {calendarDays.map((day) => {
           const date = format(day, "yyyy-MM-dd");
           const financials = financialsByDate.get(date) ?? EMPTY_DAY;
-          const hasActivity = financials.subscriptionCount > 0 || financials.memberCount > 0;
+          const belongsToMonth = isSameMonth(day, currentMonth);
+          const hasActivity = belongsToMonth && (financials.subscriptionCount > 0 || financials.memberCount > 0);
           const spendLabel = financials.subscriptionCount > 0
             ? formatCompactCurrencyAmount(financials.subscriptionSpend, defaultCurrency, locale)
             : "";
@@ -284,23 +336,26 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
             ? formatCompactCurrencyAmount(financials.memberIncome, defaultCurrency, locale)
             : "";
           return (
-            <div
+            <button
+              type="button"
               key={date}
               className={cn(
-                "min-h-10 min-w-0 overflow-hidden bg-card p-1 text-center sm:min-h-8 sm:px-1 sm:py-1.5",
-                !isSameMonth(day, currentMonth) && "bg-muted/20 text-muted-foreground/50",
+                "min-h-12 min-w-0 overflow-hidden rounded-md bg-card p-1 text-center transition-colors hover:bg-muted/45 sm:min-h-11 sm:px-1 sm:py-1.5",
+                !belongsToMonth && "pointer-events-none bg-muted/20 text-muted-foreground/50",
               )}
+              disabled={!belongsToMonth}
+              onClick={() => setSelectedDate(date)}
             >
               <div className="flex justify-center">
                 <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold tabular-nums", isToday(day) && "bg-primary text-primary-foreground")}>{format(day, "d")}</span>
               </div>
               {hasActivity ? (
-                <div className="mt-0.5 grid min-w-0 grid-cols-2 gap-1 overflow-hidden text-[9px] font-semibold leading-3 sm:text-[10px]">
-                  <p className="min-w-0 truncate text-left tabular-nums text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{spendLabel ? `-${spendLabel}` : ""}</p>
-                  <p className="min-w-0 truncate text-right tabular-nums text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{incomeLabel ? `+${incomeLabel}` : ""}</p>
+                <div className="mt-0.5 grid min-w-0 grid-cols-2 gap-0.5 overflow-hidden text-[8px] font-bold leading-3 sm:gap-1 sm:text-[10px]">
+                  <span className="min-w-0 truncate text-left tabular-nums text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{spendLabel ? `-${spendLabel}` : ""}</span>
+                  <span className="min-w-0 truncate text-right tabular-nums text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{incomeLabel ? `+${incomeLabel}` : ""}</span>
                 </div>
               ) : null}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -317,6 +372,27 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
           </div>
         ))}
       </div>
+      <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedDate ? formatDateTime(dateOnlyToLocalDate(selectedDate as DateOnly), { year: "numeric", month: "long", day: "numeric" }) : ""}</DialogTitle>
+            <DialogDescription>{t("dashboard.renewalCalendarDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="divide-y divide-border rounded-lg border border-border">
+            {(selectedDate ? financialsByDate.get(selectedDate)?.items ?? [] : []).map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-4 px-3 py-3 text-sm">
+                <span className="min-w-0 truncate font-medium text-foreground">{item.label}</span>
+                <span className={cn("shrink-0 font-semibold tabular-nums", item.kind === "spend" ? "text-destructive" : "text-emerald-600 dark:text-emerald-400")}>
+                  {item.kind === "spend" ? "-" : "+"}{formatCompactCurrencyAmount(item.amount, defaultCurrency, locale)}
+                </span>
+              </div>
+            ))}
+            {selectedDate && (financialsByDate.get(selectedDate)?.items.length ?? 0) === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t("sharing.upcomingDialogEmpty")}</p>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

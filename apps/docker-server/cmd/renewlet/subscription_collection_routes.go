@@ -60,6 +60,7 @@ type subscriptionCollectionItemResponse struct {
 	TrialEndDate                 *string                `json:"trialEndDate,omitempty"`
 	ReminderDays                 int                    `json:"reminderDays"`
 	CostSharing                  map[string]interface{} `json:"costSharing,omitempty"`
+	Tags                         []string               `json:"tags,omitempty"`
 }
 
 type subscriptionFacetsResponse struct {
@@ -277,6 +278,7 @@ func subscriptionCollectionAPIFromRecord(record *core.Record) subscriptionCollec
 		AutoCalculateNextBillingDate: billingCycle != "one-time" && record.GetBool("autoCalculateNextBillingDate"),
 		TrialEndDate:                 trimmedSubscriptionString(record.GetString("trialEndDate")),
 		ReminderDays:                 record.GetInt("reminderDays"),
+		Tags:                         subscriptionRecordStringSlice(record, "tags"),
 	}
 	if billingCycle == "custom" {
 		out.CustomDays = record.GetInt("customDays")

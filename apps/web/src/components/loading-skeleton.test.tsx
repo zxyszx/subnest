@@ -34,7 +34,7 @@ describe("DashboardPageSkeleton", () => {
     const monthlySpend = screen.getByTestId("dashboard-skeleton-stat-monthly-spend");
     const sharingProfit = screen.getByTestId("dashboard-skeleton-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-5", "gap-1", "sm:grid-cols-2", "sm:gap-3", "lg:grid-cols-5");
+    expect(grid).toHaveClass("grid", "grid-cols-5", "gap-3", "sm:grid-cols-2", "sm:gap-3", "lg:grid-cols-5");
     expect(monthlySpend).toHaveClass("p-1.5", "sm:p-4", "col-span-1");
     expect(screen.getByTestId("dashboard-skeleton-stat-sharing-income")).toHaveClass("p-1.5", "sm:p-4");
     expect(sharingProfit).toHaveClass("p-1.5", "sm:p-4");

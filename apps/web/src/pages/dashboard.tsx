@@ -266,14 +266,14 @@ export default function Index() {
             </article>
           </Tabs>
         </section> : (
-          <section className="mt-2.5 grid items-stretch gap-2.5 lg:grid-cols-2" aria-label={t("dashboard.renewalTasks")}>
+          <section className="mt-2.5 grid items-start gap-2.5 lg:grid-cols-2" aria-label={t("dashboard.renewalTasks")}>
             <article id="dashboard-subscription-renewals" className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 shadow-card">
               <h2 className="font-semibold text-foreground">{t("dashboard.subscriptionRenewals")}</h2>
               <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
                 <Link href="/subscriptions"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
               </div>
-              <div className="flex flex-1 flex-col">
+              <div className="flex flex-col">
                 {subscriptions.length === 0 ? (
                   <div className="flex min-h-36 flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center">
                     <h3 className="text-base font-semibold text-foreground">{t("dashboard.emptyTitle")}</h3>
@@ -310,7 +310,7 @@ export default function Index() {
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
                 <Link href="/sharing"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
               </div>
-              <div className="flex flex-1 flex-col">
+              <div className="flex flex-col">
                 <SharingUpcomingRenewals
                   items={sharingRenewals}
                   pending={sharingRenewalsPending}

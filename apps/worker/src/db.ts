@@ -112,6 +112,7 @@ export const SUBSCRIPTION_COLLECTION_COLUMN_NAMES = [
   "auto_calculate_next_billing_date",
   "trial_end_date",
   "reminder_days",
+  "tags_json",
   "cost_sharing_json",
   "created_at",
 ] as const satisfies readonly (keyof SubscriptionCollectionRow)[];
@@ -376,6 +377,7 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
       : intToBool(row.auto_calculate_next_billing_date),
     ...(row.trial_end_date ? { trialEndDate: row.trial_end_date } : {}),
     reminderDays: row.reminder_days,
+    tags: parseStringArray(row.tags_json),
     ...(Object.keys(costSharing).length > 0 ? { costSharing } : {}),
   };
   return apiSubscriptionCollectionItemSchema.parse(normalized);

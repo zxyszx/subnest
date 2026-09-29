@@ -31,14 +31,13 @@ import {
 import { SubscriptionsPageSkeleton } from '@/components/loading-skeleton';
 import { useRouteReady } from '@/components/route-progress';
 import { SubscriptionCategoryFilter } from '@/components/subscription-category-filter';
-import { SubscriptionFilterFeedback } from '@/components/subscription-filter-feedback';
 import { QueryErrorState } from '@/components/query-error-state';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } from '@/types/subscription';
-import { BILLING_CYCLES, CYCLE_LABELS, DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
+import type { Subscription, SubscriptionCollectionItem } from '@/types/subscription';
+import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
 import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -57,7 +56,7 @@ import { useSettingsEnvelope } from '@/hooks/use-settings';
 import { useSubscriptionCrud } from '@/modules/subscriptions/application/use-subscription-crud';
 import { useSubscriptionExport } from '@/modules/subscriptions/application/use-subscription-export';
 import { useSubscriptionFilters } from '@/modules/subscriptions/application/use-subscription-filters';
-import { SUBSCRIPTION_PAYMENT_METHOD_NONE_VALUE, type SubscriptionPaymentTypeFilter, type SubscriptionSortOption } from '@/modules/subscriptions/domain/subscription-filters';
+import type { SubscriptionSortOption } from '@/modules/subscriptions/domain/subscription-filters';
 import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptions/domain/subscription-price-reference';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -67,16 +66,8 @@ import type { MessageKey } from '@/i18n/messages';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSubscriptionDetailDialog } from '@/hooks/use-subscription-detail-dialog';
 import { useSubscriptionCalendarDialog } from '@/hooks/use-subscription-calendar-dialog';
-import { useManagedCurrencyOptions } from '@/hooks/use-managed-currency-options';
 import { useZonedToday } from '@/hooks/use-zoned-today';
 import { syncSubscriptionCollectionBoundary } from '@/hooks/subscription-query-cache';
-import {
-  SubscriptionTagFilterDrawer,
-  SubscriptionTagFilterPopover,
-} from '@/components/subscription-tag-filter-drawer';
-import {
-  SubscriptionAdvancedFilter,
-} from '@/components/subscription-advanced-filter';
 
 const PlatformFilterBar = lazy(() => import('@/components/platform-filter-bar'));
 const AddSubscriptionDialog = lazy(async () => {
@@ -108,14 +99,8 @@ const SORT_OPTION_LABEL_KEYS: Record<SubscriptionSortOption, MessageKey> = {
   price_asc: "subscriptions.sort.priceAsc",
   name_asc: "subscriptions.sort.nameAsc",
   name_desc: "subscriptions.sort.nameDesc",
-};
-
-const PAYMENT_TYPE_FILTER_LABEL_KEYS: Record<SubscriptionPaymentTypeFilter, MessageKey> = {
-  all: "subscriptions.paymentTypeFilter.all",
-  auto: "subscriptions.paymentTypeFilter.auto",
-  manual: "subscriptions.paymentTypeFilter.manual",
-  "one-time-buyout": "subscriptions.paymentTypeFilter.buyout",
-  "one-time-fixed-term": "subscriptions.paymentTypeFilter.fixedTerm",
+  account_asc: "subscriptions.sort.accountAsc",
+  account_desc: "subscriptions.sort.accountDesc",
 };
 
 /** 订阅列表页组件。 */
@@ -140,21 +125,6 @@ const Subscriptions = () => {
   const categoryByValue = useMemo(() => new Map(config.categories.map((category) => [category.value, category])), [config.categories]);
   const paymentMethodByValue = useMemo(() => new Map(config.paymentMethods.map((method) => [method.value, method])), [config.paymentMethods]);
   const { t, label, locale } = useI18n();
-  const billingCycleOptions = useMemo(
-    () => BILLING_CYCLES.map((value) => ({ value, label: label(CYCLE_LABELS[value]) })),
-    [label],
-  );
-  const paymentMethodFilterOptions = useMemo(
-    () => [
-      { value: SUBSCRIPTION_PAYMENT_METHOD_NONE_VALUE, label: t("subscriptions.advanced.paymentMethodNone") },
-      ...config.paymentMethods.map((method) => ({ value: method.value, label: label(method.labels) })),
-    ],
-    [config.paymentMethods, label, t],
-  );
-  const currencyFilterOptions = useManagedCurrencyOptions({
-    currencies: config.currencies,
-    locale,
-  });
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -166,27 +136,19 @@ const Subscriptions = () => {
   const {
     searchQuery,
     setSearchQuery,
-    selectedCategories,
-    setSelectedCategories,
-    statusFilter,
-    setStatusFilter,
-    paymentTypeFilter,
-    setPaymentTypeFilter,
+    selectedCategories: _selectedCategories,
+    statusFilter: _statusFilter,
+    paymentTypeFilter: _paymentTypeFilter,
     sortOption,
     setSortOption,
-    selectedTags,
-    setSelectedTags,
-    advancedFilters,
-    setAdvancedFilters,
+    selectedTags: _selectedTags,
+    advancedFilters: _advancedFilters,
     allTags,
     sortSubscriptionsForDisplay,
     selectSubscriptionsForExport,
     subscriptionListFilters,
     hasActiveFilters,
     needsCollectionIndex,
-    toggleCategory,
-    clearSelectedCategories,
-    toggleTag,
     clearFilters,
   } = useSubscriptionFilters({
     defaultCurrency,
@@ -195,7 +157,8 @@ const Subscriptions = () => {
     today,
     availableTags: facetsQuery.data?.tags ?? [],
   });
-  const useFilteredIndex = needsCollectionIndex || selectedPlatform !== null;
+  const numericAccountSearch = /^\d+$/.test(searchQuery.trim());
+  const useFilteredIndex = !numericAccountSearch && (needsCollectionIndex || selectedPlatform !== null);
   const indexQuery = useSubscriptionIndex(subscriptionListFilters, useFilteredIndex);
   const platformIndexQuery = useSubscriptionIndex(undefined, true);
   const platformOptions = useMemo(() => {
@@ -238,16 +201,21 @@ const Subscriptions = () => {
     return Array.from(platforms.values());
   }, [config.platforms, locale, platformIndexQuery.data?.subscriptions]);
   const indexedSubscriptions = indexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS;
-  const displaySourceSubscriptions = useFilteredIndex ? indexedSubscriptions : subscriptions;
+  const displaySourceSubscriptions = numericAccountSearch
+    ? (platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS)
+    : useFilteredIndex ? indexedSubscriptions : subscriptions;
   // 先选择分页或全库索引，再只排序实际展示的数据；索引模式不能附带重排未展示的分页列表。
   const filteredSubscriptions = useMemo(() => {
+    const accountSubscriptions = numericAccountSearch
+      ? displaySourceSubscriptions.filter((subscription) => String(subscription.accountNumber ?? 1).includes(searchQuery.trim()))
+      : displaySourceSubscriptions;
     const platformSubscriptions = selectedPlatform
-      ? displaySourceSubscriptions.filter(
+      ? accountSubscriptions.filter(
           (subscription) => selectedPlatform === UNBOUND_PLATFORM_VALUE
             ? subscriptionPlatformName(subscription) === ""
             : subscriptionPlatformName(subscription) === selectedPlatform,
         )
-      : displaySourceSubscriptions;
+      : accountSubscriptions;
     if (selectedPlatform && sortOption === "default") {
       return [...platformSubscriptions].sort((left, right) => (
         (left.accountNumber ?? Number.MAX_SAFE_INTEGER) - (right.accountNumber ?? Number.MAX_SAFE_INTEGER)
@@ -255,7 +223,7 @@ const Subscriptions = () => {
       ));
     }
     return sortSubscriptionsForDisplay(platformSubscriptions);
-  }, [displaySourceSubscriptions, locale, selectedPlatform, sortOption, sortSubscriptionsForDisplay]);
+  }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay]);
   const isDisplayPending = useFilteredIndex && indexQuery.isPending;
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
   const displayError = useFilteredIndex ? indexQuery.error : subscriptionsQuery.error;
@@ -311,26 +279,10 @@ const Subscriptions = () => {
     handleDetailDialogOpenChange,
   } = useSubscriptionDetailDialog(displaySourceSubscriptions);
   const calendarDialog = useSubscriptionCalendarDialog(displaySourceSubscriptions);
-  const selectedStatus = config.statuses.find((status) => status.value === statusFilter);
-  const statusFilterLabel = statusFilter === "all"
-    ? t("subscriptions.allStatuses")
-    : selectedStatus
-      ? label(selectedStatus.labels)
-      : statusFilter;
-  const paymentTypeFilterLabel = t(PAYMENT_TYPE_FILTER_LABEL_KEYS[paymentTypeFilter]);
   const sortOptionLabel = t(SORT_OPTION_LABEL_KEYS[sortOption]);
-  const paymentTypeFilterItems = Object.entries(PAYMENT_TYPE_FILTER_LABEL_KEYS).map(([value, key]) => (
-    <SelectItem key={value} value={value}>{t(key)}</SelectItem>
-  ));
   const sortOptionItems = Object.entries(SORT_OPTION_LABEL_KEYS).map(([value, key]) => (
     <SelectItem key={value} value={value}>{t(key)}</SelectItem>
   ));
-  const removeSelectedTag = useCallback((tag: string) => {
-    setSelectedTags((current) => current.filter((item) => item !== tag));
-  }, [setSelectedTags]);
-  const clearSelectedTags = useCallback(() => {
-    setSelectedTags([]);
-  }, [setSelectedTags]);
   const handleLoadMore = useCallback(() => {
     void fetchNextPage();
   }, [fetchNextPage]);
@@ -496,41 +448,6 @@ const Subscriptions = () => {
                     </Suspense>
                   ) : null}
 
-                  <div className="grid grid-cols-2 gap-3">
-                <SubscriptionCategoryFilter
-                  categories={config.categories}
-                  selectedCategories={selectedCategories}
-                  onToggleCategory={toggleCategory}
-                  onClearCategories={clearSelectedCategories}
-                  onApply={setSelectedCategories}
-                  mode="drawer"
-                />
-
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as SubscriptionStatus | 'all')}>
-                  <SelectTrigger className="h-11 min-w-0 border-border bg-secondary" tooltipContent={statusFilterLabel}>
-                    <SelectValue placeholder={t("subscription.field.status")} />
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscription.field.status")}>
-                    <SelectItem value="all">{t("subscriptions.allStatuses")}</SelectItem>
-                    {config.statuses.map((status) => (
-                      <SelectItem key={status.id} value={status.value}>
-                        {label(status.labels)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3" data-testid="mobile-payment-type-sort-row">
-                <Select value={paymentTypeFilter} onValueChange={(v) => setPaymentTypeFilter(v as SubscriptionPaymentTypeFilter)}>
-                  <SelectTrigger className="h-11 min-w-0 border-border bg-secondary" tooltipContent={paymentTypeFilterLabel}>
-                    <SelectValue placeholder={t("subscriptions.paymentTypeFilter.label")} />
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscriptions.paymentTypeFilter.label")}>
-                    {paymentTypeFilterItems}
-                  </SelectContent>
-                </Select>
-
                 <Select value={sortOption} onValueChange={(v) => setSortOption(v as SubscriptionSortOption)}>
                   <SelectTrigger
                     aria-label={t("subscriptions.sort.label")}
@@ -543,42 +460,6 @@ const Subscriptions = () => {
                     {sortOptionItems}
                   </SelectContent>
                 </Select>
-                  </div>
-
-                  <div className="flex min-w-0 items-center gap-3" data-testid="mobile-advanced-tag-row">
-                <SubscriptionAdvancedFilter
-                  filters={advancedFilters}
-                  onChange={setAdvancedFilters}
-                  billingCycleOptions={billingCycleOptions}
-                  paymentMethodOptions={paymentMethodFilterOptions}
-                  currencyOptions={currencyFilterOptions}
-                  mode="mobileWorkspace"
-                  className="flex-1"
-                />
-
-                {allTags.length > 0 && (
-                  <SubscriptionTagFilterDrawer
-                    tags={allTags}
-                    selectedTags={selectedTags}
-                    onApply={setSelectedTags}
-                  />
-                )}
-                  </div>
-
-                  <SubscriptionFilterFeedback
-                selectedTags={selectedTags}
-                onRemoveTag={removeSelectedTag}
-                filters={advancedFilters}
-                onChangeAdvancedFilters={setAdvancedFilters}
-                billingCycleOptions={billingCycleOptions}
-                paymentMethodOptions={paymentMethodFilterOptions}
-                currencyOptions={currencyFilterOptions}
-                hasActiveFilters={hasActiveFilters}
-                onClearFilters={clearFilters}
-                tagTestId="mobile-selected-tags"
-                advancedTestId="mobile-selected-advanced-filters"
-                testId="mobile-filter-feedback"
-                  />
                 </div>
               ) : null}
             </>
@@ -598,38 +479,6 @@ const Subscriptions = () => {
                   />
                 </div>
 
-                <SubscriptionCategoryFilter
-                  categories={config.categories}
-                  selectedCategories={selectedCategories}
-                  onToggleCategory={toggleCategory}
-                  onClearCategories={clearSelectedCategories}
-                  onApply={setSelectedCategories}
-                  mode="popover"
-                />
-
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as SubscriptionStatus | 'all')}>
-                  <SelectTrigger className={subscriptionFilterLayout.desktopStatusTrigger} tooltipContent={statusFilterLabel}>
-                    <SelectValue placeholder={t("subscription.field.status")} />
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscription.field.status")}>
-                    <SelectItem value="all">{t("subscriptions.allStatuses")}</SelectItem>
-                    {config.statuses.map((status) => (
-                      <SelectItem key={status.id} value={status.value}>
-                        {label(status.labels)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={paymentTypeFilter} onValueChange={(v) => setPaymentTypeFilter(v as SubscriptionPaymentTypeFilter)}>
-                  <SelectTrigger className={subscriptionFilterLayout.desktopPaymentTypeTrigger} tooltipContent={paymentTypeFilterLabel}>
-                    <SelectValue placeholder={t("subscriptions.paymentTypeFilter.label")} />
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscriptions.paymentTypeFilter.label")}>
-                    {paymentTypeFilterItems}
-                  </SelectContent>
-                </Select>
-
                 <Select value={sortOption} onValueChange={(v) => setSortOption(v as SubscriptionSortOption)}>
                   <SelectTrigger
                     aria-label={t("subscriptions.sort.label")}
@@ -643,39 +492,7 @@ const Subscriptions = () => {
                   </SelectContent>
                 </Select>
 
-                <SubscriptionAdvancedFilter
-                  filters={advancedFilters}
-                  onChange={setAdvancedFilters}
-                  billingCycleOptions={billingCycleOptions}
-                  paymentMethodOptions={paymentMethodFilterOptions}
-                  currencyOptions={currencyFilterOptions}
-                  mode="desktopSidePanel"
-                />
-
-                {allTags.length > 0 && (
-                  <SubscriptionTagFilterPopover
-                    tags={allTags}
-                    selectedTags={selectedTags}
-                    onToggleTag={toggleTag}
-                    onClearTags={clearSelectedTags}
-                  />
-                )}
               </div>
-
-              <SubscriptionFilterFeedback
-                selectedTags={selectedTags}
-                onRemoveTag={removeSelectedTag}
-                filters={advancedFilters}
-                onChangeAdvancedFilters={setAdvancedFilters}
-                billingCycleOptions={billingCycleOptions}
-                paymentMethodOptions={paymentMethodFilterOptions}
-                currencyOptions={currencyFilterOptions}
-                hasActiveFilters={hasActiveFilters}
-                onClearFilters={clearFilters}
-                tagTestId="desktop-selected-tags"
-                advancedTestId="desktop-selected-advanced-filters"
-                testId="desktop-filter-feedback"
-              />
             </>
           )}
         </div>

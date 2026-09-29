@@ -461,6 +461,18 @@ function SubscriptionCardComponent({
               ) : null}
             </div>
 
+            {canManualRenew ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="pointer-events-auto h-8 shrink-0 gap-1.5 px-2 text-xs"
+                onClick={() => onRenew?.(subscription.id)}
+              >
+                <RotateCw className="h-3.5 w-3.5" />
+                {t("subscription.renew")}
+              </Button>
+            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -547,6 +559,9 @@ function SubscriptionCardComponent({
               >
                 <TruncatedTooltipText text={categoryLabel} className="block max-w-full" />
               </Badge>
+              {((subscription as SubscriptionCollectionItem & { tags?: string[] }).tags ?? []).slice(0, 3).map((tag) => (
+                <Badge key={tag} variant="secondary" className="max-w-28 truncate px-2 text-xs font-normal" title={tag}>{tag}</Badge>
+              ))}
               <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
                 <SubscriptionStatusBadge status={effectiveStatus} className="px-2 sm:px-2.5" />
               </span>

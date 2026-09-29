@@ -75,6 +75,8 @@ export const SUBSCRIPTION_SORT_OPTIONS = [
   "price_asc",
   "name_asc",
   "name_desc",
+  "account_asc",
+  "account_desc",
 ] as const;
 
 /** 订阅列表排序选项。 */
@@ -318,6 +320,10 @@ export function sortSubscriptions<T extends SubscriptionCollectionItem>(
         case "name_asc":
         case "name_desc":
           comparison = collator?.compare(left.subscription.name, right.subscription.name) ?? 0;
+          break;
+        case "account_asc":
+        case "account_desc":
+          comparison = (left.subscription.accountNumber ?? Number.MAX_SAFE_INTEGER) - (right.subscription.accountNumber ?? Number.MAX_SAFE_INTEGER);
           break;
       }
 

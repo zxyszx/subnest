@@ -383,15 +383,15 @@ describe("Dashboard page loading state", () => {
 
     renderDashboard();
 
-    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥100");
+    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
     expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥150");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥50");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥10");
 
     await user.click(screen.getByRole("button", { name: "下个月" }));
 
-    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥40");
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥-15");
+    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥35");
   });
 
   it("counts only subscriptions and members due within the next seven days", async () => {

@@ -165,7 +165,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     await user.type(screen.getByRole("textbox", { name: "sharing.periodCharge" }), "15");
     await user.click(screen.getByRole("button", { name: "sharing.quarterly" }));
     await user.click(screen.getByRole("combobox", { name: "sharing.contactType" }));
-    await user.click(screen.getByRole("option", { name: "sharing.xianyu" }));
+    await user.click(screen.getByRole("option", { name: /sharing\.xianyu/ }));
     await user.click(screen.getByRole("button", { name: "sharing.saveSeat" }));
 
     await waitFor(() => expect(mocks.updateSeat).toHaveBeenCalledTimes(1));

@@ -110,6 +110,7 @@ export function RenewSubscriptionDialogContent({
   const [form, setForm] = useState<RenewFormState | null>(() => (
     open && subscription ? createInitialState(subscription, today) : null
   ));
+  const [confirming, setConfirming] = useState(false);
   const [errors, setErrors] = useState<RenewFormErrors>({});
   const includeDisabledCurrent = form?.currency ?? subscription?.currency ?? null;
   const currencyOptions = useManagedCurrencyOptions({
@@ -122,6 +123,7 @@ export function RenewSubscriptionDialogContent({
     if (!open || !subscription) return;
     setForm(createInitialState(subscription, today));
     setErrors({});
+    setConfirming(false);
   }, [open, subscription, today]);
 
   const setField = useCallback(<K extends keyof RenewFormState>(key: K, value: RenewFormState[K]) => {
@@ -218,6 +220,10 @@ export function RenewSubscriptionDialogContent({
       autoCalculateNextBillingDate: form.mode === "restart" ? form.autoCalculateNextBillingDate : false,
     };
     if (!hasRenewBodyDates(payload)) return;
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
     await onSubmit(payload);
   };
 
@@ -336,6 +342,12 @@ export function RenewSubscriptionDialogContent({
       ) : null)}
       schedule={loadingSlots?.schedule ?? (currentForm ? (
         <>
+          {subscription?.paymentMethod || subscription?.cardLast4 ? (
+            <div className="grid gap-2 rounded-md border border-border bg-secondary/40 p-3 text-sm sm:grid-cols-2">
+              <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("subscription.field.paymentMethod")}</p><p className="truncate font-medium text-foreground">{subscription.paymentMethod ?? "-"}</p></div>
+              <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("subscription.field.cardLast4")}</p><p className="font-medium tabular-nums text-foreground">{subscription.cardLast4 ? `•••• ${subscription.cardLast4}` : "-"}</p></div>
+            </div>
+          ) : null}
           {restartMode ? (
             <FormFieldRow
               alignAt="sm"
@@ -420,7 +432,7 @@ export function RenewSubscriptionDialogContent({
           </Button>
           <Button type="submit" disabled={submitting} className="w-full bg-primary text-primary-foreground hover:bg-primary-glow sm:w-auto">
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {submitLabel}
+            {confirming ? t("subscription.renew.confirmSubmit") : submitLabel}
           </Button>
         </>
       ) : null)}

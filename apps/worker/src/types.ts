@@ -225,6 +225,7 @@ export type SubscriptionCollectionRow = Pick<SubscriptionRow,
   | "auto_calculate_next_billing_date"
   | "trial_end_date"
   | "reminder_days"
+  | "tags_json"
   | "cost_sharing_json"
   | "created_at"
 >;
