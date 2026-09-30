@@ -268,7 +268,7 @@ export function SubscriptionFamilySharingFields({
 
   return (
     <>
-    <section className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
+    <section className="grid gap-3 rounded-lg border border-border bg-secondary/20 p-3 sm:p-4">
       {showEnabledControl ? <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <Label htmlFor={id("familySharingEnabled")} className="flex cursor-pointer items-center gap-2 text-sm font-medium">
@@ -285,7 +285,7 @@ export function SubscriptionFamilySharingFields({
       </div> : null}
 
       {value.enabled ? (
-        <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-4" : "grid gap-4"}>
+        <div className={showEnabledControl ? "grid gap-3 border-t border-border pt-3" : "grid gap-3"}>
           <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
             <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>
               {(field) => (
@@ -318,9 +318,9 @@ export function SubscriptionFamilySharingFields({
             </FormField>
           </FormFieldRow>
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
-          {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
+          {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="-mt-1 text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
           {managedMailbox ? (
-            <div className="grid gap-3 rounded-md border border-border bg-background p-3" aria-busy={shareLoading}>
+            <div className="grid gap-2 rounded-md border border-primary/20 bg-primary/3 p-3" aria-busy={shareLoading}>
               <div className="flex min-h-11 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{managedMailbox.address}</p>
@@ -394,10 +394,7 @@ export function SubscriptionFamilySharingFields({
               ) : null}
             </div>
           ) : null}
-          <FormField
-            id={id("familySharingPassword")}
-            label={t("subscription.familySharing.password")}
-          >
+          <FormField id={id("familySharingPassword")} label={t("subscription.familySharing.password")}>
             {(field) => (
               <div className="relative">
                 <Input
@@ -451,7 +448,7 @@ export function SubscriptionFamilySharingFields({
           </FormField>
           <FormField id={id("familySharingVerificationLink")} label={managedCopy.link}>
             {(field) => (
-              <div className="grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <div className={managedMailbox && managedLink ? "grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start" : "grid gap-2"}>
                 <div className="relative min-w-0">
                   <Input
                     id={field.id}
@@ -486,8 +483,8 @@ export function SubscriptionFamilySharingFields({
                   ) : null}
                 </div>
                 {managedMailbox && managedLink ? (
-                  <div className="flex min-w-0 flex-col gap-1.5 sm:max-w-56">
-                    <Button type="button" variant="outline" className="min-h-11 justify-center border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
+                  <div className="flex min-w-0 flex-col gap-1 sm:max-w-52">
+                    <Button type="button" variant="outline" className="min-h-10 justify-center border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setConfirmation("reset")} disabled={shareLoading}>
                       {shareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       {managedCopy.resetLink}
                     </Button>

@@ -7,11 +7,13 @@ import {
   sharingAccountsResponseSchema,
   sharingCredentialsResponseSchema,
   sharingSeatUpdateSchema,
+  sharingSeatMoveSchema,
   type SharingAccount,
   type SharingAccountCreate,
   type SharingAccountDetail,
   type SharingAccountUpdate,
   type SharingSeatUpdate,
+  type SharingSeatMove,
 } from "@renewlet/shared/schemas/sharing";
 
 function signalInit(signal?: AbortSignal): RequestInit | undefined {
@@ -55,6 +57,15 @@ export const sharingService = {
       `/api/app/sharing/seats/${encodeURIComponent(id)}`,
       sharingAccountDetailResponseSchema,
       { method: "PUT", body: JSON.stringify(payload) },
+    );
+  },
+
+  async moveSeat(id: string, input: SharingSeatMove): Promise<SharingAccountDetail> {
+    const payload = sharingSeatMoveSchema.parse(input);
+    return await apiFetch(
+      `/api/app/sharing/seats/${encodeURIComponent(id)}/move`,
+      sharingAccountDetailResponseSchema,
+      { method: "POST", body: JSON.stringify(payload) },
     );
   },
 

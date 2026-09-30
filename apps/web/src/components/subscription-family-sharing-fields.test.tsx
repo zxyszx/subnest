@@ -25,17 +25,19 @@ vi.mock("@/i18n/I18nProvider", () => ({
 
 function Harness({
   onPendingChange,
+  loginAccount = "netflix16@newszxcn.com",
   verificationLink = "",
   showEnabledControl = true,
 }: {
   onPendingChange: (pending: boolean) => void;
+  loginAccount?: string;
   verificationLink?: string;
   showEnabledControl?: boolean;
 }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }));
   const [value, setValue] = useState<FamilySharingFormState>({
     enabled: true,
-    loginAccount: "netflix16@newszxcn.com",
+    loginAccount,
     password: "saved-password",
     hasPassword: true,
     passwordMask: "s***d",
@@ -84,6 +86,15 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
     expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@newszxcn.com");
     expect(screen.getByLabelText("subscription.familySharing.capacity")).toHaveValue(5);
     expect(screen.getByLabelText("subscription.familySharing.password")).toBeInTheDocument();
+  });
+
+  it("does not reserve managed-mailbox space for an ordinary external account", async () => {
+    render(<Harness onPendingChange={vi.fn()} loginAccount="family@example.com" />);
+
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("family@example.com");
+    await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
+    expect(screen.queryByRole("switch", { name: "开启共享收件箱" })).not.toBeInTheDocument();
+    expect(screen.queryByText("更换文件夹")).not.toBeInTheDocument();
   });
 
   it("requires an explicit folder selection before creating a managed share", async () => {

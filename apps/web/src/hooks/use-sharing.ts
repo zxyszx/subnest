@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sharingService } from "@/services/sharing-service";
-import type { SharingAccountCreate, SharingAccountUpdate, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
+import type { SharingAccountCreate, SharingAccountUpdate, SharingSeatMove, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
 
 export const sharingQueryKeys = {
   all: ["sharing"] as const,
@@ -54,6 +54,17 @@ export function useUpdateSharingSeat(accountId: string) {
     onSuccess: (detail) => {
       queryClient.setQueryData(sharingQueryKeys.detail(accountId), detail);
       void queryClient.invalidateQueries({ queryKey: sharingQueryKeys.accounts });
+    },
+  });
+}
+
+export function useMoveSharingSeat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ seatId, input }: { seatId: string; input: SharingSeatMove }) => sharingService.moveSeat(seatId, input),
+    onSuccess: (detail) => {
+      queryClient.setQueryData(sharingQueryKeys.detail(detail.account.id), detail);
+      void queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all });
     },
   });
 }

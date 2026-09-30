@@ -67,6 +67,10 @@ type sharingSeatUpdateRequest struct {
 	Notes         string `json:"notes"`
 }
 
+type sharingSeatMoveRequest struct {
+	TargetSeatID string `json:"targetSeatId"`
+}
+
 func handleSharingAccountDetail(app core.App, e *core.RequestEvent) error {
 	account, err := findOwnedSharingAccount(app, e.Auth.Id, e.Request.PathValue("id"))
 	if err != nil {
@@ -105,6 +109,97 @@ func handleSharingSeatUpdate(app core.App, e *core.RequestEvent) error {
 		return e.InternalServerError(serverText(locale, "common.internalError"), err)
 	}
 	return apiSuccessJSON(e, http.StatusOK, payload)
+}
+
+func handleSharingSeatMove(app core.App, e *core.RequestEvent) error {
+	locale := requestLocale(e.Request)
+	source, err := findOwnedSharingSeat(app, e.Auth.Id, e.Request.PathValue("id"))
+	if err != nil {
+		return e.NotFoundError("SHARING_SEAT_NOT_FOUND", err)
+	}
+	body, err := decodeStrictJSON[sharingSeatMoveRequest](e.Request, locale)
+	if err != nil || strings.TrimSpace(body.TargetSeatID) == "" || body.TargetSeatID == source.Id {
+		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
+	}
+	target, err := findOwnedSharingSeat(app, e.Auth.Id, body.TargetSeatID)
+	if err != nil {
+		return e.NotFoundError("SHARING_TARGET_SEAT_NOT_FOUND", err)
+	}
+	sourceAccount, err := findOwnedSharingAccount(app, e.Auth.Id, source.GetString("sharingAccount"))
+	if err != nil {
+		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
+	}
+	targetAccount, err := findOwnedSharingAccount(app, e.Auth.Id, target.GetString("sharingAccount"))
+	if err != nil {
+		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
+	}
+	sourceSubscription, err := app.FindRecordById("subscriptions", sourceAccount.GetString("subscription"))
+	if err != nil || sourceSubscription.GetString("user") != e.Auth.Id {
+		return e.NotFoundError("SUBSCRIPTION_NOT_FOUND", err)
+	}
+	targetSubscription, err := app.FindRecordById("subscriptions", targetAccount.GetString("subscription"))
+	if err != nil || targetSubscription.GetString("user") != e.Auth.Id {
+		return e.NotFoundError("SUBSCRIPTION_NOT_FOUND", err)
+	}
+	sourcePlatform := strings.TrimSpace(sourceSubscription.GetString("platformName"))
+	if sourcePlatform == "" {
+		sourcePlatform = strings.TrimSpace(sourceSubscription.GetString("name"))
+	}
+	targetPlatform := strings.TrimSpace(targetSubscription.GetString("platformName"))
+	if targetPlatform == "" {
+		targetPlatform = strings.TrimSpace(targetSubscription.GetString("name"))
+	}
+	if !strings.EqualFold(sourcePlatform, targetPlatform) || source.GetString("status") == "vacant" || source.GetString("memberName") == "" || target.GetString("status") != "vacant" {
+		return e.BadRequestError("SHARING_SEAT_MOVE_NOT_ALLOWED", nil)
+	}
+	if err := moveSharingSeat(app, e.Auth.Id, source.Id, target.Id); err != nil {
+		return e.BadRequestError("SHARING_SEAT_MOVE_FAILED", err)
+	}
+	payload, err := sharingAccountDetailAPI(app, targetAccount)
+	if err != nil {
+		return e.InternalServerError(serverText(locale, "common.internalError"), err)
+	}
+	return apiSuccessJSON(e, http.StatusOK, payload)
+}
+
+func moveSharingSeat(app core.App, userID, sourceID, targetID string) error {
+	return app.RunInTransaction(func(txApp core.App) error {
+		source, err := txApp.FindRecordById("sharing_seats", sourceID)
+		if err != nil || source.GetString("user") != userID || source.GetString("status") == "vacant" || source.GetString("memberName") == "" {
+			return errors.New("source sharing seat is unavailable")
+		}
+		target, err := txApp.FindRecordById("sharing_seats", targetID)
+		if err != nil || target.GetString("user") != userID || target.GetString("status") != "vacant" {
+			return errors.New("target sharing seat is unavailable")
+		}
+		for _, field := range []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "billingMonths", "startDate", "expiresAt", "status", "notes"} {
+			target.Set(field, source.Get(field))
+		}
+		if err := txApp.Save(target); err != nil {
+			return err
+		}
+		receivables, err := txApp.FindRecordsByFilter(
+			"sharing_receivables",
+			"user = {:user} && seat = {:seat} && (status = 'pending' || status = 'partial' || status = 'overdue')",
+			"created", 500, 0, dbx.Params{"user": userID, "seat": sourceID},
+		)
+		if err != nil {
+			return err
+		}
+		for _, receivable := range receivables {
+			receivable.Set("sharingAccount", target.GetString("sharingAccount"))
+			receivable.Set("seat", target.Id)
+			if err := txApp.Save(receivable); err != nil {
+				return err
+			}
+		}
+		for _, field := range []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "startDate", "expiresAt", "notes"} {
+			source.Set(field, "")
+		}
+		source.Set("billingMonths", nil)
+		source.Set("status", "vacant")
+		return txApp.Save(source)
+	})
 }
 
 func findOwnedSharingAccount(app core.App, userID, accountID string) (*core.Record, error) {

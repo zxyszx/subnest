@@ -32,7 +32,6 @@
   "detailOnlyFields": [
     "website",
     "notes",
-    "tags",
     "repeatReminderEnabled",
     "repeatReminderInterval",
     "repeatReminderWindow",

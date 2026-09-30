@@ -38,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem } from '@/types/subscription';
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel, CalendarClock, Hash } from 'lucide-react';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel, ArrowDownUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -102,12 +102,28 @@ const SORT_OPTION_LABEL_KEYS: Record<SubscriptionSortOption, MessageKey> = {
   account_asc: "subscriptions.sort.accountAsc",
   account_desc: "subscriptions.sort.accountDesc",
 };
-const QUICK_SORT_OPTIONS = new Set<SubscriptionSortOption>([
-  "renewal_asc",
-  "renewal_desc",
-  "account_asc",
-  "account_desc",
-]);
+type SubscriptionSortField = "renewal" | "account" | "monthly_cost" | "price" | "name";
+const SORT_FIELD_OPTIONS: { value: SubscriptionSortField; labelKey: MessageKey }[] = [
+  { value: "renewal", labelKey: "subscriptions.sort.renewalAsc" },
+  { value: "account", labelKey: "subscriptions.sort.accountAsc" },
+  { value: "monthly_cost", labelKey: "subscriptions.sort.monthlyCostDesc" },
+  { value: "price", labelKey: "subscriptions.sort.priceDesc" },
+  { value: "name", labelKey: "subscriptions.sort.nameAsc" },
+];
+const SORT_FIELD_BY_OPTION: Record<Exclude<SubscriptionSortOption, "default">, SubscriptionSortField> = {
+  renewal_asc: "renewal", renewal_desc: "renewal",
+  account_asc: "account", account_desc: "account",
+  monthly_cost_asc: "monthly_cost", monthly_cost_desc: "monthly_cost",
+  price_asc: "price", price_desc: "price",
+  name_asc: "name", name_desc: "name",
+};
+const SORT_OPTION_BY_FIELD: Record<SubscriptionSortField, { asc: SubscriptionSortOption; desc: SubscriptionSortOption }> = {
+  renewal: { asc: "renewal_asc", desc: "renewal_desc" },
+  account: { asc: "account_asc", desc: "account_desc" },
+  monthly_cost: { asc: "monthly_cost_asc", desc: "monthly_cost_desc" },
+  price: { asc: "price_asc", desc: "price_desc" },
+  name: { asc: "name_asc", desc: "name_desc" },
+};
 
 /** 订阅列表页组件。 */
 const Subscriptions = () => {
@@ -130,7 +146,7 @@ const Subscriptions = () => {
   const { config } = useCustomConfigState();
   const categoryByValue = useMemo(() => new Map(config.categories.map((category) => [category.value, category])), [config.categories]);
   const paymentMethodByValue = useMemo(() => new Map(config.paymentMethods.map((method) => [method.value, method])), [config.paymentMethods]);
-  const { t, label, locale } = useI18n();
+  const { t, locale } = useI18n();
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -143,7 +159,6 @@ const Subscriptions = () => {
     searchQuery,
     setSearchQuery,
     selectedCategories: _selectedCategories,
-    statusFilter: _statusFilter,
     paymentTypeFilter: _paymentTypeFilter,
     sortOption,
     setSortOption,
@@ -285,32 +300,28 @@ const Subscriptions = () => {
     handleDetailDialogOpenChange,
   } = useSubscriptionDetailDialog(displaySourceSubscriptions);
   const calendarDialog = useSubscriptionCalendarDialog(displaySourceSubscriptions);
-  const sortOptionLabel = t(SORT_OPTION_LABEL_KEYS[sortOption]);
-  const isQuickSort = QUICK_SORT_OPTIONS.has(sortOption);
-  const sortOptionItems = Object.entries(SORT_OPTION_LABEL_KEYS)
-    .filter(([value]) => !QUICK_SORT_OPTIONS.has(value as SubscriptionSortOption))
-    .map(([value, key]) => <SelectItem key={value} value={value}>{t(key)}</SelectItem>);
-  const quickSortControls = (
-    <div className="grid shrink-0 grid-cols-2 gap-2" aria-label={t("subscriptions.sort.label")}>
+  const effectiveSortOption = sortOption === "default" ? "renewal_asc" : sortOption;
+  const sortField = SORT_FIELD_BY_OPTION[effectiveSortOption];
+  const sortDirection = effectiveSortOption.endsWith("_desc") ? "desc" : "asc";
+  const sortControls = (
+    <div className="grid min-w-0 grid-cols-[minmax(8.5rem,1fr)_2.75rem] gap-2" aria-label={t("subscriptions.sort.label")}>
+      <Select value={sortField} onValueChange={(field) => setSortOption(SORT_OPTION_BY_FIELD[field as SubscriptionSortField].asc)}>
+        <SelectTrigger aria-label={t("subscriptions.sort.label")} className="h-11 border-border bg-secondary sm:h-10">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent mobileTitle={t("subscriptions.sort.label")}>
+          {SORT_FIELD_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{t(option.labelKey).replace(/\s?(最高|最低|最近|最远|正序|倒序|A-Z|Z-A)$/, "")}</SelectItem>)}
+        </SelectContent>
+      </Select>
       <Button
         type="button"
-        variant={sortOption === "renewal_asc" || sortOption === "renewal_desc" ? "secondary" : "outline"}
-        className="h-10 min-w-0 gap-1.5 border-border px-3 text-xs"
-        aria-pressed={sortOption === "renewal_asc" || sortOption === "renewal_desc"}
-        onClick={() => setSortOption(sortOption === "renewal_asc" ? "renewal_desc" : "renewal_asc")}
+        variant="outline"
+        className="h-11 w-11 border-border p-0 sm:h-10 sm:w-10"
+        aria-label={t(SORT_OPTION_LABEL_KEYS[SORT_OPTION_BY_FIELD[sortField][sortDirection === "asc" ? "desc" : "asc"]])}
+        title={t(SORT_OPTION_LABEL_KEYS[effectiveSortOption])}
+        onClick={() => setSortOption(SORT_OPTION_BY_FIELD[sortField][sortDirection === "asc" ? "desc" : "asc"])}
       >
-        <CalendarClock className="h-4 w-4" />
-        <span className="whitespace-nowrap">{t(SORT_OPTION_LABEL_KEYS[sortOption === "renewal_desc" ? "renewal_desc" : "renewal_asc"])}</span>
-      </Button>
-      <Button
-        type="button"
-        variant={sortOption === "account_asc" || sortOption === "account_desc" ? "secondary" : "outline"}
-        className="h-10 min-w-0 gap-1.5 border-border px-3 text-xs"
-        aria-pressed={sortOption === "account_asc" || sortOption === "account_desc"}
-        onClick={() => setSortOption(sortOption === "account_asc" ? "account_desc" : "account_asc")}
-      >
-        <Hash className="h-4 w-4" />
-        <span className="whitespace-nowrap">{t(SORT_OPTION_LABEL_KEYS[sortOption === "account_desc" ? "account_desc" : "account_asc"])}</span>
+        <ArrowDownUp className="h-4 w-4" />
       </Button>
     </div>
   );
@@ -479,30 +490,15 @@ const Subscriptions = () => {
                     </Suspense>
                   ) : null}
 
-                {quickSortControls}
-
-                <Select value={sortOption} onValueChange={(v) => setSortOption(v as SubscriptionSortOption)}>
-                  <SelectTrigger
-                    aria-label={t("subscriptions.sort.label")}
-                    className="h-11 border-border bg-secondary"
-                    tooltipContent={sortOptionLabel}
-                  >
-                    <SelectValue placeholder={t("subscriptions.sort.label")}>
-                      {isQuickSort ? t("subscriptions.sort.more") : sortOptionLabel}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-                    {isQuickSort ? <SelectItem value={sortOption} className="hidden">{sortOptionLabel}</SelectItem> : null}
-                    {sortOptionItems}
-                  </SelectContent>
-                </Select>
+                <div className="grid gap-2">
+                  {sortControls}
+                </div>
                 </div>
               ) : null}
             </>
           ) : (
             <>
               <div className={subscriptionFilterLayout.desktopRow} data-testid="desktop-filter-toolbar">
-                {quickSortControls}
                 <div className={subscriptionFilterLayout.desktopSearch}>
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -515,22 +511,7 @@ const Subscriptions = () => {
                     className="border-border bg-secondary pl-10"
                   />
                 </div>
-
-                <Select value={sortOption} onValueChange={(v) => setSortOption(v as SubscriptionSortOption)}>
-                  <SelectTrigger
-                    aria-label={t("subscriptions.sort.label")}
-                    className={subscriptionFilterLayout.desktopSortTrigger}
-                    tooltipContent={sortOptionLabel}
-                  >
-                    <SelectValue placeholder={t("subscriptions.sort.label")}>
-                      {isQuickSort ? t("subscriptions.sort.more") : sortOptionLabel}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-                    {isQuickSort ? <SelectItem value={sortOption} className="hidden">{sortOptionLabel}</SelectItem> : null}
-                    {sortOptionItems}
-                  </SelectContent>
-                </Select>
+                <div className="w-[min(14rem,100%)]">{sortControls}</div>
 
               </div>
             </>

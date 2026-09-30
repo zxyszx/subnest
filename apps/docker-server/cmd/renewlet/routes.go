@@ -379,6 +379,7 @@ func registerRoutes(app core.App, router *router.Router[*core.RequestEvent]) []a
 	auth.PUT("/sharing/accounts/{id}", func(e *core.RequestEvent) error { return handleSharingAccountUpdate(app, e) })
 	auth.GET("/sharing/accounts/{id}/credentials", func(e *core.RequestEvent) error { return handleSharingAccountCredentials(app, e) })
 	auth.PUT("/sharing/seats/{id}", func(e *core.RequestEvent) error { return handleSharingSeatUpdate(app, e) })
+	auth.POST("/sharing/seats/{id}/move", func(e *core.RequestEvent) error { return handleSharingSeatMove(app, e) })
 	auth.GET("/online-totp/accounts", func(e *core.RequestEvent) error { return handleOnlineTotpAccountsList(app, e) })
 	auth.POST("/online-totp/accounts", func(e *core.RequestEvent) error { return handleOnlineTotpAccountCreate(app, e) })
 	auth.PUT("/online-totp/accounts/{id}", func(e *core.RequestEvent) error { return handleOnlineTotpAccountUpdate(app, e) })

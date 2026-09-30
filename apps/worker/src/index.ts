@@ -82,6 +82,7 @@ import {
   readSharingAccounts,
   rejectLegacySharingAccountMutation,
   updateSharingSeat,
+  moveSharingSeat,
 } from "./sharing";
 import {
   createPublicStatusPage,
@@ -327,6 +328,9 @@ defineRoute(sharingRoutes, "/accounts/:id", {
 });
 defineRoute(sharingRoutes, "/seats/:id", {
   PUT: (context) => updateSharingSeat(context.req.raw, context.env, routeParam(context, "id")),
+});
+defineRoute(sharingRoutes, "/seats/:id/move", {
+  POST: (context) => moveSharingSeat(context.req.raw, context.env, routeParam(context, "id")),
 });
 app.route("/api/app/sharing", sharingRoutes);
 

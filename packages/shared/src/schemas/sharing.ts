@@ -148,9 +148,14 @@ export const sharingSeatUpdateSchema = z.object({
   notes: z.string().max(5000),
 }).strict();
 
+export const sharingSeatMoveSchema = z.object({
+  targetSeatId: z.string().min(1),
+}).strict();
+
 export type SharingAccount = z.infer<typeof sharingAccountSchema>;
 export type SharingAccountCreate = z.infer<typeof sharingAccountCreateSchema>;
 export type SharingAccountUpdate = z.infer<typeof sharingAccountUpdateSchema>;
 export type SharingAccountDetail = z.infer<typeof sharingAccountDetailPayloadSchema>;
 export type SharingSeat = z.infer<typeof sharingSeatSchema>;
 export type SharingSeatUpdate = z.infer<typeof sharingSeatUpdateSchema>;
+export type SharingSeatMove = z.infer<typeof sharingSeatMoveSchema>;

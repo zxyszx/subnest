@@ -751,7 +751,8 @@ describe("Subscriptions page virtualization", () => {
     expect(screen.getAllByTestId("subscription-card-reference")[0]).toHaveTextContent("USD");
 
     await user.click(screen.getByRole("combobox", { name: "排序" }));
-    await user.click(await screen.findByRole("option", { name: "名称 Z-A" }));
+    await user.click(await screen.findByRole("option", { name: "名称" }));
+    await user.click(screen.getByRole("button", { name: "名称 Z-A" }));
 
     await waitFor(() => {
       expect(visibleSubscriptionNames()[0]).toBe("Service 089");
@@ -765,36 +766,23 @@ describe("Subscriptions page virtualization", () => {
     expect(screen.getByTestId("virtualized-subscription-list")).toBeInTheDocument();
   });
 
-  it("keeps the same virtualized list model when loading more subscriptions", async () => {
-    const user = userEvent.setup();
+  it("keeps the same virtualized list model when the complete sorted index grows", async () => {
     const firstPageSubscriptions = manySubscriptions(50);
     const nextPageSubscriptions = manySubscriptions(100);
-    const fetchNextPage = vi.fn();
     let queryState = {
       subscriptions: firstPageSubscriptions,
       isPending: false,
-      hasNextPage: true,
-      isFetchingNextPage: false,
-      fetchNextPage,
     };
     mocks.useInfiniteSubscriptions.mockImplementation(() => queryState);
     const { rerenderSubscriptionsPage } = renderSubscriptionsPage();
-    await user.click(screen.getByRole("combobox", { name: "排序" }));
-    await user.click(await screen.findByRole("option", { name: "默认顺序" }));
     const virtualizedList = screen.getByTestId("virtualized-subscription-list");
-    const loadMoreRow = screen.getByTestId("subscriptions-load-more-row");
 
     expect(virtualizedList).toBeInTheDocument();
-    expect(loadMoreRow.className).toContain("[overflow-anchor:none]");
     expect(screen.getAllByTestId("subscription-card").length).toBeLessThan(50);
-
-    await user.click(screen.getByRole("button", { name: "加载更多" }));
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
 
     queryState = {
       ...queryState,
       subscriptions: nextPageSubscriptions,
-      isFetchingNextPage: false,
     };
     rerenderSubscriptionsPage();
 

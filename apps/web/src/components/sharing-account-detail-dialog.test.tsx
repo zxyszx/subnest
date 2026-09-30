@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   copyTextToClipboard: vi.fn(),
   password: vi.fn(),
   updateSeat: vi.fn<(payload: { seatId: string; input: SharingSeatUpdate }) => Promise<void>>(),
+  moveSeat: vi.fn(),
   seats: [] as SharingSeat[],
 }));
 
@@ -53,6 +54,9 @@ vi.mock("@/hooks/use-sharing", () => ({
     isPending: false,
     isError: false,
   }),
+  useSharingAccounts: () => ({ data: { accounts: [account], total: 1 }, isPending: false }),
+  useSharingAccountDetails: () => [],
+  useMoveSharingSeat: () => ({ mutateAsync: mocks.moveSeat, isPending: false }),
   useUpdateSharingSeat: () => ({ mutateAsync: mocks.updateSeat, isPending: false }),
 }));
 
@@ -100,6 +104,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     mocks.copyTextToClipboard.mockReset().mockResolvedValue({ ok: true });
     mocks.password.mockReset().mockResolvedValue("secret-17");
     mocks.updateSeat.mockReset().mockResolvedValue(undefined);
+    mocks.moveSeat.mockReset().mockResolvedValue(undefined);
     mocks.seats = [];
   });
 

@@ -78,6 +78,7 @@ const recurringCollectionItem = {
   nextBillingDate: recurringResponse.nextBillingDate,
   autoRenew: recurringResponse.autoRenew,
   autoCalculateNextBillingDate: recurringResponse.autoCalculateNextBillingDate,
+  tags: recurringResponse.tags,
   reminderDays: recurringResponse.reminderDays,
 };
 

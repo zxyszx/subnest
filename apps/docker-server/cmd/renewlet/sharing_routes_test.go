@@ -194,6 +194,54 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	if len(detailEnvelope.Data.Seats) != 5 || detailEnvelope.Data.Seats[0].CurrentReceivable == nil || detailEnvelope.Data.Seats[0].CurrentReceivable.Amount != "45" || detailEnvelope.Data.Seats[0].CurrentReceivable.Status != "paid" {
 		t.Fatalf("unexpected seat detail: %#v", detailEnvelope.Data.Seats)
 	}
+	moveSeat := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[1].Id+"/move", `{"targetSeatId":"`+seats[2].Id+`"}`, token)
+	if moveSeat.Code != http.StatusOK {
+		t.Fatalf("move seat status = %d body=%s", moveSeat.Code, moveSeat.Body.String())
+	}
+	movedSource, err := app.FindRecordById("sharing_seats", seats[1].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	movedTarget, err := app.FindRecordById("sharing_seats", seats[2].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if movedSource.GetString("status") != "vacant" || movedSource.GetString("memberName") != "" {
+		t.Fatalf("move source was not cleared: status=%q member=%q", movedSource.GetString("status"), movedSource.GetString("memberName"))
+	}
+	if movedTarget.GetString("status") != "active" || movedTarget.GetString("memberName") != "Bob" {
+		t.Fatalf("move target did not receive member: status=%q member=%q", movedTarget.GetString("status"), movedTarget.GetString("memberName"))
+	}
+	pendingReceivables, err := app.FindRecordsByFilter(
+		"sharing_receivables",
+		"user = {:user} && status = 'pending'",
+		"created",
+		10,
+		0,
+		map[string]interface{}{"user": user.Id},
+	)
+	if err != nil || len(pendingReceivables) != 1 || pendingReceivables[0].GetString("seat") != seats[2].Id {
+		t.Fatalf("pending receivable did not follow target seat: rows=%#v err=%v", pendingReceivables, err)
+	}
+	paidReceivables, err := app.FindRecordsByFilter(
+		"sharing_receivables",
+		"user = {:user} && status = 'paid'",
+		"created",
+		10,
+		0,
+		map[string]interface{}{"user": user.Id},
+	)
+	if err != nil || len(paidReceivables) != 1 || paidReceivables[0].GetString("seat") != seats[0].Id {
+		t.Fatalf("paid receivable must remain on its original seat: rows=%#v err=%v", paidReceivables, err)
+	}
+	moveIntoOccupied := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[0].Id+"/move", `{"targetSeatId":"`+seats[2].Id+`"}`, token)
+	if moveIntoOccupied.Code != http.StatusBadRequest {
+		t.Fatalf("move into occupied seat status = %d, want 400", moveIntoOccupied.Code)
+	}
+	foreignMove := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[0].Id+"/move", `{"targetSeatId":"`+seats[3].Id+`"}`, foreignToken)
+	if foreignMove.Code != http.StatusNotFound {
+		t.Fatalf("foreign move status = %d, want 404", foreignMove.Code)
+	}
 	foreignSeatUpdate := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+seats[0].Id, paidSeatBody, foreignToken)
 	if foreignSeatUpdate.Code != http.StatusNotFound {
 		t.Fatalf("foreign seat update status = %d, want 404", foreignSeatUpdate.Code)

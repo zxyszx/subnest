@@ -4,6 +4,7 @@ import {
   sharingAccountsPayloadSchema,
   sharingCredentialsPayloadSchema,
   sharingSeatUpdateSchema,
+  sharingSeatMoveSchema,
 } from "@renewlet/shared/schemas/sharing";
 import { addMoney, divideMoney, moneyFromNumber, moneyToNumber, multiplyMoney, subtractMoney } from "@renewlet/shared/money";
 import { toMonthlyAmount } from "@renewlet/shared/subscription-billing";
@@ -159,6 +160,50 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
   }
   await env.DB.batch(statements);
   return readSharingAccountDetail(request, env, account.id);
+}
+
+export async function moveSharingSeat(request: Request, env: Env, id: string): Promise<Response> {
+  const locale = requestLocale(request);
+  const auth = await requireAuth(request, env);
+  const body = await readJson(request, sharingSeatMoveSchema, locale);
+  if (body.targetSeatId === id) throw new HttpError(400, "SHARING_SEAT_MOVE_NOT_ALLOWED", "INVALID_PAYLOAD");
+  const source = await env.DB.prepare(`
+    SELECT seat.*, lower(COALESCE(NULLIF(subscription.platform_name, ''), subscription.name)) AS platform
+    FROM sharing_seats seat
+    JOIN sharing_accounts account ON account.id = seat.sharing_account_id AND account.user_id = seat.user_id
+    JOIN subscriptions subscription ON subscription.id = account.subscription_id AND subscription.user_id = account.user_id
+    WHERE seat.id = ? AND seat.user_id = ? LIMIT 1
+  `).bind(id, auth.user.id).first<SharingSeatRow & { platform: string }>();
+  const target = await env.DB.prepare(`
+    SELECT seat.*, lower(COALESCE(NULLIF(subscription.platform_name, ''), subscription.name)) AS platform
+    FROM sharing_seats seat
+    JOIN sharing_accounts account ON account.id = seat.sharing_account_id AND account.user_id = seat.user_id
+    JOIN subscriptions subscription ON subscription.id = account.subscription_id AND subscription.user_id = account.user_id
+    WHERE seat.id = ? AND seat.user_id = ? LIMIT 1
+  `).bind(body.targetSeatId, auth.user.id).first<SharingSeatRow & { platform: string }>();
+  if (!source || !target) throw new HttpError(404, "SHARING_SEAT_NOT_FOUND", "NOT_FOUND");
+  if (source.status === "vacant" || !source.member_name || target.status !== "vacant" || source.platform !== target.platform) {
+    throw new HttpError(400, "SHARING_SEAT_MOVE_NOT_ALLOWED", "INVALID_PAYLOAD");
+  }
+  const timestamp = nowIso();
+  await env.DB.batch([
+    env.DB.prepare(`
+      UPDATE sharing_seats SET member_name = ?, contact = ?, contact_type = ?, monthly_price = ?, currency = ?,
+        billing_months = ?, start_date = ?, expires_at = ?, status = ?, notes = ?, updated_at = ?
+      WHERE id = ? AND user_id = ? AND status = 'vacant'
+    `).bind(source.member_name, source.contact, source.contact_type, source.monthly_price, source.currency,
+      source.billing_months, source.start_date, source.expires_at, source.status, source.notes, timestamp, target.id, auth.user.id),
+    env.DB.prepare(`
+      UPDATE sharing_receivables SET sharing_account_id = ?, seat_id = ?, updated_at = ?
+      WHERE user_id = ? AND seat_id = ? AND status IN ('pending', 'partial', 'overdue')
+    `).bind(target.sharing_account_id, target.id, timestamp, auth.user.id, source.id),
+    env.DB.prepare(`
+      UPDATE sharing_seats SET member_name = NULL, contact = NULL, contact_type = NULL, monthly_price = NULL,
+        currency = NULL, billing_months = NULL, start_date = NULL, expires_at = NULL, status = 'vacant', notes = NULL, updated_at = ?
+      WHERE id = ? AND user_id = ? AND status != 'vacant'
+    `).bind(timestamp, source.id, auth.user.id),
+  ]);
+  return readSharingAccountDetail(request, env, target.sharing_account_id);
 }
 
 export function sharingBillingAmounts(monthlyPrice: string, billingAmount: string | undefined, billingMonths: number) {

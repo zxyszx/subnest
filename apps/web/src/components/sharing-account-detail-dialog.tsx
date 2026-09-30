@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, Mail, MessageCircle, MessageSquare, Pencil, Phone, ReceiptText, RotateCw, Send, ShoppingBag, UserRound } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, Mail, MessageCircle, MessageSquare, Pencil, Phone, ReceiptText, RotateCw, Send, ShoppingBag, UserRound } from "lucide-react";
 
-import { useSharingAccountDetail, useUpdateSharingSeat } from "@/hooks/use-sharing";
+import { useMoveSharingSeat, useSharingAccountDetail, useSharingAccountDetails, useSharingAccounts, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useManagedCurrencyOptions } from "@/hooks/use-managed-currency-options";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DateOnlyPickerField } from "@/components/date-only-picker-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -84,16 +85,31 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
   const [selectedSeat, setSelectedSeat] = useState<SharingSeat | null>(null);
+  const [movingSeat, setMovingSeat] = useState<SharingSeat | null>(null);
+  const [targetSeatId, setTargetSeatId] = useState("");
   const [seatDialogMode, setSeatDialogMode] = useState<"edit" | "renew">("edit");
   const [password, setPassword] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const detail = detailQuery.data;
+  const accountsQuery = useSharingAccounts();
+  const samePlatformAccounts = (accountsQuery.data?.accounts ?? []).filter((candidate) => (
+    candidate.subscription.platformName.toLocaleLowerCase() === account?.subscription.platformName.toLocaleLowerCase()
+  ));
+  const candidateDetailQueries = useSharingAccountDetails(open && mode === "seats" ? samePlatformAccounts.map((candidate) => candidate.id) : []);
+  const moveSeat = useMoveSharingSeat();
+  const targetSeatOptions = candidateDetailQueries.flatMap((query) => query.data ? query.data.seats
+    .filter((seat) => seat.status === "vacant" && seat.id !== movingSeat?.id)
+    .map((seat) => ({
+      id: seat.id,
+      label: `${query.data.account.subscription.platformName} #${query.data.account.accountNumber} · ${t("sharing.seatNumber")} ${seat.seatNumber}`,
+    })) : []);
   useEffect(() => {
     setPassword(null);
     setPasswordVisible(false);
     setPasswordLoading(false);
   }, [account?.id, open]);
+  useEffect(() => { setTargetSeatId(""); }, [movingSeat?.id]);
 
   const copyValue = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -267,6 +283,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                           </td>
                           <td className="px-3 py-2 text-right"><div className="flex justify-end gap-2">
                             {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
+                            {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />换位</Button> : null}
                             <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                           </div></td>
                         </tr>
@@ -290,8 +307,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                         <div><dt className="text-muted-foreground">{t("sharing.expiresAt")}</dt><dd className="mt-0.5 font-medium tabular-nums text-foreground">{seat.expiresAt ?? "-"}</dd></div>
                         <div><dt className="text-muted-foreground">{t("sharing.paymentStatus")}</dt><dd className="mt-1">{seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}</dd></div>
                       </dl>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : <span />}
+                        {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />换位</Button> : <span />}
                         <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                       </div>
                     </article>
@@ -304,6 +322,47 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       </Dialog>
 
       {mode === "seats" && account ? <SharingSeatDialog account={account} seat={selectedSeat} mode={seatDialogMode} open={Boolean(selectedSeat)} onOpenChange={(nextOpen) => !nextOpen && setSelectedSeat(null)} /> : null}
+      <Dialog open={Boolean(movingSeat)} onOpenChange={(nextOpen) => !nextOpen && setMovingSeat(null)}>
+        <DialogContent className="max-w-lg" closeLabel={t("sharing.cancel")} dismissMode="explicit">
+          <DialogHeader>
+            <DialogTitle>同平台换车位</DialogTitle>
+            <DialogDescription>
+              {movingSeat ? `${movingSeat.memberName ?? ""} · ${account?.subscription.platformName ?? ""} #${account?.accountNumber ?? ""} · ${t("sharing.seatNumber")} ${movingSeat.seatNumber}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="sharing-target-seat">目标空闲车位</Label>
+            <Select value={targetSeatId} onValueChange={setTargetSeatId}>
+              <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label="目标空闲车位"><SelectValue placeholder="选择同平台空闲车位" /></SelectTrigger>
+              <SelectContent mobileTitle="目标空闲车位">
+                {targetSeatOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">当前平台没有可用的空闲车位。</p> : null}
+            <p className="text-xs leading-5 text-muted-foreground">车友资料和未完成的待收款将移至目标车位；已完成的历史收费记录保留在原车位。</p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline">{t("sharing.cancel")}</Button></DialogClose>
+            <Button
+              type="button"
+              disabled={!movingSeat || !targetSeatId || moveSeat.isPending}
+              onClick={async () => {
+                if (!movingSeat || !targetSeatId) return;
+                try {
+                  await moveSeat.mutateAsync({ seatId: movingSeat.id, input: { targetSeatId } });
+                  toast.success("车位已更换");
+                  setMovingSeat(null);
+                } catch (error) {
+                  toast.error(getDisplayErrorMessage(error, "换位失败，请确认目标车位仍为空闲状态"));
+                }
+              }}
+            >
+              {moveSeat.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+              确认换位
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

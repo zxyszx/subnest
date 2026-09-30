@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { ArrowDownUp, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
@@ -10,9 +10,10 @@ import { SubscriptionLogo } from "@/components/subscription-logo";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
@@ -48,33 +49,8 @@ function currencyMetric(formatted: string, currency: string) {
   );
 }
 
-interface ExpirySortMenuProps {
-  value: SharingExpirySortDirection;
-  onValueChange: (value: SharingExpirySortDirection) => void;
-  label: string;
-  ascendingLabel: string;
-  descendingLabel: string;
-  className?: string;
-}
-
-function ExpirySortMenu({ value, onValueChange, label, ascendingLabel, descendingLabel, className }: ExpirySortMenuProps) {
-  const currentLabel = value === "asc" ? ascendingLabel : descendingLabel;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className={cn("h-8 w-8", className)} aria-label={label} title={`${label}：${currentLabel}`}>
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-40">
-        <DropdownMenuRadioGroup value={value} onValueChange={(nextValue) => onValueChange(nextValue as SharingExpirySortDirection)}>
-          <DropdownMenuRadioItem value="asc">{ascendingLabel}</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="desc">{descendingLabel}</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+type SharingFilter = "all" | "available" | "full" | "expiring" | "overdue" | "outstanding";
+type SharingSortField = "expiry" | "account" | "vacancies" | "revenue" | "profit";
 
 export default function Sharing() {
   const { t, formatCurrency, formatDateOnly } = useI18n();
@@ -88,6 +64,8 @@ export default function Sharing() {
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [accountFilter, setAccountFilter] = useState<SharingFilter>("all");
+  const [sortField, setSortField] = useState<SharingSortField>("expiry");
   const [expirySortDirection, setExpirySortDirection] = useState<SharingExpirySortDirection>("asc");
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -114,23 +92,46 @@ export default function Sharing() {
     accounts: { id: string; accountNumber: number }[];
   }>()).values());
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
-  const filteredAccounts = accounts
+  const platformAccounts = accounts
     .filter((account) => !selectedPlatform || subscriptionPlatformName(account.subscription) === selectedPlatform)
-    .filter((account) => {
-      if (!normalizedSearch) return true;
-      const platformName = subscriptionPlatformName(account.subscription).toLocaleLowerCase();
-      const accountNumber = String(account.accountNumber);
-      return platformName.includes(normalizedSearch)
-        || accountNumber.includes(normalizedSearch)
-        || `${platformName}${accountNumber}`.includes(normalizedSearch.replaceAll(" ", ""));
-    })
     .sort((left, right) => left.accountNumber - right.accountNumber || left.name.localeCompare(right.name));
-  const accountDetailQueries = useSharingAccountDetails(filteredAccounts.map((account) => account.id));
-  const accountDetails = new Map(filteredAccounts.flatMap((account, index) => {
+  const accountDetailQueries = useSharingAccountDetails(platformAccounts.map((account) => account.id));
+  const accountDetails = new Map(platformAccounts.flatMap((account, index) => {
     const detail = accountDetailQueries[index]?.data;
     return detail ? [[account.id, detail] as const] : [];
   }));
-  const visibleAccounts = sortSharingAccountsByNearestSeatExpiry(filteredAccounts, accountDetails, today, expirySortDirection);
+  const searchedAccounts = platformAccounts.filter((account) => {
+    if (!normalizedSearch) return true;
+    if (/^\d+$/.test(normalizedSearch)) return String(account.accountNumber) === normalizedSearch;
+    const platformName = subscriptionPlatformName(account.subscription).toLocaleLowerCase();
+    const detail = accountDetails.get(account.id);
+    return platformName.includes(normalizedSearch)
+      || account.loginAccount.toLocaleLowerCase().includes(normalizedSearch)
+      || `${platformName}${account.accountNumber}`.includes(normalizedSearch.replaceAll(" ", ""))
+      || Boolean(detail?.seats.some((seat) => seat.memberName?.toLocaleLowerCase().includes(normalizedSearch) || seat.contact?.toLocaleLowerCase().includes(normalizedSearch)));
+  });
+  const filteredAccounts = searchedAccounts.filter((account) => {
+    if (accountFilter === "all") return true;
+    if (accountFilter === "available") return account.occupiedSeats < account.capacity;
+    if (accountFilter === "full") return account.occupiedSeats >= account.capacity;
+    if (accountFilter === "outstanding") return Number(account.outstandingAmount) > 0;
+    const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
+    if (!nearest) return false;
+    return accountFilter === "overdue" ? nearest.daysUntilExpiry < 0 : nearest.daysUntilExpiry >= 0 && nearest.daysUntilExpiry <= 7;
+  });
+  const directionFactor = expirySortDirection === "asc" ? 1 : -1;
+  const visibleAccounts = sortField === "expiry"
+    ? sortSharingAccountsByNearestSeatExpiry(filteredAccounts, accountDetails, today, expirySortDirection)
+    : [...filteredAccounts].sort((left, right) => {
+        const comparison = sortField === "account"
+          ? left.accountNumber - right.accountNumber
+          : sortField === "vacancies"
+            ? (left.capacity - left.occupiedSeats) - (right.capacity - right.occupiedSeats)
+            : sortField === "revenue"
+              ? sharingMonthlyRevenue(left, defaultCurrency, convert) - sharingMonthlyRevenue(right, defaultCurrency, convert)
+              : sharingMonthlyProfit(left, defaultCurrency, convert) - sharingMonthlyProfit(right, defaultCurrency, convert);
+        return comparison * directionFactor || left.accountNumber - right.accountNumber;
+      });
   const upcomingSeatRenewals = sharingUpcomingSeatRenewals(
     accountDetailQueries.flatMap((query) => query.data ? [query.data] : []),
     today,
@@ -194,6 +195,16 @@ export default function Sharing() {
 
   const AccountIdentity = ({ account }: { account: SharingAccount }) => {
     const platformName = subscriptionPlatformName(account.subscription);
+    const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
+    const health = nearest && nearest.daysUntilExpiry < 0
+      ? { label: "存在逾期", variant: "destructive" as const }
+      : Number(account.outstandingAmount) > 0
+        ? { label: "存在待收款", variant: "destructive" as const }
+        : nearest && nearest.daysUntilExpiry <= 7
+          ? { label: "即将到期", variant: "secondary" as const }
+          : account.occupiedSeats >= account.capacity
+            ? { label: "已满", variant: "secondary" as const }
+            : { label: "有空位", variant: "outline" as const };
     return (
       <div className="flex min-w-0 items-center gap-3">
         <button
@@ -208,7 +219,10 @@ export default function Sharing() {
             {account.accountNumber}
           </span>
         </button>
-        <span className="min-w-0 truncate font-medium text-foreground">{platformName}</span>
+        <div className="min-w-0">
+          <span className="block truncate font-medium text-foreground">{platformName}</span>
+          <Badge variant={health.variant} className="mt-1 h-5 px-1.5 text-[10px]">{health.label}</Badge>
+        </div>
       </div>
     );
   };
@@ -245,6 +259,43 @@ export default function Sharing() {
       return sharingSeatExpiryTone(daysBetweenDateOnly(today, seat.expiresAt));
     });
   };
+
+  const sharingFilterControls = (
+    <div className="grid min-w-0 grid-cols-[minmax(8.5rem,1fr)_minmax(8.5rem,1fr)_2.75rem] gap-2">
+      <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
+        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label="账号状态"><SelectValue /></SelectTrigger>
+        <SelectContent mobileTitle="账号状态">
+          <SelectItem value="all">全部状态</SelectItem>
+          <SelectItem value="available">有空位</SelectItem>
+          <SelectItem value="full">已满</SelectItem>
+          <SelectItem value="expiring">7 天内到期</SelectItem>
+          <SelectItem value="overdue">存在逾期</SelectItem>
+          <SelectItem value="outstanding">存在待收款</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={sortField} onValueChange={(value) => setSortField(value as SharingSortField)}>
+        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("subscriptions.sort.label")}><SelectValue /></SelectTrigger>
+        <SelectContent mobileTitle={t("subscriptions.sort.label")}>
+          <SelectItem value="expiry">最近到期</SelectItem>
+          <SelectItem value="account">账号序号</SelectItem>
+          <SelectItem value="vacancies">空余车位</SelectItem>
+          <SelectItem value="revenue">月收入</SelectItem>
+          <SelectItem value="profit">月利润</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        size="icon"
+        variant="outline"
+        className="h-11 w-11 border-border sm:h-9 sm:w-9"
+        aria-label={expirySortDirection === "asc" ? "切换为降序" : "切换为升序"}
+        title={expirySortDirection === "asc" ? "当前升序" : "当前降序"}
+        onClick={() => setExpirySortDirection((direction) => direction === "asc" ? "desc" : "asc")}
+      >
+        <ArrowDownUp className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   return (
     <div className="app-page bg-background">
@@ -309,15 +360,7 @@ export default function Sharing() {
                       ariaLabel={t("sharing.platformFilter")}
                       className="rounded-lg border bg-secondary/50 px-1"
                     />
-                    <div className="flex justify-end">
-                      <ExpirySortMenu
-                        value={expirySortDirection}
-                        onValueChange={setExpirySortDirection}
-                        label={t("subscriptions.sort.label")}
-                        ascendingLabel={t("subscriptions.sort.renewalAsc")}
-                        descendingLabel={t("subscriptions.sort.renewalDesc")}
-                      />
-                    </div>
+                    {sharingFilterControls}
                   </div>
                 ) : null}
               </>
@@ -345,6 +388,7 @@ export default function Sharing() {
                     />
                   </div>
                 </div>
+                <div className="mr-2 shrink-0">{sharingFilterControls}</div>
               </>
             )}
           </div>
@@ -369,7 +413,7 @@ export default function Sharing() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-2 font-medium"><span className="flex items-center gap-1"><span>{t("subscription.field.platformName")}</span><ExpirySortMenu value={expirySortDirection} onValueChange={setExpirySortDirection} label={t("subscriptions.sort.label")} ascendingLabel={t("subscriptions.sort.renewalAsc")} descendingLabel={t("subscriptions.sort.renewalDesc")} /></span></th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
+                  <th className="px-4 py-2 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
