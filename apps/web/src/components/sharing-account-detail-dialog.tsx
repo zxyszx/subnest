@@ -283,7 +283,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                           </td>
                           <td className="px-3 py-2 text-right"><div className="flex justify-end gap-2">
                             {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
-                            {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />换位</Button> : null}
+                            {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />{t("sharing.moveSeat")}</Button> : null}
                             <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                           </div></td>
                         </tr>
@@ -309,7 +309,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                       </dl>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : <span />}
-                        {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />换位</Button> : <span />}
+                        {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />{t("sharing.moveSeat")}</Button> : <span />}
                         <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                       </div>
                     </article>
@@ -325,21 +325,21 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       <Dialog open={Boolean(movingSeat)} onOpenChange={(nextOpen) => !nextOpen && setMovingSeat(null)}>
         <DialogContent className="max-w-lg" closeLabel={t("sharing.cancel")} dismissMode="explicit">
           <DialogHeader>
-            <DialogTitle>同平台换车位</DialogTitle>
+          <DialogTitle>{t("sharing.samePlatformMoveSeat")}</DialogTitle>
             <DialogDescription>
               {movingSeat ? `${movingSeat.memberName ?? ""} · ${account?.subscription.platformName ?? ""} #${account?.accountNumber ?? ""} · ${t("sharing.seatNumber")} ${movingSeat.seatNumber}` : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
-            <Label htmlFor="sharing-target-seat">目标空闲车位</Label>
+            <Label htmlFor="sharing-target-seat">{t("sharing.targetVacantSeat")}</Label>
             <Select value={targetSeatId} onValueChange={setTargetSeatId}>
-              <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label="目标空闲车位"><SelectValue placeholder="选择同平台空闲车位" /></SelectTrigger>
-              <SelectContent mobileTitle="目标空闲车位">
+              <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label={t("sharing.targetVacantSeat")}><SelectValue placeholder={t("sharing.selectVacantSeat")} /></SelectTrigger>
+              <SelectContent mobileTitle={t("sharing.targetVacantSeat")}>
                 {targetSeatOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            {targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">当前平台没有可用的空闲车位。</p> : null}
-            <p className="text-xs leading-5 text-muted-foreground">车友资料和未完成的待收款将移至目标车位；已完成的历史收费记录保留在原车位。</p>
+            {targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noVacantSeats")}</p> : null}
+            <p className="text-xs leading-5 text-muted-foreground">{t("sharing.moveSeatHint")}</p>
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">{t("sharing.cancel")}</Button></DialogClose>
@@ -350,15 +350,15 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 if (!movingSeat || !targetSeatId) return;
                 try {
                   await moveSeat.mutateAsync({ seatId: movingSeat.id, input: { targetSeatId } });
-                  toast.success("车位已更换");
+                  toast.success(t("sharing.moveSeatSuccess"));
                   setMovingSeat(null);
                 } catch (error) {
-                  toast.error(getDisplayErrorMessage(error, "换位失败，请确认目标车位仍为空闲状态"));
+                  toast.error(getDisplayErrorMessage(error, t("sharing.moveSeatFailed")));
                 }
               }}
             >
               {moveSeat.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
-              确认换位
+              {t("sharing.confirmMoveSeat")}
             </Button>
           </DialogFooter>
         </DialogContent>

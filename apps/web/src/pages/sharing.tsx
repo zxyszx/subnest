@@ -263,24 +263,24 @@ export default function Sharing() {
   const sharingFilterControls = (
     <div className="grid min-w-0 grid-cols-[minmax(8.5rem,1fr)_minmax(8.5rem,1fr)_2.75rem] gap-2">
       <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
-        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label="账号状态"><SelectValue /></SelectTrigger>
-        <SelectContent mobileTitle="账号状态">
-          <SelectItem value="all">全部状态</SelectItem>
-          <SelectItem value="available">有空位</SelectItem>
-          <SelectItem value="full">已满</SelectItem>
-          <SelectItem value="expiring">7 天内到期</SelectItem>
-          <SelectItem value="overdue">存在逾期</SelectItem>
-          <SelectItem value="outstanding">存在待收款</SelectItem>
+        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("sharing.accountStatusFilter")}><SelectValue /></SelectTrigger>
+        <SelectContent mobileTitle={t("sharing.accountStatusFilter")}>
+          <SelectItem value="all">{t("sharing.allStatus")}</SelectItem>
+          <SelectItem value="available">{t("sharing.hasVacancies")}</SelectItem>
+          <SelectItem value="full">{t("sharing.accountFull")}</SelectItem>
+          <SelectItem value="expiring">{t("sharing.expiringWithinSevenDays")}</SelectItem>
+          <SelectItem value="overdue">{t("sharing.hasOverdue")}</SelectItem>
+          <SelectItem value="outstanding">{t("sharing.hasOutstanding")}</SelectItem>
         </SelectContent>
       </Select>
       <Select value={sortField} onValueChange={(value) => setSortField(value as SharingSortField)}>
         <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("subscriptions.sort.label")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-          <SelectItem value="expiry">最近到期</SelectItem>
-          <SelectItem value="account">账号序号</SelectItem>
-          <SelectItem value="vacancies">空余车位</SelectItem>
-          <SelectItem value="revenue">月收入</SelectItem>
-          <SelectItem value="profit">月利润</SelectItem>
+          <SelectItem value="expiry">{t("sharing.nearestExpiry")}</SelectItem>
+          <SelectItem value="account">{t("sharing.accountNumberSort")}</SelectItem>
+          <SelectItem value="vacancies">{t("sharing.vacantSeatsSort")}</SelectItem>
+          <SelectItem value="revenue">{t("sharing.monthlyRevenue")}</SelectItem>
+          <SelectItem value="profit">{t("sharing.monthlyProfit")}</SelectItem>
         </SelectContent>
       </Select>
       <Button
@@ -288,8 +288,8 @@ export default function Sharing() {
         size="icon"
         variant="outline"
         className="h-11 w-11 border-border sm:h-9 sm:w-9"
-        aria-label={expirySortDirection === "asc" ? "切换为降序" : "切换为升序"}
-        title={expirySortDirection === "asc" ? "当前升序" : "当前降序"}
+        aria-label={expirySortDirection === "asc" ? t("sharing.toggleDescending") : t("sharing.toggleAscending")}
+        title={expirySortDirection === "asc" ? t("sharing.currentAscending") : t("sharing.currentDescending")}
         onClick={() => setExpirySortDirection((direction) => direction === "asc" ? "desc" : "asc")}
       >
         <ArrowDownUp className="h-4 w-4" />
