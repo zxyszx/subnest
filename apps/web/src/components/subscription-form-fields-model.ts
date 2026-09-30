@@ -26,6 +26,8 @@ export interface SubscriptionFormFieldsProps {
   costSharingCurrencyConvert?: ((amount: number | string, fromCurrency: string, toCurrency: string) => number) | undefined;
   onNestedDialogOpenChange?: ((open: boolean) => void) | undefined;
   onManagedShareSetupPendingChange?: ((pending: boolean) => void) | undefined;
+  /** 仅展示家庭共享账号设置；总开关仍只属于订阅编辑页。 */
+  familySharingOnly?: boolean | undefined;
 }
 
 export type { SubscriptionFormErrors };

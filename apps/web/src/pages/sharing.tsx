@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowUpDown, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
 import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
+import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
@@ -14,11 +16,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
-import { useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
+import { sharingQueryKeys, useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
+import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscriptions";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
@@ -74,18 +78,23 @@ function ExpirySortMenu({ value, onValueChange, label, ascendingLabel, descendin
 
 export default function Sharing() {
   const { t, formatCurrency, formatDateOnly } = useI18n();
+  const { pending: customConfigPending } = useCustomConfigState();
   const accountsQuery = useSharingAccounts();
   const settingsQuery = useSettingsEnvelope();
   const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
   const today = useZonedToday(settingsQuery.data?.settings.timezone ?? "UTC");
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
+  const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expirySortDirection, setExpirySortDirection] = useState<SharingExpirySortDirection>("asc");
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
+  const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
+  const updateSubscription = useUpdateSubscription();
+  const queryClient = useQueryClient();
   useRouteReady();
 
   const accounts = accountsQuery.data?.accounts ?? [];
@@ -170,6 +179,19 @@ export default function Sharing() {
     }
   };
 
+  const saveFamilySharing = (changes: Parameters<typeof updateSubscription.mutate>[0]["changes"]) => {
+    if (!editingSubscriptionId) return;
+    updateSubscription.mutate(
+      { id: editingSubscriptionId, changes },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({ queryKey: sharingQueryKeys.all, refetchType: "active" });
+          setEditingSubscriptionId(null);
+        },
+      },
+    );
+  };
+
   const AccountIdentity = ({ account }: { account: SharingAccount }) => {
     const platformName = subscriptionPlatformName(account.subscription);
     return (
@@ -179,7 +201,7 @@ export default function Sharing() {
           className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label={t("sharing.editAccount")}
           title={t("sharing.editAccount")}
-          onClick={() => setSelectedAccount(account)}
+          onClick={() => setEditingSubscriptionId(account.subscription.id)}
         >
           <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
@@ -400,6 +422,16 @@ export default function Sharing() {
           </section>
         )}
         <SharingAccountDetailDialog account={selectedAccount} mode="seats" open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
+        <EditSubscriptionDialog
+          scope="family-sharing"
+          subscription={editingSubscriptionQuery.data ?? null}
+          loadingPreview={null}
+          open={Boolean(editingSubscriptionId)}
+          onOpenChange={(open) => !open && setEditingSubscriptionId(null)}
+          onSave={saveFamilySharing}
+          platformSuggestions={platformOptions}
+          loading={customConfigPending || editingSubscriptionQuery.isPending || editingSubscriptionQuery.isFetching}
+        />
         <Dialog open={renewalsOpen} onOpenChange={setRenewalsOpen}>
           <DialogContent className="max-w-2xl bg-card" closeLabel={t("common.close")}>
             <DialogHeader>

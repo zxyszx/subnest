@@ -49,6 +49,13 @@ vi.mock("@/components/logo-picker", () => ({
   LogoPicker: () => null,
 }));
 
+vi.mock("@/services/newszxcn-service", () => ({
+  newszxcnService: {
+    mailboxes: vi.fn().mockResolvedValue({ items: [] }),
+    links: vi.fn().mockResolvedValue({ links: [] }),
+  },
+}));
+
 beforeAll(async () => {
   Element.prototype.hasPointerCapture ??= vi.fn(() => false);
   Element.prototype.setPointerCapture ??= vi.fn();
@@ -100,6 +107,41 @@ function makeSubscription(overrides: SubscriptionFixtureOverrides<Subscription> 
 }
 
 describe("SubscriptionDialog", () => {
+  it("renders a focused family-sharing editor without the subscription fields or master switch", async () => {
+    render(
+      <TooltipProvider delayDuration={0}>
+        <SubscriptionDialog
+          loadingPreview={null}
+          mode="edit"
+          scope="family-sharing"
+          open
+          onOpenChange={vi.fn()}
+          onSubmit={vi.fn()}
+          subscription={makeSubscription({
+            familySharing: {
+              enabled: true,
+              loginAccount: "family@example.com",
+              hasPassword: true,
+              passwordMask: "s***d",
+              verificationLink: "https://example.com/verify",
+              capacity: 5,
+            },
+          })}
+        />
+      </TooltipProvider>,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "编辑家庭共享" });
+    expect(within(dialog).getByLabelText("登录账号")).toHaveValue("family@example.com");
+    expect(within(dialog).getByLabelText("车位数")).toHaveValue(5);
+    expect(within(dialog).getByLabelText("登录密码")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("验证码链接")).toHaveValue("https://example.com/verify");
+    expect(within(dialog).queryByRole("switch", { name: "家庭共享" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("平台名称")).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("金额")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "保存账号" })).toBeInTheDocument();
+  });
+
   it("marks an existing platform account number as already added", async () => {
     const user = setupUser();
 

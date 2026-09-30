@@ -83,6 +83,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   onClearFieldError,
   notificationReminderDays,
   onManagedShareSetupPendingChange,
+  familySharingOnly = false,
 }: SubscriptionFormFieldsProps) {
   const { t, locale, label } = useI18n();
 
@@ -211,6 +212,20 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
       keywords: [platform.name],
     })),
   ];
+
+  if (familySharingOnly) {
+    return (
+      <SubscriptionFamilySharingFields
+        id={id}
+        subscriptionId={subscriptionId}
+        value={formData.familySharing}
+        onChange={(familySharing) => update("familySharing", familySharing)}
+        error={errors.familySharing}
+        onShareSetupPendingChange={onManagedShareSetupPendingChange}
+        showEnabledControl={false}
+      />
+    );
+  }
 
   return (
     <>

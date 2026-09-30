@@ -270,6 +270,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
           costSharingCurrencyConvert={convertCurrency}
           onNestedDialogOpenChange={props.onNestedDialogOpenChange}
           onManagedShareSetupPendingChange={setManagedShareSetupPending}
+          familySharingOnly={props.mode === "edit" && props.scope === "family-sharing"}
         />
       )}
       actions={loadingSlots?.actions ?? (
@@ -297,7 +298,9 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
               ? isCloneCreateMode
                 ? t("subscription.cloneSubmit")
                 : t("subscription.dialogCreateSubmit")
-              : t("subscription.dialogEditSubmit")}
+              : props.scope === "family-sharing"
+                ? t("sharing.saveAccount")
+                : t("subscription.dialogEditSubmit")}
           </Button>
         </>
       )}

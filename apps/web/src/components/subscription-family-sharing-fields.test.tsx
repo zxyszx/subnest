@@ -23,7 +23,15 @@ vi.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-function Harness({ onPendingChange, verificationLink = "" }: { onPendingChange: (pending: boolean) => void; verificationLink?: string }) {
+function Harness({
+  onPendingChange,
+  verificationLink = "",
+  showEnabledControl = true,
+}: {
+  onPendingChange: (pending: boolean) => void;
+  verificationLink?: string;
+  showEnabledControl?: boolean;
+}) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }));
   const [value, setValue] = useState<FamilySharingFormState>({
     enabled: true,
@@ -41,6 +49,7 @@ function Harness({ onPendingChange, verificationLink = "" }: { onPendingChange: 
         value={value}
         onChange={setValue}
         onShareSetupPendingChange={onPendingChange}
+        showEnabledControl={showEnabledControl}
       />
     </QueryClientProvider>
   );
@@ -66,6 +75,15 @@ describe("SubscriptionFamilySharingFields managed mailbox", () => {
       createdAt: "2026-09-26T00:00:00Z",
       updatedAt: "2026-09-26T00:00:00Z",
     } });
+  });
+
+  it("keeps the master switch out of the focused family-sharing editor", async () => {
+    render(<Harness onPendingChange={vi.fn()} showEnabledControl={false} />);
+
+    expect(screen.queryByRole("switch", { name: "subscription.familySharing.title" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@newszxcn.com");
+    expect(screen.getByLabelText("subscription.familySharing.capacity")).toHaveValue(5);
+    expect(screen.getByLabelText("subscription.familySharing.password")).toBeInTheDocument();
   });
 
   it("requires an explicit folder selection before creating a managed share", async () => {

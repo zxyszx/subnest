@@ -77,7 +77,9 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
               ? isCloneCreateMode
                 ? t("subscription.cloneDialogTitle")
                 : t("subscription.dialogCreateTitle")
-              : t("subscription.dialogEditTitle")}
+              : props.scope === "family-sharing"
+                ? t("sharing.editAccount")
+                : t("subscription.dialogEditTitle")}
           </DialogTitle>
           <DialogDescription className="sr-only">
             {props.mode === "create" && clonePreview

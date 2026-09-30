@@ -59,6 +59,7 @@ export function SubscriptionFamilySharingFields({
   onChange,
   error,
   onShareSetupPendingChange,
+  showEnabledControl = true,
 }: {
   id: (name: string) => string;
   subscriptionId?: string | undefined;
@@ -66,6 +67,8 @@ export function SubscriptionFamilySharingFields({
   onChange: (value: FamilySharingFormState) => void;
   error?: string | undefined;
   onShareSetupPendingChange?: ((pending: boolean) => void) | undefined;
+  /** 家庭共享独立编辑入口不显示总开关；开关只在完整订阅表单中维护。 */
+  showEnabledControl?: boolean | undefined;
 }) {
   const { t } = useI18n();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -266,7 +269,7 @@ export function SubscriptionFamilySharingFields({
   return (
     <>
     <section className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
-      <div className="flex items-center justify-between gap-4">
+      {showEnabledControl ? <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <Label htmlFor={id("familySharingEnabled")} className="flex cursor-pointer items-center gap-2 text-sm font-medium">
             <UsersRound className="h-4 w-4" />
@@ -279,10 +282,10 @@ export function SubscriptionFamilySharingFields({
           checked={value.enabled}
           onCheckedChange={(enabled) => update("enabled", enabled)}
         />
-      </div>
+      </div> : null}
 
       {value.enabled ? (
-        <div className="grid gap-4 border-t border-border pt-4">
+        <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-4" : "grid gap-4"}>
           <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
             <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>
               {(field) => (

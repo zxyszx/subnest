@@ -16,6 +16,8 @@ export type SubscriptionPlatformSuggestion = {
   }[] | undefined;
 };
 
+export type SubscriptionDialogEditScope = "full" | "family-sharing";
+
 type CreateSubscriptionDialogProps = {
   mode: "create";
   open: boolean;
@@ -31,6 +33,7 @@ type CreateSubscriptionDialogProps = {
 
 type EditSubscriptionDialogProps = {
   mode: "edit";
+  scope?: SubscriptionDialogEditScope | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subscription: Subscription | null;

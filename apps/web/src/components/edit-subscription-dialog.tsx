@@ -11,7 +11,7 @@ import type {
   SubscriptionCollectionItem,
   SubscriptionFormSubmission,
 } from "@/types/subscription";
-import type { SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
+import type { SubscriptionDialogEditScope, SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
 
 interface EditSubscriptionDialogProps {
   /** 当前正在编辑的订阅（null 表示未选中）。 */
@@ -26,6 +26,8 @@ interface EditSubscriptionDialogProps {
   availableTags?: readonly string[] | undefined;
   platformSuggestions?: readonly SubscriptionPlatformSuggestion[] | undefined;
   loading?: boolean | undefined;
+  /** 限制编辑弹窗只展示指定业务域；家庭共享入口不应暴露订阅总开关或其他订阅字段。 */
+  scope?: SubscriptionDialogEditScope;
 }
 
 /** 以 edit mode 渲染通用订阅弹窗。 */
@@ -38,6 +40,7 @@ export function EditSubscriptionDialog({
   availableTags,
   platformSuggestions,
   loading,
+  scope,
 }: EditSubscriptionDialogProps) {
   return (
     <SubscriptionDialog
@@ -50,6 +53,7 @@ export function EditSubscriptionDialog({
       availableTags={availableTags}
       platformSuggestions={platformSuggestions}
       loading={loading}
+      scope={scope}
     />
   );
 }
