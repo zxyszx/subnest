@@ -386,13 +386,51 @@ describe("Dashboard page loading state", () => {
 
     expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
     expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥35");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥95");
 
     await user.click(screen.getByRole("button", { name: "下个月" }));
 
     expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
     expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥35");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥95");
+  });
+
+  it("allocates a multi-month sharing charge evenly across its covered months", async () => {
+    const user = userEvent.setup();
+    const account = sharingAccount();
+    const detail = sharingDetail(account);
+    detail.seats[0] = {
+      ...detail.seats[0]!,
+      monthlyPrice: "100",
+      billingMonths: 3,
+      startDate: assertDateOnly("2026-09-01"),
+      expiresAt: assertDateOnly("2026-12-01"),
+      currentReceivable: {
+        id: "receivable-quarterly",
+        periodStart: assertDateOnly("2026-09-01"),
+        periodEnd: assertDateOnly("2026-12-01"),
+        dueDate: assertDateOnly("2026-09-01"),
+        amount: "300",
+        paidAmount: "300",
+        currency: "CNY",
+        status: "paid",
+        paidAt: "2026-09-01T00:00:00Z",
+      },
+    };
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
+
+    renderDashboard();
+    await user.click(screen.getByRole("button", { name: "2026年6月" }));
+    await user.click(screen.getByRole("button", { name: "9月" }));
+
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
+    expect(screen.getByRole("button", { name: "1 +¥100" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "下个月" }));
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
+    await user.click(screen.getByRole("button", { name: "下个月" }));
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
   });
 
   it("keeps each calendar date's detail items isolated", async () => {

@@ -112,12 +112,13 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
 
     sharingDetails.forEach((detail) => detail.seats.forEach((seat) => {
       if (!seat.expiresAt || !seat.memberName || !seat.currency || seat.status !== "active") return;
+      const months = Math.max(1, seat.billingMonths ?? 1);
       const periodAmount = seat.currentReceivable
         ? Number(seat.currentReceivable.amount)
-        : Number(seat.monthlyPrice ?? 0) * (seat.billingMonths ?? 1);
-      const amount = convert(periodAmount, seat.currency, defaultCurrency);
+        : Number(seat.monthlyPrice ?? 0) * months;
+      const monthlyAmount = periodAmount / months;
+      const amount = convert(monthlyAmount, seat.currency, defaultCurrency);
       let dueDate = assertDateOnly(seat.expiresAt);
-      const months = Math.max(1, seat.billingMonths ?? 1);
       const addSeatOccurrence = (date: DateOnly) => {
         const day = getDay(date);
         day.memberCount += 1;
@@ -126,7 +127,10 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         values.set(date, day);
       };
       const previousDates: DateOnly[] = [];
-      let previousDate = format(subMonths(dateOnlyToLocalDate(dueDate), months), "yyyy-MM-dd") as DateOnly;
+      // A multi-month seat payment is earned month by month. Starting one month
+      // before the expiry places a quarterly Sep-Dec term on Sep, Oct and Nov,
+      // while the expiry itself starts the next projected monthly allocation.
+      let previousDate = format(subMonths(dateOnlyToLocalDate(dueDate), 1), "yyyy-MM-dd") as DateOnly;
       for (
         let occurrence = 0;
         compareDateOnly(previousDate, range.from) >= 0
@@ -135,14 +139,14 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         occurrence += 1
       ) {
         previousDates.push(previousDate);
-        const nextPreviousDate = format(subMonths(dateOnlyToLocalDate(previousDate), months), "yyyy-MM-dd") as DateOnly;
+        const nextPreviousDate = format(subMonths(dateOnlyToLocalDate(previousDate), 1), "yyyy-MM-dd") as DateOnly;
         if (compareDateOnly(nextPreviousDate, previousDate) >= 0) break;
         previousDate = nextPreviousDate;
       }
       previousDates.reverse().forEach(addSeatOccurrence);
       for (let occurrence = 0; compareDateOnly(dueDate, range.to) <= 0 && occurrence < MAX_PROJECTED_OCCURRENCES; occurrence += 1) {
         if (compareDateOnly(dueDate, range.from) >= 0) addSeatOccurrence(dueDate);
-        dueDate = format(addMonths(dateOnlyToLocalDate(dueDate), months), "yyyy-MM-dd") as DateOnly;
+        dueDate = format(addMonths(dateOnlyToLocalDate(dueDate), 1), "yyyy-MM-dd") as DateOnly;
       }
     }));
 
@@ -151,6 +155,7 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
 
   const monthlyFinancials = useMemo(() => {
     const monthPrefix = format(currentMonth, "yyyy-MM-");
+    const monthEnd = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0), "yyyy-MM-dd");
     let subscriptionSpend = 0;
     let memberIncome = 0;
 
@@ -160,12 +165,18 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
       memberIncome += financials.memberIncome;
     });
 
+    const sharingCost = sharingDetails.reduce((total, detail) => {
+      const { account } = detail;
+      if (account.status !== "active" || account.createdAt.slice(0, 10) > monthEnd) return total;
+      return total + convert(account.monthlyCost, account.currency, defaultCurrency);
+    }, 0);
+
     return {
       subscriptionSpend,
       memberIncome,
-      netProfit: memberIncome - subscriptionSpend,
+      netProfit: memberIncome - sharingCost,
     };
-  }, [currentMonth, financialsByDate]);
+  }, [convert, currentMonth, defaultCurrency, financialsByDate, sharingDetails]);
 
   const monthlySummary = [
     {
