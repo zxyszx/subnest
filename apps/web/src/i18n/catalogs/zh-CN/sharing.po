@@ -476,7 +476,7 @@ msgstr "续费"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:108
 msgid "sharing.editAccount"
-msgstr "编辑账号资料"
+msgstr "编辑家庭共享"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:61

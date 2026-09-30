@@ -172,7 +172,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           closeLabel={t("sharing.cancel")}
         >
           <DialogHeader className="shrink-0 pr-10">
-            <DialogTitle>{account?.name ?? t("sharing.manageAccount")}</DialogTitle>
+            <DialogTitle>{t("sharing.editAccount")}</DialogTitle>
             <DialogDescription>{account ? `${account.subscription.name} #${account.accountNumber}` : t("sharing.accountSummary")}</DialogDescription>
           </DialogHeader>
 

@@ -1,5 +1,5 @@
 // Dashboard 页面测试保护首页 hook 装配和统计入口，避免页面层绕过 domain 模型直接计算金额。
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -322,7 +322,7 @@ describe("Dashboard page loading state", () => {
     const monthlySpend = screen.getByTestId("dashboard-stat-monthly-spend");
     const sharingProfit = screen.getByTestId("dashboard-stat-sharing-profit");
 
-    expect(grid).toHaveClass("grid", "grid-cols-5", "gap-3", "sm:grid-cols-2", "sm:gap-3", "lg:grid-cols-5");
+    expect(grid).toHaveClass("grid", "grid-cols-2", "gap-2.5", "sm:gap-3", "lg:grid-cols-5");
     expect(monthlySpend).toHaveClass("p-1.5", "sm:p-3", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-1.5", "sm:p-3");
@@ -385,14 +385,54 @@ describe("Dashboard page loading state", () => {
     renderDashboard();
 
     expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥150");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥10");
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
+    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥35");
 
     await user.click(screen.getByRole("button", { name: "下个月" }));
 
     expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
     expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
     expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥35");
+  });
+
+  it("keeps each calendar date's detail items isolated", async () => {
+    const user = userEvent.setup();
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [
+        subscription({ id: "june-18", name: "June 18 service", price: "100", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-18") }),
+        subscription({ id: "june-19", name: "June 19 service", price: "40", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-19") }),
+      ],
+      isPending: false,
+    });
+
+    renderDashboard();
+    await user.click(screen.getByRole("button", { name: "18 -¥100" }));
+
+    const dialog = screen.getByRole("dialog", { name: "2026年6月18日" });
+    expect(within(dialog).getAllByText("June 18 service")).toHaveLength(1);
+    expect(within(dialog).queryByText("June 19 service")).not.toBeInTheDocument();
+  });
+
+  it("projects active sharing income into earlier selected months without crossing the seat start date", async () => {
+    const user = userEvent.setup();
+    const account = sharingAccount();
+    const detail = sharingDetail(account);
+    detail.seats[0] = {
+      ...detail.seats[0]!,
+      monthlyPrice: "25",
+      startDate: assertDateOnly("2026-05-04"),
+      expiresAt: assertDateOnly("2026-07-04"),
+    };
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
+
+    renderDashboard();
+
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
+    await user.click(screen.getByRole("button", { name: "上个月" }));
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
+    await user.click(screen.getByRole("button", { name: "上个月" }));
+    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥0");
   });
 
   it("counts only subscriptions and members due within the next seven days", async () => {

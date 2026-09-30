@@ -103,11 +103,12 @@ describe("UpcomingRenewals", () => {
 
     const price = screen.getByText("USD 10");
     expect(list).toHaveClass("min-w-0", "divide-y", "divide-border");
-    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_auto_auto_auto]");
+    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_auto]");
     expect(row.children[0]).toBe(details);
     expect(details).toHaveClass("min-w-0");
     expect(name).toHaveClass("min-w-0", "truncate");
-    expect(price).toHaveClass("whitespace-nowrap", "tabular-nums");
+    expect(row.children[1]).toHaveClass("grid", "grid-cols-[4.75rem_minmax(6rem,1fr)_3.5rem]");
+    expect(price).toHaveClass("truncate", "whitespace-nowrap", "tabular-nums");
   });
 
   it("uses the reminder-window empty state instead of the old two-week copy", () => {

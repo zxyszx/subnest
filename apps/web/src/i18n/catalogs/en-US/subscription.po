@@ -854,6 +854,11 @@ msgid "subscription.reminderDisabledHelp"
 msgstr "No expiry reminder will be sent, and repeat reminders stay off."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:777
+msgid "subscriptions.sort.more"
+msgstr "More sorting"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:566
 msgid "aiRecognition.imageLimit"
 msgstr "Upload up to {count} images."
@@ -1974,6 +1979,11 @@ msgid "subscription.platformSearchPlaceholder"
 msgstr "Search platforms"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:310
+msgid "subscriptions.searchPlaceholder"
+msgstr "Search serial number, subscription, tags, or notes..."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:345
 msgid "subscriptions.tags.searchPlaceholder"
 msgstr "Search tags..."
@@ -1982,11 +1992,6 @@ msgstr "Search tags..."
 #: src/i18n/descriptors/subscription.ts:376
 msgid "subscriptions.advanced.searchResults"
 msgstr "Search results"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:310
-msgid "subscriptions.searchPlaceholder"
-msgstr "Search subscriptions, tags, or notes..."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:198
@@ -3024,11 +3029,6 @@ msgid "aiRecognition.addMoreImages"
 msgstr "Add more"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:243
-msgid "subscription.renew"
-msgstr "Renew"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:244
 msgid "subscription.renew.title"
 msgstr "Renew “{name}”"
@@ -3042,6 +3042,11 @@ msgstr "Next billing date after renewal"
 #: src/i18n/descriptors/subscription.ts:246
 msgid "subscription.renew.mode"
 msgstr "Renewal mode"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:243
+msgid "subscription.renew"
+msgstr "Renew"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:745

@@ -105,7 +105,7 @@ export const messages = [
   msg({ id: "sharing.email", message: "邮箱" }),
   msg({ id: "sharing.phone", message: "电话" }),
   msg({ id: "sharing.other", message: "其他" }),
-  msg({ id: "sharing.editAccount", message: "编辑账号资料" }),
+  msg({ id: "sharing.editAccount", message: "编辑家庭共享" }),
   msg({ id: "sharing.renewSeat", message: "续费" }),
   msg({ id: "sharing.renewSeatDescription", message: "从原到期日期开始顺延，可提前续费。" }),
   msg({ id: "sharing.confirmRenewal", message: "确认续费" }),

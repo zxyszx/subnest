@@ -164,7 +164,7 @@ function SubscriptionCardMetaFlow({ items }: { items: readonly SubscriptionCardM
   );
 }
 
-function SubscriptionCardGridMeta({ items }: { items: readonly SubscriptionCardMetaItem[] }) {
+function SubscriptionCardGridMeta({ items, action }: { items: readonly SubscriptionCardMetaItem[]; action?: ReactNode }) {
   const relativeBilling = items.find((item) => item.key === "relative-billing");
   const primaryItems = items.filter((item) => item.key === "start-date" || item.key === "billing-date");
   const secondaryItems = items.filter((item) => (
@@ -181,9 +181,12 @@ function SubscriptionCardGridMeta({ items }: { items: readonly SubscriptionCardM
           {secondaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
         </div>
       ) : null}
-      {relativeBilling ? (
-        <div className="flex min-w-0 items-center justify-end border-t border-border/50 pt-1.5">
-          <SubscriptionCardMetaToken item={relativeBilling} />
+      {relativeBilling || action ? (
+        <div className="flex min-h-8 min-w-0 items-center justify-between gap-3 border-t border-border/50 pt-1.5">
+          <div className="min-w-0">
+            {relativeBilling ? <SubscriptionCardMetaToken item={relativeBilling} /> : null}
+          </div>
+          {action}
         </div>
       ) : null}
     </div>
@@ -377,6 +380,21 @@ function SubscriptionCardComponent({
   const handleViewDetails = () => {
     onViewDetails?.(subscription.id);
   };
+  const renewAction = canManualRenew ? (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="pointer-events-auto h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+      onPointerEnter={preloadRenewSubscriptionDialog}
+      onFocus={preloadRenewSubscriptionDialog}
+      onTouchStart={preloadRenewSubscriptionDialog}
+      onClick={() => onRenew?.(subscription.id)}
+    >
+      <RotateCw className="h-3.5 w-3.5" />
+      {t("subscription.renew")}
+    </Button>
+  ) : null;
 
   return (
     <>
@@ -461,18 +479,6 @@ function SubscriptionCardComponent({
               ) : null}
             </div>
 
-            {canManualRenew ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="pointer-events-auto h-8 shrink-0 gap-1.5 px-2 text-xs"
-                onClick={() => onRenew?.(subscription.id)}
-              >
-                <RotateCw className="h-3.5 w-3.5" />
-                {t("subscription.renew")}
-              </Button>
-            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -499,18 +505,6 @@ function SubscriptionCardComponent({
                   <DropdownMenuItem className={CARD_ACTION_MENU_ITEM_CLASSNAME} onClick={() => onAddToCalendar?.(subscription.id)}>
                     <CalendarPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
                     {t("subscription.addToCalendar")}
-                  </DropdownMenuItem>
-                ) : null}
-                {canManualRenew ? (
-                  <DropdownMenuItem
-                    className={CARD_ACTION_MENU_ITEM_CLASSNAME}
-                    onPointerEnter={preloadRenewSubscriptionDialog}
-                    onFocus={preloadRenewSubscriptionDialog}
-                    onTouchStart={preloadRenewSubscriptionDialog}
-                    onClick={() => onRenew?.(subscription.id)}
-                  >
-                    <RotateCw className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    {t("subscription.renew")}
                   </DropdownMenuItem>
                 ) : null}
                 {onTogglePinned ? (
@@ -580,7 +574,7 @@ function SubscriptionCardComponent({
             viewMode === "grid" ? "gap-y-1 border-t border-border/60 pt-2" : "gap-y-1.5",
           )}>
             {viewMode === "grid"
-              ? <SubscriptionCardGridMeta items={metaItems} />
+              ? <SubscriptionCardGridMeta items={metaItems} action={renewAction} />
               : <SubscriptionCardMetaFlow items={metaItems} />}
 
             {viewMode === 'list' && !isBuyout && (
@@ -596,6 +590,10 @@ function SubscriptionCardComponent({
               </div>
             )}
           </div>
+
+          {viewMode === "list" && renewAction ? (
+            <div className="flex justify-end border-t border-border/60 pt-2">{renewAction}</div>
+          ) : null}
 
           {isTrialEndingSoon && subscription.trialEndDate && (
             <div className="flex items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">

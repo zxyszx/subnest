@@ -240,7 +240,7 @@ export const messages = [
   msg({ id: "subscription.cloneDialogTitle", message: "复制订阅" }),
   msg({ id: "subscription.cloneDialogDescription", message: "基于「{name}」创建一条新订阅，保存前可以调整任何字段。" }),
   msg({ id: "subscription.cloneSubmit", message: "创建副本" }),
-  msg({ id: "subscription.renew", message: "续订" }),
+  msg({ id: "subscription.renew", message: "续费" }),
   msg({ id: "subscription.renew.title", message: "续订「{name}」" }),
   msg({ id: "subscription.renew.description", message: "选择续订方式，并确认本次续订后的价格、货币和扣费日期。" }),
   msg({ id: "subscription.renew.mode", message: "续订方式" }),
@@ -307,7 +307,7 @@ export const messages = [
   msg({ id: "subscriptions.exportFailed", message: "导出失败，请稍后重试" }),
   msg({ id: "subscriptions.importData", message: "导入数据" }),
   msg({ id: "subscriptions.aiRecognizeAdd", message: "AI 识别添加" }),
-  msg({ id: "subscriptions.searchPlaceholder", message: "搜索订阅、标签或备注..." }),
+  msg({ id: "subscriptions.searchPlaceholder", message: "搜索序号、订阅、标签或备注..." }),
   msg({ id: "subscriptions.mobileFilters.open", message: "筛选" }),
   msg({ id: "subscriptions.mobileFilters.collapse", message: "收起" }),
   msg({ id: "subscriptions.allCategories", message: "所有分类" }),
@@ -774,4 +774,5 @@ export const messages = [
   msg({ id: "subscription.addToCalendarFeedStatusRetrying", message: "正在重新加载..." }),
   msg({ id: "subscription.addToCalendarOpenSystemLoading", message: "正在打开系统日历..." }),
   msg({ id: "subscription.addToCalendarRegenerateLoading", message: "正在重新生成..." }),
+  msg({ id: "subscriptions.sort.more", message: "其他排序" }),
 ] as const;

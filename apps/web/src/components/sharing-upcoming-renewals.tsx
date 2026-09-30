@@ -46,8 +46,8 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
         <div
           key={seat.id}
           className={cn(
-            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center first:pt-0 last:pb-0",
-            "gap-3 py-3",
+            "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto_auto]",
+            "gap-2 py-2.5 sm:gap-3",
             daysUntilExpiry < 0
               ? "text-destructive"
               : daysUntilExpiry <= 3 && "text-warning",
@@ -73,20 +73,23 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               </>
             )}
           </div>
-          <div className="text-right">
-            <p className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 3 ? "text-warning" : "text-muted-foreground")}>
+          <div className="order-3 col-span-2 grid min-w-0 grid-cols-[minmax(6rem,1fr)_3.5rem] items-end gap-2 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:w-44 sm:bg-transparent sm:p-0">
+            <div className="text-right">
+              <p className="text-[11px] text-muted-foreground">{t("subscription.field.price")}</p>
+              <p className="mt-0.5 truncate whitespace-nowrap text-right text-sm font-semibold tabular-nums text-foreground">
+                {seat.currentReceivable && seat.currency
+                  ? formatCurrency(seat.currentReceivable.amount, seat.currentReceivable.currency)
+                  : seat.monthlyPrice && seat.currency
+                    ? formatCurrency(Number(seat.monthlyPrice) * (seat.billingMonths ?? 1), seat.currency)
+                    : "-"}
+              </p>
+            </div>
+            <p className={cn("pb-0.5 text-right text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 3 ? "text-warning" : "text-muted-foreground")}>
               {daysUntilExpiry < 0
                 ? t("subscription.card.expiredDays", { days: Math.abs(daysUntilExpiry) })
                 : daysUntilExpiry === 0
                   ? t("upcoming.todayShort")
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
-            </p>
-            <p className="mt-0.5 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-foreground">
-              {seat.currentReceivable && seat.currency
-                ? formatCurrency(seat.currentReceivable.amount, seat.currentReceivable.currency)
-                : seat.monthlyPrice && seat.currency
-                  ? formatCurrency(Number(seat.monthlyPrice) * (seat.billingMonths ?? 1), seat.currency)
-                  : "-"}
             </p>
           </div>
           <Button asChild type="button" variant="outline" size="sm" className="shrink-0 gap-1.5">

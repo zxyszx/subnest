@@ -153,6 +153,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
       </TooltipProvider>,
     );
 
+    expect(screen.getByRole("dialog", { name: "sharing.editAccount" })).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "sharing.editSeat" })[0]!);
     expect(screen.getByRole("button", { name: "sharing.monthly" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "sharing.quarterly" })).toBeInTheDocument();

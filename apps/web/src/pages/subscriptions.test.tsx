@@ -339,6 +339,23 @@ describe("Subscriptions page sorting", () => {
     expect(screen.queryByRole("button", { name: "添加第一个订阅" })).not.toBeInTheDocument();
   });
 
+  it("matches a numeric search against the complete serial number only", async () => {
+    const user = userEvent.setup();
+    mocks.useInfiniteSubscriptions.mockReturnValue({
+      subscriptions: [
+        subscription({ id: "serial-1", name: "Serial One", accountNumber: 1 }),
+        subscription({ id: "serial-11", name: "Serial Eleven", accountNumber: 11 }),
+        subscription({ id: "serial-19", name: "Serial Nineteen", accountNumber: 19 }),
+      ],
+      isPending: false,
+    });
+
+    renderSubscriptionsPage();
+    await user.type(screen.getByRole("searchbox"), "1");
+
+    await waitFor(() => expect(visibleSubscriptionNames()).toEqual(["Serial One"]));
+  });
+
   it("preserves the structured collection-limit error when index search fails", async () => {
     const user = userEvent.setup();
     const refetch = vi.fn();
@@ -475,7 +492,7 @@ describe("Subscriptions page sorting", () => {
 
     expect(container.querySelector(".app-page")).toBeInTheDocument();
     expect(container.querySelector("main.app-main")).toBeInTheDocument();
-    const searchInput = screen.getByPlaceholderText("搜索订阅、标签或备注...");
+    const searchInput = screen.getByPlaceholderText("搜索序号、订阅、标签或备注...");
     expect(searchInput).toHaveAttribute("type", "search");
     expect(searchInput).toHaveAttribute("name", "subscription-search");
     expect(searchInput).toHaveAttribute("enterkeyhint", "search");
@@ -740,7 +757,7 @@ describe("Subscriptions page virtualization", () => {
       expect(visibleSubscriptionNames()[0]).toBe("Service 089");
     });
 
-    await user.type(screen.getByPlaceholderText("搜索订阅、标签或备注..."), "Service 042");
+    await user.type(screen.getByPlaceholderText("搜索序号、订阅、标签或备注..."), "Service 042");
 
     await waitFor(() => {
       expect(visibleSubscriptionNames()).toEqual(["Service 042"]);

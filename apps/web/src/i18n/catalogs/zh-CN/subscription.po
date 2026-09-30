@@ -854,6 +854,11 @@ msgid "subscription.reminderDisabledHelp"
 msgstr "关闭后不会发送到期提醒，也不会启用重复提醒。"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:777
+msgid "subscriptions.sort.more"
+msgstr "其他排序"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:566
 msgid "aiRecognition.imageLimit"
 msgstr "最多上传 {count} 张图片。"
@@ -1974,6 +1979,11 @@ msgid "subscription.platformSearchPlaceholder"
 msgstr "搜索平台"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:310
+msgid "subscriptions.searchPlaceholder"
+msgstr "搜索序号、订阅、标签或备注..."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:345
 msgid "subscriptions.tags.searchPlaceholder"
 msgstr "搜索标签..."
@@ -1982,11 +1992,6 @@ msgstr "搜索标签..."
 #: src/i18n/descriptors/subscription.ts:376
 msgid "subscriptions.advanced.searchResults"
 msgstr "搜索结果"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:310
-msgid "subscriptions.searchPlaceholder"
-msgstr "搜索订阅、标签或备注..."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:198
@@ -3024,11 +3029,6 @@ msgid "aiRecognition.addMoreImages"
 msgstr "继续添加"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:243
-msgid "subscription.renew"
-msgstr "续订"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:244
 msgid "subscription.renew.title"
 msgstr "续订「{name}」"
@@ -3042,6 +3042,11 @@ msgstr "续订后下次扣费日"
 #: src/i18n/descriptors/subscription.ts:246
 msgid "subscription.renew.mode"
 msgstr "续订方式"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:243
+msgid "subscription.renew"
+msgstr "续费"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:745

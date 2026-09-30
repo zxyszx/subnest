@@ -2351,6 +2351,7 @@ export const MESSAGE_KEYS = [
   "subscriptions.sort.label",
   "subscriptions.sort.monthlyCostAsc",
   "subscriptions.sort.monthlyCostDesc",
+  "subscriptions.sort.more",
   "subscriptions.sort.nameAsc",
   "subscriptions.sort.nameDesc",
   "subscriptions.sort.priceAsc",

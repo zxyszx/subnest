@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { formatCompactCurrencyAmount } from "@/lib/currency";
-import { compareDateOnly, dateOnlyToLocalDate, type DateOnly } from "@/lib/time/date-only";
+import { assertDateOnly, compareDateOnly, dateOnlyToLocalDate, type DateOnly } from "@/lib/time/date-only";
 import { getSubscriptionCalendarRange } from "@/modules/subscriptions/domain/subscription-calendar-range";
 import { isOneTimeBuyout } from "@/lib/subscription-billing";
 import { addBillingCycles } from "@renewlet/shared/subscription-renewal";
@@ -32,13 +32,15 @@ interface DayFinancials {
   items: Array<{ id: string; label: string; amount: number; kind: "spend" | "income" }>;
 }
 
-const EMPTY_DAY: DayFinancials = {
-  subscriptionCount: 0,
-  subscriptionSpend: 0,
-  memberCount: 0,
-  memberIncome: 0,
-  items: [],
-};
+function createEmptyDay(): DayFinancials {
+  return {
+    subscriptionCount: 0,
+    subscriptionSpend: 0,
+    memberCount: 0,
+    memberIncome: 0,
+    items: [],
+  };
+}
 
 const MAX_PROJECTED_OCCURRENCES = 500;
 
@@ -76,7 +78,7 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
 
   const financialsByDate = useMemo(() => {
     const values = new Map<string, DayFinancials>();
-    const getDay = (date: string) => values.get(date) ?? { ...EMPTY_DAY };
+    const getDay = (date: string) => values.get(date) ?? createEmptyDay();
 
     const addSubscriptionOccurrence = (subscription: SubscriptionCollectionItem, date: string) => {
       const day = getDay(date);
@@ -114,16 +116,32 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         ? Number(seat.currentReceivable.amount)
         : Number(seat.monthlyPrice ?? 0) * (seat.billingMonths ?? 1);
       const amount = convert(periodAmount, seat.currency, defaultCurrency);
-      let dueDate = seat.expiresAt;
+      let dueDate = assertDateOnly(seat.expiresAt);
       const months = Math.max(1, seat.billingMonths ?? 1);
+      const addSeatOccurrence = (date: DateOnly) => {
+        const day = getDay(date);
+        day.memberCount += 1;
+        day.memberIncome += amount;
+        day.items.push({ id: `seat:${seat.id}:${date}`, label: seat.memberName!, amount, kind: "income" });
+        values.set(date, day);
+      };
+      const previousDates: DateOnly[] = [];
+      let previousDate = format(subMonths(dateOnlyToLocalDate(dueDate), months), "yyyy-MM-dd") as DateOnly;
+      for (
+        let occurrence = 0;
+        compareDateOnly(previousDate, range.from) >= 0
+          && (!seat.startDate || compareDateOnly(previousDate, seat.startDate) >= 0)
+          && occurrence < MAX_PROJECTED_OCCURRENCES;
+        occurrence += 1
+      ) {
+        previousDates.push(previousDate);
+        const nextPreviousDate = format(subMonths(dateOnlyToLocalDate(previousDate), months), "yyyy-MM-dd") as DateOnly;
+        if (compareDateOnly(nextPreviousDate, previousDate) >= 0) break;
+        previousDate = nextPreviousDate;
+      }
+      previousDates.reverse().forEach(addSeatOccurrence);
       for (let occurrence = 0; compareDateOnly(dueDate, range.to) <= 0 && occurrence < MAX_PROJECTED_OCCURRENCES; occurrence += 1) {
-        if (compareDateOnly(dueDate, range.from) >= 0) {
-          const day = getDay(dueDate);
-          day.memberCount += 1;
-          day.memberIncome += amount;
-          day.items.push({ id: `seat:${seat.id}:${dueDate}`, label: seat.memberName, amount, kind: "income" });
-          values.set(dueDate, day);
-        }
+        if (compareDateOnly(dueDate, range.from) >= 0) addSeatOccurrence(dueDate);
         dueDate = format(addMonths(dateOnlyToLocalDate(dueDate), months), "yyyy-MM-dd") as DateOnly;
       }
     }));
@@ -174,12 +192,12 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
 
   return (
     <section className="rounded-xl border border-border bg-card p-3 shadow-card sm:p-4" aria-labelledby="dashboard-calendar-title">
-      <div className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-0.5">
-        <h2 id="dashboard-calendar-title" className="flex min-w-0 items-center gap-2 text-base font-semibold text-foreground sm:text-lg">
+      <div className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1">
+        <h2 id="dashboard-calendar-title" className="col-span-2 flex min-w-0 items-center gap-2 text-base font-semibold text-foreground sm:col-span-1 sm:col-start-1 sm:row-start-1 sm:text-lg">
           <CalendarDays className="h-4 w-4 shrink-0 text-primary sm:h-5 sm:w-5" />
           <span className="truncate">{t("dashboard.renewalCalendar")}</span>
         </h2>
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="col-span-2 flex items-center justify-end gap-1 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:gap-2">
           <Button type="button" variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" aria-label={t("calendar.previousMonth")} onClick={() => setCurrentMonth((month) => subMonths(month, 1))}><ChevronLeft /></Button>
           <Popover
             open={monthPickerOpen}
@@ -320,44 +338,46 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         <p className="col-span-2 truncate text-xs text-muted-foreground sm:text-sm">{t("dashboard.renewalCalendarDescription")}</p>
       </div>
 
-      <div className="mb-0.5 grid grid-cols-7">
-        {weekdayLabels.map((label) => <div key={label} className="py-0.5 text-center text-xs font-semibold text-muted-foreground">{label}</div>)}
-      </div>
-      <div className="grid grid-cols-7 overflow-hidden bg-card">
-        {calendarDays.map((day) => {
-          const date = format(day, "yyyy-MM-dd");
-          const financials = financialsByDate.get(date) ?? EMPTY_DAY;
-          const belongsToMonth = isSameMonth(day, currentMonth);
-          const hasActivity = belongsToMonth && (financials.subscriptionCount > 0 || financials.memberCount > 0);
-          const spendLabel = financials.subscriptionCount > 0
-            ? formatCompactCurrencyAmount(financials.subscriptionSpend, defaultCurrency, locale)
-            : "";
-          const incomeLabel = financials.memberCount > 0
-            ? formatCompactCurrencyAmount(financials.memberIncome, defaultCurrency, locale)
-            : "";
-          return (
-            <button
-              type="button"
-              key={date}
-              className={cn(
-                "min-h-12 min-w-0 overflow-hidden rounded-md bg-card p-1 text-center transition-colors hover:bg-muted/45 sm:min-h-11 sm:px-1 sm:py-1.5",
-                !belongsToMonth && "pointer-events-none bg-muted/20 text-muted-foreground/50",
-              )}
-              disabled={!belongsToMonth}
-              onClick={() => setSelectedDate(date)}
-            >
-              <div className="flex justify-center">
-                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold tabular-nums", isToday(day) && "bg-primary text-primary-foreground")}>{format(day, "d")}</span>
-              </div>
-              {hasActivity ? (
-                <div className="mt-0.5 grid min-w-0 grid-cols-2 gap-0.5 overflow-hidden text-[8px] font-bold leading-3 sm:gap-1 sm:text-[10px]">
-                  <span className="min-w-0 truncate text-left tabular-nums text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{spendLabel ? `-${spendLabel}` : ""}</span>
-                  <span className="min-w-0 truncate text-right tabular-nums text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{incomeLabel ? `+${incomeLabel}` : ""}</span>
+      <div className="overflow-hidden rounded-lg border border-border">
+        <div className="grid grid-cols-7 border-b border-border bg-muted/35">
+          {weekdayLabels.map((label) => <div key={label} className="py-1.5 text-center text-xs font-semibold text-muted-foreground">{label}</div>)}
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-border">
+          {calendarDays.map((day) => {
+            const date = format(day, "yyyy-MM-dd");
+            const financials = financialsByDate.get(date) ?? createEmptyDay();
+            const belongsToMonth = isSameMonth(day, currentMonth);
+            const hasActivity = belongsToMonth && (financials.subscriptionCount > 0 || financials.memberCount > 0);
+            const spendLabel = financials.subscriptionCount > 0
+              ? formatCompactCurrencyAmount(financials.subscriptionSpend, defaultCurrency, locale)
+              : "";
+            const incomeLabel = financials.memberCount > 0
+              ? formatCompactCurrencyAmount(financials.memberIncome, defaultCurrency, locale)
+              : "";
+            return (
+              <button
+                type="button"
+                key={date}
+                className={cn(
+                  "min-h-12 min-w-0 overflow-hidden bg-card px-1.5 py-1 text-center transition-colors hover:bg-muted/45 sm:px-2",
+                  !belongsToMonth && "pointer-events-none bg-muted/45 text-muted-foreground/50",
+                )}
+                disabled={!belongsToMonth}
+                onClick={() => setSelectedDate(date)}
+              >
+                <div className="flex justify-center">
+                  <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold tabular-nums", isToday(day) && "bg-primary text-primary-foreground")}>{format(day, "d")}</span>
                 </div>
-              ) : null}
-            </button>
-          );
-        })}
+                {hasActivity ? (
+                  <div className="mt-1 grid min-w-0 grid-cols-2 gap-1 overflow-hidden text-[9px] font-semibold leading-3 sm:text-[11px]">
+                    <span className="min-w-0 truncate text-left tabular-nums text-destructive" title={financials.subscriptionCount > 0 ? t("dashboard.calendarSpend", { amount: formatCurrency(financials.subscriptionSpend, defaultCurrency) }) : undefined}>{spendLabel ? `-${spendLabel}` : ""}</span>
+                    <span className="min-w-0 truncate text-right tabular-nums text-emerald-600 dark:text-emerald-400" title={financials.memberCount > 0 ? t("dashboard.calendarIncome", { amount: formatCurrency(financials.memberIncome, defaultCurrency) }) : undefined}>{incomeLabel ? `+${incomeLabel}` : ""}</span>
+                  </div>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="mt-2 grid grid-cols-3 divide-x divide-border border-t border-border pt-2">
         {monthlySummary.map((item) => (

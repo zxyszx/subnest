@@ -371,7 +371,7 @@ describe("SubscriptionDetailDialog", () => {
     expect(within(actions).getAllByRole("button").map((button) => button.textContent)).toEqual([
       "关闭",
       "添加到日历",
-      "续订",
+      "续费",
       "编辑",
     ]);
   });

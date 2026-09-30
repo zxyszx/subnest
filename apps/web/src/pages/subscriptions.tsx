@@ -38,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem } from '@/types/subscription';
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel, CalendarClock, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -102,6 +102,12 @@ const SORT_OPTION_LABEL_KEYS: Record<SubscriptionSortOption, MessageKey> = {
   account_asc: "subscriptions.sort.accountAsc",
   account_desc: "subscriptions.sort.accountDesc",
 };
+const QUICK_SORT_OPTIONS = new Set<SubscriptionSortOption>([
+  "renewal_asc",
+  "renewal_desc",
+  "account_asc",
+  "account_desc",
+]);
 
 /** 订阅列表页组件。 */
 const Subscriptions = () => {
@@ -207,7 +213,7 @@ const Subscriptions = () => {
   // 先选择分页或全库索引，再只排序实际展示的数据；索引模式不能附带重排未展示的分页列表。
   const filteredSubscriptions = useMemo(() => {
     const accountSubscriptions = numericAccountSearch
-      ? displaySourceSubscriptions.filter((subscription) => String(subscription.accountNumber ?? 1).includes(searchQuery.trim()))
+      ? displaySourceSubscriptions.filter((subscription) => String(subscription.accountNumber ?? 1) === searchQuery.trim())
       : displaySourceSubscriptions;
     const platformSubscriptions = selectedPlatform
       ? accountSubscriptions.filter(
@@ -280,9 +286,34 @@ const Subscriptions = () => {
   } = useSubscriptionDetailDialog(displaySourceSubscriptions);
   const calendarDialog = useSubscriptionCalendarDialog(displaySourceSubscriptions);
   const sortOptionLabel = t(SORT_OPTION_LABEL_KEYS[sortOption]);
-  const sortOptionItems = Object.entries(SORT_OPTION_LABEL_KEYS).map(([value, key]) => (
-    <SelectItem key={value} value={value}>{t(key)}</SelectItem>
-  ));
+  const isQuickSort = QUICK_SORT_OPTIONS.has(sortOption);
+  const sortOptionItems = Object.entries(SORT_OPTION_LABEL_KEYS)
+    .filter(([value]) => !QUICK_SORT_OPTIONS.has(value as SubscriptionSortOption))
+    .map(([value, key]) => <SelectItem key={value} value={value}>{t(key)}</SelectItem>);
+  const quickSortControls = (
+    <div className="grid shrink-0 grid-cols-2 gap-2" aria-label={t("subscriptions.sort.label")}>
+      <Button
+        type="button"
+        variant={sortOption === "renewal_asc" || sortOption === "renewal_desc" ? "secondary" : "outline"}
+        className="h-10 min-w-0 gap-1.5 border-border px-3 text-xs"
+        aria-pressed={sortOption === "renewal_asc" || sortOption === "renewal_desc"}
+        onClick={() => setSortOption(sortOption === "renewal_asc" ? "renewal_desc" : "renewal_asc")}
+      >
+        <CalendarClock className="h-4 w-4" />
+        <span className="whitespace-nowrap">{t(SORT_OPTION_LABEL_KEYS[sortOption === "renewal_desc" ? "renewal_desc" : "renewal_asc"])}</span>
+      </Button>
+      <Button
+        type="button"
+        variant={sortOption === "account_asc" || sortOption === "account_desc" ? "secondary" : "outline"}
+        className="h-10 min-w-0 gap-1.5 border-border px-3 text-xs"
+        aria-pressed={sortOption === "account_asc" || sortOption === "account_desc"}
+        onClick={() => setSortOption(sortOption === "account_asc" ? "account_desc" : "account_asc")}
+      >
+        <Hash className="h-4 w-4" />
+        <span className="whitespace-nowrap">{t(SORT_OPTION_LABEL_KEYS[sortOption === "account_desc" ? "account_desc" : "account_asc"])}</span>
+      </Button>
+    </div>
+  );
   const handleLoadMore = useCallback(() => {
     void fetchNextPage();
   }, [fetchNextPage]);
@@ -448,15 +479,20 @@ const Subscriptions = () => {
                     </Suspense>
                   ) : null}
 
+                {quickSortControls}
+
                 <Select value={sortOption} onValueChange={(v) => setSortOption(v as SubscriptionSortOption)}>
                   <SelectTrigger
                     aria-label={t("subscriptions.sort.label")}
                     className="h-11 border-border bg-secondary"
                     tooltipContent={sortOptionLabel}
                   >
-                    <SelectValue placeholder={t("subscriptions.sort.label")} />
+                    <SelectValue placeholder={t("subscriptions.sort.label")}>
+                      {isQuickSort ? t("subscriptions.sort.more") : sortOptionLabel}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.sort.label")}>
+                    {isQuickSort ? <SelectItem value={sortOption} className="hidden">{sortOptionLabel}</SelectItem> : null}
                     {sortOptionItems}
                   </SelectContent>
                 </Select>
@@ -466,6 +502,7 @@ const Subscriptions = () => {
           ) : (
             <>
               <div className={subscriptionFilterLayout.desktopRow} data-testid="desktop-filter-toolbar">
+                {quickSortControls}
                 <div className={subscriptionFilterLayout.desktopSearch}>
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -485,9 +522,12 @@ const Subscriptions = () => {
                     className={subscriptionFilterLayout.desktopSortTrigger}
                     tooltipContent={sortOptionLabel}
                   >
-                    <SelectValue placeholder={t("subscriptions.sort.label")} />
+                    <SelectValue placeholder={t("subscriptions.sort.label")}>
+                      {isQuickSort ? t("subscriptions.sort.more") : sortOptionLabel}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent mobileTitle={t("subscriptions.sort.label")}>
+                    {isQuickSort ? <SelectItem value={sortOption} className="hidden">{sortOptionLabel}</SelectItem> : null}
                     {sortOptionItems}
                   </SelectContent>
                 </Select>

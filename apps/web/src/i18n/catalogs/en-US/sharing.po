@@ -476,7 +476,7 @@ msgstr "Renew"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:108
 msgid "sharing.editAccount"
-msgstr "Edit account details"
+msgstr "Edit family sharing"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:61
