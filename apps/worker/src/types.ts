@@ -227,6 +227,8 @@ export type SubscriptionCollectionRow = Pick<SubscriptionRow,
   | "reminder_days"
   | "tags_json"
   | "cost_sharing_json"
+  | "family_sharing_enabled"
+  | "sharing_login_account"
   | "created_at"
 >;
 

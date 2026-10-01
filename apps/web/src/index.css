@@ -76,8 +76,8 @@
   --animate-fade-in: fade-in 0.4s ease-out;
   --animate-slide-in: slide-in 0.3s ease-out;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-renewal-warning: renewal-warning 2s ease-in-out infinite;
-  --animate-renewal-danger: renewal-danger 1.4s ease-in-out infinite;
+  --animate-renewal-warning: renewal-warning 3.2s ease-in-out infinite;
+  --animate-renewal-danger: renewal-danger 2.4s ease-in-out infinite;
 
   @keyframes accordion-down {
     from {
@@ -135,7 +135,7 @@
       box-shadow: 0 0 0 0 hsl(var(--warning) / 0);
     }
     50% {
-      box-shadow: 0 0 14px 1px hsl(var(--warning) / 0.24);
+      box-shadow: 0 0 8px 1px hsl(var(--warning) / 0.18);
     }
   }
 
@@ -145,7 +145,7 @@
       box-shadow: 0 0 0 0 hsl(var(--destructive) / 0);
     }
     50% {
-      box-shadow: 0 0 16px 2px hsl(var(--destructive) / 0.3);
+      box-shadow: 0 0 10px 1px hsl(var(--destructive) / 0.22);
     }
   }
 }

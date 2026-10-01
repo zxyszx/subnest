@@ -103,7 +103,6 @@ describe("SubscriptionCard", () => {
     const dateGroup = screen.getByTestId("subscription-card-meta-date-group");
     const startDateMeta = screen.getByTestId("subscription-card-meta-start-date");
     const billingDateMeta = screen.getByTestId("subscription-card-meta-billing-date");
-    const dailyAverageMeta = screen.getByTestId("subscription-card-meta-daily-average");
     const paymentMethodMeta = screen.getByTestId("subscription-card-meta-payment-method");
     const badgeFlow = screen.getByTestId("subscription-card-badge-flow");
 
@@ -118,10 +117,8 @@ describe("SubscriptionCard", () => {
     expect(dateGroup).toContainElement(paymentMethodMeta);
     expect(metaFlow).toContainElement(billingDateMeta);
     expect(metaFlow).toContainElement(paymentMethodMeta);
-    expect(metaFlow).toContainElement(dailyAverageMeta);
     expect(dateGroup).not.toContainElement(billingDateMeta);
-    expect(dateGroup).not.toContainElement(dailyAverageMeta);
-    expect(dailyAverageMeta).toHaveClass("tabular-nums");
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
     expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
     expect(within(paymentMethodMeta).getByText("信用卡 · •••• 6109")).toBeInTheDocument();
@@ -176,6 +173,16 @@ describe("SubscriptionCard", () => {
 
     expect(screen.getByRole("heading", { name: "服务器" })).toBeInTheDocument();
     expect(screen.getByText("搬瓦工")).toBeInTheDocument();
+  });
+
+  it("shows the family account only when the private collection includes its enabled summary", () => {
+    const enabled = renderSubscriptionCard({ familySharingLoginAccount: "netflix17@example.com" });
+
+    expect(screen.getByText("netflix17@example.com")).toBeInTheDocument();
+    enabled.unmount();
+
+    renderSubscriptionCard({ familySharingLoginAccount: undefined });
+    expect(screen.queryByText("netflix17@example.com")).not.toBeInTheDocument();
   });
 
   it("uses a yellow renewal treatment from four to seven days", () => {
@@ -519,7 +526,7 @@ describe("SubscriptionCard", () => {
     expect(within(banner).getByText("28 天后续费")).toBeInTheDocument();
     expect(within(banner).getByText("2026/6/15")).toBeInTheDocument();
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("开始日期2026/5/15");
-    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
   });
 
   it("shows a stable placeholder when a recurring subscription has an unknown start date", () => {
@@ -531,7 +538,6 @@ describe("SubscriptionCard", () => {
 
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("开始日期-");
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("28 天后续费·2026/6/15");
-    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
   });
 
   it("keeps start date, billing date, payment method, and relative days in the intended order", () => {
@@ -547,7 +553,7 @@ describe("SubscriptionCard", () => {
     expect(within(banner).getByText("2026/6/15")).toBeInTheDocument();
     expect(within(details).getByText("2026/5/15")).toBeInTheDocument();
     expect(within(details).getByText(mocks.creditCardLabel)).toBeInTheDocument();
-    expect(metaFlow.textContent).toContain("日均 $5.3");
+    expect(metaFlow.textContent).not.toContain("日均");
     expect(banner.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -562,7 +568,6 @@ describe("SubscriptionCard", () => {
     const paymentMethodText = within(paymentMethodMeta).getByText(mocks.longPaymentMethodLabel);
 
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("15 天后续费·2026/6/2");
-    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
     expect(metaFlow).toContainElement(paymentMethodMeta);
     expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
@@ -576,7 +581,6 @@ describe("SubscriptionCard", () => {
 
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("15 天后续费·2026/6/2");
-    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
     expect(screen.getByTestId("subscription-card-meta-payment-method")).toHaveTextContent("未设置支付方式");
     expect(within(metaFlow).queryByText(mocks.creditCardLabel)).not.toBeInTheDocument();
   });
@@ -592,15 +596,6 @@ describe("SubscriptionCard", () => {
 
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("75 天后到期·2026/8/1");
-    expect(screen.getByText("日均 $1")).toBeInTheDocument();
-  });
-
-  it("keeps long daily amounts constrained inside the shared metadata flow", () => {
-    renderSubscriptionCard({ price: "1000000000" });
-
-    const dailyAverageMeta = screen.getByTestId("subscription-card-meta-daily-average");
-    expect(dailyAverageMeta).toHaveClass("min-w-0", "max-w-full", "tabular-nums");
-    expect(within(dailyAverageMeta).getByText("日均 $33,333,333.33")).toBeInTheDocument();
   });
 
   it("renders buyout purchase dates without relative renewal days", () => {
@@ -610,19 +605,19 @@ describe("SubscriptionCard", () => {
 
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
     expect(within(metaFlow).getByText("购买日期: 2026/5/15")).toBeInTheDocument();
-    expect(within(metaFlow).getByText("持有日均 $39.75")).toBeInTheDocument();
+    expect(within(metaFlow).queryByText(/日均/)).not.toBeInTheDocument();
     expect(within(metaFlow).queryByText("28 天后续费")).not.toBeInTheDocument();
     expect(within(metaFlow).queryByText("到期: 2026/6/15")).not.toBeInTheDocument();
     expect(screen.getAllByText("长期有效").length).toBeGreaterThan(0);
   });
 
-  it("keeps incurred buyout cost visible for paused and cancelled records but hides future purchases", () => {
+  it("keeps daily averages hidden for buyout records in every state", () => {
     const paused = renderSubscriptionCard({ billingCycle: "one-time", status: "paused" });
-    expect(screen.getByText("持有日均 $39.75")).toBeInTheDocument();
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
     paused.unmount();
 
     const cancelled = renderSubscriptionCard({ billingCycle: "one-time", status: "cancelled" });
-    expect(screen.getByText("持有日均 $39.75")).toBeInTheDocument();
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
     cancelled.unmount();
 
     renderSubscriptionCard({ billingCycle: "one-time", startDate: assertDateOnly("2026-05-19"), nextBillingDate: assertDateOnly("2026-05-19") });
@@ -678,7 +673,7 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ reminderDays: -1 }, {}, { viewMode: "list" });
 
     expect(screen.getByText("默认提醒：提前 5 天")).toBeInTheDocument();
-    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
   });
 
   it("renders disabled reminder days", () => {

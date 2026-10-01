@@ -236,7 +236,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           layout="frame"
-          className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-5xl gap-3 overflow-hidden p-4 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:p-5"
+          className={mode === "seats"
+            ? "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"
+            : "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-2xl gap-3 overflow-hidden p-4 sm:p-5"}
           dismissMode="explicit"
           closeLabel={t("sharing.cancel")}
         >
@@ -250,9 +252,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           ) : detailQuery.isError || !detail ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadDetailFailed")}</div>
           ) : (
-            <div className={mode === "seats"
-              ? "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y sm:flex sm:flex-col sm:gap-3 sm:space-y-0 sm:overflow-hidden"
-              : "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y"}
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y"
               data-testid="sharing-account-scroll"
             >
               <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden rounded-md border sm:grid-cols-2 lg:grid-cols-5">
@@ -306,12 +306,12 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 </div>
               </section>
 
-              {mode === "seats" ? <section className="flex min-h-0 flex-1 flex-col">
+              {mode === "seats" ? <section>
                 <div className="mb-2 flex shrink-0 items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
                   <span className="text-xs tabular-nums text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</span>
                 </div>
-                <div className="hidden min-h-0 flex-1 overflow-auto rounded-md border sm:block">
+                <div className="hidden max-h-[min(24rem,45vh)] overflow-auto rounded-md border sm:block">
                   <table className="w-full min-w-200 text-left text-sm">
                     <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                       <tr>

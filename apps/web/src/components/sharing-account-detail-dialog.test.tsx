@@ -223,6 +223,19 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(screen.getByTestId("sharing-seat-mobile-list")).not.toHaveClass("overflow-y-auto");
   });
 
+  it("keeps the seat manager content-sized with a bounded desktop list", () => {
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "sharing.editAccount" });
+    expect(dialog).toHaveClass("h5-dialog-auto-frame", "max-w-5xl");
+    expect(dialog).not.toHaveClass("h-[calc(100dvh-1rem)]");
+    expect(screen.getByRole("table").parentElement).toHaveClass("max-h-[min(24rem,45vh)]");
+  });
+
   it("selects a searchable target account before exposing its vacant seats", async () => {
     const user = userEvent.setup();
     const movingSeat: SharingSeat = {

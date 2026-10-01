@@ -114,6 +114,26 @@ describe("Cloudflare subscription mapper", () => {
     },
   );
 
+  it("exposes only the enabled family-sharing login account in collection items", () => {
+    const enabled = toSubscriptionRow("sub_family", USER_ID, subscriptionBody({
+      familySharing: {
+        enabled: true,
+        loginAccount: " family@example.com ",
+        password: "secret-password",
+        verificationLink: "https://example.com/inbox",
+        capacity: 5,
+      },
+    }), "2026-06-05T00:00:00.000Z", "2026-06-05T00:00:00.000Z");
+    const collectionItem = toApiSubscriptionCollectionItem(enabled);
+
+    expect(collectionItem.familySharingLoginAccount).toBe("family@example.com");
+    expect(collectionItem).not.toHaveProperty("familySharing");
+    expect(collectionItem).not.toHaveProperty("sharingEncryptedCredentials");
+
+    const disabled = toSubscriptionRow("sub_no_family", USER_ID, subscriptionBody({ familySharing: null }), "2026-06-05T00:00:00.000Z", "2026-06-05T00:00:00.000Z");
+    expect(toApiSubscriptionCollectionItem(disabled)).not.toHaveProperty("familySharingLoginAccount");
+  });
+
   it("persists and exposes custom cycle units", () => {
     const row = toSubscriptionRow("sub_custom", "usr_custom", subscriptionBody({
       billingCycle: "custom",

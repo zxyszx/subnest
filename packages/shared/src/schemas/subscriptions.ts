@@ -367,6 +367,8 @@ const apiSubscriptionCollectionItemShape = {
   trialEndDate: dateInputSchema.optional(),
   reminderDays: reminderDaysSchema,
   costSharing: costSharingSchema.optional(),
+  // 私有列表只暴露卡片所需账号摘要；密码、验证链接和容量仍仅存在于详情响应。
+  familySharingLoginAccount: z.string().trim().min(1).max(320).optional(),
   tags: z.array(z.string()).default([]),
 } satisfies z.ZodRawShape;
 

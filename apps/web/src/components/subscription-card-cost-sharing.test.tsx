@@ -81,6 +81,6 @@ describe("SubscriptionCard cost sharing", () => {
     );
 
     expect(screen.getByText(/你的份额\s*¥0 CNY/)).toBeInTheDocument();
-    expect(screen.getByText("日均 ¥1.67")).toBeInTheDocument();
+    expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
   });
 });

@@ -114,6 +114,8 @@ export const SUBSCRIPTION_COLLECTION_COLUMN_NAMES = [
   "reminder_days",
   "tags_json",
   "cost_sharing_json",
+  "family_sharing_enabled",
+  "sharing_login_account",
   "created_at",
 ] as const satisfies readonly (keyof SubscriptionCollectionRow)[];
 
@@ -379,6 +381,9 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
     reminderDays: row.reminder_days,
     tags: parseStringArray(row.tags_json),
     ...(Object.keys(costSharing).length > 0 ? { costSharing } : {}),
+    ...(intToBool(row.family_sharing_enabled) && row.sharing_login_account?.trim()
+      ? { familySharingLoginAccount: row.sharing_login_account.trim() }
+      : {}),
   };
   return apiSubscriptionCollectionItemSchema.parse(normalized);
 }

@@ -57,6 +57,7 @@ type SubscriptionCollectionBaseForService = Pick<
   | "trialEndDate"
   | "reminderDays"
   | "costSharing"
+  | "familySharingLoginAccount"
   | "tags"
 >;
 
@@ -135,6 +136,7 @@ function fromApiSubscriptionCollectionBase(
     trialEndDate: parsedRow.trialEndDate ? assertDateOnly(parsedRow.trialEndDate) : undefined,
     reminderDays: parsedRow.reminderDays,
     costSharing: parsedRow.costSharing,
+    familySharingLoginAccount: parsedRow.familySharingLoginAccount,
     tags: parsedRow.tags ?? [],
   };
 }

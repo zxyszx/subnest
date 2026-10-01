@@ -67,6 +67,55 @@ func TestSubscriptionCollectionMapperMatchesSharedCycleFixtures(t *testing.T) {
 	}
 }
 
+func TestSubscriptionCollectionMapperExposesOnlyEnabledFamilyLoginAccount(t *testing.T) {
+	app := newSchemaTestApp(t)
+	if err := ensureSchema(app); err != nil {
+		t.Fatal(err)
+	}
+	registerRecordHooks(app)
+	user, _ := createRouteTestUser(t, app, "subscription-family-summary")
+	enabled := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
+		"familySharingEnabled":        true,
+		"sharingLoginAccount":         "family@example.com",
+		"sharingEncryptedCredentials": "encrypted-secret",
+		"sharingVerificationLink":     "https://example.com/inbox",
+		"sharingCapacity":             5,
+	})
+
+	encoded, err := json.Marshal(subscriptionCollectionAPIFromRecord(enabled))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var actual map[string]interface{}
+	if err := json.Unmarshal(encoded, &actual); err != nil {
+		t.Fatal(err)
+	}
+	if actual["familySharingLoginAccount"] != "family@example.com" {
+		t.Fatalf("familySharingLoginAccount = %#v", actual["familySharingLoginAccount"])
+	}
+	for _, sensitiveField := range []string{"familySharing", "sharingEncryptedCredentials", "sharingVerificationLink"} {
+		if _, exposed := actual[sensitiveField]; exposed {
+			t.Fatalf("collection item exposed sensitive field %q: %#v", sensitiveField, actual)
+		}
+	}
+
+	disabled := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
+		"familySharingEnabled": false,
+		"sharingLoginAccount":  "disabled@example.com",
+	})
+	encoded, err = json.Marshal(subscriptionCollectionAPIFromRecord(disabled))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual = map[string]interface{}{}
+	if err := json.Unmarshal(encoded, &actual); err != nil {
+		t.Fatal(err)
+	}
+	if _, exposed := actual["familySharingLoginAccount"]; exposed {
+		t.Fatalf("disabled family account must be omitted: %#v", actual)
+	}
+}
+
 type subscriptionManifestRoute struct {
 	Path    string   `json:"path"`
 	Methods []string `json:"methods"`

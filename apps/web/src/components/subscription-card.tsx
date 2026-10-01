@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { colorWithAlpha } from '@/lib/color';
-import { Calendar, MoreHorizontal, CalendarClock, Bell, ChevronRight, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Gauge, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
+import { Calendar, MoreHorizontal, CalendarClock, Bell, ChevronRight, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
 import {
   daysBetweenDateOnly,
   type DateOnly,
@@ -51,12 +51,10 @@ import {
 import { useI18n } from '@/i18n/I18nProvider';
 import { SubscriptionLogo } from '@/components/subscription-logo';
 import { SubscriptionStatusBadge } from '@/components/subscription-status-badge';
-import { formatCompactCurrencyAmount } from '@/lib/currency';
 import {
   formatBillingCycleLabel,
   isOneTimeBuyout,
   isOneTimeFixedTerm,
-  projectSubscriptionDailyCost,
 } from '@/lib/subscription-billing';
 import {
   getSubscriptionPriceReference,
@@ -296,6 +294,7 @@ function SubscriptionCardComponent({
   const categoryColor = categoryConfig?.color ?? DEFAULT_BADGE_COLOR;
   const displayName = subscriptionPlatformName(subscription);
   const serviceName = subscription.name.trim();
+  const familyAccount = subscription.familySharingLoginAccount?.trim() ?? "";
   const accountNumber = subscription.accountNumber ?? 1;
   const categoryBadgeStyle = {
     backgroundColor: colorWithAlpha(categoryColor, 0.1) ?? undefined,
@@ -308,7 +307,6 @@ function SubscriptionCardComponent({
   const daysUntilTrialEnd = subscription.trialEndDate ? daysBetweenDateOnly(today, subscription.trialEndDate) : null;
   const isBuyout = isOneTimeBuyout(subscription);
   const isFixedTermOneTime = isOneTimeFixedTerm(subscription);
-  const dailyCost = projectSubscriptionDailyCost(subscription.price, subscription, today);
   const hasCalendarEvent = !isBuyout;
   const canManualRenew = Boolean(onRenew) && isManualRenewEligible(subscription);
   const billingCycleLabel = formatBillingCycleLabel(subscription, locale);
@@ -402,19 +400,6 @@ function SubscriptionCardComponent({
           icon: <Calendar className="h-3.5 w-3.5 shrink-0" />,
           text: billingDateText,
           tone: "muted" as const,
-        }]
-      : []),
-    ...(dailyCost !== null
-      ? [{
-          key: "daily-average",
-          icon: <Gauge className="h-3.5 w-3.5 shrink-0" />,
-          text: t(dailyCost.basis === "ownership-to-date"
-            ? "subscription.card.dailyCostToDate"
-            : "subscription.card.dailyAverage", {
-            amount: formatCompactCurrencyAmount(dailyCost.amount, subscription.currency, locale),
-          }),
-          tone: "muted" as const,
-          tabular: true,
         }]
       : []),
     ...(paymentMethodLabel || subscription.cardLast4
@@ -544,6 +529,13 @@ function SubscriptionCardComponent({
                   as="p"
                   text={serviceName}
                   className="mt-0.5 min-w-0 text-xs text-muted-foreground"
+                />
+              ) : null}
+              {familyAccount ? (
+                <TruncatedTooltipText
+                  as="p"
+                  text={familyAccount}
+                  className={cn("min-w-0 text-xs text-muted-foreground", serviceName !== displayName && "mt-0.5")}
                 />
               ) : null}
             </div>

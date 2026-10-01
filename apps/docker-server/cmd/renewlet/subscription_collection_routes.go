@@ -60,6 +60,7 @@ type subscriptionCollectionItemResponse struct {
 	TrialEndDate                 *string                `json:"trialEndDate,omitempty"`
 	ReminderDays                 int                    `json:"reminderDays"`
 	CostSharing                  map[string]interface{} `json:"costSharing,omitempty"`
+	FamilySharingLoginAccount    *string                `json:"familySharingLoginAccount,omitempty"`
 	Tags                         []string               `json:"tags,omitempty"`
 }
 
@@ -290,6 +291,9 @@ func subscriptionCollectionAPIFromRecord(record *core.Record) subscriptionCollec
 	}
 	if costSharing := subscriptionRecordJSONMap(record, "costSharing"); len(costSharing) > 0 {
 		out.CostSharing = costSharing
+	}
+	if record.GetBool("familySharingEnabled") {
+		out.FamilySharingLoginAccount = trimmedSubscriptionString(record.GetString("sharingLoginAccount"))
 	}
 	return out
 }
