@@ -5,6 +5,7 @@ import { useMoveSharingSeat, useSharingAccountDetail, useSharingAccountDetails, 
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { useSettingsEnvelope } from "@/hooks/use-settings";
 import { useManagedCurrencyOptions } from "@/hooks/use-managed-currency-options";
+import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
@@ -16,7 +17,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { DateOnlyPickerField } from "@/components/date-only-picker-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
@@ -26,6 +27,8 @@ import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { sharingService } from "@/services/sharing-service";
 import { divideMoney } from "@renewlet/shared/money";
 import { getDisplayErrorMessage } from "@/lib/display-error";
+import { daysBetweenDateOnly, type DateOnly } from "@/lib/time/date-only";
+import { matchesSearchableOption } from "@/lib/searchable-options";
 
 const inboxCopy = { copy: "复制验证码链接", copied: "验证码链接已复制", failed: "复制验证码链接失败" };
 
@@ -78,14 +81,54 @@ function seatStatusClassName(status: SharingSeat["status"]) {
   return status === "paused" ? "border-warning/40 bg-warning/10 text-warning" : undefined;
 }
 
+function matchesTargetAccountOption(option: SearchableSelectOption, search: string) {
+  const normalizedSearch = search.trim();
+  if (/^\d+$/.test(normalizedSearch)) return option.keywords?.[0] === normalizedSearch;
+  return matchesSearchableOption(option, normalizedSearch);
+}
+
+export function getSeatExpiryUrgency(today: DateOnly | string, expiresAt: DateOnly | string | null | undefined) {
+  if (!expiresAt) return { daysUntilExpiry: null, tone: "default" as const };
+  const daysUntilExpiry = daysBetweenDateOnly(today, expiresAt);
+  if (daysUntilExpiry <= 3) return { daysUntilExpiry, tone: "danger" as const };
+  if (daysUntilExpiry <= 7) return { daysUntilExpiry, tone: "warning" as const };
+  return { daysUntilExpiry, tone: "default" as const };
+}
+
+function SeatExpiry({ expiresAt, today }: { expiresAt: SharingSeat["expiresAt"]; today: DateOnly }) {
+  const { t } = useI18n();
+  const urgency = getSeatExpiryUrgency(today, expiresAt);
+  const toneClassName = urgency.tone === "danger"
+    ? "text-destructive"
+    : urgency.tone === "warning"
+      ? "text-amber-700 dark:text-amber-400"
+      : "text-foreground";
+  const statusLabel = urgency.daysUntilExpiry === null || urgency.daysUntilExpiry > 7
+    ? null
+    : urgency.daysUntilExpiry < 0
+      ? t("subscription.card.expiredDays", { days: Math.abs(urgency.daysUntilExpiry) })
+      : urgency.daysUntilExpiry === 0
+        ? t("common.today")
+        : t("upcoming.daysShort", { days: urgency.daysUntilExpiry });
+
+  return (
+    <div className={`tabular-nums ${toneClassName}`}>
+      <div className="font-medium">{expiresAt ?? "-"}</div>
+      {statusLabel ? <div className="mt-0.5 text-[11px] font-medium leading-none">{statusLabel}</div> : null}
+    </div>
+  );
+}
+
 export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account" }: SharingAccountDetailDialogProps) {
   const { t, formatCurrency } = useI18n();
   const detailQuery = useSharingAccountDetail(open ? account?.id ?? null : null);
   const settingsQuery = useSettingsEnvelope();
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const defaultCurrency = settingsQuery.data?.settings.defaultCurrency ?? "CNY";
+  const today = useZonedToday(settingsQuery.data?.settings.timezone ?? "UTC");
   const [selectedSeat, setSelectedSeat] = useState<SharingSeat | null>(null);
   const [movingSeat, setMovingSeat] = useState<SharingSeat | null>(null);
+  const [targetAccountId, setTargetAccountId] = useState("");
   const [targetSeatId, setTargetSeatId] = useState("");
   const [seatDialogMode, setSeatDialogMode] = useState<"edit" | "renew">("edit");
   const [password, setPassword] = useState<string | null>(null);
@@ -98,18 +141,28 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   ));
   const candidateDetailQueries = useSharingAccountDetails(open && mode === "seats" ? samePlatformAccounts.map((candidate) => candidate.id) : []);
   const moveSeat = useMoveSharingSeat();
-  const targetSeatOptions = candidateDetailQueries.flatMap((query) => query.data ? query.data.seats
+  const targetAccountOptions = samePlatformAccounts.map((candidate) => ({
+    value: candidate.id,
+    label: `${candidate.subscription.platformName} #${candidate.accountNumber} · ${candidate.loginAccount}`,
+    keywords: [String(candidate.accountNumber), candidate.loginAccount, candidate.name],
+  }));
+  const selectedTargetAccountIndex = samePlatformAccounts.findIndex((candidate) => candidate.id === targetAccountId);
+  const selectedTargetAccountQuery = selectedTargetAccountIndex >= 0 ? candidateDetailQueries[selectedTargetAccountIndex] : undefined;
+  const targetSeatOptions = selectedTargetAccountQuery?.data ? selectedTargetAccountQuery.data.seats
     .filter((seat) => seat.status === "vacant" && seat.id !== movingSeat?.id)
     .map((seat) => ({
       id: seat.id,
-      label: `${query.data.account.subscription.platformName} #${query.data.account.accountNumber} · ${t("sharing.seatNumber")} ${seat.seatNumber}`,
-    })) : []);
+      label: `${t("sharing.seatNumber")} ${seat.seatNumber}`,
+    })) : [];
   useEffect(() => {
     setPassword(null);
     setPasswordVisible(false);
     setPasswordLoading(false);
   }, [account?.id, open]);
-  useEffect(() => { setTargetSeatId(""); }, [movingSeat?.id]);
+  useEffect(() => {
+    setTargetAccountId("");
+    setTargetSeatId("");
+  }, [movingSeat?.id]);
 
   const copyValue = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -197,7 +250,11 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           ) : detailQuery.isError || !detail ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadDetailFailed")}</div>
           ) : (
-            <div className={mode === "seats" ? "flex min-h-0 flex-1 flex-col gap-3" : "min-h-0 flex-1 space-y-3 overflow-y-auto"}>
+            <div className={mode === "seats"
+              ? "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y sm:flex sm:flex-col sm:gap-3 sm:space-y-0 sm:overflow-hidden"
+              : "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y"}
+              data-testid="sharing-account-scroll"
+            >
               <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden rounded-md border sm:grid-cols-2 lg:grid-cols-5">
                 <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
                 <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
@@ -277,7 +334,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                           </td>
                           <td className="px-3 py-2"><Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
                           <td className="px-3 py-2 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
-                          <td className="px-3 py-2 tabular-nums">{seat.expiresAt ?? "-"}</td>
+                          <td className="px-3 py-2"><SeatExpiry expiresAt={seat.expiresAt} today={today} /></td>
                           <td className="px-3 py-2">
                             {seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}
                           </td>
@@ -291,7 +348,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     </tbody>
                   </table>
                 </div>
-                <div className="min-h-0 flex-1 divide-y overflow-y-auto rounded-md border sm:hidden">
+                <div className="divide-y rounded-md border sm:hidden" data-testid="sharing-seat-mobile-list">
                   {detail.seats.map((seat) => (
                     <article key={seat.id} className="space-y-3 border-l-2 border-l-primary/35 bg-card p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -304,7 +361,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                       </div>
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                         <div><dt className="text-muted-foreground">{t("sharing.monthlyPrice")}</dt><dd className="mt-0.5 font-medium tabular-nums text-foreground">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</dd></div>
-                        <div><dt className="text-muted-foreground">{t("sharing.expiresAt")}</dt><dd className="mt-0.5 font-medium tabular-nums text-foreground">{seat.expiresAt ?? "-"}</dd></div>
+                        <div><dt className="text-muted-foreground">{t("sharing.expiresAt")}</dt><dd className="mt-0.5"><SeatExpiry expiresAt={seat.expiresAt} today={today} /></dd></div>
                         <div><dt className="text-muted-foreground">{t("sharing.paymentStatus")}</dt><dd className="mt-1">{seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}</dd></div>
                       </dl>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -330,15 +387,35 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
               {movingSeat ? `${movingSeat.memberName ?? ""} · ${account?.subscription.platformName ?? ""} #${account?.accountNumber ?? ""} · ${t("sharing.seatNumber")} ${movingSeat.seatNumber}` : ""}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="sharing-target-seat">{t("sharing.targetVacantSeat")}</Label>
-            <Select value={targetSeatId} onValueChange={setTargetSeatId}>
-              <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label={t("sharing.targetVacantSeat")}><SelectValue placeholder={t("sharing.selectVacantSeat")} /></SelectTrigger>
-              <SelectContent mobileTitle={t("sharing.targetVacantSeat")}>
-                {targetSeatOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noVacantSeats")}</p> : null}
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="sharing-target-account">{t("sharing.targetAccount")}</Label>
+              <SearchableSelect
+                id="sharing-target-account"
+                value={targetAccountId}
+                onValueChange={(value) => {
+                  setTargetAccountId(value);
+                  setTargetSeatId("");
+                }}
+                options={targetAccountOptions}
+                filterOption={matchesTargetAccountOption}
+                placeholder={t("sharing.selectTargetAccount")}
+                searchPlaceholder={t("sharing.searchTargetAccount")}
+                emptyMessage={t("sharing.noTargetAccounts")}
+                className="min-h-11 bg-secondary"
+                aria-label={t("sharing.targetAccount")}
+              />
+            </div>
+            {targetAccountId ? <div className="grid gap-2">
+              <Label htmlFor="sharing-target-seat">{t("sharing.targetVacantSeat")}</Label>
+              <Select value={targetSeatId} onValueChange={setTargetSeatId} disabled={Boolean(selectedTargetAccountQuery?.isPending)}>
+                <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label={t("sharing.targetVacantSeat")}><SelectValue placeholder={t("sharing.selectVacantSeat")} /></SelectTrigger>
+                <SelectContent mobileTitle={t("sharing.targetVacantSeat")}>
+                  {targetSeatOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {!selectedTargetAccountQuery?.isPending && targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noVacantSeats")}</p> : null}
+            </div> : <p className="text-sm text-muted-foreground">{t("sharing.selectAccountBeforeSeat")}</p>}
             <p className="text-xs leading-5 text-muted-foreground">{t("sharing.moveSeatHint")}</p>
           </div>
           <DialogFooter>

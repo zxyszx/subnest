@@ -22,6 +22,7 @@ type SubscriptionCardHandlers = {
   onClone?: (id: string) => void;
   onTogglePinned?: (id: string) => void;
   onTogglePublicHidden?: (id: string) => void;
+  onRenew?: (id: string) => void;
   onViewDetails?: (id: string) => void;
   onAddToCalendar?: (id: string) => void;
   onPrefetchDetails?: (id: string) => void;
@@ -129,6 +130,7 @@ export function renderSubscriptionCard(
         {...(handlers.onTogglePinned ? { onTogglePinned: handlers.onTogglePinned } : {})}
         {...(handlers.onTogglePublicHidden ? { onTogglePublicHidden: handlers.onTogglePublicHidden } : {})}
         {...(handlers.onViewDetails ? { onViewDetails: handlers.onViewDetails } : {})}
+        {...(handlers.onRenew ? { onRenew: handlers.onRenew } : {})}
         onAddToCalendar={handlers.onAddToCalendar ?? vi.fn()}
         onPrefetchDetails={handlers.onPrefetchDetails ?? vi.fn()}
       />

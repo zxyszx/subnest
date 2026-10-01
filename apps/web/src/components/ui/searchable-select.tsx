@@ -31,6 +31,7 @@ interface SearchableSelectProps {
   contentClassName?: string;
   renderOption?: (option: SearchableSelectOption, state: { selected: boolean }) => React.ReactNode;
   renderValue?: (option: SearchableSelectOption | undefined) => React.ReactNode;
+  filterOption?: (option: SearchableSelectOption, search: string) => boolean;
   /** 未输入搜索词前最多渲染的选项数量；长货币/时区列表依赖它控制首屏开销。 */
   initialRenderLimit?: number;
   "aria-label"?: string;
@@ -53,6 +54,7 @@ export function SearchableSelect({
   contentClassName,
   renderOption,
   renderValue,
+  filterOption,
   initialRenderLimit = DEFAULT_INITIAL_RENDER_LIMIT,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy,
@@ -73,7 +75,9 @@ export function SearchableSelect({
     const trimmedSearch = search.trim();
     if (trimmedSearch) {
       // 搜索只过滤候选项，不能让 cmdk 的评分排序覆盖调用方传入的业务顺序。
-      return options.filter((option) => matchesSearchableOption(option, trimmedSearch));
+      return options.filter((option) => filterOption
+        ? filterOption(option, trimmedSearch)
+        : matchesSearchableOption(option, trimmedSearch));
     }
     if (initialRenderLimit <= 0 || options.length <= initialRenderLimit) {
       return options;
@@ -82,7 +86,7 @@ export function SearchableSelect({
     const visibleLimit = selectedIndex >= initialRenderLimit ? selectedIndex + 1 : initialRenderLimit;
     // 长列表首屏限量只是性能优化；货币等业务选择器的顺序必须继续完全服从调用方传入顺序。
     return options.slice(0, visibleLimit);
-  }, [initialRenderLimit, options, search, selectedIndex]);
+  }, [filterOption, initialRenderLimit, options, search, selectedIndex]);
 
   React.useEffect(() => {
     if (!open) setSearch("");

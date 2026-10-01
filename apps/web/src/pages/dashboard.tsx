@@ -11,8 +11,8 @@
  * - 首页统计由 `useDashboardStats` 生成，新增入口由 `useSubscriptionCrud` 管理。
  */
 
-import Link from '@/components/router-link';
 import type { SubscriptionCollectionItem } from "@/types/subscription";
+import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 import { Header } from "@/components/header";
 import { dashboardStatLayout } from "@/components/dashboard-stat-layout";
 import { StatCard } from "@/components/ui/stat-card";
@@ -37,12 +37,16 @@ import { useRouteReady } from "@/components/route-progress";
 import { useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
 import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingUpcomingSeatRenewals } from "@/lib/sharing-financials";
 import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { DashboardRenewalCalendar } from "@/components/dashboard-renewal-calendar";
 import { DeferredRenewSubscriptionDialog } from "@/components/renew-subscription-dialog-loader";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMediaQuery } from "@/hooks/use-media-query";
+
+const SharingAccountDetailDialog = lazy(() => import("@/components/sharing-account-detail-dialog").then((module) => ({
+  default: module.SharingAccountDetailDialog,
+})));
 
 const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 
@@ -50,6 +54,7 @@ const EMPTY_SUBSCRIPTIONS: SubscriptionCollectionItem[] = [];
 export default function Index() {
   const [subscriptionRenewalsOpen, setSubscriptionRenewalsOpen] = useState(false);
   const [memberRenewalsOpen, setMemberRenewalsOpen] = useState(false);
+  const [selectedSharingAccount, setSelectedSharingAccount] = useState<SharingAccount | null>(null);
   const [renewalTaskTab, setRenewalTaskTab] = useState<"subscriptions" | "members">("subscriptions");
   const isCompactRenewalLayout = useMediaQuery("(max-width: 1023px)");
   const subscriptionsQuery = useSubscriptionAnalytics();
@@ -92,6 +97,7 @@ export default function Index() {
     subscriptions,
     today,
     notificationReminderDays: 7,
+    includeExpired: true,
     ignoreSubscriptionReminder: true,
   });
   const subscriptionRenewalCount = subscriptionRenewals.length;
@@ -219,7 +225,7 @@ export default function Index() {
               <TabsContent id="dashboard-subscription-renewals" value="subscriptions" className="mt-0">
                 <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                   <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
-                  <Link href="/subscriptions"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground" onClick={() => setSubscriptionRenewalsOpen(true)}>{t("dashboard.viewAll", { count: subscriptionRenewals.length })}<ArrowRight className="h-4 w-4" /></Button>
                 </div>
                 {subscriptions.length === 0 ? (
                   <div className="flex min-h-36 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center">
@@ -253,7 +259,7 @@ export default function Index() {
               <TabsContent id="dashboard-member-renewals" value="members" className="mt-0">
                 <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                   <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
-                  <Link href="/sharing"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground" onClick={() => setMemberRenewalsOpen(true)}>{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button>
                 </div>
                 <SharingUpcomingRenewals
                   items={sharingRenewals}
@@ -261,6 +267,7 @@ export default function Index() {
                   limit={5}
                   showFooter={false}
                   density="compact"
+                  onManageAccount={setSelectedSharingAccount}
                 />
               </TabsContent>
             </article>
@@ -271,7 +278,7 @@ export default function Index() {
               <h2 className="font-semibold text-foreground">{t("dashboard.subscriptionRenewals")}</h2>
               <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.renewalListDescription")}</p>
-                <Link href="/subscriptions"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: subscriptions.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground" onClick={() => setSubscriptionRenewalsOpen(true)}>{t("dashboard.viewAll", { count: subscriptionRenewals.length })}<ArrowRight className="h-4 w-4" /></Button>
               </div>
               <div className="flex flex-col">
                 {subscriptions.length === 0 ? (
@@ -308,7 +315,7 @@ export default function Index() {
               <h2 className="font-semibold text-foreground">{t("dashboard.memberRenewals")}</h2>
               <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-xs text-muted-foreground">{t("dashboard.memberRenewalListDescription")}</p>
-                <Link href="/sharing"><Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground">{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button></Link>
+                <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 px-2 text-muted-foreground hover:text-foreground" onClick={() => setMemberRenewalsOpen(true)}>{t("dashboard.viewAll", { count: sharingRenewals.length })}<ArrowRight className="h-4 w-4" /></Button>
               </div>
               <div className="flex flex-col">
                 <SharingUpcomingRenewals
@@ -317,6 +324,7 @@ export default function Index() {
                   limit={5}
                   showFooter={false}
                   density="compact"
+                  onManageAccount={setSelectedSharingAccount}
                 />
               </div>
             </article>
@@ -331,7 +339,7 @@ export default function Index() {
             <DialogDescription>{t("dashboard.subscriptionRenewalDialogDescription")}</DialogDescription>
           </DialogHeader>
           <div className="max-h-[60dvh] overflow-y-auto pr-1">
-            <UpcomingRenewals subscriptions={subscriptions} today={today} notificationReminderDays={inheritedReminderDays} windowDays={7} limit={100} onRenew={(id) => { setSubscriptionRenewalsOpen(false); handleRenewSubscription(id); }} />
+            <UpcomingRenewals subscriptions={subscriptions} today={today} notificationReminderDays={inheritedReminderDays} includeExpired windowDays={7} limit={100} onRenew={(id) => { setSubscriptionRenewalsOpen(false); handleRenewSubscription(id); }} />
           </div>
         </DialogContent>
       </Dialog>
@@ -343,10 +351,30 @@ export default function Index() {
             <DialogDescription>{t("dashboard.memberRenewalDialogDescription")}</DialogDescription>
           </DialogHeader>
           <div className="max-h-[60dvh] overflow-y-auto pr-1">
-            <SharingUpcomingRenewals items={sharingRenewals.filter((item) => item.daysUntilExpiry >= 0)} pending={sharingRenewalsPending} limit={100} />
+            <SharingUpcomingRenewals
+              items={sharingRenewals}
+              pending={sharingRenewalsPending}
+              limit={100}
+              showFooter={false}
+              onManageAccount={(account) => {
+                setMemberRenewalsOpen(false);
+                setSelectedSharingAccount(account);
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>
+
+      {selectedSharingAccount ? (
+        <Suspense fallback={null}>
+          <SharingAccountDetailDialog
+            account={selectedSharingAccount}
+            mode="seats"
+            open
+            onOpenChange={(open) => !open && setSelectedSharingAccount(null)}
+          />
+        </Suspense>
+      ) : null}
 
       <DeferredRenewSubscriptionDialog
         subscription={subscriptionCrud.renewingSubscription}

@@ -19,7 +19,7 @@ msgid "sharing.nextSevenDays"
 msgstr "Next 7 days"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:138
+#: src/i18n/descriptors/sharing.ts:143
 msgid "sharing.expiringWithinSevenDays"
 msgstr "Expiring within 7 days"
 
@@ -109,12 +109,17 @@ msgid "sharing.emptyDescription"
 msgstr "Create a platform subscription first, then add its shared accounts here."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:128
+msgid "sharing.selectTargetAccount"
+msgstr "Select a target account first"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:5
 msgid "sharing.allPlatforms"
 msgstr "All platforms"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:135
+#: src/i18n/descriptors/sharing.ts:140
 msgid "sharing.allStatus"
 msgstr "All statuses"
 
@@ -144,12 +149,12 @@ msgid "sharing.nearestExpiry"
 msgstr "Nearest expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:144
+#: src/i18n/descriptors/sharing.ts:149
 msgid "sharing.toggleAscending"
 msgstr "Switch to ascending"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:143
+#: src/i18n/descriptors/sharing.ts:148
 msgid "sharing.toggleDescending"
 msgstr "Switch to descending"
 
@@ -239,12 +244,12 @@ msgid "sharing.copyLink"
 msgstr "Copy verification link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:140
+#: src/i18n/descriptors/sharing.ts:145
 msgid "sharing.hasOutstanding"
 msgstr "Has outstanding payments"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:139
+#: src/i18n/descriptors/sharing.ts:144
 msgid "sharing.hasOverdue"
 msgstr "Has overdue seats"
 
@@ -294,7 +299,7 @@ msgid "sharing.collectedRevenue"
 msgstr "Collected"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:137
+#: src/i18n/descriptors/sharing.ts:142
 msgid "sharing.accountFull"
 msgstr "Full"
 
@@ -314,17 +319,17 @@ msgid "sharing.startDate"
 msgstr "Start date"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:145
+#: src/i18n/descriptors/sharing.ts:150
 msgid "sharing.currentAscending"
 msgstr "Currently ascending"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:129
+#: src/i18n/descriptors/sharing.ts:134
 msgid "sharing.noVacantSeats"
 msgstr "No vacant seats are available on this platform."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:146
+#: src/i18n/descriptors/sharing.ts:151
 msgid "sharing.currentDescending"
 msgstr "Currently descending"
 
@@ -374,7 +379,7 @@ msgid "sharing.moveSeat"
 msgstr "Move seat"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:133
+#: src/i18n/descriptors/sharing.ts:138
 msgid "sharing.moveSeatFailed"
 msgstr "Move failed. Confirm that the target seat is still vacant."
 
@@ -382,6 +387,11 @@ msgstr "Move failed. Confirm that the target seat is still vacant."
 #: src/i18n/descriptors/sharing.ts:118
 msgid "sharing.searchPlaceholder"
 msgstr "Search account number or platform"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:129
+msgid "sharing.searchTargetAccount"
+msgstr "Search by account number, login, or email"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:30
@@ -444,7 +454,7 @@ msgid "sharing.monthlyRevenue"
 msgstr "Monthly revenue"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:136
+#: src/i18n/descriptors/sharing.ts:141
 msgid "sharing.hasVacancies"
 msgstr "Has vacant seats"
 
@@ -489,6 +499,11 @@ msgid "sharing.monthlyPrice"
 msgstr "Monthly charge"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:130
+msgid "sharing.noTargetAccounts"
+msgstr "No matching accounts on this platform"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:119
 msgid "sharing.noSearchResults"
 msgstr "No matching sharing accounts found"
@@ -509,12 +524,17 @@ msgid "sharing.loginAccount"
 msgstr "Login account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:127
+#: src/i18n/descriptors/sharing.ts:132
 msgid "sharing.targetVacantSeat"
 msgstr "Target vacant seat"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:131
+#: src/i18n/descriptors/sharing.ts:127
+msgid "sharing.targetAccount"
+msgstr "Target account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:136
 msgid "sharing.confirmMoveSeat"
 msgstr "Confirm move"
 
@@ -524,7 +544,7 @@ msgid "sharing.confirmRenewal"
 msgstr "Confirm renewal"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:142
+#: src/i18n/descriptors/sharing.ts:147
 msgid "sharing.vacantSeatsSort"
 msgstr "Vacant seats"
 
@@ -616,12 +636,12 @@ msgid "sharing.accountName"
 msgstr "Account name"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:141
+#: src/i18n/descriptors/sharing.ts:146
 msgid "sharing.accountNumberSort"
 msgstr "Account number"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:134
+#: src/i18n/descriptors/sharing.ts:139
 msgid "sharing.accountStatusFilter"
 msgstr "Account status"
 
@@ -661,7 +681,7 @@ msgid "sharing.seatSaved"
 msgstr "Seat and receivable updated"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:132
+#: src/i18n/descriptors/sharing.ts:137
 msgid "sharing.moveSeatSuccess"
 msgstr "Seat moved"
 
@@ -696,7 +716,7 @@ msgid "sharing.memberDetails"
 msgstr "Member details"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:130
+#: src/i18n/descriptors/sharing.ts:135
 msgid "sharing.moveSeatHint"
 msgstr "Member details and unpaid receivables will move to the target seat; completed payment history stays with the original seat."
 
@@ -711,9 +731,14 @@ msgid "sharing.emptyTitle"
 msgstr "No shared accounts yet"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:128
+#: src/i18n/descriptors/sharing.ts:133
 msgid "sharing.selectVacantSeat"
 msgstr "Select a vacant seat on this platform"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:131
+msgid "sharing.selectAccountBeforeSeat"
+msgstr "Select a target account, then choose one of its vacant seats."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:106

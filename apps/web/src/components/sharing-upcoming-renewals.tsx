@@ -1,4 +1,3 @@
-import Link from "@/components/router-link";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { SharingUpcomingSeatRenewal } from "@/lib/sharing-financials";
@@ -15,9 +14,11 @@ interface SharingUpcomingRenewalsProps {
   showFooter?: boolean;
   /** 仪表盘卡片使用紧凑密度；弹窗保留默认密度。 */
   density?: "default" | "compact";
+  onManageAccount?: (account: SharingUpcomingSeatRenewal["account"]) => void;
+  onViewAll?: () => void;
 }
 
-export function SharingUpcomingRenewals({ items, pending = false, limit = 5, showFooter = true, density = "default" }: SharingUpcomingRenewalsProps) {
+export function SharingUpcomingRenewals({ items, pending = false, limit = 5, showFooter = true, density = "default", onManageAccount, onViewAll }: SharingUpcomingRenewalsProps) {
   const { t, locale, formatCurrency } = useI18n();
   const visibleItems = items.slice(0, limit);
   const compact = density === "compact";
@@ -93,20 +94,18 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   ? t("upcoming.todayShort")
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
             </span>
-            <Button asChild type="button" variant="outline" size="sm" className="shrink-0 gap-1.5">
-              <Link href="/sharing"><Users className="h-4 w-4" />{t("sharing.manageAccount")}</Link>
+            <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => onManageAccount?.(account)}>
+              <Users className="h-4 w-4" />{t("sharing.manageAccount")}
             </Button>
           </div>
         </div>
       ))}
-      {showFooter ? <div className="flex justify-end">
-        <Link href="/sharing">
-          <Button variant="ghost" size="sm" className="min-h-11 gap-2 text-muted-foreground hover:text-foreground">
-            <Users className="h-4 w-4" />
-            {t("dashboard.viewAll", { count: items.length })}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
+      {showFooter && onViewAll ? <div className="flex justify-end">
+        <Button type="button" variant="ghost" size="sm" className="min-h-11 gap-2 text-muted-foreground hover:text-foreground" onClick={onViewAll}>
+          <Users className="h-4 w-4" />
+          {t("dashboard.viewAll", { count: items.length })}
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </div> : null}
     </div>
   );

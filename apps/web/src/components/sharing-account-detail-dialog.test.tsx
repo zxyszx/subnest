@@ -2,9 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
+import { getSeatExpiryUrgency, SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { SharingSeat, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
+import type { SharingAccount, SharingAccountDetail, SharingSeat, SharingSeatUpdate } from "@renewlet/shared/schemas/sharing";
 
 const mocks = vi.hoisted(() => ({
   copyTextToClipboard: vi.fn(),
@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   updateSeat: vi.fn<(payload: { seatId: string; input: SharingSeatUpdate }) => Promise<void>>(),
   moveSeat: vi.fn(),
   seats: [] as SharingSeat[],
+  accounts: [] as SharingAccount[],
+  details: new Map<string, SharingAccountDetail>(),
 }));
 
 const account = {
@@ -54,8 +56,8 @@ vi.mock("@/hooks/use-sharing", () => ({
     isPending: false,
     isError: false,
   }),
-  useSharingAccounts: () => ({ data: { accounts: [account], total: 1 }, isPending: false }),
-  useSharingAccountDetails: () => [],
+  useSharingAccounts: () => ({ data: { accounts: mocks.accounts, total: mocks.accounts.length }, isPending: false }),
+  useSharingAccountDetails: (ids: string[]) => ids.map((id) => ({ data: mocks.details.get(id), isPending: false, isError: false })),
   useMoveSharingSeat: () => ({ mutateAsync: mocks.moveSeat, isPending: false }),
   useUpdateSharingSeat: () => ({ mutateAsync: mocks.updateSeat, isPending: false }),
 }));
@@ -106,6 +108,8 @@ describe("SharingAccountDetailDialog account credentials", () => {
     mocks.updateSeat.mockReset().mockResolvedValue(undefined);
     mocks.moveSeat.mockReset().mockResolvedValue(undefined);
     mocks.seats = [];
+    mocks.accounts = [account];
+    mocks.details = new Map();
   });
 
   it("copies account, password and link independently and supports copying all", async () => {
@@ -190,5 +194,110 @@ describe("SharingAccountDetailDialog account credentials", () => {
       monthlyPrice: "15",
       billingMonths: 3,
     });
+  });
+
+  it("keeps mobile account content in one scroll region", () => {
+    mocks.seats = [{
+      id: "seat-scroll",
+      seatNumber: 1,
+      memberName: "Member",
+      contact: null,
+      contactType: null,
+      monthlyPrice: "15",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: "2026-09-25",
+      expiresAt: "2026-10-05",
+      status: "active",
+      notes: null,
+      currentReceivable: null,
+    }];
+
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getByTestId("sharing-account-scroll")).toHaveClass("overflow-y-auto", "touch-pan-y");
+    expect(screen.getByTestId("sharing-seat-mobile-list")).not.toHaveClass("overflow-y-auto");
+  });
+
+  it("selects a searchable target account before exposing its vacant seats", async () => {
+    const user = userEvent.setup();
+    const movingSeat: SharingSeat = {
+      id: "seat-moving",
+      seatNumber: 1,
+      memberName: "Yihun",
+      contact: "member-id",
+      contactType: "wechat",
+      monthlyPrice: "15",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: "2026-09-25",
+      expiresAt: "2026-10-04",
+      status: "active",
+      notes: null,
+      currentReceivable: null,
+    };
+    const targetAccount: SharingAccount = {
+      ...account,
+      id: "share-18",
+      accountNumber: 18,
+      loginAccount: "netflix18@example.com",
+      occupiedSeats: 0,
+    };
+    const targetSeat: SharingSeat = {
+      ...movingSeat,
+      id: "seat-target",
+      seatNumber: 2,
+      memberName: null,
+      contact: null,
+      contactType: null,
+      monthlyPrice: null,
+      currency: null,
+      startDate: null,
+      expiresAt: null,
+      status: "vacant",
+    };
+    mocks.seats = [movingSeat];
+    mocks.accounts = [account, targetAccount];
+    mocks.details = new Map([
+      [account.id, { account, seats: [movingSeat], totals: { monthlyRevenue: "15", contractedRevenue: "0", collectedRevenue: "0", outstandingAmount: "0", monthlyProfit: -27.93 } }],
+      [targetAccount.id, { account: targetAccount, seats: [targetSeat], totals: { monthlyRevenue: "0", contractedRevenue: "0", collectedRevenue: "0", outstandingAmount: "0", monthlyProfit: -42.93 } }],
+    ]);
+
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getAllByRole("button", { name: "sharing.moveSeat" })[0]!);
+
+    expect(screen.queryByLabelText("sharing.targetVacantSeat")).not.toBeInTheDocument();
+    expect(screen.getByText("sharing.selectAccountBeforeSeat")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "sharing.targetAccount" }));
+    const accountSearch = screen.getByPlaceholderText("sharing.searchTargetAccount");
+    await user.type(accountSearch, "1");
+    expect(screen.queryByText("Netflix #18 · netflix18@example.com")).not.toBeInTheDocument();
+    await user.clear(accountSearch);
+    await user.type(accountSearch, "18");
+    await user.click(screen.getByText("Netflix #18 · netflix18@example.com"));
+
+    expect(screen.getByLabelText("sharing.targetVacantSeat")).toBeInTheDocument();
+  });
+});
+
+describe("getSeatExpiryUrgency", () => {
+  it.each([
+    ["2026-09-30", "danger", -1],
+    ["2026-10-01", "danger", 0],
+    ["2026-10-04", "danger", 3],
+    ["2026-10-05", "warning", 4],
+    ["2026-10-08", "warning", 7],
+    ["2026-10-09", "default", 8],
+  ] as const)("classifies %s as %s", (expiresAt, tone, daysUntilExpiry) => {
+    expect(getSeatExpiryUrgency("2026-10-01", expiresAt)).toEqual({ tone, daysUntilExpiry });
   });
 });

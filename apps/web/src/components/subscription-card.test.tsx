@@ -111,20 +111,38 @@ describe("SubscriptionCard", () => {
     expect(source).not.toContain("@max-xs/subscription-card");
     expect(card.getAttribute("class")).not.toContain("@container/subscription-card");
     expect(card).toHaveAttribute("data-view-mode", "grid");
-    expect(metaFlow).toHaveClass("grid", "gap-1.5");
+    expect(metaFlow).toHaveClass("grid", "gap-3");
     expect(metaFlow.getAttribute("class")).not.toContain("@max-xs/subscription-card");
-    expect(dateGroup).toHaveClass("grid", "grid-cols-2", "gap-x-3");
+    expect(dateGroup).toHaveClass("grid", "grid-cols-2", "divide-x");
     expect(dateGroup).toContainElement(startDateMeta);
-    expect(dateGroup).toContainElement(billingDateMeta);
+    expect(dateGroup).toContainElement(paymentMethodMeta);
+    expect(metaFlow).toContainElement(billingDateMeta);
     expect(metaFlow).toContainElement(paymentMethodMeta);
     expect(metaFlow).toContainElement(dailyAverageMeta);
-    expect(dateGroup).not.toContainElement(paymentMethodMeta);
+    expect(dateGroup).not.toContainElement(billingDateMeta);
     expect(dateGroup).not.toContainElement(dailyAverageMeta);
     expect(dailyAverageMeta).toHaveClass("tabular-nums");
-    expect(paymentMethodMeta).toHaveClass("min-w-0", "max-w-full");
+    expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
     expect(within(paymentMethodMeta).getByText("信用卡 · •••• 6109")).toBeInTheDocument();
-    expect(badgeFlow).toHaveClass("col-span-full", "flex", "flex-wrap", "gap-x-1.5", "gap-y-1.5");
+    expect(badgeFlow).toHaveClass("col-span-full", "hidden");
+  });
+
+  it("shows the payment icon and a primary renewal action in grid cards", () => {
+    const onRenew = vi.fn();
+    renderSubscriptionCard(
+      { paymentMethod: "credit_card", cardLast4: "6109" },
+      { onRenew },
+    );
+
+    const paymentDetails = screen.getByTestId("subscription-card-meta-payment-method");
+    expect(paymentDetails.querySelector("img")).toHaveAttribute("src", "/icons/payment-methods/credit_card.svg");
+    expect(paymentDetails).toHaveTextContent("信用卡 · •••• 6109");
+
+    const renewButton = screen.getByRole("button", { name: "续费" });
+    expect(renewButton).toHaveClass("bg-primary", "text-primary-foreground");
+    fireEvent.click(renewButton);
+    expect(onRenew).toHaveBeenCalledWith("sub-1");
   });
 
   it("renders subscription logos through the unified theme-aware logo surface", () => {
@@ -261,7 +279,7 @@ describe("SubscriptionCard", () => {
     expect(pinnedIcon).toHaveAttribute("aria-hidden", "true");
     expect(pinnedIcon.compareDocumentPosition(subscriptionName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText("置顶")).toHaveClass("sr-only");
-    expect(cardContent).toHaveClass("relative", "z-10", "flex", "items-start", "gap-3.5");
+    expect(cardContent).toHaveClass("relative", "z-10", "grid", "items-start", "gap-x-3.5");
     expect(cardContent).not.toHaveClass("pt-7");
   });
 
@@ -320,7 +338,7 @@ describe("SubscriptionCard", () => {
     const statusBadge = screen.getByText("活跃").closest("div");
     const subscriptionName = screen.getByText(baseSubscription.name);
 
-    expect(badgeGroup).toHaveClass("col-span-full", "flex", "flex-wrap", "items-center", "gap-x-1.5", "gap-y-1.5");
+    expect(badgeGroup).toHaveClass("col-span-full", "hidden");
     expect(badgeGroup).not.toHaveClass("overflow-hidden");
     expect(subscriptionName).toHaveAttribute("data-slot", "truncated-tooltip-text");
     expect(subscriptionName).not.toHaveAttribute("title");
@@ -497,19 +515,23 @@ describe("SubscriptionCard", () => {
   it("renders future recurring subscriptions with remaining days and the target date", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-06-15") });
 
-    expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/6/15", "日均 $5.3", "28 天后续费");
+    const banner = screen.getByTestId("subscription-card-renewal-banner");
+    expect(within(banner).getByText("28 天后续费")).toBeInTheDocument();
+    expect(within(banner).getByText("2026/6/15")).toBeInTheDocument();
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("开始日期2026/5/15");
+    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
   });
 
-  it("hides the start-date meta item when a recurring subscription has an unknown start date", () => {
+  it("shows a stable placeholder when a recurring subscription has an unknown start date", () => {
     renderSubscriptionCard({
       startDate: null,
       autoCalculateNextBillingDate: false,
       nextBillingDate: assertDateOnly("2026-06-15"),
     });
 
-    const metaFlow = expectMetaFlowItemsInOrder("到期: 2026/6/15", "日均 $5.3", "28 天后续费");
-
-    expect(within(metaFlow).queryByText(/开始:/)).not.toBeInTheDocument();
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("开始日期-");
+    expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("28 天后续费·2026/6/15");
+    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
   });
 
   it("keeps start date, billing date, payment method, and relative days in the intended order", () => {
@@ -518,13 +540,15 @@ describe("SubscriptionCard", () => {
       nextBillingDate: assertDateOnly("2026-06-15"),
     });
 
-    expectMetaFlowItemsInOrder(
-      "开始: 2026/5/15",
-      "到期: 2026/6/15",
-      "日均 $5.3",
-      mocks.creditCardLabel,
-      "28 天后续费",
-    );
+    const metaFlow = screen.getByTestId("subscription-card-meta-flow");
+    const banner = screen.getByTestId("subscription-card-renewal-banner");
+    const details = screen.getByTestId("subscription-card-meta-date-group");
+    expect(within(banner).getByText("28 天后续费")).toBeInTheDocument();
+    expect(within(banner).getByText("2026/6/15")).toBeInTheDocument();
+    expect(within(details).getByText("2026/5/15")).toBeInTheDocument();
+    expect(within(details).getByText(mocks.creditCardLabel)).toBeInTheDocument();
+    expect(metaFlow.textContent).toContain("日均 $5.3");
+    expect(banner.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("keeps long payment methods after the billing date without hiding either value", () => {
@@ -533,21 +557,27 @@ describe("SubscriptionCard", () => {
       nextBillingDate: assertDateOnly("2026-06-02"),
     });
 
-    const metaFlow = expectMetaFlowItemsInOrder("到期: 2026/6/2", "日均 $5.3", mocks.longPaymentMethodLabel, "15 天后续费");
+    const metaFlow = screen.getByTestId("subscription-card-meta-flow");
     const paymentMethodMeta = screen.getByTestId("subscription-card-meta-payment-method");
     const paymentMethodText = within(paymentMethodMeta).getByText(mocks.longPaymentMethodLabel);
 
+    expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("15 天后续费·2026/6/2");
+    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
     expect(metaFlow).toContainElement(paymentMethodMeta);
-    expect(paymentMethodMeta).toHaveClass("min-w-0", "max-w-full");
+    expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
-    expect(paymentMethodText).toHaveClass("block", "max-w-24", "truncate", "sm:max-w-32");
+    expect(paymentMethodText).toHaveClass("block", "truncate", "text-xs");
   });
 
   it("keeps relative billing after the billing date when there is no payment method", () => {
     renderSubscriptionCard({ paymentMethod: undefined, nextBillingDate: assertDateOnly("2026-06-02") });
 
-    const metaFlow = expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/6/2", "日均 $5.3", "15 天后续费");
+    const metaFlow = screen.getByTestId("subscription-card-meta-flow");
 
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("15 天后续费·2026/6/2");
+    expect(screen.getByText("日均 $5.3")).toBeInTheDocument();
+    expect(screen.getByTestId("subscription-card-meta-payment-method")).toHaveTextContent("未设置支付方式");
     expect(within(metaFlow).queryByText(mocks.creditCardLabel)).not.toBeInTheDocument();
   });
 
@@ -560,7 +590,9 @@ describe("SubscriptionCard", () => {
       nextBillingDate: assertDateOnly("2026-08-01"),
     });
 
-    expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/8/1", "日均 $1", "75 天后到期");
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("75 天后到期·2026/8/1");
+    expect(screen.getByText("日均 $1")).toBeInTheDocument();
   });
 
   it("keeps long daily amounts constrained inside the shared metadata flow", () => {
@@ -574,8 +606,11 @@ describe("SubscriptionCard", () => {
   it("renders buyout purchase dates without relative renewal days", () => {
     renderSubscriptionCard({ billingCycle: "one-time" });
 
-    const metaFlow = expectMetaFlowItemsInOrder("购买日期: 2026/5/15", "持有日均 $39.75");
+    const metaFlow = screen.getByTestId("subscription-card-meta-flow");
 
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(within(metaFlow).getByText("购买日期: 2026/5/15")).toBeInTheDocument();
+    expect(within(metaFlow).getByText("持有日均 $39.75")).toBeInTheDocument();
     expect(within(metaFlow).queryByText("28 天后续费")).not.toBeInTheDocument();
     expect(within(metaFlow).queryByText("到期: 2026/6/15")).not.toBeInTheDocument();
     expect(screen.getAllByText("长期有效").length).toBeGreaterThan(0);
@@ -602,9 +637,10 @@ describe("SubscriptionCard", () => {
     const card = statusBadge?.closest(".group");
 
     expect(statusBadge).toHaveClass("bg-destructive/10", "text-destructive", "border-destructive/25");
-    expect(expiredDateText.closest("div")).toHaveClass("text-muted-foreground");
+    expect(expiredDateText).toHaveClass("text-destructive");
     expect(card).toHaveClass("border-destructive/45", "bg-linear-to-br");
-    expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/5/15", "已过期 3 天");
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("已过期 3 天·2026/5/15");
   });
 
   it("does not render relative renewal days for overdue paused subscriptions", () => {
@@ -612,7 +648,8 @@ describe("SubscriptionCard", () => {
     const metaFlow = screen.getByTestId("subscription-card-meta-flow");
 
     expect(screen.getByText("已暂停")).toBeInTheDocument();
-    expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/5/12");
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(within(metaFlow).getByText("到期: 2026/5/12")).toBeInTheDocument();
     expect(within(metaFlow).queryByText("-6 天后续费")).not.toBeInTheDocument();
     expect(within(metaFlow).queryByText("已过期 6 天")).not.toBeInTheDocument();
   });
@@ -631,7 +668,8 @@ describe("SubscriptionCard", () => {
     const metaFlow = screen.getByTestId("subscription-card-meta-flow");
 
     expect(screen.getByText("已取消")).toBeInTheDocument();
-    expectMetaFlowItemsInOrder("开始: 2026/5/15", "到期: 2026/5/12");
+    expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
+    expect(within(metaFlow).getByText("到期: 2026/5/12")).toBeInTheDocument();
     expect(within(metaFlow).queryByText("-6 天后续费")).not.toBeInTheDocument();
     expect(within(metaFlow).queryByText("已过期 6 天")).not.toBeInTheDocument();
   });

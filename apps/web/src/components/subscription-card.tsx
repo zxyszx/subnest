@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { colorWithAlpha } from '@/lib/color';
-import { Calendar, MoreHorizontal, CalendarClock, Bell, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Gauge, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
+import { Calendar, MoreHorizontal, CalendarClock, Bell, ChevronRight, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Gauge, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
 import {
   daysBetweenDateOnly,
   type DateOnly,
@@ -164,31 +164,107 @@ function SubscriptionCardMetaFlow({ items }: { items: readonly SubscriptionCardM
   );
 }
 
-function SubscriptionCardGridMeta({ items, action }: { items: readonly SubscriptionCardMetaItem[]; action?: ReactNode }) {
+function SubscriptionCardGridMeta({
+  items,
+  action,
+  renewalLabel,
+  reminderDate,
+  reminderTone,
+  startDateLabel,
+  startDateValue,
+  paymentMethodLabel,
+  paymentMethodFallback,
+}: {
+  items: readonly SubscriptionCardMetaItem[];
+  action?: ReactNode;
+  renewalLabel: string;
+  reminderDate: string;
+  reminderTone: "normal" | "warning" | "danger";
+  startDateLabel: string;
+  startDateValue: string;
+  paymentMethodLabel: string;
+  paymentMethodFallback: string;
+}) {
   const relativeBilling = items.find((item) => item.key === "relative-billing");
-  const primaryItems = items.filter((item) => item.key === "start-date" || item.key === "billing-date");
+  const paymentMethod = items.find((item) => item.key === "payment-method");
   const secondaryItems = items.filter((item) => (
-    item.key !== "start-date" && item.key !== "billing-date" && item.key !== "relative-billing"
+    item.key !== "start-date"
+    && item.key !== "payment-method"
+    && item.key !== "relative-billing"
+    && (item.key !== "billing-date" || !relativeBilling)
   ));
 
   return (
-    <div data-testid="subscription-card-meta-flow" className="grid min-w-0 gap-1.5">
-      <div data-testid="subscription-card-meta-date-group" className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1.5">
-        {primaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
+    <div data-testid="subscription-card-meta-flow" className="grid min-w-0 gap-3">
+      {relativeBilling ? (
+        <div
+          data-testid="subscription-card-renewal-banner"
+          className={cn(
+            "flex min-h-10 min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium tabular-nums",
+            reminderTone === "danger" && "border-destructive/20 bg-destructive/8 text-destructive",
+            reminderTone === "warning" && "border-warning/25 bg-warning/10 text-warning",
+            reminderTone === "normal" && "border-primary/15 bg-primary/8 text-primary",
+          )}
+        >
+          <CalendarClock className="h-4 w-4 shrink-0" />
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+            <span
+              data-testid="subscription-card-meta-relative-billing"
+              className={cn(
+                "truncate",
+                reminderTone === "danger" && "text-destructive",
+                reminderTone === "warning" && "text-warning",
+                reminderTone === "normal" && "text-primary",
+              )}
+            >
+              {relativeBilling.text}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span data-testid="subscription-card-meta-billing-date" className="shrink-0">{reminderDate}</span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 opacity-70" />
+        </div>
+      ) : null}
+
+      <div
+        data-testid="subscription-card-meta-date-group"
+        className="grid min-w-0 grid-cols-2 divide-x divide-border/60 rounded-md border border-border/60 bg-muted/15"
+      >
+        <div data-testid="subscription-card-meta-start-date" className="flex min-w-0 items-center gap-2.5 px-3 py-2.5">
+          <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="text-[11px] leading-4 text-muted-foreground">{startDateLabel}</p>
+            <span className="block truncate text-xs text-foreground tabular-nums">{startDateValue}</span>
+          </div>
+        </div>
+        <div data-testid="subscription-card-meta-payment-method" className="flex min-w-0 items-center gap-2.5 px-3 py-2.5">
+          {paymentMethod?.icon ?? <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />}
+          <div className="min-w-0">
+            <p className="text-[11px] leading-4 text-muted-foreground">{paymentMethodLabel}</p>
+            {paymentMethod ? (
+              <span className="block truncate text-xs text-foreground">{paymentMethod.text}</span>
+            ) : (
+              <span className="block truncate text-xs text-muted-foreground">{paymentMethodFallback}</span>
+            )}
+          </div>
+        </div>
       </div>
+
       {secondaryItems.length > 0 ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-0.5">
           {secondaryItems.map((item) => <SubscriptionCardMetaToken key={item.key} item={item} />)}
         </div>
       ) : null}
-      {relativeBilling || action ? (
-        <div className="flex min-h-8 min-w-0 items-center justify-between gap-3 border-t border-border/50 pt-1.5">
-          <div className="min-w-0">
-            {relativeBilling ? <SubscriptionCardMetaToken item={relativeBilling} /> : null}
-          </div>
+
+      <div className="flex min-h-9 min-w-0 items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap px-2.5 text-xs font-medium">
+          <RotateCw className="h-3.5 w-3.5" />
+          {renewalLabel}
+        </Badge>
+        <div className="ml-auto">
           {action}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
@@ -383,9 +459,12 @@ function SubscriptionCardComponent({
   const renewAction = canManualRenew ? (
     <Button
       type="button"
-      variant="outline"
+      variant={viewMode === "grid" ? "default" : "outline"}
       size="sm"
-      className="pointer-events-auto h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+      className={cn(
+        "pointer-events-auto h-8 shrink-0 gap-1.5 px-3 text-xs",
+        viewMode === "grid" && "bg-primary text-primary-foreground shadow-none hover:bg-primary/90",
+      )}
       onPointerEnter={preloadRenewSubscriptionDialog}
       onFocus={preloadRenewSubscriptionDialog}
       onTouchStart={preloadRenewSubscriptionDialog}
@@ -404,8 +483,8 @@ function SubscriptionCardComponent({
       onPointerEnter={() => onPrefetchDetails?.(subscription.id)}
       onFocusCapture={() => onPrefetchDetails?.(subscription.id)}
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
-        viewMode === "list" ? "h-full p-5" : "p-4 sm:p-5",
+        "group relative h-full overflow-hidden border border-border bg-card transition-colors duration-200 hover:bg-card-hover",
+        viewMode === "list" ? "rounded-xl p-5 shadow-card" : "rounded-lg p-4 shadow-sm sm:p-5",
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
         isExpired && "border-destructive/45 bg-linear-to-br from-destructive/12 via-card to-card hover:from-destructive/18",
@@ -418,12 +497,19 @@ function SubscriptionCardComponent({
         <button
           type="button"
           aria-label={t("subscription.viewDetailsLabel", { name: displayName })}
-          className="absolute inset-0 z-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={cn(
+            "absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            viewMode === "list" ? "rounded-xl" : "rounded-lg",
+          )}
           onClick={handleViewDetails}
           data-testid="subscription-card-primary-action"
         />
       ) : null}
-      <div className={cn("relative z-10 flex items-start gap-3.5", viewMode === "list" && "gap-4", onViewDetails && "pointer-events-none")}>
+      <div className={cn(
+        "relative z-10 items-start",
+        viewMode === "grid" ? "grid grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-3" : "flex gap-4",
+        onViewDetails && "pointer-events-none",
+      )}>
         <div className="relative shrink-0">
           <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
           <span
@@ -434,7 +520,7 @@ function SubscriptionCardComponent({
           </span>
         </div>
 
-        <div className={cn("min-w-0 flex-1 grid", viewMode === "grid" ? "gap-2" : "gap-3")}>
+        <div className={cn("min-w-0 flex-1", viewMode === "grid" ? "contents" : "grid gap-3")}>
           <div className={cn(
             "grid grid-cols-[minmax(0,1fr)_auto_auto] items-start",
             viewMode === "grid" ? "gap-x-2 gap-y-1.5" : "gap-x-3 gap-y-2",
@@ -464,12 +550,13 @@ function SubscriptionCardComponent({
 
             <div className={cn(
               "min-w-0 shrink-0 text-right",
-              viewMode === "grid" ? "max-w-32 sm:max-w-36" : "max-w-35 sm:max-w-40",
+              viewMode === "grid" ? "max-w-none" : "max-w-35 sm:max-w-40",
             )}>
-              <p className={cn("truncate font-bold text-foreground", viewMode === "grid" ? "text-lg" : "text-xl")}>
+              <p className={cn("font-bold text-foreground tabular-nums", viewMode === "grid" ? "whitespace-nowrap text-lg" : "truncate text-xl")}>
                 {formatCurrency(subscription.price, subscription.currency)}
+                {viewMode === "grid" ? <span className="ml-1 text-sm font-medium text-muted-foreground">/ {billingCycleLabel.replace(/^每/, "")}</span> : null}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className={cn("text-xs text-muted-foreground", viewMode === "grid" && "sr-only")}>
                 {billingCycleLabel}
               </p>
               {priceReferenceLabel ? (
@@ -542,7 +629,7 @@ function SubscriptionCardComponent({
               data-testid="subscription-card-badge-flow"
               className={cn(
                 "col-span-full flex flex-wrap items-center",
-                viewMode === "grid" ? "mt-0.5 gap-x-1.5 gap-y-1.5" : "gap-x-1.5 gap-y-2 sm:gap-2",
+                viewMode === "grid" ? "hidden" : "gap-x-1.5 gap-y-2 sm:gap-2",
               )}
             >
               <Badge
@@ -553,7 +640,7 @@ function SubscriptionCardComponent({
               >
                 <TruncatedTooltipText text={categoryLabel} className="block max-w-full" />
               </Badge>
-              {((subscription as SubscriptionCollectionItem & { tags?: string[] }).tags ?? []).slice(0, 3).map((tag) => (
+              {((subscription as SubscriptionCollectionItem & { tags?: string[] }).tags ?? []).slice(0, viewMode === "grid" ? 0 : 3).map((tag) => (
                 <Badge key={tag} variant="secondary" className="max-w-28 truncate px-2 text-xs font-normal" title={tag}>{tag}</Badge>
               ))}
               <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
@@ -571,10 +658,22 @@ function SubscriptionCardComponent({
 
           <div className={cn(
             "grid min-w-0 text-sm",
-            viewMode === "grid" ? "gap-y-1 border-t border-border/60 pt-2" : "gap-y-1.5",
+            viewMode === "grid" ? "col-span-full gap-y-1" : "gap-y-1.5",
           )}>
             {viewMode === "grid"
-              ? <SubscriptionCardGridMeta items={metaItems} action={renewAction} />
+              ? (
+                  <SubscriptionCardGridMeta
+                    items={metaItems}
+                    action={renewAction}
+                    renewalLabel={renewalBadgeLabel}
+                    reminderDate={formatDateOnly(subscription.nextBillingDate)}
+                    reminderTone={isExpired ? "danger" : renewalTone}
+                    startDateLabel={t("subscription.field.startDate")}
+                    startDateValue={subscription.startDate ? formatDateOnly(subscription.startDate) : "-"}
+                    paymentMethodLabel={t("subscription.field.paymentMethod")}
+                    paymentMethodFallback={t("subscriptions.advanced.paymentMethodNone")}
+                  />
+                )
               : <SubscriptionCardMetaFlow items={metaItems} />}
 
             {viewMode === 'list' && !isBuyout && (
@@ -595,7 +694,7 @@ function SubscriptionCardComponent({
             <div className="flex justify-end border-t border-border/60 pt-2">{renewAction}</div>
           ) : null}
 
-          {isTrialEndingSoon && subscription.trialEndDate && (
+          {viewMode === "list" && isTrialEndingSoon && subscription.trialEndDate && (
             <div className="flex items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
               <span className="font-medium">
                 {t("subscription.card.trialEnds", { date: formatDateOnly(subscription.trialEndDate, "monthDay") })}

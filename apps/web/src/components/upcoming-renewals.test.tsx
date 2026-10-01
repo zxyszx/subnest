@@ -22,6 +22,21 @@ vi.mock("@/i18n/I18nProvider", () => ({
       return value;
     },
     formatCurrency: (amount: number, currency: string) => `${currency} ${amount}`,
+    label: (labels: Record<string, string>) => labels["zh-CN"] ?? labels.en ?? "",
+  }),
+}));
+
+vi.mock("@/contexts/CustomConfigContext", () => ({
+  useCustomConfigState: () => ({
+    config: {
+      paymentMethods: [
+        {
+          value: "visa",
+          labels: { "zh-CN": "Visa", en: "Visa" },
+          icon: "/api/assets/visa.png",
+        },
+      ],
+    },
   }),
 }));
 
@@ -103,13 +118,27 @@ describe("UpcomingRenewals", () => {
 
     const price = screen.getByText("USD 10");
     expect(list).toHaveClass("min-w-0", "divide-y", "divide-border");
-    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_auto]");
+    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_5.5rem]");
     expect(row.children[0]).toBe(details);
     expect(details).toHaveClass("min-w-0");
     expect(name).toHaveClass("min-w-0", "truncate");
-    expect(row.children[1]).toHaveClass("grid", "grid-cols-[4.75rem_minmax(0,1fr)]");
-    expect(row.children[2]).toHaveClass("flex", "flex-col", "items-end");
-    expect(price).toHaveClass("truncate", "whitespace-nowrap", "tabular-nums");
+    expect(row.children[1]).toHaveClass("grid", "grid-cols-[5.5rem_minmax(0,1fr)]");
+    expect(row.children[2]).toHaveClass("flex", "w-22", "flex-col", "items-end");
+    expect(price).toHaveClass("whitespace-nowrap", "tabular-nums");
+    expect(price).not.toHaveClass("truncate");
+  });
+
+  it("shows the configured payment method icon and card tail below the subscription", () => {
+    render(
+      <UpcomingRenewals
+        subscriptions={[subscription({ paymentMethod: "visa", cardLast4: "4242" })]}
+        today="2026-06-15"
+        notificationReminderDays={3}
+      />,
+    );
+
+    expect(screen.getByText("Visa · •••• 4242")).toBeInTheDocument();
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/api/assets/visa.png");
   });
 
   it("uses the reminder-window empty state instead of the old two-week copy", () => {

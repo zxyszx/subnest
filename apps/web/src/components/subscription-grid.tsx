@@ -7,7 +7,7 @@ import type { SubscriptionCollectionItem } from "@/types/subscription";
 import type { DateOnly } from "@/lib/time/date-only";
 
 const SUBSCRIPTION_GRID_ROW_GAP = 16;
-const SUBSCRIPTION_GRID_ROW_ESTIMATE = 220;
+const SUBSCRIPTION_GRID_ROW_ESTIMATE = 296;
 const SUBSCRIPTION_LIST_ROW_ESTIMATE = 174;
 
 type SubscriptionGridProps = {
@@ -137,8 +137,8 @@ export function SubscriptionGrid({
       getItemKey={getRowKey}
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
-        "grid items-start gap-4",
-        viewMode === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1",
+        "grid gap-4",
+        viewMode === "grid" ? "items-stretch sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 items-start",
       )}
       testId="virtualized-subscription-list"
       renderItem={renderRow}

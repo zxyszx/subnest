@@ -13,6 +13,9 @@ import { getSubscriptionCalendarRange } from "@/modules/subscriptions/domain/sub
 import { isOneTimeBuyout } from "@/lib/subscription-billing";
 import { addBillingCycles } from "@renewlet/shared/subscription-renewal";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { CalendarAccountIdentity } from "@/components/calendar-account-identity";
+import { subscriptionPlatformName } from "@/lib/subscription-platform";
 
 type CurrencyConvert = (amount: number | string, fromCurrency: string, toCurrency: string) => number;
 
@@ -29,7 +32,15 @@ interface DayFinancials {
   subscriptionSpend: number;
   memberCount: number;
   memberIncome: number;
-  items: Array<{ id: string; label: string; amount: number; kind: "spend" | "income" }>;
+  items: Array<{
+    id: string;
+    platformName: string;
+    logo?: string | null;
+    accountNumber: number;
+    detailLabel: string;
+    amount: number;
+    kind: "spend" | "income";
+  }>;
 }
 
 function createEmptyDay(): DayFinancials {
@@ -85,7 +96,15 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
       const amount = convert(subscription.price, subscription.currency, defaultCurrency);
       day.subscriptionCount += 1;
       day.subscriptionSpend += amount;
-      day.items.push({ id: `subscription:${subscription.id}:${date}`, label: subscription.platformName || subscription.name, amount, kind: "spend" });
+      day.items.push({
+        id: `subscription:${subscription.id}:${date}`,
+        platformName: subscription.platformName || subscription.name,
+        logo: subscription.logo ?? null,
+        accountNumber: subscription.accountNumber ?? 1,
+        detailLabel: subscription.name,
+        amount,
+        kind: "spend",
+      });
       values.set(date, day);
     };
 
@@ -123,7 +142,15 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
         const day = getDay(date);
         day.memberCount += 1;
         day.memberIncome += amount;
-        day.items.push({ id: `seat:${seat.id}:${date}`, label: seat.memberName!, amount, kind: "income" });
+        day.items.push({
+          id: `seat:${seat.id}:${date}`,
+          platformName: subscriptionPlatformName(detail.account.subscription),
+          logo: detail.account.subscription.logo,
+          accountNumber: detail.account.accountNumber,
+          detailLabel: `${seat.memberName!} · ${t("sharing.seatNumber")} #${seat.seatNumber}`,
+          amount,
+          kind: "income",
+        });
         values.set(date, day);
       };
       const previousDates: DateOnly[] = [];
@@ -151,7 +178,7 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
     }));
 
     return values;
-  }, [convert, defaultCurrency, range.from, range.to, sharingDetails, subscriptions]);
+  }, [convert, defaultCurrency, range.from, range.to, sharingDetails, subscriptions, t]);
 
   const monthlyFinancials = useMemo(() => {
     const monthPrefix = format(currentMonth, "yyyy-MM-");
@@ -411,8 +438,23 @@ export function DashboardRenewalCalendar({ subscriptions, sharingDetails, today,
           </DialogHeader>
           <div className="divide-y divide-border rounded-lg border border-border">
             {(selectedDate ? financialsByDate.get(selectedDate)?.items ?? [] : []).map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-4 px-3 py-3 text-sm">
-                <span className="min-w-0 truncate font-medium text-foreground">{item.label}</span>
+              <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-sm">
+                <div className="min-w-0">
+                  <CalendarAccountIdentity
+                    platformName={item.platformName}
+                    logo={item.logo ?? undefined}
+                    accountNumber={item.accountNumber}
+                    size="sm"
+                  />
+                  <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-6.5">
+                    <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px] font-medium">
+                      {t(item.kind === "spend" ? "dashboard.subscriptionRenewals" : "dashboard.memberRenewals")}
+                    </Badge>
+                    {item.detailLabel !== item.platformName ? (
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{item.detailLabel}</span>
+                    ) : null}
+                  </div>
+                </div>
                 <span className={cn("shrink-0 font-semibold tabular-nums", item.kind === "spend" ? "text-destructive" : "text-emerald-600 dark:text-emerald-400")}>
                   {item.kind === "spend" ? "-" : "+"}{formatCompactCurrencyAmount(item.amount, defaultCurrency, locale)}
                 </span>

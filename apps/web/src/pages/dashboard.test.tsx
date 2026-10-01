@@ -70,6 +70,12 @@ vi.mock("@/components/add-subscription-dialog", () => ({
   AddSubscriptionDialog: ({ trigger }: { trigger: React.ReactNode }) => trigger,
 }));
 
+vi.mock("@/components/sharing-account-detail-dialog", () => ({
+  SharingAccountDetailDialog: ({ account, open }: { account: SharingAccount | null; open: boolean }) => (
+    open ? <div role="dialog" aria-label={`家庭共享 ${account?.accountNumber}`}>{account?.loginAccount}</div> : null
+  ),
+}));
+
 vi.mock("@/hooks/use-report-exchange-rates", () => ({
   useReportExchangeRates: () => ({
     convert: (amount: number | string, from: string, to: string) => {
@@ -454,6 +460,8 @@ describe("Dashboard page loading state", () => {
 
     const dialog = screen.getByRole("dialog", { name: "2026年6月18日" });
     expect(within(dialog).getAllByText("June 18 service")).toHaveLength(1);
+    expect(within(dialog).getByTitle("账号编号 1")).toBeInTheDocument();
+    expect(within(dialog).getByText("订阅续费")).toBeInTheDocument();
     expect(within(dialog).queryByText("June 19 service")).not.toBeInTheDocument();
   });
 
@@ -513,6 +521,43 @@ describe("Dashboard page loading state", () => {
     expect(screen.getAllByText("¥15 CNY").length).toBeGreaterThan(0);
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60");
     expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20");
+  });
+
+  it("opens the seven-day worklists in dialogs instead of navigating away", async () => {
+    const user = userEvent.setup();
+    const account = sharingAccount();
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })],
+      isPending: false,
+    });
+
+    renderDashboard();
+
+    const subscriptionPanel = screen.getByRole("heading", { name: "订阅续费" }).closest("article");
+    expect(subscriptionPanel).not.toBeNull();
+    await user.click(within(subscriptionPanel!).getByRole("button", { name: "查看全部 (1)" }));
+    expect(screen.getByRole("dialog", { name: "7 天内订阅续费" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "关闭" }));
+
+    const memberPanel = screen.getByRole("heading", { name: "车友续费" }).closest("article");
+    expect(memberPanel).not.toBeNull();
+    await user.click(within(memberPanel!).getByRole("button", { name: "查看全部 (1)" }));
+    const memberDialog = screen.getByRole("dialog", { name: "7 天内车友续费" });
+    expect(memberDialog).toHaveTextContent("已过期 1 天");
+  });
+
+  it("opens the selected sharing account in a dialog from the dashboard", async () => {
+    const user = userEvent.setup();
+    const account = sharingAccount();
+    mocks.sharingAccounts = [account];
+    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
+
+    renderDashboard();
+    await user.click(screen.getByRole("button", { name: "管理账号" }));
+
+    expect(await screen.findByRole("dialog", { name: "家庭共享 2" })).toHaveTextContent("netflix@example.com");
   });
 
   it("combines renewal worklists into switchable tabs on compact screens", async () => {
