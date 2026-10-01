@@ -22,7 +22,7 @@ vi.mock("@/i18n/I18nProvider", () => ({
       return value;
     },
     formatCurrency: (amount: number, currency: string) => `${currency} ${amount}`,
-    label: (labels: Record<string, string>) => labels["zh-CN"] ?? labels.en ?? "",
+    label: (labels: Record<string, string>) => labels["zh-CN"] ?? labels["en"] ?? "",
   }),
 }));
 
