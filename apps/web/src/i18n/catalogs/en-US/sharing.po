@@ -149,16 +149,6 @@ msgid "sharing.nearestExpiry"
 msgstr "Nearest expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:149
-msgid "sharing.toggleAscending"
-msgstr "Switch to ascending"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:148
-msgid "sharing.toggleDescending"
-msgstr "Switch to descending"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:35
 msgid "sharing.creating"
 msgstr "Creating…"
@@ -319,19 +309,9 @@ msgid "sharing.startDate"
 msgstr "Start date"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:150
-msgid "sharing.currentAscending"
-msgstr "Currently ascending"
-
-#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:134
 msgid "sharing.noVacantSeats"
 msgstr "No vacant seats are available on this platform."
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:151
-msgid "sharing.currentDescending"
-msgstr "Currently descending"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:85

@@ -874,6 +874,16 @@ msgid "statistics.mostExpensiveNamed"
 msgstr "最贵: {name}"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:323
+msgid "subscriptions.sort.renewalAsc"
+msgstr "最近到期"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:324
+msgid "subscriptions.sort.renewalDesc"
+msgstr "最远到期"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:472
 msgid "import.conflictMode"
 msgstr "冲突处理"
@@ -957,16 +967,6 @@ msgstr "到期: {date}"
 #: src/i18n/descriptors/subscription.ts:17
 msgid "subscription.addToCalendarExpiryEvent"
 msgstr "到期事件"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:323
-msgid "subscriptions.sort.renewalAsc"
-msgstr "到期最近"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:324
-msgid "subscriptions.sort.renewalDesc"
-msgstr "到期最远"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:123

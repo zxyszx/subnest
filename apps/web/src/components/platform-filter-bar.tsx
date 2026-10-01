@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ListFilter } from "lucide-react";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,12 @@ interface PlatformFilterBarProps {
   moreLabel: string;
   ariaLabel: string;
   className?: string;
+  visibleLimits?: {
+    compact?: number;
+    regular?: number;
+    wide?: number;
+  };
+  moreIconOnly?: boolean;
 }
 
 export function PlatformFilterBar({
@@ -35,10 +41,16 @@ export function PlatformFilterBar({
   moreLabel,
   ariaLabel,
   className,
+  visibleLimits,
+  moreIconOnly = false,
 }: PlatformFilterBarProps) {
   const compact = useMediaQuery("(max-width: 767px)");
   const wide = useMediaQuery("(min-width: 1280px)");
-  const visibleLimit = compact ? 2 : wide ? 6 : 4;
+  const visibleLimit = compact
+    ? (visibleLimits?.compact ?? 2)
+    : wide
+      ? (visibleLimits?.wide ?? 6)
+      : (visibleLimits?.regular ?? 4);
   const ordered = useMemo(() => {
     const unique = new Map<string, PlatformFilterOption>();
     for (const platform of platforms) {
@@ -96,9 +108,20 @@ export function PlatformFilterBar({
       {overflow.length > 0 ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type="button" variant="ghost" className="h-10 shrink-0 gap-1 px-3">
-              {moreLabel}
-              <ChevronDown className="h-4 w-4" />
+            <Button
+              type="button"
+              variant="ghost"
+              size={moreIconOnly ? "icon" : "default"}
+              className={cn("h-10 shrink-0", moreIconOnly ? "w-10 p-0" : "gap-1 px-3")}
+              aria-label={moreLabel}
+              title={moreLabel}
+            >
+              {moreIconOnly ? <ListFilter className="h-4 w-4" /> : (
+                <>
+                  {moreLabel}
+                  <ChevronDown className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-52">

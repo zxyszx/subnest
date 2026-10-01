@@ -111,6 +111,7 @@ export function manySubscriptions(count: number) {
     subscription({
       id: `service-${index.toString().padStart(3, "0")}`,
       name: `Service ${index.toString().padStart(3, "0")}`,
+      accountNumber: index + 1,
       price: String(index + 1),
     }),
   );

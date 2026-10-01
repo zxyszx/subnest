@@ -145,8 +145,4 @@ export const messages = [
   msg({ id: "sharing.hasOutstanding", message: "存在待收款" }),
   msg({ id: "sharing.accountNumberSort", message: "账号序号" }),
   msg({ id: "sharing.vacantSeatsSort", message: "空余车位" }),
-  msg({ id: "sharing.toggleDescending", message: "切换为降序" }),
-  msg({ id: "sharing.toggleAscending", message: "切换为升序" }),
-  msg({ id: "sharing.currentAscending", message: "当前升序" }),
-  msg({ id: "sharing.currentDescending", message: "当前降序" }),
 ] as const;

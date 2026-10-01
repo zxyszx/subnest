@@ -874,6 +874,16 @@ msgid "statistics.mostExpensiveNamed"
 msgstr "Most expensive: {name}"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:323
+msgid "subscriptions.sort.renewalAsc"
+msgstr "Renewal soonest"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:324
+msgid "subscriptions.sort.renewalDesc"
+msgstr "Renewal latest"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:472
 msgid "import.conflictMode"
 msgstr "Conflict handling"
@@ -957,16 +967,6 @@ msgstr "Due: {date}"
 #: src/i18n/descriptors/subscription.ts:17
 msgid "subscription.addToCalendarExpiryEvent"
 msgstr "Expiry event"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:323
-msgid "subscriptions.sort.renewalAsc"
-msgstr "Renewal soonest"
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/subscription.ts:324
-msgid "subscriptions.sort.renewalDesc"
-msgstr "Renewal latest"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:123

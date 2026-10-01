@@ -18,7 +18,6 @@ import { Header } from '@/components/header';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionGrid } from '@/components/subscription-grid';
 import { AddToCalendarDialog } from '@/components/add-to-calendar-dialog';
-import { subscriptionFilterLayout } from '@/components/subscription-filter-layout';
 import { DeferredRenewSubscriptionDialog } from '@/components/renew-subscription-dialog-loader';
 import {
   DeferredImportDataDialog,
@@ -38,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem } from '@/types/subscription';
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel, ArrowDownUp } from 'lucide-react';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -102,28 +101,11 @@ const SORT_OPTION_LABEL_KEYS: Record<SubscriptionSortOption, MessageKey> = {
   account_asc: "subscriptions.sort.accountAsc",
   account_desc: "subscriptions.sort.accountDesc",
 };
-type SubscriptionSortField = "renewal" | "account" | "monthly_cost" | "price" | "name";
-const SORT_FIELD_OPTIONS: { value: SubscriptionSortField; labelKey: MessageKey }[] = [
-  { value: "renewal", labelKey: "subscriptions.sort.renewalAsc" },
-  { value: "account", labelKey: "subscriptions.sort.accountAsc" },
-  { value: "monthly_cost", labelKey: "subscriptions.sort.monthlyCostDesc" },
-  { value: "price", labelKey: "subscriptions.sort.priceDesc" },
-  { value: "name", labelKey: "subscriptions.sort.nameAsc" },
+const SORT_OPTIONS: Exclude<SubscriptionSortOption, "default">[] = [
+  "renewal_asc",
+  "account_asc",
+  "account_desc",
 ];
-const SORT_FIELD_BY_OPTION: Record<Exclude<SubscriptionSortOption, "default">, SubscriptionSortField> = {
-  renewal_asc: "renewal", renewal_desc: "renewal",
-  account_asc: "account", account_desc: "account",
-  monthly_cost_asc: "monthly_cost", monthly_cost_desc: "monthly_cost",
-  price_asc: "price", price_desc: "price",
-  name_asc: "name", name_desc: "name",
-};
-const SORT_OPTION_BY_FIELD: Record<SubscriptionSortField, { asc: SubscriptionSortOption; desc: SubscriptionSortOption }> = {
-  renewal: { asc: "renewal_asc", desc: "renewal_desc" },
-  account: { asc: "account_asc", desc: "account_desc" },
-  monthly_cost: { asc: "monthly_cost_asc", desc: "monthly_cost_desc" },
-  price: { asc: "price_asc", desc: "price_desc" },
-  name: { asc: "name_asc", desc: "name_desc" },
-};
 
 /** 订阅列表页组件。 */
 const Subscriptions = () => {
@@ -301,28 +283,18 @@ const Subscriptions = () => {
   } = useSubscriptionDetailDialog(displaySourceSubscriptions);
   const calendarDialog = useSubscriptionCalendarDialog(displaySourceSubscriptions);
   const effectiveSortOption = sortOption === "default" ? "renewal_asc" : sortOption;
-  const sortField = SORT_FIELD_BY_OPTION[effectiveSortOption];
-  const sortDirection = effectiveSortOption.endsWith("_desc") ? "desc" : "asc";
   const sortControls = (
-    <div className="grid min-w-0 grid-cols-[minmax(8.5rem,1fr)_2.75rem] gap-2" aria-label={t("subscriptions.sort.label")}>
-      <Select value={sortField} onValueChange={(field) => setSortOption(SORT_OPTION_BY_FIELD[field as SubscriptionSortField].asc)}>
+    <div className="min-w-0" aria-label={t("subscriptions.sort.label")}>
+      <Select value={effectiveSortOption} onValueChange={(value) => setSortOption(value as SubscriptionSortOption)}>
         <SelectTrigger aria-label={t("subscriptions.sort.label")} className="h-11 border-border bg-secondary sm:h-10">
           <SelectValue />
         </SelectTrigger>
         <SelectContent mobileTitle={t("subscriptions.sort.label")}>
-          {SORT_FIELD_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{t(option.labelKey).replace(/\s?(最高|最低|最近|最远|正序|倒序|A-Z|Z-A)$/, "")}</SelectItem>)}
+          {SORT_OPTIONS.map((option) => (
+            <SelectItem key={option} value={option}>{t(SORT_OPTION_LABEL_KEYS[option])}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11 w-11 border-border p-0 sm:h-10 sm:w-10"
-        aria-label={t(SORT_OPTION_LABEL_KEYS[SORT_OPTION_BY_FIELD[sortField][sortDirection === "asc" ? "desc" : "asc"]])}
-        title={t(SORT_OPTION_LABEL_KEYS[effectiveSortOption])}
-        onClick={() => setSortOption(SORT_OPTION_BY_FIELD[sortField][sortDirection === "asc" ? "desc" : "asc"])}
-      >
-        <ArrowDownUp className="h-4 w-4" />
-      </Button>
     </div>
   );
   const handleLoadMore = useCallback(() => {
@@ -427,26 +399,8 @@ const Subscriptions = () => {
           </div>
         </div>
 
-        {!isMobileTagFilter && platformOptions.length > 0 ? (
-          <Suspense fallback={<div className="h-12 rounded-t-lg border border-b-0 bg-card" />}>
-            <PlatformFilterBar
-              platforms={platformOptions}
-              value={selectedPlatform}
-              onValueChange={setSelectedPlatform}
-              allLabel={t("subscriptions.allPlatforms")}
-              moreLabel={t("subscriptions.morePlatforms")}
-              ariaLabel={t("subscriptions.platformFilter")}
-              className="rounded-t-lg border border-b-0 bg-card px-2"
-            />
-          </Suspense>
-        ) : null}
-
-        <div className={cn(
-          "mb-6 border border-border bg-card p-5",
-          !isMobileTagFilter && platformOptions.length > 0 ? "rounded-b-xl rounded-t-none border-t-0" : "rounded-xl",
-          isMobileTagFilter ? "grid gap-3 p-3" : "grid gap-4",
-        )}>
-          {isMobileTagFilter ? (
+        {isMobileTagFilter ? (
+          <div className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-3">
             <>
               <div className="flex min-w-0 items-center gap-2" data-testid="mobile-compact-filter-toolbar">
                 <div className="relative min-w-0 flex-1">
@@ -496,10 +450,29 @@ const Subscriptions = () => {
                 </div>
               ) : null}
             </>
-          ) : (
-            <>
-              <div className={subscriptionFilterLayout.desktopRow} data-testid="desktop-filter-toolbar">
-                <div className={subscriptionFilterLayout.desktopSearch}>
+          </div>
+        ) : (
+          <div
+            className="mb-6 flex min-w-0 items-center rounded-lg border border-border bg-card"
+            data-testid="desktop-subscription-toolbar"
+          >
+            {platformOptions.length > 0 ? (
+              <Suspense fallback={<div className="h-12 min-w-0 flex-1" />}>
+                <PlatformFilterBar
+                  platforms={platformOptions}
+                  value={selectedPlatform}
+                  onValueChange={setSelectedPlatform}
+                  allLabel={t("subscriptions.allPlatforms")}
+                  moreLabel={t("subscriptions.morePlatforms")}
+                  ariaLabel={t("subscriptions.platformFilter")}
+                  className="min-w-0 flex-1 border-0 px-2"
+                  visibleLimits={{ regular: 2, wide: 4 }}
+                  moreIconOnly
+                />
+              </Suspense>
+            ) : null}
+            <div className={cn("flex min-w-0 shrink-0 items-center gap-2 p-2", platformOptions.length > 0 && "pl-0")}>
+                <div className="relative w-[clamp(14rem,28vw,24rem)] min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     name="subscription-search"
@@ -508,15 +481,13 @@ const Subscriptions = () => {
                     placeholder={t("subscriptions.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-border bg-secondary pl-10"
+                    className="h-10 border-border bg-secondary pl-10"
                   />
                 </div>
-                <div className="w-[min(14rem,100%)]">{sortControls}</div>
-
+                <div className="w-40">{sortControls}</div>
               </div>
-            </>
-          )}
-        </div>
+          </div>
+        )}
 
         {displayError ? (
           <QueryErrorState error={displayError} onRetry={retryDisplayQuery} />

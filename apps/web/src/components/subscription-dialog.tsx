@@ -70,12 +70,14 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
         dismissMode="explicit"
         layout="frame"
         className={cn(
-          "h5-dialog-frame h5-subscription-dialog-panel border-border bg-card p-0",
-          props.mode === "edit" && props.scope === "family-sharing" ? "sm:max-w-lg" : "sm:max-w-2xl",
+          "h5-subscription-dialog-panel border-border bg-card p-0",
+          props.mode === "edit" && props.scope === "family-sharing"
+            ? "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:max-w-lg"
+            : "h5-dialog-frame sm:max-w-2xl",
         )}
         aria-busy={modulePending || props.loading ? true : undefined}
       >
-        <DialogHeader data-subscription-dialog-header="" className="shrink-0 p-6 pb-0">
+        <DialogHeader data-subscription-dialog-header="" className="shrink-0 px-5 py-4 pb-0">
           <DialogTitle className="text-xl font-semibold">
             {props.mode === "create"
               ? isCloneCreateMode

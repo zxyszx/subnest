@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownUp, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
@@ -27,7 +27,7 @@ import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
-import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry, type SharingExpirySortDirection } from "@/lib/sharing-financials";
+import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
@@ -70,7 +70,6 @@ export default function Sharing() {
   const [searchQuery, setSearchQuery] = useState("");
   const [accountFilter, setAccountFilter] = useState<SharingFilter>("all");
   const [sortField, setSortField] = useState<SharingSortField>("expiry");
-  const [expirySortDirection, setExpirySortDirection] = useState<SharingExpirySortDirection>("asc");
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
@@ -123,9 +122,8 @@ export default function Sharing() {
     if (!nearest) return false;
     return accountFilter === "overdue" ? nearest.daysUntilExpiry < 0 : nearest.daysUntilExpiry >= 0 && nearest.daysUntilExpiry <= 7;
   });
-  const directionFactor = expirySortDirection === "asc" ? 1 : -1;
   const visibleAccounts = sortField === "expiry"
-    ? sortSharingAccountsByNearestSeatExpiry(filteredAccounts, accountDetails, today, expirySortDirection)
+    ? sortSharingAccountsByNearestSeatExpiry(filteredAccounts, accountDetails, today, "asc")
     : [...filteredAccounts].sort((left, right) => {
         const comparison = sortField === "account"
           ? left.accountNumber - right.accountNumber
@@ -134,7 +132,7 @@ export default function Sharing() {
             : sortField === "revenue"
               ? sharingMonthlyRevenue(left, defaultCurrency, convert) - sharingMonthlyRevenue(right, defaultCurrency, convert)
               : sharingMonthlyProfit(left, defaultCurrency, convert) - sharingMonthlyProfit(right, defaultCurrency, convert);
-        return comparison * directionFactor || left.accountNumber - right.accountNumber;
+        return comparison || left.accountNumber - right.accountNumber;
       });
   const upcomingSeatRenewals = sharingUpcomingSeatRenewals(
     accountDetailQueries.flatMap((query) => query.data ? [query.data] : []),
@@ -268,7 +266,7 @@ export default function Sharing() {
   };
 
   const sharingFilterControls = (
-    <div className="grid min-w-0 grid-cols-[minmax(8.5rem,1fr)_minmax(8.5rem,1fr)_2.75rem] gap-2">
+    <div className="grid min-w-0 grid-cols-2 gap-2">
       <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
         <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("sharing.accountStatusFilter")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("sharing.accountStatusFilter")}>
@@ -290,17 +288,6 @@ export default function Sharing() {
           <SelectItem value="profit">{t("sharing.monthlyProfit")}</SelectItem>
         </SelectContent>
       </Select>
-      <Button
-        type="button"
-        size="icon"
-        variant="outline"
-        className="h-11 w-11 border-border sm:h-9 sm:w-9"
-        aria-label={expirySortDirection === "asc" ? t("sharing.toggleDescending") : t("sharing.toggleAscending")}
-        title={expirySortDirection === "asc" ? t("sharing.currentAscending") : t("sharing.currentDescending")}
-        onClick={() => setExpirySortDirection((direction) => direction === "asc" ? "desc" : "asc")}
-      >
-        <ArrowDownUp className="h-4 w-4" />
-      </Button>
     </div>
   );
 

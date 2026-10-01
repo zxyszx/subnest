@@ -103,9 +103,9 @@ function resolveDetailLoadingStructure(
   return {
     showCalendarAction: preview !== null && !buyout,
     showCostSharing: preview?.costSharing?.enabled === true,
-    showDailyAverage: preview !== null && projectSubscriptionDailyCost(preview.price, preview, today) !== null,
     showNextBillingDate: preview !== null && (!buyout || preview.startDate !== null),
     showPaymentMethod: Boolean(preview?.paymentMethod),
+    showDailyAverage: preview !== null && projectSubscriptionDailyCost(preview.price, preview, today) !== null,
     showStartDate: !buyout && preview?.startDate !== null && preview?.startDate !== undefined,
     showTrialEndDate: preview?.trialEndDate !== undefined,
   };
@@ -152,12 +152,12 @@ function SubscriptionDetailContent({
   const inheritedReminderDays = settings?.notificationReminderDays ?? DEFAULT_NOTIFICATION_REMINDER_DAYS;
   const isBuyout = isOneTimeBuyout(subscription);
   const isFixedTermOneTime = isOneTimeFixedTerm(subscription);
-  const dailyCost = projectSubscriptionDailyCost(subscription.price, subscription, today);
   const canManualRenew = Boolean(onRenewSubscription) && isManualRenewEligible(subscription);
   const costSharingSummary = calculateCostSharingSummary(subscription.costSharing, subscription.price, {
     baseCurrency: subscription.currency,
     convert: currencyConvert,
   });
+  const dailyCost = projectSubscriptionDailyCost(subscription.price, subscription, today);
   const priceReference = getSubscriptionPriceReference({
     price: subscription.price,
     currency: subscription.currency,
@@ -516,12 +516,12 @@ export function SubscriptionDetailDialog({
           <DialogContent
             layout="frame"
             closeLabel={t("common.close")}
-            className="h5-dialog-frame gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg"
+            className="h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg"
             onOpenAutoFocus={handleOpenAutoFocus}
             onCloseAutoFocus={handleCloseAutoFocus}
             aria-busy={loading ? true : undefined}
           >
-            <DialogHeader className="shrink-0 border-b border-border px-6 py-5 pr-14 text-left">
+            <DialogHeader className="shrink-0 border-b border-border px-5 py-4 pr-14 text-left">
               <div className="flex min-w-0 items-start gap-3">
                 {headerLogo ? <span aria-hidden="true" className="shrink-0">{headerLogo}</span> : null}
                 <div className="min-w-0 flex-1">

@@ -39,23 +39,23 @@ export function SubscriptionDetailScaffold({
     >
       {/* 外层 Dialog/Drawer 提供确定高度；正文独占可收缩轨道，footer 始终留在滚动区之外。 */}
       <div
-        className="h5-mobile-sheet-scroll grid min-w-0 content-start gap-5 px-5 py-4 sm:p-6"
+        className="h5-mobile-sheet-scroll grid min-w-0 content-start gap-4 px-5 py-4 sm:p-5"
         data-dialog-scroll-region="subscription-detail"
         data-subscription-dialog-scroll=""
       >
         <div
-          className="flex items-center justify-between rounded-lg bg-secondary/50 p-4"
+          className="flex items-center justify-between rounded-lg bg-secondary/50 p-3"
           data-dialog-region="subscription-summary"
         >
           {summary}
         </div>
-        <div className="grid gap-3" data-dialog-region="subscription-facts">
+        <div className="grid gap-2" data-dialog-region="subscription-facts">
           {facts}
           {extensions}
         </div>
       </div>
       <footer
-        className="flex shrink-0 flex-col gap-2 border-t border-border bg-card px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:px-6 sm:pb-4"
+        className="flex shrink-0 flex-col gap-2 border-t border-border bg-card px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:px-5 sm:pb-3"
         data-dialog-region="subscription-actions"
         data-subscription-dialog-footer=""
       >

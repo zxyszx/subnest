@@ -388,7 +388,7 @@ describe("SubscriptionDetailDialog", () => {
     if (!title.parentElement) throw new Error("Missing desktop subscription detail title stack");
     const category = within(title.parentElement).getByText("开发工具");
 
-    expect(dialog).toHaveClass("h5-dialog-frame", "overflow-hidden");
+    expect(dialog).toHaveClass("h5-dialog-auto-frame", "overflow-hidden");
     expect(header).toHaveClass("shrink-0");
     expect(scrollRegions).toHaveLength(1);
     expect(scrollRegions[0]?.parentElement?.parentElement).toBe(dialog);

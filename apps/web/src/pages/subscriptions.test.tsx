@@ -283,6 +283,15 @@ describe("Subscriptions page sorting", () => {
     });
   });
 
+  it("keeps platform, search, and expiry sorting in one desktop toolbar", async () => {
+    renderSubscriptionsPage();
+
+    const toolbar = screen.getByTestId("desktop-subscription-toolbar");
+    expect(await within(toolbar).findByRole("navigation", { name: "按平台筛选订阅" })).toBeInTheDocument();
+    expect(within(toolbar).getByRole("searchbox")).toHaveAttribute("placeholder", "搜索序号、订阅、标签或备注...");
+    expect(within(toolbar).getByRole("combobox", { name: "排序" })).toHaveTextContent("最近到期");
+  });
+
   it("renders a page-isomorphic skeleton while the first subscription page is pending", () => {
     mocks.useInfiniteSubscriptions.mockReturnValue({
       subscriptions: [],
@@ -751,8 +760,7 @@ describe("Subscriptions page virtualization", () => {
     expect(screen.getAllByTestId("subscription-card-reference")[0]).toHaveTextContent("USD");
 
     await user.click(screen.getByRole("combobox", { name: "排序" }));
-    await user.click(await screen.findByRole("option", { name: "名称" }));
-    await user.click(screen.getByRole("button", { name: "名称 Z-A" }));
+    await user.click(await screen.findByRole("option", { name: "序号倒序" }));
 
     await waitFor(() => {
       expect(visibleSubscriptionNames()[0]).toBe("Service 089");
