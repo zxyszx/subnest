@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowDownUp, CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
-import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { SubscriptionStatusBadge } from "@/components/subscription-status-badge";
@@ -33,6 +32,10 @@ import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
+
+const SharingAccountDetailDialog = lazy(() => import("@/components/sharing-account-detail-dialog").then((module) => ({
+  default: module.SharingAccountDetailDialog,
+})));
 
 function DenseDate({ value }: { value: string }) {
   const date = toPlainDate(value);
@@ -469,7 +472,11 @@ export default function Sharing() {
             </div>
           </section>
         )}
-        <SharingAccountDetailDialog account={selectedAccount} mode="seats" open={Boolean(selectedAccount)} onOpenChange={(open) => !open && setSelectedAccount(null)} />
+        {selectedAccount ? (
+          <Suspense fallback={null}>
+            <SharingAccountDetailDialog account={selectedAccount} mode="seats" open onOpenChange={(open) => !open && setSelectedAccount(null)} />
+          </Suspense>
+        ) : null}
         <EditSubscriptionDialog
           scope="family-sharing"
           subscription={editingSubscriptionQuery.data ?? null}
