@@ -175,7 +175,13 @@ function subscription(
 function sharingAccount(): SharingAccount {
   return {
     id: "sharing-1",
-    subscription: { id: "netflix", name: "Netflix", platformName: "Netflix", logo: null },
+    subscription: {
+      id: "netflix",
+      name: "Netflix",
+      platformName: "Netflix",
+      logo: null,
+      status: "active",
+    },
     name: "Netflix",
     accountNumber: 2,
     loginAccount: "netflix@example.com",
