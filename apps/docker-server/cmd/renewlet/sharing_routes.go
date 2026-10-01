@@ -27,6 +27,7 @@ type sharingSubscriptionSummary struct {
 	Name         string  `json:"name"`
 	PlatformName string  `json:"platformName"`
 	Logo         *string `json:"logo"`
+	Status       string  `json:"status"`
 }
 
 type sharingAccountResponse struct {
@@ -528,6 +529,7 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 			Name:         subscription.GetString("name"),
 			PlatformName: sharingPlatformName(subscription),
 			Logo:         optionalSharingString(subscription.GetString("logo")),
+			Status:       subscription.GetString("status"),
 		},
 		Name:                     record.GetString("name"),
 		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),

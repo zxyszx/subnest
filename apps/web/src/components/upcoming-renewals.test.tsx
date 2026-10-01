@@ -107,7 +107,8 @@ describe("UpcomingRenewals", () => {
     expect(row.children[0]).toBe(details);
     expect(details).toHaveClass("min-w-0");
     expect(name).toHaveClass("min-w-0", "truncate");
-    expect(row.children[1]).toHaveClass("grid", "grid-cols-[4.75rem_minmax(6rem,1fr)_3.5rem]");
+    expect(row.children[1]).toHaveClass("grid", "grid-cols-[4.75rem_minmax(0,1fr)]");
+    expect(row.children[2]).toHaveClass("flex", "flex-col", "items-end");
     expect(price).toHaveClass("truncate", "whitespace-nowrap", "tabular-nums");
   });
 

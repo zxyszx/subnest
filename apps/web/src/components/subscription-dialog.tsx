@@ -11,6 +11,7 @@ import { DialogModulePending } from "@/components/ui/dialog-module-pending";
 import { createLazyDialogResource, useLazyDialogSession } from "@/hooks/use-lazy-dialog-session";
 import { useNestedDialogCloseGuard } from "@/hooks/use-nested-dialog-close-guard";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cn } from "@/lib/utils";
 import type {
   SubscriptionDialogContentProps,
   SubscriptionDialogProps,
@@ -68,7 +69,10 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
         closeLabel={t("common.close")}
         dismissMode="explicit"
         layout="frame"
-        className="h5-dialog-frame h5-subscription-dialog-panel border-border bg-card p-0 sm:max-w-2xl"
+        className={cn(
+          "h5-dialog-frame h5-subscription-dialog-panel border-border bg-card p-0",
+          props.mode === "edit" && props.scope === "family-sharing" ? "sm:max-w-lg" : "sm:max-w-2xl",
+        )}
         aria-busy={modulePending || props.loading ? true : undefined}
       >
         <DialogHeader data-subscription-dialog-header="" className="shrink-0 p-6 pb-0">

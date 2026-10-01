@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, Mail, MessageCircle, MessageSquare, Pencil, Phone, ReceiptText, RotateCw, Send, ShoppingBag, UserRound } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, MessageCircle, MessageSquare, Pencil, ReceiptText, RotateCw, Send, ShoppingBag, UserRound } from "lucide-react";
 
 import { useMoveSharingSeat, useSharingAccountDetail, useSharingAccountDetails, useSharingAccounts, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -38,8 +38,8 @@ interface SharingAccountDetailDialogProps {
   mode?: SharingAccountDetailMode;
 }
 
-const contactTypes = ["wechat", "telegram", "ns", "xianyu", "email", "phone", "other"] as const;
-const seatStatuses = ["active", "vacant", "paused", "archived"] as const;
+const contactTypes = ["wechat", "telegram", "ns", "xianyu"] as const;
+const seatStatuses = ["active", "paused", "vacant"] as const;
 const billingPresetLabelKeys: Record<(typeof SHARING_BILLING_MONTH_PRESETS)[number], MessageKey> = {
   1: "sharing.monthly",
   3: "sharing.quarterly",
@@ -57,25 +57,25 @@ const contactTypeLabelKeys: Record<(typeof contactTypes)[number], MessageKey> = 
   telegram: "sharing.telegram",
   ns: "sharing.ns",
   xianyu: "sharing.xianyu",
-  email: "sharing.email",
-  phone: "sharing.phone",
-  other: "sharing.other",
 };
 
 function ContactTypeIcon({ type }: { type: string | null | undefined }) {
   const { t } = useI18n();
   if (type === "wechat") return <MessageCircle className="h-4 w-4 shrink-0 text-[#07c160]" aria-label={t("sharing.wechat")} />;
   if (type === "telegram") return <Send className="h-4 w-4 shrink-0 text-[#229ed9]" aria-label={t("sharing.telegram")} />;
-  if (type === "ns") return <MessageSquare className="h-4 w-4 shrink-0 text-foreground" aria-label={t("sharing.ns")} />;
+  if (type === "ns") return <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-xs font-black text-black dark:text-white" aria-label={t("sharing.ns")}>{t("sharing.nsMark")}</span>;
   if (type === "xianyu") return <ShoppingBag className="h-4 w-4 shrink-0 text-amber-500" aria-label={t("sharing.xianyu")} />;
-  const Icon = type === "email" ? Mail : type === "phone" ? Phone : MessageSquare;
-  return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  return <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />;
 }
 
 function statusVariant(status: SharingSeat["status"] | "pending" | "paid") {
   if (status === "active" || status === "paid") return "default" as const;
   if (status === "pending") return "destructive" as const;
   return "secondary" as const;
+}
+
+function seatStatusClassName(status: SharingSeat["status"]) {
+  return status === "paused" ? "border-warning/40 bg-warning/10 text-warning" : undefined;
 }
 
 export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account" }: SharingAccountDetailDialogProps) {
@@ -154,7 +154,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   const convertedTotals = useMemo(() => {
     if (!detail) return null;
     const accountCurrency = detail.account.currency;
-    const activeSeats = detail.seats.filter((seat) => seat.status === "active" && seat.monthlyPrice && seat.currency);
+    const activeSeats = detail.seats.filter((seat) => (seat.status === "active" || seat.status === "paused") && seat.monthlyPrice && seat.currency);
     const monthlyRevenue = activeSeats.reduce(
       (total, seat) => total + convert(Number(seat.monthlyPrice), seat.currency ?? accountCurrency, defaultCurrency),
       0,
@@ -183,7 +183,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           layout="frame"
-          className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-6xl gap-3 overflow-hidden p-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:p-5"
+          className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-5xl gap-3 overflow-hidden p-4 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:p-5"
           dismissMode="explicit"
           closeLabel={t("sharing.cancel")}
         >
@@ -275,7 +275,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
                             {seat.contact && <button type="button" className="mt-0.5 flex max-w-56 items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                           </td>
-                          <td className="px-3 py-2"><Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
+                          <td className="px-3 py-2"><Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
                           <td className="px-3 py-2 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
                           <td className="px-3 py-2 tabular-nums">{seat.expiresAt ?? "-"}</td>
                           <td className="px-3 py-2">
@@ -300,7 +300,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                           <div className="mt-1 truncate font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
                           {seat.contact && <button type="button" className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                         </div>
-                        <Badge variant={statusVariant(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge>
+                        <Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge>
                       </div>
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                         <div><dt className="text-muted-foreground">{t("sharing.monthlyPrice")}</dt><dd className="mt-0.5 font-medium tabular-nums text-foreground">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</dd></div>
@@ -429,7 +429,7 @@ function emptySeatDraft(seat: SharingSeat, mode: "edit" | "renew"): SharingSeatD
   return {
     memberName: seat.memberName ?? "",
     contact: seat.contact ?? "",
-    contactType: seat.contactType ?? "",
+    contactType: contactTypes.includes(seat.contactType as (typeof contactTypes)[number]) ? seat.contactType ?? "" : "",
     monthlyPrice: seat.monthlyPrice ?? "",
     // 本期收费是用户本次实际收款的总额，留空便于直接录入；历史应收仍然回显。
     billingAmount: seat.currentReceivable && Number(seat.currentReceivable.amount) > 0
@@ -515,7 +515,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto bg-card" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
+      <DialogContent className="max-h-[92dvh] max-w-lg overflow-y-auto bg-card" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
         <form onSubmit={submit} className="space-y-4" autoComplete="off">
           <DialogHeader>
             <DialogTitle>{t(mode === "renew" ? "sharing.renewSeat" : "sharing.editSeat")} #{seat.seatNumber}</DialogTitle>
@@ -523,7 +523,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
           </DialogHeader>
 
           <FormField id="sharing-seat-status" label={t("sharing.status")} description={draft.status === "vacant" ? t("sharing.vacantClearsSeat") : undefined}>
-            {(field) => <div id={field.id} aria-describedby={field.describedBy} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(field) => <div id={field.id} aria-describedby={field.describedBy} className="grid grid-cols-3 gap-2">
               {seatStatuses.map((status) => <Button key={status} type="button" variant={draft.status === status ? "default" : "outline"} aria-pressed={draft.status === status} onClick={() => update("status", status)}>{t(seatStatusLabelKeys[status])}</Button>)}
             </div>}
           </FormField>
@@ -533,7 +533,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
             <div className="flex items-center gap-2 text-sm font-semibold"><UserRound className="h-4 w-4" />{t("sharing.memberDetails")}</div>
             <FormField id="sharing-seat-member" label={t("sharing.memberName")} error={validationErrors.member}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-alias" aria-describedby={field.describedBy} aria-invalid={field.invalid} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} />}</FormField>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
-              <FormField id="sharing-seat-contact-type" label={t("sharing.contactType")}>{(field) => <Select value={draft.contactType || "other"} onValueChange={(value) => update("contactType", value as SharingSeatUpdate["contactType"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{contactTypes.map((type) => <SelectItem key={type} value={type}><span className="flex items-center gap-2"><ContactTypeIcon type={type} />{t(contactTypeLabelKeys[type])}</span></SelectItem>)}</SelectContent></Select>}</FormField>
+              <FormField id="sharing-seat-contact-type" label={t("sharing.contactType")}>{(field) => <Select value={draft.contactType || "wechat"} onValueChange={(value) => update("contactType", value as SharingSeatUpdate["contactType"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{contactTypes.map((type) => <SelectItem key={type} value={type}><span className="flex items-center gap-2"><ContactTypeIcon type={type} />{t(contactTypeLabelKeys[type])}</span></SelectItem>)}</SelectContent></Select>}</FormField>
               <FormField id="sharing-seat-contact" label={t("sharing.contact")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-contact" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.contact} onChange={(event) => update("contact", event.target.value)} />}</FormField>
             </FormFieldRow>
           </section>
@@ -600,7 +600,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">{t("sharing.cancel")}</Button></DialogClose>
-            <Button type="submit" disabled={updateSeat.isPending}>{updateSeat.isPending ? t("sharing.saving") : t(mode === "renew" ? "sharing.confirmRenewal" : "sharing.saveSeat")}</Button>
+            <Button type="submit" disabled={updateSeat.isPending}>{updateSeat.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{updateSeat.isPending ? t("sharing.saving") : t(mode === "renew" ? "sharing.confirmRenewal" : "sharing.saveSeat")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

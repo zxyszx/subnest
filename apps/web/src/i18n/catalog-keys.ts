@@ -1855,6 +1855,7 @@ export const MESSAGE_KEYS = [
   "sharing.noVerificationLink",
   "sharing.notes",
   "sharing.ns",
+  "sharing.nsMark",
   "sharing.occupiedSeats",
   "sharing.openUpcomingRenewals",
   "sharing.other",

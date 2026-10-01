@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 
 const account = {
   id: "share-17",
-  subscription: { id: "sub-17", name: "Netflix", platformName: "Netflix", logo: null },
+  subscription: { id: "sub-17", name: "Netflix", platformName: "Netflix", logo: null, status: "active" as const },
   name: "编号 17",
   accountNumber: 17,
   loginAccount: "netflix17@newszxcn.com",
@@ -167,10 +167,17 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(screen.getByRole("button", { name: "sharing.custom" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "sharing.twoMonths" })).not.toBeInTheDocument();
     expect(screen.queryByRole("spinbutton", { name: "sharing.customMonths" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.active" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.paused" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "sharing.vacant" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "sharing.archived" })).not.toBeInTheDocument();
     await user.clear(screen.getByRole("textbox", { name: "sharing.periodCharge" }));
     await user.type(screen.getByRole("textbox", { name: "sharing.periodCharge" }), "15");
     await user.click(screen.getByRole("button", { name: "sharing.quarterly" }));
     await user.click(screen.getByRole("combobox", { name: "sharing.contactType" }));
+    expect(screen.queryByRole("option", { name: /sharing\.email/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /sharing\.phone/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /sharing\.other/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole("option", { name: /sharing\.xianyu/ }));
     await user.click(screen.getByRole("button", { name: "sharing.saveSeat" }));
 

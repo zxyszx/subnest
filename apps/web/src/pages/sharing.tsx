@@ -7,6 +7,7 @@ import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } fro
 import { SharingAccountDetailDialog } from "@/components/sharing-account-detail-dialog";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
+import { SubscriptionStatusBadge } from "@/components/subscription-status-badge";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
@@ -221,7 +222,10 @@ export default function Sharing() {
         </button>
         <div className="min-w-0">
           <span className="block truncate font-medium text-foreground">{platformName}</span>
-          <Badge variant={health.variant} className="mt-1 h-5 px-1.5 text-[10px]">{health.label}</Badge>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <SubscriptionStatusBadge status={account.subscription.status} className="h-5 px-1.5 text-[10px]" />
+            <Badge variant={health.variant} className="h-5 px-1.5 text-[10px]">{health.label}</Badge>
+          </div>
         </div>
       </div>
     );
@@ -418,7 +422,7 @@ export default function Sharing() {
                 <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
                 ) : visibleAccounts.map((account) => (
-                  <tr key={account.id} className="transition-colors duration-200 hover:bg-muted/20">
+                  <tr key={account.id} className={cn("transition-colors duration-200 hover:bg-muted/20", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
                     <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
                     <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></td>
@@ -444,7 +448,7 @@ export default function Sharing() {
               {visibleAccounts.length === 0 ? (
                 <p className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</p>
               ) : visibleAccounts.map((account) => (
-                <article key={account.id} className="space-y-4 p-4">
+                <article key={account.id} className={cn("space-y-4 p-4", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
                   <AccountIdentity account={account} />
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                     <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>

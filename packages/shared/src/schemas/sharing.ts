@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiSuccessResponseSchema } from "./api";
 import { dateInputSchema } from "./subscriptions";
 import { moneyStringSchema } from "../money";
+import { SUBSCRIPTION_STATUSES } from "../runtime";
 
 export const SHARING_ACCOUNT_STATUSES = ["active", "paused", "archived"] as const;
 export const SHARING_SEAT_STATUSES = ["vacant", "active", "paused", "archived"] as const;
@@ -13,6 +14,7 @@ export const sharingSubscriptionSummarySchema = z.object({
   name: z.string().min(1),
   platformName: z.string().min(1),
   logo: z.string().nullable(),
+  status: z.enum(SUBSCRIPTION_STATUSES),
 }).strict();
 
 export const sharingAccountSchema = z.object({

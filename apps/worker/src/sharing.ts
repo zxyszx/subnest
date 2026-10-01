@@ -66,7 +66,7 @@ export async function readSharingAccounts(request: Request, env: Env): Promise<R
     SELECT a.* FROM sharing_accounts a
     JOIN subscriptions s ON s.id = a.subscription_id AND s.user_id = a.user_id
     WHERE a.user_id = ? AND a.status != 'archived' AND s.family_sharing_enabled = 1
-    ORDER BY COALESCE((SELECT MIN(expires_at) FROM sharing_seats WHERE sharing_account_id = a.id AND status = 'active'), '9999-12-31'),
+    ORDER BY COALESCE((SELECT MIN(expires_at) FROM sharing_seats WHERE sharing_account_id = a.id AND status IN ('active', 'paused')), '9999-12-31'),
       lower(s.platform_name), s.account_number, a.created_at
     LIMIT 500
   `).bind(auth.user.id).all<SharingAccountRow>();
@@ -231,7 +231,9 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
   const subscription = await subscriptionForAccount(env, account);
   const seats = await env.DB.prepare("SELECT status, monthly_price, currency FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?")
     .bind(account.user_id, account.id, subscription.sharing_capacity ?? 5).all<Pick<SharingSeatRow, "status" | "monthly_price" | "currency">>();
-  const activeSeats = seats.results.filter((seat) => seat.status === "active");
+  // A paused seat means "stop at expiry": it remains occupied and earns revenue
+  // through the current paid period, but renewal notifications exclude it.
+  const activeSeats = seats.results.filter((seat) => seat.status === "active" || seat.status === "paused");
   const monthlyRevenue = addMoney(...activeSeats.map((seat) => seat.monthly_price ?? "0"));
   const monthlyRevenueByCurrency = Object.fromEntries(Object.entries(activeSeats.reduce<Record<string, number>>((totals, seat) => {
     const currency = (seat.currency || subscription.currency).toUpperCase();
@@ -252,6 +254,7 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
       name: subscription.name,
       platformName: subscription.platform_name || subscription.name,
       logo: subscription.logo,
+      status: subscription.status,
     },
     name: `编号 ${subscription.account_number ?? 1}`,
     accountNumber: subscription.account_number ?? 1,
