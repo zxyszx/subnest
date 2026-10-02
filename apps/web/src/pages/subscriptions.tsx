@@ -35,7 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Subscription, SubscriptionCollectionItem } from '@/types/subscription';
+import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } from '@/types/subscription';
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
 import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -60,6 +60,7 @@ import { resolveSubscriptionPriceReferenceCurrency } from '@/modules/subscriptio
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useI18n } from '@/i18n/I18nProvider';
 import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from '@/lib/subscription-platform';
+import { getEffectiveSubscriptionStatus } from '@/modules/subscriptions/domain/subscription-status';
 import { getConfigItemLabel } from '@/types/config';
 import type { MessageKey } from '@/i18n/messages';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -141,6 +142,8 @@ const Subscriptions = () => {
     searchQuery,
     setSearchQuery,
     selectedCategories: _selectedCategories,
+    statusFilter,
+    setStatusFilter,
     paymentTypeFilter: _paymentTypeFilter,
     sortOption,
     setSortOption,
@@ -219,19 +222,22 @@ const Subscriptions = () => {
             : subscriptionPlatformName(subscription) === selectedPlatform,
         )
       : accountSubscriptions;
+    const statusSubscriptions = statusFilter === "all"
+      ? platformSubscriptions
+      : platformSubscriptions.filter((subscription) => getEffectiveSubscriptionStatus(subscription, today) === statusFilter);
     if (selectedPlatform && sortOption === "default") {
-      return [...platformSubscriptions].sort((left, right) => (
+      return [...statusSubscriptions].sort((left, right) => (
         (left.accountNumber ?? Number.MAX_SAFE_INTEGER) - (right.accountNumber ?? Number.MAX_SAFE_INTEGER)
         || left.name.localeCompare(right.name, locale)
       ));
     }
-    return sortSubscriptionsForDisplay(platformSubscriptions);
-  }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay]);
+    return sortSubscriptionsForDisplay(statusSubscriptions);
+  }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay, statusFilter, today]);
   const isDisplayPending = useFilteredIndex && indexQuery.isPending;
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
   const displayError = useFilteredIndex ? indexQuery.error : subscriptionsQuery.error;
   const retryDisplayQuery = useFilteredIndex ? indexQuery.refetch : subscriptionsQuery.refetch;
-  const displayedTotal = selectedPlatform
+  const displayedTotal = selectedPlatform || numericAccountSearch
     ? filteredSubscriptions.length
     : useFilteredIndex
       ? (indexQuery.data?.total ?? 0)
@@ -292,6 +298,21 @@ const Subscriptions = () => {
         <SelectContent mobileTitle={t("subscriptions.sort.label")}>
           {SORT_OPTIONS.map((option) => (
             <SelectItem key={option} value={option}>{t(SORT_OPTION_LABEL_KEYS[option])}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+  const statusControls = (
+    <div className="min-w-0" aria-label={t("subscriptions.allStatuses")}>
+      <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as SubscriptionStatus | "all")}>
+        <SelectTrigger aria-label={t("subscriptions.allStatuses")} className="h-11 border-border bg-secondary sm:h-10">
+          <SelectValue placeholder={t("subscriptions.allStatuses")} />
+        </SelectTrigger>
+        <SelectContent mobileTitle={t("subscriptions.allStatuses")}>
+          <SelectItem value="all">{t("subscriptions.allStatuses")}</SelectItem>
+          {config.statuses.map((status) => (
+            <SelectItem key={status.value} value={status.value}>{getConfigItemLabel(status, locale)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -445,6 +466,7 @@ const Subscriptions = () => {
                   ) : null}
 
                 <div className="grid gap-2">
+                  {statusControls}
                   {sortControls}
                 </div>
                 </div>
@@ -472,7 +494,7 @@ const Subscriptions = () => {
               </Suspense>
             ) : null}
             <div className={cn("flex min-w-0 shrink-0 items-center gap-2 p-2", platformOptions.length > 0 && "pl-0")}>
-                <div className="relative w-[clamp(14rem,28vw,24rem)] min-w-0">
+                <div className="relative w-[clamp(11rem,18vw,18rem)] min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     name="subscription-search"
@@ -484,7 +506,8 @@ const Subscriptions = () => {
                     className="h-10 border-border bg-secondary pl-10"
                   />
                 </div>
-                <div className="w-40">{sortControls}</div>
+                <div className="w-32">{statusControls}</div>
+                <div className="w-36">{sortControls}</div>
               </div>
           </div>
         )}

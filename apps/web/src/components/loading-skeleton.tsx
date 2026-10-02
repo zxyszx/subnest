@@ -221,7 +221,7 @@ function SubscriptionsContentSkeleton() {
         </div>
       </div>
 
-      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="subscriptions-skeleton-list">
+      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="subscriptions-skeleton-list">
         {range(9).map((index) => <SubscriptionCardSkeleton key={index} />)}
       </div>
     </>

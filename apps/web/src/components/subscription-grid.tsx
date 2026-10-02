@@ -35,8 +35,9 @@ function getRootScrollElement() {
   return typeof document === "undefined" ? null : document.getElementById("root");
 }
 
-function getSubscriptionColumnCount(viewMode: "grid" | "list", isTwoColumnGrid: boolean, isThreeColumnGrid: boolean) {
+function getSubscriptionColumnCount(viewMode: "grid" | "list", isTwoColumnGrid: boolean, isThreeColumnGrid: boolean, isFourColumnGrid: boolean) {
   if (viewMode === "list") return 1;
+  if (isFourColumnGrid) return 4;
   if (isThreeColumnGrid) return 3;
   if (isTwoColumnGrid) return 2;
   return 1;
@@ -72,7 +73,8 @@ export function SubscriptionGrid({
 }: SubscriptionGridProps) {
   const isTwoColumnGrid = useMediaQuery("(min-width: 640px)");
   const isThreeColumnGrid = useMediaQuery("(min-width: 1024px)");
-  const columnCount = getSubscriptionColumnCount(viewMode, isTwoColumnGrid, isThreeColumnGrid);
+  const isFourColumnGrid = useMediaQuery("(min-width: 1280px)");
+  const columnCount = getSubscriptionColumnCount(viewMode, isTwoColumnGrid, isThreeColumnGrid, isFourColumnGrid);
   const rows = useMemo(() => chunkSubscriptions(subscriptions, columnCount), [columnCount, subscriptions]);
   const estimatedRowSize = viewMode === "grid" ? SUBSCRIPTION_GRID_ROW_ESTIMATE : SUBSCRIPTION_LIST_ROW_ESTIMATE;
   const getRowKey = useCallback(
@@ -138,7 +140,7 @@ export function SubscriptionGrid({
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
         "grid gap-4",
-        viewMode === "grid" ? "items-stretch sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 items-start",
+        viewMode === "grid" ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 items-start",
       )}
       testId="virtualized-subscription-list"
       renderItem={renderRow}

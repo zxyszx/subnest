@@ -532,7 +532,7 @@ describe("Subscriptions page sorting", () => {
     expect(await screen.findByTestId("import-dialog-state")).toHaveTextContent("true");
   });
 
-  it.skip("filters by expired using the effective status of legacy overdue subscriptions", async () => {
+  it("filters by expired using the effective status of legacy overdue subscriptions", async () => {
     const user = userEvent.setup();
     mocks.useInfiniteSubscriptions.mockReturnValue({
       subscriptions: [
