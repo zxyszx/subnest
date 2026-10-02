@@ -39,6 +39,7 @@ const loadOnlineTotp = () => import("@/pages/online-totp");
 const loadCalendar = () => import("@/pages/calendar");
 const loadStatistics = () => import("@/pages/statistics");
 const loadSettings = () => import("@/pages/settings");
+const loadSharedInboxAdmin = () => import("@/pages/shared-inbox-admin");
 const loadSetup = () => import("@/pages/setup");
 const loadLogin = () => import("@/pages/login");
 const loadPrivacy = () => import("@/pages/privacy");
@@ -179,7 +180,7 @@ export const routeResources = {
   },
   sharedInbox: { path: "/s", load: loadSharedInbox, fallback: LightweightRouteFallback },
   publicOnlineTotp: { path: "/otp", load: loadPublicOnlineTotp, fallback: LightweightRouteFallback },
-  sharedInboxAdmin: { path: "/shared-inboxes", load: loadSettings, fallback: SettingsRouteFallback, usesPrivateShell: true },
+  sharedInboxAdmin: { path: "/shared-inboxes", load: loadSharedInboxAdmin, fallback: SettingsRouteFallback, usesPrivateShell: true },
   notFound: {
     path: "*",
     load: loadNotFound,

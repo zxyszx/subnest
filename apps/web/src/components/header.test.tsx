@@ -67,6 +67,7 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "nav.calendar": "日历",
         "nav.dashboard": "仪表盘",
         "nav.online2fa": "在线 2FA",
+        "nav.sharedInbox": "共享收件箱",
         "nav.settings": "设置",
         "nav.sharing": "会员共享",
         "nav.statistics": "统计",
@@ -307,6 +308,18 @@ describe("Header system version entry", () => {
     expect(subscriptionLabel).not.toHaveClass("sr-only", "xl:not-sr-only");
 
     expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
+  });
+
+  it("places shared inbox management between online 2FA and calendar for admins", () => {
+    mocks.useSession.mockReturnValue(adminSession("admin"));
+
+    renderHeader();
+
+    const links = within(screen.getByTestId("app-header-desktop-nav")).getAllByRole("link");
+    const labels = links.map((link) => link.textContent?.trim());
+    expect(labels.indexOf("共享收件箱")).toBe(labels.indexOf("在线 2FA") + 1);
+    expect(labels.indexOf("日历")).toBe(labels.indexOf("共享收件箱") + 1);
+    expect(within(screen.getByTestId("app-header-desktop-nav")).getByRole("link", { name: "共享收件箱" })).toHaveAttribute("href", "/shared-inboxes");
   });
 
   it("uses the shared brand mark contract in the header", () => {

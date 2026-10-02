@@ -11,7 +11,7 @@
 
 import Link, { NavLink } from '@/components/router-link';
 import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck, Inbox } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
@@ -44,7 +44,7 @@ interface HeaderProps {
   pageActions?: ReactNode;
 }
 
-type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "online2fa" | "calendar" | "statistics" | "settings";
+type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "sharedInbox" | "online2fa" | "calendar" | "statistics" | "settings";
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
 const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean }> = [
@@ -52,6 +52,7 @@ const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; ad
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
   { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
   { path: '/online-2fa', labelKey: 'nav.online2fa', icon: "online2fa" },
+  { path: '/shared-inboxes', labelKey: 'nav.sharedInbox', icon: "sharedInbox", adminOnly: true },
   { path: '/calendar', labelKey: 'nav.calendar', icon: "calendar" },
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
@@ -65,6 +66,8 @@ function renderNavIcon(icon: NavIconKey, className: string) {
       return <List className={className} />;
     case "sharing":
       return <UsersRound className={className} />;
+    case "sharedInbox":
+      return <Inbox className={className} />;
     case "online2fa":
       return <ShieldCheck className={className} />;
     case "calendar":
