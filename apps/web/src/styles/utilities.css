@@ -69,6 +69,7 @@
 
   /* 短动作 Dialog 只跟随内容收高；继续套长表单 90vh frame 会在 footer 后撑出空白。 */
   .h5-dialog-auto-frame {
+    height: fit-content;
     min-height: 0;
   }
 

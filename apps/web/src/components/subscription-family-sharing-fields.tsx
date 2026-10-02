@@ -268,7 +268,7 @@ export function SubscriptionFamilySharingFields({
 
   return (
     <>
-    <section className="grid gap-3 rounded-lg border border-border bg-secondary/20 p-3 sm:p-4">
+    <section className="grid gap-4 rounded-lg border border-border bg-secondary/20 p-3 sm:p-4">
       {showEnabledControl ? <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <Label htmlFor={id("familySharingEnabled")} className="flex cursor-pointer items-center gap-2 text-sm font-medium">
@@ -285,7 +285,7 @@ export function SubscriptionFamilySharingFields({
       </div> : null}
 
       {value.enabled ? (
-        <div className={showEnabledControl ? "grid gap-3 border-t border-border pt-3" : "grid gap-3"}>
+        <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-3" : "grid gap-4"}>
           <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
             <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>
               {(field) => (
@@ -296,7 +296,7 @@ export function SubscriptionFamilySharingFields({
                   autoComplete="username"
                   required
                   aria-describedby={field.describedBy}
-                  className="border-border bg-secondary"
+                  className="border-border bg-secondary pr-10"
                   list={mailboxes.length ? id("newszxcn-mailboxes") : undefined}
                 />
               )}
@@ -320,7 +320,7 @@ export function SubscriptionFamilySharingFields({
           {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
           {value.loginAccount.trim() && mailboxesLoading && !managedMailbox ? <p className="-mt-1 text-xs text-muted-foreground">{t("subscription.familySharing.matchingManagedMailbox")}</p> : null}
           {managedMailbox ? (
-            <div className="grid gap-2 rounded-md border border-primary/20 bg-primary/3 p-3" aria-busy={shareLoading}>
+            <div className="grid gap-3 rounded-md border border-primary/20 bg-primary/3 p-3" aria-busy={shareLoading}>
               <div className="flex min-h-11 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{managedMailbox.address}</p>

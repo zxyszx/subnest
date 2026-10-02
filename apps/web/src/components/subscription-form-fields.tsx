@@ -326,6 +326,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           onUploadStatusChange={onLogoUploadStatusChange}
           serviceName={formData.platformName || formData.name}
           website={formData.website}
+          compact
         />
       ) : null}
 

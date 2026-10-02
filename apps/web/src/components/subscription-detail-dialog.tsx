@@ -88,7 +88,7 @@ function DetailRow({
   alignStart?: boolean;
 }) {
   return (
-    <div className={cn("grid gap-1 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]", alignStart ? "items-start" : "items-center")}>
+    <div className={cn("grid min-w-0 gap-1 text-sm sm:grid-cols-[minmax(5rem,auto)_minmax(0,1fr)] sm:gap-3", alignStart ? "items-start" : "items-center")}>
       <span className="text-muted-foreground">{label}</span>
       <div className="min-w-0 text-foreground sm:text-right">{children}</div>
     </div>
@@ -228,7 +228,7 @@ function SubscriptionDetailContent({
             </DetailRow>
           ) : null}
           {costSharingSummary.enabled ? (
-            <div className="grid gap-2 rounded-lg border border-border bg-secondary/40 p-3">
+            <div className="grid gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:col-span-2">
               <DetailRow label={t("subscription.field.price")}>
                 <span className="font-semibold">{formatCurrency(costSharingSummary.total, subscription.currency)}</span>
               </DetailRow>
@@ -319,7 +319,7 @@ function SubscriptionDetailContent({
             </DetailRow>
           ) : null}
           {subscription.notes ? (
-            <div className="grid gap-2 border-t border-border pt-3">
+            <div className="grid gap-2 border-t border-border pt-3 sm:col-span-2">
               <p className="text-sm text-muted-foreground">{t("subscription.field.notes")}</p>
               <div className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-secondary/40 p-3 text-sm leading-6 text-foreground">
                 {subscription.notes}

@@ -49,7 +49,7 @@ export function SubscriptionDetailScaffold({
         >
           {summary}
         </div>
-        <div className="grid gap-2" data-dialog-region="subscription-facts">
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2" data-dialog-region="subscription-facts">
           {facts}
           {extensions}
         </div>

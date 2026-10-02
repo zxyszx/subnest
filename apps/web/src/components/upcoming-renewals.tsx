@@ -75,16 +75,22 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
               accountNumber={item.subscription.accountNumber ?? 1}
               size="sm"
             />
-            {item.subscription.platformName && item.subscription.platformName !== item.subscription.name ? (
-              <p className={cn("truncate text-xs text-muted-foreground", compact ? "mt-0.5 pl-6.5" : "mt-1 pl-11")}>{item.subscription.name}</p>
-            ) : null}
-            {item.subscription.paymentMethod || item.subscription.cardLast4 ? (
-              <SharingPaymentSummary
-                paymentMethod={item.subscription.paymentMethod ?? null}
-                cardLast4={item.subscription.cardLast4 ?? null}
-                className={cn("mt-0.5 max-w-full text-xs text-muted-foreground", compact ? "pl-6.5" : "pl-11")}
-              />
-            ) : null}
+            {(item.subscription.platformName && item.subscription.platformName !== item.subscription.name)
+              || item.subscription.paymentMethod
+              || item.subscription.cardLast4 ? (
+                <div className={cn("mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground", compact ? "pl-6.5" : "pl-11")}>
+                  {item.subscription.platformName && item.subscription.platformName !== item.subscription.name ? (
+                    <span className="min-w-0 truncate">{item.subscription.name}</span>
+                  ) : null}
+                  {item.subscription.paymentMethod || item.subscription.cardLast4 ? (
+                    <SharingPaymentSummary
+                      paymentMethod={item.subscription.paymentMethod ?? null}
+                      cardLast4={item.subscription.cardLast4 ?? null}
+                      className="min-w-0 max-w-full shrink text-xs text-muted-foreground"
+                    />
+                  ) : null}
+                </div>
+              ) : null}
           </div>
           <div className="order-3 col-span-2 grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-end gap-3 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:grid-cols-[5.5rem_minmax(7.75rem,1fr)] sm:bg-transparent sm:p-0">
             <div className="text-left sm:text-right">

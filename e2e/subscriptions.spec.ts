@@ -135,7 +135,7 @@ test("short desktop calendar and long detail keep their scroll and footer geomet
       await expectSameDOMNode(loadingNodes.scroll, scrollRegion, "detail scroll region remains stable");
       await expectSameDOMNode(loadingNodes.footer, footer, "detail footer remains stable");
 
-      for (const action of ["关闭", "添加到日历", "续订", "编辑"]) {
+      for (const action of ["关闭", "添加到日历", "续费", "编辑"]) {
         await expect(footer.getByRole("button", { name: action, exact: true })).toBeVisible();
       }
       await expectDetailFooterStableWhileScrolling(
