@@ -299,7 +299,6 @@ describe("Subscriptions page sorting", () => {
     });
 
     renderSubscriptionsPage();
-
     expect(screen.getByTestId("subscriptions-skeleton")).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByTestId("subscriptions-skeleton-list")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
@@ -317,7 +316,6 @@ describe("Subscriptions page sorting", () => {
     });
 
     renderSubscriptionsPage();
-
     expect(screen.getByRole("alert")).toHaveTextContent("操作失败，请稍后重试");
     expect(screen.queryByText("没有找到订阅")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "重试" }));
@@ -331,7 +329,6 @@ describe("Subscriptions page sorting", () => {
     });
 
     renderSubscriptionsPage();
-
     expect(screen.getByRole("heading", { name: "还没有订阅" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "添加第一个订阅" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "清除筛选" })).not.toBeInTheDocument();
@@ -340,9 +337,7 @@ describe("Subscriptions page sorting", () => {
   it("offers clearing filters instead of adding when no subscriptions match", async () => {
     const user = userEvent.setup();
     renderSubscriptionsPage();
-
     await user.type(screen.getByRole("searchbox"), "no-match");
-
     expect(await screen.findByRole("heading", { name: "没有匹配结果" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "清除筛选" })).not.toHaveLength(0);
     expect(screen.queryByRole("button", { name: "添加第一个订阅" })).not.toBeInTheDocument();
@@ -381,7 +376,6 @@ describe("Subscriptions page sorting", () => {
 
     renderSubscriptionsPage();
     await user.type(screen.getByRole("searchbox"), "layout");
-
     expect(await screen.findByRole("alert")).toHaveTextContent("结果超过可处理上限，请缩小搜索或筛选范围");
     expect(screen.queryByText("没有找到订阅")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "重试" }));
@@ -401,7 +395,6 @@ describe("Subscriptions page sorting", () => {
     mocks.useSettingsEnvelope.mockReturnValue({});
     const rendered = renderSubscriptionsPage();
     const resetQueries = vi.spyOn(rendered.queryClient, "resetQueries");
-
     expect(rendered.queryClient.getQueryData(["subscriptions", "collection-boundary"])).toBeUndefined();
     mockSubscriptionsPageSettings("Asia/Shanghai");
     rendered.rerenderSubscriptionsPage();
@@ -412,7 +405,6 @@ describe("Subscriptions page sorting", () => {
   it.skip("keeps sort-only out of filter feedback and preserves sorting when filters are cleared", async () => {
     const user = userEvent.setup();
     renderSubscriptionsPage();
-
     expect(visibleSubscriptionNames()).toEqual(["Annual USD", "Monthly CNY", "Quarterly CNY"]);
 
     await user.click(screen.getByRole("combobox", { name: "排序" }));
@@ -441,11 +433,9 @@ describe("Subscriptions page sorting", () => {
     });
 
     renderSubscriptionsPage();
-
     expect(visibleSubscriptionNames()).toEqual(["Pinned Service", "Regular Service"]);
 
     await user.click(screen.getByRole("button", { name: "置顶 Regular Service" }));
-
     expect(mocks.handleTogglePinnedSubscription).toHaveBeenCalledWith("regular");
   });
 
@@ -459,7 +449,6 @@ describe("Subscriptions page sorting", () => {
     renderSubscriptionsPage();
 
     await user.click(screen.getByRole("button", { name: "公开切换 Public Toggle" }));
-
     expect(mocks.handleTogglePublicHiddenSubscription).toHaveBeenCalledWith("public-toggle");
   });
 
@@ -473,11 +462,9 @@ describe("Subscriptions page sorting", () => {
     renderSubscriptionsPage();
 
     await user.click(screen.getByRole("button", { name: "查看 Readable Service 的详情" }));
-
     expect(screen.getByText(/Readable Service 详情/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "编辑详情 Readable Service" }));
-
     expect(mocks.handleEditSubscription).toHaveBeenCalledWith("readable");
   });
 
@@ -491,14 +478,12 @@ describe("Subscriptions page sorting", () => {
     root.scrollTop = 420;
 
     fireEvent.scroll(root);
-
     expect(await screen.findByRole("button", { name: "回到顶部" })).toBeInTheDocument();
   });
 
   it.skip("uses the shared H5 page shell and native search metadata on mobile", () => {
     mockMobileTagFilterMatch(true, 390);
     const { container } = renderSubscriptionsPage();
-
     expect(container.querySelector(".app-page")).toBeInTheDocument();
     expect(container.querySelector("main.app-main")).toBeInTheDocument();
     const searchInput = screen.getByPlaceholderText("搜索序号、订阅、标签或备注...");
@@ -520,7 +505,6 @@ describe("Subscriptions page sorting", () => {
     expect(aiButton).not.toHaveAttribute("title");
 
     await user.click(aiButton);
-
     expect(await screen.findByTestId("ai-recognition-dialog")).toHaveTextContent("true");
   });
 
@@ -749,7 +733,6 @@ describe("Subscriptions page virtualization", () => {
   it("uses one virtualized list model while preserving sorting and filtering", async () => {
     const user = userEvent.setup();
     renderSubscriptionsPage();
-
     expect(screen.getByTestId("virtualized-subscription-list")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getAllByTestId("subscription-card").length).toBeGreaterThan(0);
@@ -784,7 +767,6 @@ describe("Subscriptions page virtualization", () => {
     mocks.useInfiniteSubscriptions.mockImplementation(() => queryState);
     const { rerenderSubscriptionsPage } = renderSubscriptionsPage();
     const virtualizedList = screen.getByTestId("virtualized-subscription-list");
-
     expect(virtualizedList).toBeInTheDocument();
     expect(screen.getAllByTestId("subscription-card").length).toBeLessThan(50);
 
@@ -793,7 +775,6 @@ describe("Subscriptions page virtualization", () => {
       subscriptions: nextPageSubscriptions,
     };
     rerenderSubscriptionsPage();
-
     expect(screen.getByTestId("virtualized-subscription-list")).toBe(virtualizedList);
     expect(screen.getAllByTestId("subscription-card").length).toBeLessThan(100);
   });

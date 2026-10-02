@@ -11,7 +11,6 @@ import {
   captureLogoSheetScrollMetrics,
   expectActionNearContainerBottom,
   expectNoHorizontalOverflow,
-  expectOverlayLeavesTopScrim,
   expectScrollContentNearFooter,
   expectTouchTarget,
   expectTouchTargetsDoNotOverlap,
@@ -560,38 +559,13 @@ test("mobile option sheets use consistent detents and do not leak backdrop event
   await expect(languageSheet).toBeHidden();
 
   await page.goto("/subscriptions");
-  await page.getByTestId("mobile-category-filter").getByRole("button", { name: "分类" }).click();
-  const categoryDrawer = page.getByRole("dialog", { name: "筛选分类" });
-  await expect(categoryDrawer).toBeVisible();
-  await expect(categoryDrawer).toHaveAttribute("data-vaul-drawer", "");
-  await expectMobileSheetVaulChrome(categoryDrawer, "category drawer");
-  await waitForSheetAnimation(categoryDrawer);
-  await expectOverlayLeavesTopScrim(page, categoryDrawer, "category drawer");
-  await expectLocatorInsideViewport(page, categoryDrawer, "category drawer");
-  await expectNoHorizontalOverflow(page, "category drawer");
-  await page.keyboard.press("Escape");
-  await expect(categoryDrawer).toBeHidden();
-
-  await page.getByRole("combobox").filter({ hasText: "所有状态" }).click();
-  const subscriptionsStatusSheet = page.locator(".h5-mobile-sheet-content").filter({ hasText: "已过期" }).last();
-  await expect(subscriptionsStatusSheet).toBeVisible();
-  await expect(subscriptionsStatusSheet).toHaveAttribute("data-mobile-detent", "compact");
-  await dragMobileSheetHandleToClose(page, subscriptionsStatusSheet, "subscriptions status filter sheet");
-
-  await page.getByRole("combobox").filter({ hasText: "所有付费类型" }).click();
-  const subscriptionsPaymentTypeSheet = page.locator(".h5-mobile-sheet-content").filter({ hasText: "固定服务期" }).last();
-  await expect(subscriptionsPaymentTypeSheet).toBeVisible();
-  await expect(subscriptionsPaymentTypeSheet).toHaveAttribute("data-mobile-detent", "compact");
-  await expect(subscriptionsPaymentTypeSheet.getByRole("option", { name: "自动续费" })).toBeVisible();
-  await expect(subscriptionsPaymentTypeSheet.getByRole("option", { name: "手动续费" })).toBeVisible();
-  await expect(subscriptionsPaymentTypeSheet.getByRole("option", { name: "长期有效" })).toBeVisible();
-  await expect(subscriptionsPaymentTypeSheet.getByRole("option", { name: "固定服务期" })).toBeVisible();
-  await dragMobileSheetHandleToClose(page, subscriptionsPaymentTypeSheet, "subscriptions payment type filter sheet");
-
-  await page.getByTestId("mobile-payment-type-sort-row").getByRole("combobox", { name: "排序" }).click();
-  const subscriptionsSortSheet = page.locator(".h5-mobile-sheet-content").filter({ hasText: "到期最近" }).last();
+  await page.getByTestId("mobile-compact-filter-toolbar").getByRole("button", { name: "筛选" }).click();
+  await page.getByTestId("mobile-expanded-filters").getByRole("combobox", { name: "排序" }).click();
+  const subscriptionsSortSheet = page.locator(".h5-mobile-sheet-content").filter({ hasText: "最近到期" }).last();
   await expect(subscriptionsSortSheet).toBeVisible();
   await expect(subscriptionsSortSheet).toHaveAttribute("data-mobile-detent", "compact");
+  await expect(subscriptionsSortSheet.getByRole("option", { name: "序号正序" })).toBeVisible();
+  await expect(subscriptionsSortSheet.getByRole("option", { name: "序号倒序" })).toBeVisible();
   await dragMobileSheetHandleToClose(page, subscriptionsSortSheet, "subscriptions sort filter sheet");
 
   await page.setViewportSize({ width: 390, height: 740 });

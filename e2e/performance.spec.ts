@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./support/test";
 import { installPerformanceProbe, measurePerformance, observeHttpCache, waitForPerformanceContent as waitForContent } from "./support/performance-browser";
 import { performanceEnvironmentSchema, performancePages } from "../scripts/browser-performance";
+import { SUBSCRIPTION_SEARCH_PLACEHOLDER } from "./support/subscriptions";
 
 const routes = {
   dashboard: "/", subscriptions: "/subscriptions", statistics: "/statistics", calendar: "/calendar", settings: "/settings",
@@ -53,7 +54,7 @@ test("production search commits its filtered result", async ({ page }, testInfo)
   await waitForContent(page, "subscriptions");
   const name = "Performance Subscription 1000-777";
   await measurePerformance(page, testInfo, "search", "interaction",
-    () => page.getByPlaceholder("搜索订阅、标签或备注...").fill(name),
+    () => page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(name),
     () => waitForContent(page, "search"));
 });
 
@@ -61,7 +62,7 @@ test("production 1000-row virtual list scroll", async ({ page }, testInfo) => {
   await page.goto("/subscriptions");
   await waitForContent(page, "subscriptions");
   const indexResponse = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/app/subscriptions/index");
-  await page.getByPlaceholder("搜索订阅、标签或备注...").fill("Performance Subscription");
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill("Performance Subscription");
   expect((await indexResponse).ok()).toBe(true);
   await expect(page.getByTestId("virtualized-subscription-list")).toBeVisible();
   // 先证明索引已提交为千行虚拟列表，避免把 50 条分页数据的滚动误记成规模基线。

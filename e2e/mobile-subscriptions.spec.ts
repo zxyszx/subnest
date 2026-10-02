@@ -7,14 +7,13 @@ import {
   expectTagSuggestionListScrollable,
   openSubscriptionDetailDialog,
   openSubscriptionEditDialog,
+  SUBSCRIPTION_SEARCH_PLACEHOLDER,
   subscriptionCard,
   uniqueE2EName,
 } from "./support/subscriptions";
 import {
-  expectActionNearContainerBottom,
   expectDetailFooterStableWhileScrolling,
   expectNoHorizontalOverflow,
-  expectOverlayLeavesTopScrim,
   expectScrollableRegionReachesTarget,
   getRequiredLocatorBoundingBox,
 } from "./support/layout";
@@ -60,12 +59,9 @@ async function captureSubscriptionCardLayout(card: Locator) {
     return {
       cardRight: Math.round(cardRect.right * 100) / 100,
       billingDate: query("subscription-card-meta-billing-date"),
-      categoryBadge: query("subscription-card-badge-category"),
       paymentMethod: query("subscription-card-meta-payment-method"),
-      renewalBadge: query("subscription-card-badge-renewal"),
       relativeBilling: query("subscription-card-meta-relative-billing"),
       startDate: query("subscription-card-meta-start-date"),
-      statusBadge: query("subscription-card-badge-status"),
     };
   });
 }
@@ -95,7 +91,7 @@ async function captureAmountLineMetrics(amount: Locator) {
   });
 }
 
-test("mobile subscription tag drawer and tag input layout", async ({ page }, testInfo) => {
+test("mobile compact filters, tag search, and tag input layout", async ({ page }, testInfo) => {
   const plainName = uniqueE2EName(testInfo, "Mobile Plain");
   const taggedName = uniqueE2EName(testInfo, "Mobile Tagged");
   const tagName = uniqueE2EName(testInfo, "mobile-tag");
@@ -130,53 +126,32 @@ test("mobile subscription tag drawer and tag input layout", async ({ page }, tes
     tags: manyTags,
   });
 
-  const mobilePaymentTypeSortRow = page.getByTestId("mobile-payment-type-sort-row");
-  const mobileAdvancedTagRow = page.getByTestId("mobile-advanced-tag-row");
-  await expect(mobilePaymentTypeSortRow).toBeVisible();
-  await expect(mobileAdvancedTagRow).toBeVisible();
-  const mobilePaymentTypeControl = mobilePaymentTypeSortRow.getByRole("combobox").filter({ hasText: "所有付费类型" });
-  const mobileSortControl = mobilePaymentTypeSortRow.getByRole("combobox", { name: "排序" });
-  const mobileAdvancedControl = mobileAdvancedTagRow.getByRole("button", { name: "更多筛选" });
-  const mobileTagButton = mobileAdvancedTagRow.getByRole("button", { name: "标签" });
-  await expect(page.getByTestId("mobile-selected-tags")).toHaveCount(0);
-  const [mobilePaymentTypeBox, mobileSortBox, mobileAdvancedBox, mobileTagBox] = await Promise.all([
-    getRequiredLocatorBoundingBox(mobilePaymentTypeControl, "mobile payment type filter"),
-    getRequiredLocatorBoundingBox(mobileSortControl, "mobile sort filter"),
-    getRequiredLocatorBoundingBox(mobileAdvancedControl, "mobile advanced filter"),
-    getRequiredLocatorBoundingBox(mobileTagButton, "mobile tag filter"),
+  const compactToolbar = page.getByTestId("mobile-compact-filter-toolbar");
+  const search = compactToolbar.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
+  const filterToggle = compactToolbar.getByRole("button", { name: "筛选" });
+  const [searchBox, filterBox] = await Promise.all([
+    getRequiredLocatorBoundingBox(search, "mobile subscription search"),
+    getRequiredLocatorBoundingBox(filterToggle, "mobile filter toggle"),
   ]);
-  expect(Math.abs(mobilePaymentTypeBox.y - mobileSortBox.y), "mobile payment type and sort controls should share a row").toBeLessThan(8);
-  expect(mobileSortBox.x, "mobile sort filter should sit to the right of payment type").toBeGreaterThan(
-    mobilePaymentTypeBox.x + mobilePaymentTypeBox.width - 1,
-  );
-  expect(Math.abs(mobileAdvancedBox.y - mobileTagBox.y), "mobile advanced and tag controls should share a row").toBeLessThan(8);
-  expect(mobileTagBox.x, "mobile tag button should sit to the right of advanced filters").toBeGreaterThan(
-    mobileAdvancedBox.x + mobileAdvancedBox.width - 1,
+  expect(Math.abs(searchBox.y - filterBox.y), "mobile search and filter toggle should share a row").toBeLessThan(8);
+  expect(filterBox.x, "mobile filter toggle should sit to the right of search").toBeGreaterThan(
+    searchBox.x + searchBox.width - 1,
   );
 
-  await mobileTagButton.click();
-  const tagDrawer = page.getByRole("dialog", { name: "筛选标签" });
-  await expect(tagDrawer).toBeVisible();
-  await expectOverlayLeavesTopScrim(page, tagDrawer, "mobile tag filter drawer");
-  await expectActionNearContainerBottom(
-    tagDrawer,
-    tagDrawer.getByRole("button", { name: "确定" }),
-    "mobile tag filter drawer confirm",
-  );
-  await tagDrawer.getByPlaceholder("搜索标签...").fill(tagName);
-  await tagDrawer.getByRole("button", { name: tagName }).click();
-  await tagDrawer.getByRole("button", { name: "确定" }).click();
-  await expect(tagDrawer).toBeHidden();
-  await expect(page.getByTestId("mobile-selected-tags")).toBeVisible();
+  await filterToggle.click();
+  const expandedFilters = page.getByTestId("mobile-expanded-filters");
+  await expect(expandedFilters).toBeVisible();
+  const sort = expandedFilters.getByRole("combobox", { name: "排序" });
+  await expect(sort).toHaveText("最近到期");
+  await sort.click();
+  await page.getByRole("option", { name: "序号倒序" }).click();
+  await expect(sort).toHaveText("序号倒序");
+
+  await search.fill(tagName);
   await expect(subscriptionCard(page, taggedName)).toBeVisible();
   await expect(subscriptionCard(page, plainName)).toBeHidden();
   await expect(subscriptionCard(page, taggedName)).toBeInViewport();
-
-  await mobileAdvancedTagRow.getByRole("button", { name: "标签(1)" }).click();
-  await expect(tagDrawer).toBeVisible();
-  await tagDrawer.getByRole("button", { name: "清空标签" }).click();
-  await expect(tagDrawer).toBeHidden();
-  await expect(page.getByTestId("mobile-selected-tags")).toHaveCount(0);
+  await search.clear();
   await expect(subscriptionCard(page, plainName)).toBeVisible();
 
   const plainEditDialog = await openSubscriptionEditDialog(page, plainName);
@@ -213,6 +188,7 @@ test("mobile subscription card keeps date metadata naturally on the first availa
     nextBillingDate: dateOnlyFromNow(30),
   });
   await page.reload();
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
 
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
@@ -221,16 +197,11 @@ test("mobile subscription card keeps date metadata naturally on the first availa
 
   const layout = await captureSubscriptionCardLayout(card);
 
-  expect(Math.abs(layout.startDate.top - layout.billingDate.top), "start and billing dates should share a row").toBeLessThanOrEqual(4);
-  expect(layout.billingDate.left, "billing date should sit after start date").toBeGreaterThan(layout.startDate.right - 1);
-  expect(layout.paymentMethod.top, "payment method can wrap only after the billing date row").toBeGreaterThanOrEqual(layout.startDate.top - 1);
-  expect(layout.relativeBilling.top, "relative billing can wrap only after the billing date row").toBeGreaterThanOrEqual(layout.startDate.top - 1);
-
-  expect(Math.abs(layout.categoryBadge.top - layout.statusBadge.top), "category and status badges should share a row").toBeLessThanOrEqual(4);
-  expect(Math.abs(layout.statusBadge.top - layout.renewalBadge.top), "status and renewal badges should share a row").toBeLessThanOrEqual(4);
-  expect(layout.categoryBadge.right, "category badge should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
-  expect(layout.statusBadge.right, "status badge should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
-  expect(layout.renewalBadge.right, "renewal badge should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
+  expect(Math.abs(layout.relativeBilling.top - layout.billingDate.top), "relative and absolute renewal dates should share the reminder row").toBeLessThanOrEqual(4);
+  expect(Math.abs(layout.startDate.top - layout.paymentMethod.top), "start date and payment method should share the detail row").toBeLessThanOrEqual(4);
+  expect(layout.startDate.top, "detail row should follow the renewal reminder").toBeGreaterThan(layout.billingDate.top);
+  expect(layout.billingDate.right, "renewal date should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
+  expect(layout.paymentMethod.right, "payment method should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
 });
 
 test("mobile upcoming renewal amounts stay single-line and right-aligned without page overflow", async ({ page }, testInfo) => {
@@ -276,12 +247,14 @@ test("mobile upcoming renewal amounts stay single-line and right-aligned without
       });
     }
     await page.reload();
-    const upcomingSection = page.getByRole("heading", { name: "即将续费/到期", exact: true }).last().locator("..");
+    await page.getByRole("button", { name: /查看全部/ }).first().click();
+    const upcomingSection = page.getByRole("dialog", { name: /订阅续费/ });
+    await expect(upcomingSection).toBeVisible();
     const amounts: Locator[] = [];
     for (const record of upcomingRecords) {
       const name = upcomingSection.getByText(record.name, { exact: true });
       await expect(name).toBeVisible();
-      const amount = name.locator("../..").getByText(record.amount, { exact: true });
+      const amount = upcomingSection.getByText(record.amount, { exact: true });
       await expect(amount).toBeVisible();
       amounts.push(amount);
     }
@@ -332,11 +305,12 @@ test("mobile calendar and long detail preserve scroll, title, breakpoint, and fo
   try {
     await page.goto("/subscriptions");
     await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
+    await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
 
     const mobileDetail = await openSubscriptionDetailDialog(page, subscriptionName);
     await expect(mobileDetail.dialog.getByRole("heading", { name: subscriptionName, exact: true })).toHaveCount(1);
     const mobileFooter = mobileDetail.dialog.locator("[data-subscription-dialog-footer]");
-    for (const action of ["关闭", "添加到日历", "续订", "编辑"]) {
+    for (const action of ["关闭", "添加到日历", "续费", "编辑"]) {
       await expect(mobileFooter.getByRole("button", { name: action, exact: true })).toBeVisible();
     }
     const notes = mobileDetail.dialog.getByText(notesEnd, { exact: false });
@@ -371,7 +345,7 @@ test("mobile calendar and long detail preserve scroll, title, breakpoint, and fo
 
     for (const boundary of [
       { width: 639, panelClass: /h5-drawer-panel/ },
-      { width: 640, panelClass: /h5-dialog-frame/ },
+      { width: 640, panelClass: /h5-dialog-auto-frame/ },
     ]) {
       await page.setViewportSize({ width: boundary.width, height: 720 });
       const detail = await openSubscriptionDetailDialog(page, subscriptionName);

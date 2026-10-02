@@ -119,7 +119,7 @@ export async function installPerformanceProbe(page: Page, fixtureDay: string) {
       // 保留远端语言已提交这一条件；不把初始 auto 草稿或页面外壳算成就绪。
       case "settings": ready = visible(document.querySelector('[data-testid="settings-section-content"]')) && document.querySelector("#locale")?.textContent?.trim() === "中文"; break;
       case "search": {
-        const input = document.querySelector<HTMLInputElement>('input[placeholder="搜索订阅、标签或备注..."]');
+        const input = document.querySelector<HTMLInputElement>('input[placeholder="搜索序号、订阅、标签或备注..."]');
         const cards = document.querySelectorAll('[data-testid="subscription-card"]');
         const heading = cards[0]?.querySelector("h3");
         ready = cards.length === 1 && Boolean(input?.value) && heading?.textContent === input?.value && visible(heading ?? null);

@@ -318,8 +318,11 @@ function openSubscriptionReadDatabase(): DatabaseSync {
       auto_renew INTEGER NOT NULL,
       auto_calculate_next_billing_date INTEGER NOT NULL,
       trial_end_date TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
       reminder_days INTEGER NOT NULL,
       cost_sharing_json TEXT NOT NULL,
+      family_sharing_enabled INTEGER NOT NULL DEFAULT 0,
+      sharing_login_account TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL
     );
     CREATE TABLE subscription_list_index (
@@ -363,8 +366,8 @@ function seedSubscriptionReadRows(db: DatabaseSync, records: SubscriptionPerform
     id, user_id, name, platform_name, account_number, logo, price, currency, billing_cycle, custom_days, custom_cycle_unit,
     one_time_term_count, one_time_term_unit, category, status, pinned, public_hidden, payment_method,
     card_last4, start_date, next_billing_date, auto_renew, auto_calculate_next_billing_date, trial_end_date,
-    reminder_days, cost_sharing_json, created_at
-  ) VALUES (${Array.from({ length: 27 }, () => "?").join(", ")})`);
+    tags_json, reminder_days, cost_sharing_json, created_at
+  ) VALUES (${Array.from({ length: 28 }, () => "?").join(", ")})`);
   const insertIndex = db.prepare(`INSERT INTO subscription_list_index (
     subscription_id, user_id, status, billing_cycle, one_time_term_count, next_billing_date, pinned, created_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -377,7 +380,7 @@ function seedSubscriptionReadRows(db: DatabaseSync, records: SubscriptionPerform
         row.custom_days, row.custom_cycle_unit, row.one_time_term_count, row.one_time_term_unit,
         row.category, row.status, row.pinned, row.public_hidden, row.payment_method, row.card_last4 ?? null, row.start_date,
         row.next_billing_date, row.auto_renew, row.auto_calculate_next_billing_date, row.trial_end_date,
-        row.reminder_days, row.cost_sharing_json, row.created_at,
+        row.tags_json, row.reminder_days, row.cost_sharing_json, row.created_at,
       );
       insertIndex.run(
         row.id, row.user_id, row.status, row.billing_cycle, row.one_time_term_count,

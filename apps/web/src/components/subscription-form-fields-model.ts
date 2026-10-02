@@ -5,6 +5,8 @@ import type { CustomConfig } from "@/types/config";
 import type { SubscriptionFormState } from "@/types/subscription-form";
 import type { SubscriptionFormErrorField, SubscriptionFormErrors } from "@/lib/subscription-form";
 import type { SubscriptionPlatformSuggestion } from "@/components/subscription-dialog-types";
+import type { CostSharing } from "@/types/subscription";
+import { DISABLED_REMINDER_DAYS, INHERIT_REMINDER_DAYS } from "@/types/subscription";
 
 export interface SubscriptionFormFieldsProps {
   /** 同一页面可能同时渲染新增/编辑弹窗，id 前缀用于保持 label 与错误提示的 a11y 关联唯一。 */
@@ -36,6 +38,29 @@ export type SubscriptionFormFieldUpdater = <K extends keyof SubscriptionFormStat
   key: K,
   value: SubscriptionFormState[K],
 ) => void;
+
+export function disabledReminderFields(): Pick<SubscriptionFormState, "reminderType" | "reminderDays" | "repeatReminderEnabled"> {
+  return {
+    reminderType: "disabled",
+    reminderDays: String(DISABLED_REMINDER_DAYS),
+    repeatReminderEnabled: false,
+  };
+}
+
+export function inheritedReminderFields(): Pick<SubscriptionFormState, "reminderType" | "reminderDays"> {
+  return {
+    reminderType: "inherit",
+    reminderDays: String(INHERIT_REMINDER_DAYS),
+  };
+}
+
+export function disableCollectionReminder(costSharing: CostSharing | undefined): CostSharing | undefined {
+  if (!costSharing?.collectionReminder?.enabled) return costSharing;
+  return {
+    ...costSharing,
+    collectionReminder: { ...costSharing.collectionReminder, enabled: false },
+  };
+}
 
 // 输入态字段到错误区块的唯一映射；onChange 清错和 submit 校验共用它，避免某些字段改动后旧错误残留。
 export const errorFieldByFormKey: Partial<Record<keyof SubscriptionFormState, SubscriptionFormErrorField>> = {

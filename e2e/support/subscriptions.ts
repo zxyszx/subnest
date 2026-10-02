@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page, type Response, type Route, type TestInfo } from "@playwright/test";
 import { expectLabelControlGap, getRequiredLocatorBoundingBox } from "./layout";
 
+export const SUBSCRIPTION_SEARCH_PLACEHOLDER = "搜索序号、订阅、标签或备注...";
+
 export function uniqueE2EName(testInfo: TestInfo, prefix: string): string {
   // 项目名、worker 和时间戳一起参与命名，避免 desktop/mobile 共享空库时互相命中旧数据。
   const projectName = testInfo.project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -54,7 +56,7 @@ export async function openSubscriptionDetailDialog(page: Page, subscriptionName:
 }
 
 export async function openSubscriptionCalendarDialog(page: Page, subscriptionName: string) {
-  await page.getByPlaceholder("搜索订阅、标签或备注...").fill(subscriptionName);
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "更多操作" }).click();

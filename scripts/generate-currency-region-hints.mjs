@@ -14,7 +14,7 @@ const CLDR_CURRENCY_DATA_URLS = [
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(rootDir, "packages/shared/data/currency-region-hints.json");
-const currencyDataPath = path.join(rootDir, "apps/web/src/lib/currency-data.ts");
+const currencyDataPath = path.join(rootDir, "packages/shared/src/schemas/exchange-rates.ts");
 const checkMode = process.argv.includes("--check");
 const execFileAsync = promisify(execFile);
 
@@ -48,7 +48,7 @@ async function fetchText(urlOrUrls) {
 function readSupportedCurrencies(source) {
   const match = source.match(/SUPPORTED_EXCHANGE_RATE_CURRENCIES\s*=\s*\[([\s\S]*?)\]\s*as const/);
   if (!match) {
-    throw new Error("Could not find SUPPORTED_EXCHANGE_RATE_CURRENCIES in currency-data.ts");
+    throw new Error("Could not find SUPPORTED_EXCHANGE_RATE_CURRENCIES in exchange-rates.ts");
   }
   return new Set(Array.from(match[1].matchAll(/"([A-Z]{3})"/g), (item) => item[1]));
 }

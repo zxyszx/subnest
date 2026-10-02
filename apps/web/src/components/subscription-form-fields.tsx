@@ -16,16 +16,15 @@ import { SubscriptionPaymentMethodSelect } from "@/components/subscription-payme
 import { SubscriptionTagInput } from "@/components/subscription-tag-input";
 import type {
   BillingCycle,
-  CostSharing,
   RepeatReminderInterval,
   RepeatReminderWindow,
   SubscriptionStatus,
 } from "@/types/subscription";
 import {
-  DISABLED_REMINDER_DAYS,
-  INHERIT_REMINDER_DAYS,
   CUSTOM_CYCLE_UNITS,
   CYCLE_LABELS,
+  DISABLED_REMINDER_DAYS,
+  INHERIT_REMINDER_DAYS,
   REMINDER_DAYS_OPTIONS,
   REPEAT_REMINDER_INTERVAL_OPTIONS,
   REPEAT_REMINDER_SENTENCE_INTERVAL_LABELS,
@@ -37,35 +36,19 @@ import { toReminderDays } from "@/lib/subscription-form";
 import { customCycleUnitLabelKey } from "@/lib/subscription-billing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { localizedLabel } from "@/i18n/locales";
-import { getErrorFieldsToClearForFormChange, type SubscriptionFormErrors, type SubscriptionFormFieldsProps } from "@/components/subscription-form-fields-model";
+import {
+  disableCollectionReminder,
+  disabledReminderFields,
+  getErrorFieldsToClearForFormChange,
+  inheritedReminderFields,
+  type SubscriptionFormErrors,
+  type SubscriptionFormFieldsProps,
+} from "@/components/subscription-form-fields-model";
 import { UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 
 export type { SubscriptionFormReminderType };
 export type { SubscriptionFormState };
 export type { SubscriptionFormErrors, SubscriptionFormFieldsProps };
-
-function disabledReminderFields(): Pick<SubscriptionFormState, "reminderType" | "reminderDays" | "repeatReminderEnabled"> {
-  return {
-    reminderType: "disabled",
-    reminderDays: String(DISABLED_REMINDER_DAYS),
-    repeatReminderEnabled: false,
-  };
-}
-
-function inheritedReminderFields(): Pick<SubscriptionFormState, "reminderType" | "reminderDays"> {
-  return {
-    reminderType: "inherit",
-    reminderDays: String(INHERIT_REMINDER_DAYS),
-  };
-}
-
-function disableCollectionReminder(costSharing: CostSharing | undefined): CostSharing | undefined {
-  if (!costSharing?.collectionReminder?.enabled) return costSharing;
-  return {
-    ...costSharing,
-    collectionReminder: { ...costSharing.collectionReminder, enabled: false },
-  };
-}
 
 export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   idPrefix,

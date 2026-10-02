@@ -163,7 +163,6 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("combobox", { name: "平台名称" }));
     await user.click(await screen.findByRole("option", { name: "Netflix" }));
-
     expect(screen.getByText("已添加")).toBeInTheDocument();
     expect(screen.getByLabelText("账号编号")).toHaveAttribute("aria-invalid", "true");
     expect(document.querySelector("datalist")).toBeNull();
@@ -185,11 +184,9 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(document.querySelector("form")).toHaveAttribute("novalidate");
 
     await user.click(screen.getByRole("button", { name: "添加订阅" }));
-
     expect(screen.getByText("请输入服务名称")).toBeInTheDocument();
     expect(screen.getByText("金额必须是 0 到 1,000,000,000 之间的有效数字")).toBeInTheDocument();
     const startDateButton = document.getElementById("startDate");
@@ -228,7 +225,6 @@ describe("SubscriptionDialog", () => {
     const header = document.querySelector("[data-subscription-dialog-header]");
     const scrollRegion = form?.firstElementChild;
     const footer = screen.getByRole("button", { name: "添加订阅" }).closest("div");
-
     expect(dialog).toHaveClass("h5-dialog-frame", "h5-subscription-dialog-panel");
     expect(dialog).not.toHaveClass("h-fit");
     expect(header).toHaveClass("shrink-0");
@@ -276,7 +272,6 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(screen.getByRole("dialog", { name: "编辑订阅" })).toBeInTheDocument();
     const form = document.querySelector("form");
     if (!form) throw new Error("Subscription dialog form was not rendered");
@@ -289,7 +284,6 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "管理成员" }));
     await new Promise((resolve) => window.setTimeout(resolve, 0));
-
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
     const subscriptionHeader = document.querySelector("[data-subscription-dialog-header]");
     expect(subscriptionHeader).toHaveTextContent("编辑订阅");
@@ -322,7 +316,6 @@ describe("SubscriptionDialog", () => {
     await user.clear(amountInputs[1]!);
     await user.type(amountInputs[1]!, "15");
     await user.click(within(memberDialog).getByRole("button", { name: "完成" }));
-
     expect(screen.getByRole("dialog", { name: "编辑订阅" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "管理共享成员" })).not.toBeInTheDocument();
     expect(formScrollRegion.scrollTop).toBe(320);
@@ -380,7 +373,6 @@ describe("SubscriptionDialog", () => {
         <SubscriptionDialog {...dialogProps} open={false} />
       </TooltipProvider>,
     );
-
     expect(screen.queryByRole("dialog", { name: "管理共享成员" })).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "编辑订阅" })).not.toBeInTheDocument();
   });
@@ -414,7 +406,6 @@ describe("SubscriptionDialog", () => {
 
     await user.click(currencySelect);
     await user.click(await screen.findByText("¥ 人民币 (CNY)"));
-
     expect(screen.getByRole("combobox", { name: "选择货币" })).toHaveTextContent("¥ 人民币 (CNY)");
   });
 
@@ -443,7 +434,6 @@ describe("SubscriptionDialog", () => {
     await user.click(screen.getByRole("button", { name: /到期日期.*选择日期/ }));
     await user.click(await screen.findByRole("button", { name: /2026年6月8日/ }));
     await user.click(screen.getByRole("button", { name: "添加订阅" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       name: "Opt-in SaaS",
       autoRenew: true,
@@ -474,7 +464,6 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("combobox", { name: "扣费周期" }));
     await user.click(await screen.findByRole("option", { name: "每年" }));
-
     expect(screen.getByRole("switch", { name: "自动续订" })).not.toBeChecked();
   });
 
@@ -506,7 +495,6 @@ describe("SubscriptionDialog", () => {
     await user.click(await screen.findByRole("option", { name: "年" }));
 
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       billingCycle: "custom",
       customDays: 3,
@@ -529,7 +517,6 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(screen.getByRole("combobox", { name: "到期提醒" })).toHaveTextContent("提前 30 天");
   });
 
@@ -546,7 +533,6 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(screen.getByRole("combobox", { name: "到期提醒" })).toHaveTextContent("默认值从设置中获取（提前 5 天）");
   });
 
@@ -563,7 +549,6 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(screen.getByRole("switch", { name: "到期提醒" })).not.toBeChecked();
     expect(screen.queryByRole("combobox", { name: "到期提醒" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("重复提醒")).not.toBeInTheDocument();
@@ -615,7 +600,6 @@ describe("SubscriptionDialog", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /2026年4月16日/ }));
-
     expect(await screen.findByRole("button", { name: "2026年" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "四月" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /2026年4月16日.*selected/ })).toBeInTheDocument();
@@ -643,7 +627,6 @@ describe("SubscriptionDialog", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(screen.getByText("到期日期不能早于开始日期")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
@@ -669,7 +652,6 @@ describe("SubscriptionDialog", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /2026年5月20日/ }));
-
     expect(await screen.findByRole("button", { name: "五月" })).toBeInTheDocument();
     const calendar = screen.getByRole("grid");
     expect(within(calendar).getByRole("button", { name: /2026年5月13日/ })).toBeDisabled();
@@ -692,7 +674,6 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
-
     expect(screen.getByLabelText("网站")).toHaveValue("https://billing.example.com");
     expect(screen.getByLabelText("备注")).toHaveValue("团队年度订阅");
   });
@@ -727,7 +708,6 @@ describe("SubscriptionDialog", () => {
     await user.type(refreshedTagInput, "Infra");
     await user.keyboard("{Enter}");
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       tags: ["Infra", "Security", "AI"],
     }));
@@ -753,7 +733,6 @@ describe("SubscriptionDialog", () => {
 
     await user.type(screen.getByLabelText("标签"), "AI");
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       tags: ["Infra", "AI"],
     }));
@@ -779,7 +758,6 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "移除标签 Infra" }));
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       tags: ["Security"],
     }));
@@ -811,7 +789,6 @@ describe("SubscriptionDialog", () => {
     await user.clear(screen.getByLabelText("备注"));
     await user.type(screen.getByLabelText("备注"), "新备注");
     await user.click(screen.getByRole("button", { name: "保存修改" }));
-
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       website: "https://new.example.com",
       notes: "新备注",

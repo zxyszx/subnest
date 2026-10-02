@@ -10,6 +10,7 @@ import {
   openSubscriptionDetailDialog,
   openSubscriptionEditDialog,
   saveSubscriptionDialog,
+  SUBSCRIPTION_SEARCH_PLACEHOLDER,
   subscriptionCard,
   uniqueE2EName,
 } from "./support/subscriptions";
@@ -23,7 +24,6 @@ import {
 } from "./support/layout";
 import { installLogoCandidateRoute } from "./support/media-candidates";
 import { createProductSubscriptionSeed, deleteProductSubscriptionsByName } from "./support/product-api";
-import { expectSideDrawerExitLifecycle } from "./support/side-drawer";
 
 async function getRequiredElement(locator: Locator, label: string): Promise<ElementHandle<SVGElement | HTMLElement>> {
   const element = await locator.elementHandle();
@@ -40,21 +40,32 @@ async function expectSameDOMNode(
   expect(await before.evaluate((node, currentNode) => node === currentNode, after), label).toBe(true);
 }
 
-test("desktop advanced filters complete the right-side exit lifecycle", async ({ page }) => {
+test("desktop compact toolbar keeps platform, search, and sorting in one row", async ({ page }) => {
   await page.goto("/subscriptions");
   await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
 
-  const trigger = page.getByTestId("desktop-advanced-filter").getByRole("button", { name: "更多筛选" });
-  await trigger.click();
-  const panel = page.getByTestId("desktop-advanced-filter-panel");
-  await expect(panel).toBeVisible();
+  const toolbar = page.getByTestId("desktop-subscription-toolbar");
+  const platformFilter = toolbar.getByRole("navigation", { name: "按平台筛选订阅" });
+  const search = toolbar.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
+  const sort = toolbar.getByRole("combobox", { name: "排序" });
+  await expect(platformFilter).toBeVisible();
+  await expect(search).toBeVisible();
+  await expect(sort).toHaveText("最近到期");
+  const [platformBox, searchBox, sortBox] = await Promise.all([
+    platformFilter.boundingBox(),
+    search.boundingBox(),
+    sort.boundingBox(),
+  ]);
+  expect(platformBox).not.toBeNull();
+  expect(searchBox).not.toBeNull();
+  expect(sortBox).not.toBeNull();
+  expect(Math.abs((platformBox?.y ?? 0) - (searchBox?.y ?? 0))).toBeLessThan(16);
+  expect((searchBox?.x ?? 0)).toBeGreaterThan((platformBox?.x ?? 0));
+  expect((sortBox?.x ?? 0)).toBeGreaterThan((searchBox?.x ?? 0));
 
-  await expectSideDrawerExitLifecycle(
-    page,
-    panel,
-    () => panel.getByRole("button", { name: "关闭" }).click(),
-  );
-  await expect(trigger).toBeFocused();
+  await sort.click();
+  await page.getByRole("option", { name: "序号正序" }).click();
+  await expect(sort).toHaveText("序号正序");
 });
 
 test("desktop tall subscription dialog keeps footer tight to the panel bottom", async ({ page }) => {
@@ -171,7 +182,7 @@ test("short desktop calendar and long detail keep their scroll and footer geomet
   }
 });
 
-test("desktop subscription create, tag filter, edit, and reload persistence", async ({ page }, testInfo) => {
+test("desktop subscription create, tag search, edit, and reload persistence", async ({ page }, testInfo) => {
   const plainName = uniqueE2EName(testInfo, "Plain Cloud");
   const taggedName = uniqueE2EName(testInfo, "Tagged Cloud");
   const editedName = `${taggedName} Pro`;
@@ -192,16 +203,11 @@ test("desktop subscription create, tag filter, edit, and reload persistence", as
     tags: `${tagName}、云服务`,
   });
 
-  const desktopTagFilter = page.getByTestId("desktop-tag-filter");
-  await expect(desktopTagFilter.getByRole("button", { name: "标签" })).toBeVisible();
-  await desktopTagFilter.getByRole("button", { name: "标签" }).click();
-  await page.getByPlaceholder("搜索标签...").fill(tagName);
-  await page.getByRole("button", { name: tagName }).click();
-  await expect(desktopTagFilter.getByRole("button", { name: "标签(1)" })).toBeVisible();
-  await expect(page.getByTestId("desktop-selected-tags")).toBeVisible();
+  const search = page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
+  await search.fill(tagName);
   await expect(subscriptionCard(page, taggedName)).toBeVisible();
   await expect(subscriptionCard(page, plainName)).toBeHidden();
-  await page.getByRole("button", { name: "清空标签" }).click();
+  await search.clear();
   await expect(subscriptionCard(page, plainName)).toBeVisible();
 
   const editDialog = await openSubscriptionEditDialog(page, taggedName);
@@ -278,7 +284,12 @@ test("desktop 1000-row search uses one index request and keeps the virtual list 
 
   await page.goto("/subscriptions");
   await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
-  await page.getByPlaceholder("搜索订阅、标签或备注...").fill("Scale Needle");
+  const filteredIndexResponse = page.waitForResponse((response) => {
+    if (!response.url().includes("/api/app/subscriptions/index")) return false;
+    return new URL(response.url()).searchParams.get("q") === "Scale Needle";
+  });
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill("Scale Needle");
+  await filteredIndexResponse;
 
   await expect(page.getByText("Scale Needle 0", { exact: true })).toBeVisible();
   expect(indexRequests).toHaveLength(1);

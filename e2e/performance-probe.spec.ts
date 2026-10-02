@@ -75,16 +75,16 @@ test("content commits before a delayed automation action resolves", async ({ pag
 
 test("input readiness freezes the matching result without waiting for Node polling", async ({ page }) => {
   await page.evaluate(() => {
-    document.body.innerHTML = '<input placeholder="搜索订阅、标签或备注..." /><article data-testid="subscription-card"><h3>before</h3></article>';
+    document.body.innerHTML = '<input placeholder="搜索序号、订阅、标签或备注..." /><article data-testid="subscription-card"><h3>before</h3></article>';
     document.querySelector("input")?.addEventListener("input", (event) => {
       if (event.target instanceof HTMLInputElement) document.querySelector("h3")?.replaceChildren(event.target.value);
     });
     window.__renewletPerformance.start("input");
   });
-  await page.getByPlaceholder("搜索订阅、标签或备注...").fill("after");
+  await page.getByPlaceholder("搜索序号、订阅、标签或备注...").fill("after");
   await waitForPerformanceContent(page, "search");
   const before = await page.evaluate(() => window.__renewletPerformance.finish(0));
-  await page.getByPlaceholder("搜索订阅、标签或备注...").fill("later");
+  await page.getByPlaceholder("搜索序号、订阅、标签或备注...").fill("later");
   expect(await page.evaluate(() => window.__renewletPerformance.finish(0))).toEqual(before);
 });
 
