@@ -300,12 +300,14 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	if err := validateUniqueSubscriptionPlatformAccount(app, record); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
-	if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || !strings.EqualFold(previousMailboxAddress, record.GetString("sharingLoginAccount"))) {
-		if err := revokeSharedInboxLinksForMailbox(app, record.GetString("user"), previousMailboxAddress); err != nil {
-			return e.BadRequestError(serverText(locale, "common.invalidRequestParameters"), err)
+	if err := app.RunInTransaction(func(txApp core.App) error {
+		if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || !strings.EqualFold(strings.TrimSpace(previousMailboxAddress), strings.TrimSpace(record.GetString("sharingLoginAccount")))) {
+			if err := revokeInboxSubscriptionLinks(txApp, record.GetString("user"), record.Id); err != nil {
+				return err
+			}
 		}
-	}
-	if err := app.Save(record); err != nil {
+		return txApp.Save(record)
+	}); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	return apiSuccessJSON(e, http.StatusOK, subscriptionResponse{Subscription: subscriptionAPIFromRecord(record)})
@@ -348,7 +350,7 @@ func handleSubscriptionDelete(app core.App, e *core.RequestEvent) error {
 		if err != nil {
 			return err
 		}
-		if err := revokeSharedInboxLinksForMailbox(txApp, txRecord.GetString("user"), txRecord.GetString("sharingLoginAccount")); err != nil {
+		if err := revokeInboxSubscriptionLinks(txApp, txRecord.GetString("user"), txRecord.Id); err != nil {
 			return err
 		}
 		if err := deleteSharingProjectionForSubscription(txApp, txRecord); err != nil {

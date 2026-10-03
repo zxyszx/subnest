@@ -154,6 +154,9 @@ export async function updateSubscription(request: Request, env: Env, id: string)
   );
   const derived = subscriptionDerivedMutationPlan(env, { before: existing, after: merged, kind: "update" }, settings);
   const sharingStatements = await sharingProjectionStatements(env, merged, existing, timestamp);
+  if (existing.family_sharing_enabled && (!merged.family_sharing_enabled || existing.sharing_login_account !== merged.sharing_login_account)) {
+    sharingStatements.unshift(env.DB.prepare("UPDATE shared_inbox_links SET status='revoked',revoked_at=?,updated_at=? WHERE user_id=? AND seat_id IN (SELECT seat.id FROM sharing_seats seat JOIN sharing_accounts account ON account.id=seat.sharing_account_id WHERE account.user_id=? AND account.subscription_id=?)").bind(timestamp,timestamp,auth.user.id,auth.user.id,id));
+  }
   await env.DB.batch([...derived.beforeFact, factStatement, ...sharingStatements, ...derived.afterFact]);
   return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(merged) }));
 }

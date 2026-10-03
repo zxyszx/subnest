@@ -40,6 +40,10 @@ func ensureNewSzxcnCollections(app core.App, users *core.Collection) error {
 			return err
 		}
 		c.AddIndex("idx_shared_inbox_links_short_hash_unique", true, "shortKeyHash", "")
+		if err := upsertField(c, &core.TextField{Name: "seatId", Max: 256}); err != nil {
+			return err
+		}
+		c.AddIndex("idx_shared_inbox_links_active_seat", true, "user, seatId", "status = 'active' AND seatId != ''")
 		return nil
 	})
 }

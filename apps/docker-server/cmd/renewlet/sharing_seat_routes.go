@@ -175,6 +175,11 @@ func moveSharingSeat(app core.App, userID, sourceID, targetID string) error {
 		for _, field := range []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "billingMonths", "startDate", "expiresAt", "status", "notes"} {
 			target.Set(field, source.Get(field))
 		}
+		for _, seatID := range []string{sourceID, targetID} {
+			if err := revokeInboxSeatLinks(txApp, userID, seatID); err != nil {
+				return err
+			}
+		}
 		if err := txApp.Save(target); err != nil {
 			return err
 		}
@@ -279,6 +284,11 @@ func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Re
 		seat, err := txApp.FindRecordById("sharing_seats", original.Id)
 		if err != nil || seat.GetString("user") != userID {
 			return errors.New("sharing seat not found")
+		}
+		if body.Status != "active" || seat.GetString("memberName") != body.MemberName || seat.GetString("contact") != body.Contact || seat.GetString("contactType") != body.ContactType {
+			if err := revokeInboxSeatLinks(txApp, userID, seat.Id); err != nil {
+				return err
+			}
 		}
 		seat.Set("status", body.Status)
 		if body.Status == "vacant" {

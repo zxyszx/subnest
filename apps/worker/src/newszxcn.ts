@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { sendUpstreamRequest } from "./upstream-http";
 
 const DEFAULT_BASE_URL = "https://mail.newszxcn.com";
-type SharedLinkRow = { id: string; short_key_ciphertext: string; grant_id: string; mailbox_id: string; mailbox_address: string; folder_ids_json: string; window_minutes: number; expires_at: string | null; status: string; created_at: string; updated_at: string; user_id: string };
+type SharedLinkRow = { id: string; seat_id: string; short_key_ciphertext: string; grant_id: string; mailbox_id: string; mailbox_address: string; folder_ids_json: string; window_minutes: number; expires_at: string | null; status: string; created_at: string; updated_at: string; user_id: string };
 const tokenMask = (token: string) => token.length <= 8 ? "********" : `${token.slice(0, 4)}...${token.slice(-4)}`;
 function baseUrl(value: string): string { const parsed = new URL(value); if (parsed.protocol !== "https:" || parsed.hostname !== "mail.newszxcn.com") throw new HttpError(400, "API 地址必须是 https://mail.newszxcn.com", "INVALID_BASE_URL"); return parsed.toString().replace(/\/$/, ""); }
 async function upstream(env: Env, userId: string, path: string, init?: RequestInit): Promise<Response> {
@@ -42,7 +42,7 @@ export async function testNewSzxcnConnection(request: Request, env: Env): Promis
 export async function listNewSzxcnMailboxes(request: Request, env: Env): Promise<Response> { const {user}=await requireAdmin(request,env); return successJson(await upstreamJson(env,user.id,"/api/open/v1/subnest/mailboxes")); }
 export async function listNewSzxcnFolders(request: Request, env: Env, mailboxId: string): Promise<Response> { const {user}=await requireAdmin(request,env); return successJson(await upstreamJson(env,user.id,`/api/open/v1/subnest/mailboxes/${encodeURIComponent(mailboxId)}/folders`)); }
 
-async function linkResponse(request: Request, env: Env, row: SharedLinkRow): Promise<Record<string, unknown>> { const key=await decryptNewSzxcn(env,row.short_key_ciphertext); return { id: row.id, shortUrl: `${new URL(request.url).origin}/s/${key}`, mailboxId: row.mailbox_id, mailboxAddress: row.mailbox_address, folderIds: JSON.parse(row.folder_ids_json), windowMinutes: row.window_minutes, expiresAt: row.expires_at ?? null, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at }; }
+async function linkResponse(request: Request, env: Env, row: SharedLinkRow): Promise<Record<string, unknown>> { const key=await decryptNewSzxcn(env,row.short_key_ciphertext); return { id: row.id, seatId: row.seat_id || null, shortUrl: `${new URL(request.url).origin}/s/${key}`, mailboxId: row.mailbox_id, mailboxAddress: row.mailbox_address, folderIds: JSON.parse(row.folder_ids_json), windowMinutes: row.window_minutes, expiresAt: row.expires_at ?? null, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at }; }
 export async function listSharedInboxLinks(request: Request, env: Env): Promise<Response> {
   const {user}=await requireAdmin(request,env);
   const result=await env.DB.prepare("SELECT * FROM shared_inbox_links WHERE user_id = ? ORDER BY created_at DESC").bind(user.id).all<SharedLinkRow>();
@@ -52,7 +52,7 @@ export async function listSharedInboxLinks(request: Request, env: Env): Promise<
   const syncStatements=links.flatMap((link,index)=>{
     const row=result.results?.[index];
     const mailboxKey=row?.mailbox_address.trim().toLowerCase()??"";
-    if(!row || row.status!=="active" || syncedMailboxes.has(mailboxKey)) return [];
+    if(!row || row.seat_id || row.status!=="active" || syncedMailboxes.has(mailboxKey)) return [];
     syncedMailboxes.add(mailboxKey);
     const shortUrl=String(link["shortUrl"]??"");
     return [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?)) AND (sharing_verification_link IS NULL OR sharing_verification_link!=?)").bind(shortUrl,timestamp,user.id,row.mailbox_address,shortUrl)];
@@ -63,33 +63,56 @@ export async function listSharedInboxLinks(request: Request, env: Env): Promise<
 export async function createSharedInboxLink(request: Request, env: Env): Promise<Response> {
   const {user}=await requireAdmin(request,env); const body=await readJson(request,sharedInboxLinkRequestSchema,locale(request));
   const boxes=await upstreamJson<{items?:Array<{id:string;address:string}>}>(env,user.id,"/api/open/v1/subnest/mailboxes"); const box=boxes.items?.find(item=>item.id===body.mailboxId); if(!box) throw new HttpError(400,"邮箱不存在","MAILBOX_NOT_FOUND");
-  const existing=await env.DB.prepare("SELECT id FROM shared_inbox_links WHERE user_id=? AND mailbox_id=? AND status='active'").bind(user.id,body.mailboxId).first<{id:string}>(); if(existing) throw new HttpError(409,"该邮箱已开启分享，请先管理现有链接","SHARE_ALREADY_ACTIVE");
+  if(body.expiresAt && Date.parse(body.expiresAt)<=Date.now()) throw new HttpError(400,"链接到期时间无效","INVALID_EXPIRY");
+  const seatVersion=body.seatId ? await validateInboxSeat(env,user.id,body.seatId,box.address) : null;
+  const existing=await env.DB.prepare("SELECT id FROM shared_inbox_links WHERE user_id=? AND mailbox_id=? AND seat_id=? AND status='active'").bind(user.id,body.mailboxId,body.seatId??"").first<{id:string}>(); if(existing) throw new HttpError(409,"该授权已有链接，请先管理现有链接","SHARE_ALREADY_ACTIVE");
   const shortKey=randomToken(24), grantExternal=`subnest_${newId("grant")}`; const grant=await upstreamJson<{id:string}>(env,user.id,"/api/open/v1/subnest/grants",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({externalGrantId:grantExternal,mailboxId:body.mailboxId,folderIds:body.folderIds,windowMinutes:body.windowMinutes,expiresAt:body.expiresAt??undefined})});
   const timestamp=nowIso(), id=newId("sil"), shortUrl=`${new URL(request.url).origin}/s/${shortKey}`;
   try {
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO shared_inbox_links (id,user_id,short_key_hash,short_key_ciphertext,external_grant_id,grant_id,mailbox_id,mailbox_address,folder_ids_json,window_minutes,expires_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,user.id,await sha256(shortKey),await encryptNewSzxcn(env,shortKey),grantExternal,grant.id,body.mailboxId,box.address,JSON.stringify(body.folderIds),body.windowMinutes,body.expiresAt??null,"active",timestamp,timestamp),
-      env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?))").bind(shortUrl,timestamp,user.id,box.address),
+    const insert = env.DB.prepare(`INSERT INTO shared_inbox_links (id,user_id,short_key_hash,short_key_ciphertext,external_grant_id,grant_id,mailbox_id,mailbox_address,folder_ids_json,window_minutes,expires_at,status,created_at,updated_at,seat_id)
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE ?='' OR EXISTS (
+        SELECT 1 FROM sharing_seats seat JOIN sharing_accounts account ON account.id=seat.sharing_account_id AND account.user_id=seat.user_id
+        JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
+        WHERE seat.id=? AND seat.user_id=? AND seat.status='active' AND length(trim(seat.member_name))>0
+          AND account.status='active' AND subscription.family_sharing_enabled=1
+          AND lower(trim(subscription.sharing_login_account))=lower(trim(?))
+          AND seat.updated_at=? AND account.updated_at=? AND subscription.updated_at=?)`)
+      .bind(id,user.id,await sha256(shortKey),await encryptNewSzxcn(env,shortKey),grantExternal,grant.id,body.mailboxId,box.address,JSON.stringify(body.folderIds),body.windowMinutes,body.expiresAt??null,"active",timestamp,timestamp,body.seatId??"",body.seatId??"",body.seatId??"",user.id,box.address,seatVersion?.seat_updated??"",seatVersion?.account_updated??"",seatVersion?.subscription_updated??"");
+    const results = await env.DB.batch([
+      insert,
+      ...(!body.seatId ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?))").bind(shortUrl,timestamp,user.id,box.address)] : []),
     ]);
+    if(results[0]?.meta.changes !== 1) throw new HttpError(409,"车位已发生变化，请刷新后重试","SEAT_CHANGED");
   } catch (error) {
     await upstream(env,user.id,`/api/open/v1/subnest/grants/${encodeURIComponent(grant.id)}`,{method:"DELETE"}).catch(()=>undefined);
     throw error;
   }
-  return successJson({ link: { id, shortUrl, mailboxId:body.mailboxId, mailboxAddress:box.address, folderIds:body.folderIds, windowMinutes:body.windowMinutes, expiresAt:body.expiresAt??null, status:"active", createdAt:timestamp, updatedAt:timestamp } }, { status: 201 });
+  return successJson({ link: { id, shortUrl, seatId:body.seatId??null, mailboxId:body.mailboxId, mailboxAddress:box.address, folderIds:body.folderIds, windowMinutes:body.windowMinutes, expiresAt:body.expiresAt??null, status:"active", createdAt:timestamp, updatedAt:timestamp } }, { status: 201 });
 }
 export async function revokeSharedInboxLink(request: Request, env: Env, id: string): Promise<Response> {
   const {user}=await requireAdmin(request,env);
-  const row=await env.DB.prepare("SELECT grant_id,mailbox_address,short_key_ciphertext FROM shared_inbox_links WHERE id=? AND user_id=? AND status='active'").bind(id,user.id).first<Pick<SharedLinkRow,"grant_id"|"mailbox_address"|"short_key_ciphertext">>();
+  const row=await env.DB.prepare("SELECT grant_id,mailbox_address,short_key_ciphertext,seat_id FROM shared_inbox_links WHERE id=? AND user_id=? AND status='active'").bind(id,user.id).first<Pick<SharedLinkRow,"grant_id"|"mailbox_address"|"short_key_ciphertext"|"seat_id">>();
   if(!row) throw new HttpError(404,"短链接不存在","NOT_FOUND");
   const oldShortUrl=`${new URL(request.url).origin}/s/${await decryptNewSzxcn(env,row.short_key_ciphertext)}`;
   await upstream(env,user.id,`/api/open/v1/subnest/grants/${encodeURIComponent(row.grant_id)}`,{method:"DELETE"});
   const timestamp=nowIso();
   await env.DB.batch([
     env.DB.prepare("UPDATE shared_inbox_links SET status='revoked',revoked_at=?,updated_at=? WHERE id=? AND user_id=?").bind(timestamp,timestamp,id,user.id),
-    env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=NULL, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?)) AND sharing_verification_link=?").bind(timestamp,user.id,row.mailbox_address,oldShortUrl),
+    ...(!row.seat_id ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=NULL, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?)) AND sharing_verification_link=?").bind(timestamp,user.id,row.mailbox_address,oldShortUrl)] : []),
   ]);
   return json({ok:true});
 }
 
-async function publicLink(env: Env, shortKey: string) { const hash=await sha256(shortKey); const row=await env.DB.prepare("SELECT * FROM shared_inbox_links WHERE short_key_hash=? AND status='active'").bind(hash).first<SharedLinkRow>(); if(!row) throw new HttpError(404,"短链接不存在或已失效","NOT_FOUND"); if(row.expires_at && new Date(row.expires_at).getTime()<=Date.now()) throw new HttpError(403,"短链接已过期","LINK_EXPIRED"); return row; }
+async function publicLink(env: Env, shortKey: string) { const hash=await sha256(shortKey); const row=await env.DB.prepare("SELECT * FROM shared_inbox_links WHERE short_key_hash=? AND status='active'").bind(hash).first<SharedLinkRow>(); if(!row) throw new HttpError(404,"短链接不存在或已失效","NOT_FOUND"); if((row.seat_id && !row.expires_at) || (row.expires_at && !(Date.parse(row.expires_at)>Date.now()))) throw new HttpError(403,"短链接已过期","LINK_EXPIRED"); if(row.seat_id) await validateInboxSeat(env,row.user_id,row.seat_id,row.mailbox_address); return row; }
+
+async function validateInboxSeat(env: Env, userId: string, seatId: string, address: string) {
+  const seat = await env.DB.prepare(`SELECT seat.updated_at AS seat_updated, account.updated_at AS account_updated, subscription.updated_at AS subscription_updated FROM sharing_seats seat
+    JOIN sharing_accounts account ON account.id=seat.sharing_account_id AND account.user_id=seat.user_id
+    JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
+    WHERE seat.id=? AND seat.user_id=? AND seat.status='active' AND length(trim(seat.member_name))>0
+      AND account.status='active' AND subscription.family_sharing_enabled=1
+      AND lower(trim(subscription.sharing_login_account))=lower(trim(?))`).bind(seatId,userId,address).first<{seat_updated:string;account_updated:string;subscription_updated:string}>();
+  if(!seat) throw new HttpError(403,"车位不存在、未启用合租或邮箱不匹配","SEAT_UNAVAILABLE");
+  return seat;
+}
 export async function publicSharedInboxMessagesProxy(request: Request, env: Env, shortKey: string, suffix = ""): Promise<Response> { const row=await publicLink(env,shortKey); const path=`/api/open/v1/subnest/grants/${encodeURIComponent(row.grant_id)}${suffix}`; const upstreamResponse=await upstream(env,row.user_id,path + new URL(request.url).search); const contentType=upstreamResponse.headers.get("content-type")??"application/json"; if (contentType.includes("json")) { const payload=await upstreamResponse.json(); return successJson(payload,{headers:{"cache-control":"no-store"}}); } return new Response(upstreamResponse.body,{status:200,headers:{"content-type":contentType,"cache-control":"no-store","x-content-type-options":"nosniff"}}); }

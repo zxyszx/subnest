@@ -128,6 +128,10 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
   }
   const timestamp = nowIso();
   const statements: D1PreparedStatement[] = [];
+  statements.push(env.DB.prepare(`UPDATE shared_inbox_links SET status='revoked', revoked_at=?, updated_at=?
+    WHERE user_id=? AND seat_id=? AND status='active' AND (
+      ?!='active' OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
+    .bind(timestamp, timestamp, auth.user.id, id, body.status, id, auth.user.id, body.memberName, body.contact, body.contactType));
   if (body.status === "vacant") {
     statements.push(env.DB.prepare(`
       UPDATE sharing_seats SET member_name = NULL, contact = NULL, contact_type = NULL, monthly_price = NULL,
@@ -187,6 +191,7 @@ export async function moveSharingSeat(request: Request, env: Env, id: string): P
   }
   const timestamp = nowIso();
   await env.DB.batch([
+    env.DB.prepare("UPDATE shared_inbox_links SET status='revoked', revoked_at=?, updated_at=? WHERE user_id=? AND seat_id IN (?,?) AND status='active'").bind(timestamp, timestamp, auth.user.id, source.id, target.id),
     env.DB.prepare(`
       UPDATE sharing_seats SET member_name = ?, contact = ?, contact_type = ?, monthly_price = ?, currency = ?,
         billing_months = ?, start_date = ?, expires_at = ?, status = ?, notes = ?, updated_at = ?

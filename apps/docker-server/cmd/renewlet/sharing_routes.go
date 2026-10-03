@@ -386,6 +386,7 @@ func handleSharingAccountUpdate(app core.App, e *core.RequestEvent) error {
 	if body.Currency != record.GetString("currency") {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", errors.New("sharing account currency cannot change")), nil)
 	}
+	previousLoginAccount := record.GetString("loginAccount")
 	if body.Password != "" {
 		ciphertext, encryptErr := encryptSharingCredential(app, body.Password)
 		if encryptErr != nil {
@@ -403,7 +404,14 @@ func handleSharingAccountUpdate(app core.App, e *core.RequestEvent) error {
 	record.Set("cardLast4", body.CardLast4)
 	record.Set("status", body.Status)
 	record.Set("notes", body.Notes)
-	if err := app.Save(record); err != nil {
+	if err := app.RunInTransaction(func(txApp core.App) error {
+		if body.Status != "active" || !strings.EqualFold(previousLoginAccount, body.LoginAccount) {
+			if err := revokeInboxSubscriptionLinks(txApp, e.Auth.Id, record.GetString("subscription")); err != nil {
+				return err
+			}
+		}
+		return txApp.Save(record)
+	}); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	payload, err := sharingAccountDetailAPI(app, record)

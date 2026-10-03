@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +15,7 @@ import (
 )
 
 type sharedInboxLinkRequest struct {
+	SeatID        string   `json:"seatId"`
 	MailboxID     string   `json:"mailboxId"`
 	FolderIDs     []string `json:"folderIds"`
 	WindowMinutes int      `json:"windowMinutes"`
@@ -20,6 +23,7 @@ type sharedInboxLinkRequest struct {
 }
 
 type sharedInboxLinkResponse struct {
+	SeatID         string   `json:"seatId"`
 	ID             string   `json:"id"`
 	ShortURL       string   `json:"shortUrl"`
 	MailboxID      string   `json:"mailboxId"`
@@ -49,7 +53,7 @@ func handleSharedInboxLinks(app core.App, e *core.RequestEvent) error {
 			return e.InternalServerError("shared inbox link decryption failed", err)
 		}
 		mailboxKey := strings.ToLower(strings.TrimSpace(link.MailboxAddress))
-		if link.Status == "active" && !syncedMailboxes[mailboxKey] {
+		if link.SeatID == "" && link.Status == "active" && !syncedMailboxes[mailboxKey] {
 			if err := syncSharedInboxLinkToSubscriptions(app, e.Auth.Id, link.MailboxAddress, "", link.ShortURL); err != nil {
 				return e.InternalServerError("sync shared inbox link failed", err)
 			}
@@ -66,6 +70,13 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 		return err
 	}
 	body.MailboxID = strings.TrimSpace(body.MailboxID)
+	body.SeatID = strings.TrimSpace(body.SeatID)
+	if len(body.SeatID) > 256 {
+		return e.BadRequestError("车位编号无效", nil)
+	}
+	if body.SeatID != "" && body.ExpiresAt == nil {
+		return e.BadRequestError("车位链接必须设置有效期", nil)
+	}
 	if body.MailboxID == "" || len(body.FolderIDs) == 0 {
 		return e.BadRequestError("请选择邮箱和至少一个文件夹", nil)
 	}
@@ -94,7 +105,14 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 	if mailbox == nil {
 		return e.BadRequestError("邮箱不存在", nil)
 	}
-	if existing, _ := app.FindFirstRecordByFilter("shared_inbox_links", "user = {:user} && mailboxId = {:mailbox} && status = 'active'", map[string]any{"user": e.Auth.Id, "mailbox": body.MailboxID}); existing != nil {
+	var seatVersion string
+	if body.SeatID != "" {
+		seatVersion, err = inboxSeatVersion(app, e.Auth.Id, body.SeatID, mailbox.Address)
+		if err != nil {
+			return e.BadRequestError("车位不存在、未启用合租或邮箱不匹配", nil)
+		}
+	}
+	if existing, _ := app.FindFirstRecordByFilter("shared_inbox_links", "user = {:user} && mailboxId = {:mailbox} && seatId = {:seat} && status = 'active'", map[string]any{"user": e.Auth.Id, "mailbox": body.MailboxID, "seat": body.SeatID}); existing != nil {
 		return apiErrorJSON(e, http.StatusConflict, "SHARE_ALREADY_ACTIVE", "该邮箱已开启分享，请先管理现有链接", nil)
 	}
 
@@ -115,17 +133,25 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 	shortKey := randomURLToken(24)
 	encryptedKey, err := encryptSharingCredential(app, shortKey)
 	if err != nil {
+		_, _ = requestNewSzxcn(app, e.Auth.Id, http.MethodDelete, "/api/open/v1/subnest/grants/"+url.PathEscape(grant.ID), nil)
 		return e.InternalServerError("short link encryption failed", err)
 	}
 	var record *core.Record
 	shortURL := externalRequestURL(e.Request, "/s/"+shortKey, nil)
 	if err := app.RunInTransaction(func(txApp core.App) error {
+		if body.SeatID != "" {
+			currentVersion, err := inboxSeatVersion(txApp, e.Auth.Id, body.SeatID, mailbox.Address)
+			if err != nil || currentVersion != seatVersion {
+				return fmt.Errorf("seat changed during link creation")
+			}
+		}
 		collection, err := txApp.FindCollectionByNameOrId("shared_inbox_links")
 		if err != nil {
 			return err
 		}
 		record = core.NewRecord(collection)
 		record.Set("user", e.Auth.Id)
+		record.Set("seatId", body.SeatID)
 		record.Set("shortKeyHash", tokenHash(shortKey))
 		record.Set("shortKeyCiphertext", encryptedKey)
 		record.Set("grantId", grant.ID)
@@ -140,6 +166,9 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 		record.Set("status", "active")
 		if err := txApp.Save(record); err != nil {
 			return err
+		}
+		if body.SeatID != "" {
+			return validateInboxSeat(txApp, e.Auth.Id, body.SeatID, mailbox.Address)
 		}
 		return syncSharedInboxLinkToSubscriptions(txApp, e.Auth.Id, mailbox.Address, "", shortURL)
 	}); err != nil {
@@ -174,6 +203,9 @@ func handleSharedInboxLinkRevoke(app core.App, e *core.RequestEvent) error {
 		txRecord.Set("status", "revoked")
 		if saveErr := txApp.Save(txRecord); saveErr != nil {
 			return saveErr
+		}
+		if record.GetString("seatId") != "" {
+			return nil
 		}
 		return syncSharedInboxLinkToSubscriptions(txApp, e.Auth.Id, record.GetString("mailboxAddress"), oldLink.ShortURL, "")
 	}); err != nil {
@@ -218,29 +250,6 @@ func syncSharedInboxLinkToSubscriptions(app core.App, userID, mailboxAddress, ex
 	return nil
 }
 
-// Local status is checked on every public proxy request. Revoke it before a
-// subscription change is committed so an old short link cannot remain usable.
-// The upstream grant cleanup is best effort because the local proxy is the
-// authoritative access boundary for SubNest links.
-func revokeSharedInboxLinksForMailbox(app core.App, userID, mailboxAddress string) error {
-	mailboxAddress = strings.TrimSpace(mailboxAddress)
-	if mailboxAddress == "" {
-		return nil
-	}
-	records, err := app.FindRecordsByFilter("shared_inbox_links", "user = {:user} && mailboxAddress = {:address} && status = 'active'", "", 500, 0, map[string]any{"user": userID, "address": mailboxAddress})
-	if err != nil {
-		return err
-	}
-	for _, record := range records {
-		_, _ = requestNewSzxcn(app, userID, http.MethodDelete, "/api/open/v1/subnest/grants/"+url.PathEscape(record.GetString("grantId")), nil)
-		record.Set("status", "revoked")
-		if err := app.Save(record); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) error {
 	shortKey := strings.TrimSpace(e.Request.PathValue("shortKey"))
 	if shortKey == "" || len(shortKey) > 128 {
@@ -249,6 +258,14 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 	record, err := app.FindFirstRecordByFilter("shared_inbox_links", "shortKeyHash = {:hash} && status = 'active'", map[string]any{"hash": tokenHash(shortKey)})
 	if err != nil || record == nil {
 		return e.NotFoundError("短链接不存在或已失效", nil)
+	}
+	if seatID := record.GetString("seatId"); seatID != "" {
+		if strings.TrimSpace(record.GetString("expiresAt")) == "" {
+			return apiErrorJSON(e, http.StatusForbidden, "LINK_EXPIRED", "短链接已过期", nil)
+		}
+		if err := validateInboxSeat(app, record.GetString("user"), seatID, record.GetString("mailboxAddress")); err != nil {
+			return e.NotFoundError("车位分享已关闭", nil)
+		}
 	}
 	if expiresAt := strings.TrimSpace(record.GetString("expiresAt")); expiresAt != "" {
 		parsed, parseErr := time.Parse(time.RFC3339, expiresAt)
@@ -290,8 +307,79 @@ func sharedInboxLinkFromRecord(app core.App, request *http.Request, record *core
 		expiresAt = &value
 	}
 	return sharedInboxLinkResponse{
-		ID: record.Id, ShortURL: externalRequestURL(request, "/s/"+shortKey, nil), MailboxID: record.GetString("mailboxId"), MailboxAddress: record.GetString("mailboxAddress"), FolderIDs: record.GetStringSlice("folderIds"), WindowMinutes: record.GetInt("windowMinutes"), ExpiresAt: expiresAt, Status: record.GetString("status"), CreatedAt: record.GetDateTime("created").Time().UTC().Format(time.RFC3339), UpdatedAt: record.GetDateTime("updated").Time().UTC().Format(time.RFC3339),
+		SeatID: record.GetString("seatId"),
+		ID:     record.Id, ShortURL: externalRequestURL(request, "/s/"+shortKey, nil), MailboxID: record.GetString("mailboxId"), MailboxAddress: record.GetString("mailboxAddress"), FolderIDs: record.GetStringSlice("folderIds"), WindowMinutes: record.GetInt("windowMinutes"), ExpiresAt: expiresAt, Status: record.GetString("status"), CreatedAt: record.GetDateTime("created").Time().UTC().Format(time.RFC3339), UpdatedAt: record.GetDateTime("updated").Time().UTC().Format(time.RFC3339),
 	}, nil
+}
+
+func validateInboxSeat(app core.App, userID, seatID, address string) error {
+	seat, err := findOwnedSharingSeat(app, userID, seatID)
+	if err != nil || seat.GetString("status") != "active" || strings.TrimSpace(seat.GetString("memberName")) == "" {
+		return fmt.Errorf("seat unavailable")
+	}
+	account, err := findOwnedSharingAccount(app, userID, seat.GetString("sharingAccount"))
+	if err != nil || account.GetString("status") != "active" || !strings.EqualFold(strings.TrimSpace(account.GetString("loginAccount")), strings.TrimSpace(address)) {
+		return fmt.Errorf("account unavailable")
+	}
+	subscription, err := app.FindRecordById("subscriptions", account.GetString("subscription"))
+	if err != nil || subscription.GetString("user") != userID || !subscription.GetBool("familySharingEnabled") || !strings.EqualFold(strings.TrimSpace(subscription.GetString("sharingLoginAccount")), strings.TrimSpace(address)) {
+		return fmt.Errorf("subscription unavailable")
+	}
+	return nil
+}
+
+func inboxSeatVersion(app core.App, userID, seatID, address string) (string, error) {
+	if err := validateInboxSeat(app, userID, seatID, address); err != nil {
+		return "", err
+	}
+	seat, err := findOwnedSharingSeat(app, userID, seatID)
+	if err != nil {
+		return "", err
+	}
+	account, err := findOwnedSharingAccount(app, userID, seat.GetString("sharingAccount"))
+	if err != nil {
+		return "", err
+	}
+	subscription, err := app.FindRecordById("subscriptions", account.GetString("subscription"))
+	if err != nil {
+		return "", err
+	}
+	return seat.GetString("updated") + "/" + account.GetString("updated") + "/" + subscription.GetString("updated"), nil
+}
+
+// Local revocation is the access boundary; no external network call belongs in a seat transaction.
+func revokeInboxSeatLinks(app core.App, userID, seatID string) error {
+	records, err := app.FindRecordsByFilter("shared_inbox_links", "user = {:user} && seatId = {:seat} && status = 'active'", "", 0, 0, map[string]any{"user": userID, "seat": seatID})
+	if err != nil {
+		return err
+	}
+	for _, record := range records {
+		record.Set("status", "revoked")
+		if err := app.Save(record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func revokeInboxSubscriptionLinks(app core.App, userID, subscriptionID string) error {
+	account, err := app.FindFirstRecordByFilter("sharing_accounts", "user = {:user} && subscription = {:subscription}", map[string]any{"user": userID, "subscription": subscriptionID})
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	seats, err := app.FindRecordsByFilter("sharing_seats", "user = {:user} && sharingAccount = {:account}", "", 0, 0, map[string]any{"user": userID, "account": account.Id})
+	if err != nil {
+		return err
+	}
+	for _, seat := range seats {
+		if err := revokeInboxSeatLinks(app, userID, seat.Id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func requestNewSzxcn(app core.App, userID, method, path string, payload any) ([]byte, error) {
