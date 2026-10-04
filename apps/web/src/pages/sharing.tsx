@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronUp, CircleDollarSign, Copy, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, ChevronUp, CircleDollarSign, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
 
 import { Header } from "@/components/header";
 import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
@@ -66,6 +67,8 @@ export default function Sharing() {
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
+  const [viewingAccount, setViewingAccount] = useState<SharingAccount | null>(null);
+  const [linksAccount, setLinksAccount] = useState<SharingAccount | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [accountFilter, setAccountFilter] = useState<SharingFilter>("all");
@@ -169,19 +172,6 @@ export default function Sharing() {
     }
   };
 
-  const copyAll = async (account: SharingAccount) => {
-    try {
-      const password = await sharingService.password(account.id);
-      await copy(t("sharing.accountCopyTemplate", {
-        account: account.loginAccount,
-        password,
-        link: account.verificationLink ?? t("sharing.noVerificationLink"),
-      }));
-    } catch {
-      toast.error(t("sharing.passwordUnavailable"));
-    }
-  };
-
   const saveFamilySharing = (changes: Parameters<typeof updateSubscription.mutate>[0]["changes"]) => {
     if (!editingSubscriptionId) return;
     updateSubscription.mutate(
@@ -212,9 +202,9 @@ export default function Sharing() {
         <button
           type="button"
           className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label={t("sharing.editAccount")}
-          title={t("sharing.editAccount")}
-          onClick={() => setEditingSubscriptionId(account.subscription.id)}
+          aria-label={t("sharing.accountDetails")}
+          title={t("sharing.accountDetails")}
+          onClick={() => setViewingAccount(account)}
         >
           <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
@@ -426,8 +416,7 @@ export default function Sharing() {
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1.5">
                       <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyLink")} aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} className={cn("border-border", account.verificationLink ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
-                      <Button type="button" size="sm" variant="outline" title={t("sharing.copyAll")} onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
                       <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
                   </tr>
@@ -448,17 +437,18 @@ export default function Sharing() {
                     <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
                     <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
                   </dl>
-                  <div className="grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2">
+                  <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyLink")} disabled={!account.verificationLink} className={cn(account.verificationLink ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => account.verificationLink && void copy(account.verificationLink)}><LinkIcon /></Button>
+                    <Button type="button" variant="outline" className="min-w-0" onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
                     <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                   </div>
-                  <Button type="button" className="w-full" variant="outline" onClick={() => void copyAll(account)}><Copy />{t("sharing.copyAll")}</Button>
                 </article>
               ))}
             </div>
           </section>
         )}
+        {linksAccount ? <SharingInboxLinksDialog key={linksAccount.id} account={linksAccount} onClose={() => setLinksAccount(null)} /> : null}
+        {viewingAccount ? <Suspense fallback={null}><SharingAccountDetailDialog account={viewingAccount} mode="account" open onOpenChange={(open) => !open && setViewingAccount(null)} onEditAccount={() => { setEditingSubscriptionId(viewingAccount.subscription.id); setViewingAccount(null); }} /></Suspense> : null}
         {selectedAccount ? (
           <Suspense fallback={null}>
             <SharingAccountDetailDialog account={selectedAccount} mode="seats" open onOpenChange={(open) => !open && setSelectedAccount(null)} />

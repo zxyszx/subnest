@@ -39,6 +39,7 @@ interface SharingAccountDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: SharingAccountDetailMode;
+  onEditAccount?: () => void;
 }
 
 const contactTypes = ["wechat", "telegram", "ns", "xianyu"] as const;
@@ -119,7 +120,7 @@ function SeatExpiry({ expiresAt, today }: { expiresAt: SharingSeat["expiresAt"];
   );
 }
 
-export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account" }: SharingAccountDetailDialogProps) {
+export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account", onEditAccount }: SharingAccountDetailDialogProps) {
   const { t, formatCurrency } = useI18n();
   const detailQuery = useSharingAccountDetail(open ? account?.id ?? null : null);
   const settingsQuery = useSettingsEnvelope();
@@ -245,6 +246,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           <DialogHeader className="shrink-0 pr-10">
             <DialogTitle>{t("sharing.editAccount")}</DialogTitle>
             <DialogDescription>{account ? `${account.subscription.name} #${account.accountNumber}` : t("sharing.accountSummary")}</DialogDescription>
+            {onEditAccount ? <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onEditAccount}>{t("sharing.editAccount")}</Button> : null}
           </DialogHeader>
 
           {detailQuery.isPending ? (

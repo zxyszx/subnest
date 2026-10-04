@@ -64,6 +64,24 @@ test("seat inbox links keep a compact scrollable dialog and isolate a reset", as
   await expect(dialog.getByText("车位 5 · Member 5")).toBeVisible();
   await expect(page.getByText("此车位链接已重置", { exact: true })).not.toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("seat-links-light.png") });
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.goto("/sharing");
+  await expect(page.getByRole("button", { name: "一键复制全部", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "查看链接", exact: true }).click();
+  await expect(dialog.getByText("Netflix #17", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("combobox", { name: "合租账号" })).toHaveCount(0);
+  await expect(dialog.getByRole("switch", { name: "车位邮箱链接共享" })).toBeChecked();
+  await page.screenshot({ path: testInfo.outputPath("membership-links-desktop.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("membership-links-mobile.png"), animations: "disabled" });
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "查看链接", exact: true }).click();
+  await dialog.getByRole("switch", { name: "车位邮箱链接共享" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "确认", exact: true }).click();
+  await expect(dialog.getByRole("switch", { name: "车位邮箱链接共享" })).not.toBeChecked();
+  expect(revoked).toHaveLength(6);
 });
 
 test.describe("release smoke", () => {

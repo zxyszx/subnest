@@ -81,10 +81,10 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
         {value.hasPassword || value.password ? <Button type="button" variant="ghost" size="icon" className="absolute right-11 top-0 h-full w-11" disabled={passwordLoading} onClick={() => void copyPassword()} aria-label={t("subscription.familySharing.copyPassword")}><Copy className="h-4 w-4" /></Button> : null}
         <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" disabled={passwordLoading} onClick={() => void togglePassword()} aria-label={t(passwordVisible ? "subscription.familySharing.hidePassword" : "subscription.familySharing.showPassword")}>{passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
       </div>}</FormField>
-      <FormField id={id("familySharingVerificationLink")} label="验证码链接">{(field) => <div className="relative">
+      {!showEnabledControl ? <FormField id={id("familySharingVerificationLink")} label="验证码链接">{(field) => <div className="relative">
         <Input id={field.id} type="url" value={value.verificationLink} onChange={(event) => update("verificationLink", event.target.value)} placeholder={t("subscription.familySharing.verificationLinkPlaceholder")} aria-describedby={field.describedBy} className="pr-22" />
         {value.verificationLink ? <div className="absolute right-0 top-0 flex h-full items-center"><Button type="button" variant="ghost" size="icon" className="h-full w-11" aria-label={t("sharing.copyLink")} onClick={async () => { const result = await copyTextToClipboard(value.verificationLink); toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed")); }}><Copy className="h-4 w-4" /></Button><Button type="button" variant="ghost" size="icon" className="h-full w-11" onClick={() => update("verificationLink", "")} aria-label={t("sharing.clearInboxLink")}><X className="h-4 w-4" /></Button></div> : null}
-      </div>}</FormField>
+      </div>}</FormField> : null}
       <FieldError id={id("familySharing-error")} message={error} />
     </div> : null}
   </section>;

@@ -70,4 +70,38 @@ describe("SeatInboxLinksDialog", () => {
     expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "生成链接" })).toHaveLength(2);
   });
+  it("binds the membership entry to its account without loading other accounts", async () => {
+    render(<SeatInboxLinksDialog boundAccount={account} mailbox={{ id: "mailbox", address: "shared@example.test" }} links={[]} onClose={vi.fn()} onChanged={mocks.changed} />);
+    await screen.findAllByRole("button", { name: "生成链接" });
+    expect(mocks.list).not.toHaveBeenCalled();
+    expect(mocks.detail).toHaveBeenCalledWith("account", expect.any(AbortSignal));
+    expect(screen.queryByRole("combobox", { name: "合租账号" })).not.toBeInTheDocument();
+  });
+  it("enables independent links for occupied seats only", async () => {
+    const user = userEvent.setup();
+    mocks.detail.mockResolvedValue({ account, seats: [seat, { ...seat, id: "vacant", seatNumber: 2, memberName: null, status: "vacant" }] });
+    renderDialog();
+    const toggle = await screen.findByRole("switch", { name: "车位邮箱链接共享" });
+    expect(toggle).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: "收件箱" }));
+    await user.click(toggle);
+    await waitFor(() => expect(mocks.changed).toHaveBeenCalled());
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1" }));
+    expect(mocks.revoke).not.toHaveBeenCalled();
+  });
+  it("confirms disabling and leaves generic and other account links intact", async () => {
+    const user = userEvent.setup();
+    renderDialog([link, { ...link, id: "link2", seatId: "seat2" }, { ...link, id: "generic", seatId: null }, { ...link, id: "other", seatId: "other-seat" }]);
+    const toggle = await screen.findByRole("switch", { name: "车位邮箱链接共享" });
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+    expect(mocks.revoke).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "确认" }));
+    await waitFor(() => expect(mocks.changed).toHaveBeenCalled());
+    expect(mocks.revoke).toHaveBeenCalledTimes(2);
+    expect(mocks.revoke).toHaveBeenNthCalledWith(1, "link1");
+    expect(mocks.revoke).toHaveBeenNthCalledWith(2, "link2");
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
 });

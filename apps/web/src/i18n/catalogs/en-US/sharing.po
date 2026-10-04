@@ -139,6 +139,11 @@ msgid "sharing.accountSaved"
 msgstr "Sharing account updated"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:177
+msgid "sharing.disableSeatLinksTitle"
+msgstr "Disable link sharing for this family group?"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:108
 msgid "sharing.other"
 msgstr "Other"
@@ -172,6 +177,11 @@ msgstr "Stop at expiry"
 #: src/i18n/descriptors/sharing.ts:69
 msgid "sharing.dateRangeInvalid"
 msgstr "The expiry date cannot be earlier than the start date"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:188
+msgid "sharing.reloadLinksFailed"
+msgstr "Refresh failed. Reopen the links dialog."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:17
@@ -234,6 +244,11 @@ msgid "sharing.copyAccount"
 msgstr "Copy account"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:173
+msgid "sharing.copyGenericLink"
+msgstr "Copy general link"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:149
 msgid "sharing.copyInboxLink"
 msgstr "Copy link"
@@ -284,6 +299,11 @@ msgid "sharing.copySuccess"
 msgstr "Copied"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:175
+msgid "sharing.seatLinkSharingOn"
+msgstr "Enabled · Disabling revokes this group's seat links"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:89
 msgid "sharing.archived"
 msgstr "Archived"
@@ -317,6 +337,16 @@ msgstr "Annual"
 #: src/i18n/descriptors/sharing.ts:81
 msgid "sharing.startDate"
 msgstr "Start date"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:186
+msgid "sharing.groupLinksDisabled"
+msgstr "This group's seat links are disabled. General links are unchanged."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:185
+msgid "sharing.groupLinksEnabled"
+msgstr "This group's seat links are enabled."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:134
@@ -444,6 +474,11 @@ msgid "sharing.loadDetailFailed"
 msgstr "Could not load account details"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:183
+msgid "sharing.loadLinksFailed"
+msgstr "Unable to load shared mailboxes. Check the connection and retry."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:6
 msgid "sharing.morePlatforms"
 msgstr "More"
@@ -467,6 +502,11 @@ msgstr "Monthly revenue"
 #: src/i18n/descriptors/sharing.ts:141
 msgid "sharing.hasVacancies"
 msgstr "Has vacant seats"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:176
+msgid "sharing.seatLinkSharingOff"
+msgstr "Disabled · Select folders and future expiry dates to enable"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:123
@@ -494,14 +534,29 @@ msgid "sharing.periodCharge"
 msgstr "Charge for this period"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:178
+msgid "sharing.disableSeatLinksHelp"
+msgstr "All seat links in this group will immediately stop working. Credentials, other groups and general mailbox links are unchanged. Enabling again creates new links."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:120
 msgid "sharing.openUpcomingRenewals"
 msgstr "View members renewing within 7 days"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:171
+msgid "sharing.viewLinks"
+msgstr "View links"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:80
 msgid "sharing.expiryAutoHint"
 msgstr "Calculated from the start date and billing cycle. You can still adjust it manually."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:180
+msgid "sharing.loadingLinks"
+msgstr "Loading shared links..."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:153
@@ -659,6 +714,11 @@ msgid "sharing.customMonths"
 msgstr "Custom months"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:182
+msgid "sharing.mailboxNotMatched"
+msgstr "No mailbox matches this account. Check the login address and mailbox connection."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:66
 msgid "sharing.memberRequired"
 msgstr "Enter a member name"
@@ -672,6 +732,11 @@ msgstr "Enter a valid charge for this period"
 #: src/i18n/descriptors/sharing.ts:68
 msgid "sharing.datesRequired"
 msgstr "Select a start date and expiry date"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:184
+msgid "sharing.enableLinksValidation"
+msgstr "Select mail folders and future link expiry dates for occupied seats."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:50
@@ -751,6 +816,11 @@ msgid "sharing.status"
 msgstr "Seat status"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:174
+msgid "sharing.seatLinkSharing"
+msgstr "Seat mailbox link sharing"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:148
 msgid "sharing.inboxLinks"
 msgstr "Seat links"
@@ -816,9 +886,24 @@ msgid "sharing.genericLinkWarning"
 msgstr "General sharing is still enabled. Existing general links remain valid and can be revoked separately under General sharing."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:172
+msgid "sharing.genericLink"
+msgstr "General link"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:106
 msgid "sharing.email"
 msgstr "Email"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:179
+msgid "sharing.linkAdminOnly"
+msgstr "Only administrators can manage mailbox links. Account and seat management remain available."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:187
+msgid "sharing.partialLinkFailure"
+msgstr "Some seats may have changed. Check the list before retrying."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:162
@@ -829,6 +914,11 @@ msgstr "Reset"
 #: src/i18n/descriptors/sharing.ts:165
 msgid "sharing.resetInboxLinkConfirm"
 msgstr "Reset this seat link?"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:181
+msgid "sharing.retryLinks"
+msgstr "Retry"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:160

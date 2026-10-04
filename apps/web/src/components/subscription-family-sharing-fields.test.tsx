@@ -43,12 +43,18 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
   });
   it("preserves an external verification link and allows clearing it", async () => {
     const user = userEvent.setup();
-    render(<Harness verificationLink="https://example.com/otp" />);
+    render(<Harness showEnabledControl={false} verificationLink="https://example.com/otp" />);
     const input = screen.getByDisplayValue("https://example.com/otp");
     await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
     expect(input).toHaveValue("https://example.com/otp");
     await user.click(screen.getByRole("button", { name: "sharing.clearInboxLink" }));
     expect(input).toHaveValue("");
+  });
+  it("keeps link controls out of the subscription family settings", async () => {
+    render(<Harness verificationLink="https://example.com/otp" />);
+    await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
+    expect(screen.queryByDisplayValue("https://example.com/otp")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toBeInTheDocument();
   });
   it("retains password generation and visibility controls", async () => {
     const user = userEvent.setup();
