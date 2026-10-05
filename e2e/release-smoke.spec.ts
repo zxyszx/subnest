@@ -5,13 +5,11 @@ import { createAdminManagedUser, deleteProductSubscriptionsByName, updateProduct
 import { subscriptionCard, uniqueE2EName } from "./support/subscriptions";
 import { createStoredZip } from "./support/zip";
 
-test("seat inbox links keep a compact scrollable dialog and isolate a reset", async ({ page }, testInfo) => {
-  const account = {
-    id: "inbox-account", subscription: { id: "inbox-subscription", name: "Netflix", platformName: "Netflix", logo: null, status: "active" }, name: "Netflix", accountNumber: 17, loginAccount: "shared@example.test", hasPassword: true, verificationLink: null,
-    monthlyCost: "10", currency: "CNY", nextBillingDate: "2099-01-01", paymentMethod: null, cardLast4: null, capacity: 5, occupiedSeats: 5, monthlyRevenue: "25", monthlyRevenueByCurrency: { CNY: "25" }, outstandingAmount: "0", monthlyProfit: 15, status: "active", notes: null, createdAt: "2026-01-01",
-  };
-  const seats = Array.from({ length: 5 }, (_, index) => ({ id: `inbox-seat-${index + 1}`, seatNumber: index + 1, memberName: `Member ${index + 1}`, contact: null, contactType: null, monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "active", notes: null, currentReceivable: null }));
-  let links = seats.map((seat) => ({ id: `link-${seat.id}`, seatId: seat.id, shortUrl: `http://127.0.0.1:45173/s/${seat.id}`, mailboxId: "inbox-mailbox", mailboxAddress: "shared@example.test", folderIds: ["inbox"], windowMinutes: 30, expiresAt: "2099-01-01T12:00:00Z", status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" }));
+test("general inbox links require folders and stay compact without seat controls", async ({ page }, testInfo) => {
+  let enabled = true;
+  const account = { id: "inbox-account", subscription: { id: "inbox-subscription", name: "Netflix", platformName: "Netflix", logo: null, status: "active" }, name: "Netflix", accountNumber: 17, loginAccount: "shared@example.test", hasPassword: true, verificationLink: null, familySharingEnabled: true, monthlyCost: "10", currency: "CNY", nextBillingDate: "2099-01-01", paymentMethod: null, cardLast4: null, capacity: 5, occupiedSeats: 0, monthlyRevenue: "0", monthlyRevenueByCurrency: {}, outstandingAmount: "0", monthlyProfit: -10, status: "active", notes: null, createdAt: "2026-01-01" };
+  type Link = { id: string; seatId: null; shortUrl: string; mailboxId: string; mailboxAddress: string; folderIds: string[]; windowMinutes: number; expiresAt: null; status: string; createdAt: string; updatedAt: string };
+  let links: Link[] = [];
   const revoked: string[] = [];
   await page.route("**/api/app/admin/newszxcn**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -19,8 +17,7 @@ test("seat inbox links keep a compact scrollable dialog and isolate a reset", as
     await route.fulfill({ json: { ok: true, data } });
   });
   await page.route("**/api/app/sharing/accounts**", async (route) => {
-    const data = new URL(route.request().url()).pathname.endsWith("/inbox-account") ? { account, seats, totals: { monthlyRevenue: "25", contractedRevenue: "25", collectedRevenue: "25", outstandingAmount: "0", monthlyProfit: 15 } } : { accounts: [account], total: 1 };
-    await route.fulfill({ json: { ok: true, data } });
+    await route.fulfill({ json: { ok: true, data: { accounts: [{ ...account, familySharingEnabled: enabled }], total: 1 } } });
   });
   await page.route("**/api/app/admin/shared-inbox-links**", async (route) => {
     if (route.request().method() === "DELETE") {
@@ -28,60 +25,42 @@ test("seat inbox links keep a compact scrollable dialog and isolate a reset", as
       revoked.push(id); links = links.map((link) => link.id === id ? { ...link, status: "revoked" } : link);
       await route.fulfill({ json: { ok: true, data: {} } });
     } else if (route.request().method() === "POST") {
-      const body = route.request().postDataJSON() as { seatId: string; expiresAt: string };
-      expect(body.seatId).toBe("inbox-seat-1");
-      expect(Date.parse(body.expiresAt)).toBeGreaterThan(Date.now());
-      const link = { ...links[0]!, ...body, id: "new-seat-link", shortUrl: "http://127.0.0.1:45173/s/new-seat-link", status: "active" };
+      const body = route.request().postDataJSON() as { seatId?: string; folderIds: string[]; windowMinutes: number };
+      expect(body.seatId).toBeUndefined();
+      expect(body.folderIds).toEqual(["inbox"]);
+      const link: Link = { id: "general-" + links.length, seatId: null, shortUrl: "http://127.0.0.1:45173/s/general-" + links.length, mailboxId: "inbox-mailbox", mailboxAddress: account.loginAccount, folderIds: body.folderIds, windowMinutes: body.windowMinutes, expiresAt: null, status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
       links.unshift(link);
       await route.fulfill({ status: 201, json: { ok: true, data: { link } } });
     } else await route.fulfill({ json: { ok: true, data: { links } } });
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/shared-inboxes");
-  await expect(page.getByText("车位链接 5", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "车位链接", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "车位链接" });
-  await expect(dialog.getByText("车位 5 · Member 5")).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "重置", exact: true })).toHaveCount(5);
-  await page.screenshot({ path: testInfo.outputPath("seat-links-desktop.png") });
-  await dialog.getByRole("button", { name: "重置", exact: true }).first().click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "确认", exact: true }).click();
-  await expect.poll(() => revoked).toEqual(["link-inbox-seat-1"]);
-  await expect(dialog.getByRole("button", { name: "复制链接" })).toHaveCount(5);
+  await expect(page.getByRole("button", { name: "车位链接", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "通用分享", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "管理共享收件箱" });
+  await expect(dialog.getByRole("button", { name: "开启分享", exact: true })).toBeDisabled();
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "开启分享", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toBeEnabled();
+  await dialog.getByRole("button", { name: "重置链接", exact: true }).click();
+  await expect.poll(() => revoked).toEqual(["general-0"]);
+  await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toBeEnabled();
+  await dialog.screenshot({ path: testInfo.outputPath("general-inbox-desktop.png") });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(dialog).toBeVisible();
-  await expect.poll(async () => dialog.evaluate((element) => { const rect = element.getBoundingClientRect(); return rect.left >= 0 && rect.right <= window.innerWidth; })).toBe(true);
-  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
-  await dialog.locator("[data-seat-links-scroll]").evaluate((element) => { element.scrollTop = element.scrollHeight; });
-  await expect(dialog.getByText("车位 5 · Member 5")).toBeInViewport();
-  await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeInViewport();
-  await page.screenshot({ path: testInfo.outputPath("seat-links-mobile.png") });
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+  await dialog.screenshot({ path: testInfo.outputPath("general-inbox-mobile.png") });
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole("button", { name: "切换主题", exact: true }).click();
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await page.getByRole("button", { name: "车位链接", exact: true }).click();
-  await expect(dialog.getByText("车位 5 · Member 5")).toBeVisible();
-  await expect(page.getByText("此车位链接已重置", { exact: true })).not.toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("seat-links-light.png") });
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await page.goto("/sharing");
-  await expect(page.getByRole("button", { name: "一键复制全部", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "查看链接", exact: true }).click();
-  await expect(dialog.getByText("Netflix #17", { exact: true })).toBeVisible();
-  await expect(dialog.getByRole("combobox", { name: "合租账号" })).toHaveCount(0);
-  await expect(dialog.getByRole("switch", { name: "车位邮箱链接共享" })).toBeChecked();
-  await page.screenshot({ path: testInfo.outputPath("membership-links-desktop.png"), animations: "disabled" });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath("membership-links-mobile.png"), animations: "disabled" });
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole("button", { name: "查看链接", exact: true }).click();
-  await dialog.getByRole("switch", { name: "车位邮箱链接共享" }).click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "确认", exact: true }).click();
-  await expect(dialog.getByRole("switch", { name: "车位邮箱链接共享" })).not.toBeChecked();
-  expect(revoked).toHaveLength(6);
+  const view = page.getByRole("dialog", { name: /查看链接/ });
+  await expect(view.getByText(links[0]!.shortUrl, { exact: true })).toBeVisible();
+  await expect(view.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(0);
+  await expect(view.getByRole("link", { name: "设置邮箱通用链接" })).toBeVisible();
+  await view.getByRole("button", { name: "Close", exact: true }).click();
+  enabled = false;
+  await page.reload();
+  await expect(page.getByRole("button", { name: "查看链接", exact: true })).toBeDisabled();
 });
 
 test.describe("release smoke", () => {
