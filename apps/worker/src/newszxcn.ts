@@ -55,7 +55,7 @@ export async function listSharedInboxLinks(request: Request, env: Env): Promise<
     if(!row || row.seat_id || row.status!=="active" || syncedMailboxes.has(mailboxKey)) return [];
     syncedMailboxes.add(mailboxKey);
     const shortUrl=String(link["shortUrl"]??"");
-    return [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?)) AND (sharing_verification_link IS NULL OR sharing_verification_link!=?)").bind(shortUrl,timestamp,user.id,row.mailbox_address,shortUrl)];
+    return [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND COALESCE(json_extract(extra_json,'$.familyVerification.mode'),'email')!='totp' AND lower(trim(sharing_login_account))=lower(trim(?)) AND (sharing_verification_link IS NULL OR sharing_verification_link!=?)").bind(shortUrl,timestamp,user.id,row.mailbox_address,shortUrl)];
   });
   if(syncStatements.length>0) await env.DB.batch(syncStatements);
   return successJson({links});
@@ -80,7 +80,7 @@ export async function createSharedInboxLink(request: Request, env: Env): Promise
       .bind(id,user.id,await sha256(shortKey),await encryptNewSzxcn(env,shortKey),grantExternal,grant.id,body.mailboxId,box.address,JSON.stringify(body.folderIds),body.windowMinutes,body.expiresAt??null,"active",timestamp,timestamp,body.seatId??"",body.seatId??"",body.seatId??"",user.id,box.address,seatVersion?.seat_updated??"",seatVersion?.account_updated??"",seatVersion?.subscription_updated??"");
     const results = await env.DB.batch([
       insert,
-      ...(!body.seatId ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?))").bind(shortUrl,timestamp,user.id,box.address)] : []),
+      ...(!body.seatId ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=?, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND COALESCE(json_extract(extra_json,'$.familyVerification.mode'),'email')!='totp' AND lower(trim(sharing_login_account))=lower(trim(?))").bind(shortUrl,timestamp,user.id,box.address)] : []),
     ]);
     if(results[0]?.meta.changes !== 1) throw new HttpError(409,"车位已发生变化，请刷新后重试","SEAT_CHANGED");
   } catch (error) {
@@ -98,7 +98,7 @@ export async function revokeSharedInboxLink(request: Request, env: Env, id: stri
   const timestamp=nowIso();
   await env.DB.batch([
     env.DB.prepare("UPDATE shared_inbox_links SET status='revoked',revoked_at=?,updated_at=? WHERE id=? AND user_id=?").bind(timestamp,timestamp,id,user.id),
-    ...(!row.seat_id ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=NULL, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND lower(trim(sharing_login_account))=lower(trim(?)) AND sharing_verification_link=?").bind(timestamp,user.id,row.mailbox_address,oldShortUrl)] : []),
+    ...(!row.seat_id ? [env.DB.prepare("UPDATE subscriptions SET sharing_verification_link=NULL, updated_at=? WHERE user_id=? AND family_sharing_enabled=1 AND COALESCE(json_extract(extra_json,'$.familyVerification.mode'),'email')!='totp' AND lower(trim(sharing_login_account))=lower(trim(?)) AND sharing_verification_link=?").bind(timestamp,user.id,row.mailbox_address,oldShortUrl)] : []),
   ]);
   return json({ok:true});
 }

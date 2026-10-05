@@ -32,21 +32,36 @@ const token=(link:SharingTotpLink)=>link.path.replace("/otp/","");
 
 describe("family 2FA scopes",()=> {
  beforeEach(()=>{auth.userId="owner";});
- it("creates independent default and occupied seat tokens without exposing the key",async()=>{
-  const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(3);expect(new Set(links.map(link=>link.path)).size).toBe(3);
+ it("creates only a default token without exposing the key",async()=>{
+  const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(1);expect(links[0]!.expiresAt).toBeNull();
   expect(JSON.stringify(links)).not.toContain("private-key");for(const link of links) expect(await resolvePublicSharingTotp(env,token(link))).toMatchObject({id:"otp"});
  });
- it("rotates and revokes only the requested scope and does not resurrect a revoked link",async()=>{
-  const {env}=fixture();const {links}=await generate(env);const first=links.find(link=>link.seatId==="seat1")!;const second=links.find(link=>link.seatId==="seat2")!;
-  await sharingTotpLinks(request({seatId:"seat1",reset:true}),env,"account");expect(await resolvePublicSharingTotp(env,token(first))).toBeNull();expect(await resolvePublicSharingTotp(env,token(second))).not.toBeNull();
-  await revokeSharingTotpLink(request(),env,"account",second.id);await generate(env);expect(await resolvePublicSharingTotp(env,token(second))).toBeNull();
+ it("upgrades only live default grants without reviving revoked or expired grants",async()=>{
+  const {env,database}=fixture();await generate(env);
+  const migration=readFileSync(new URL("../migrations/0049_family_totp_default_lifetime.sql",import.meta.url),"utf8");
+  database.exec("UPDATE sharing_totp_links SET expires_at='2099-01-01T00:00:00Z'");database.exec(migration);
+  expect(database.prepare("SELECT expires_at FROM sharing_totp_links").get()).toEqual({expires_at:""});
+  database.exec("UPDATE sharing_totp_links SET expires_at='2000-01-01T00:00:00Z'");database.exec(migration);
+  expect(database.prepare("SELECT expires_at FROM sharing_totp_links").get()).toEqual({expires_at:"2000-01-01T00:00:00Z"});
+  database.exec("UPDATE sharing_totp_links SET expires_at='2099-01-01T00:00:00Z',revoked=1");database.exec(migration);
+  expect(database.prepare("SELECT expires_at,revoked FROM sharing_totp_links").get()).toEqual({expires_at:"2099-01-01T00:00:00Z",revoked:1});
  });
- it("checks ownership, key ownership, vacant and expired seats",async()=>{
-  const {env,database}=fixture();const {links}=await generate(env);auth.userId="other";await expect(sharingTotpLinks(request(),env,"account")).rejects.toThrow("SHARING_ACCOUNT_NOT_FOUND");auth.userId="owner";
-  await expect(sharingTotpLinks(request({seatId:"vacant"}),env,"account")).rejects.toThrow("SEAT_UNAVAILABLE");
-  database.exec("UPDATE sharing_seats SET expires_at='2000-01-01' WHERE id='seat1'");expect(await resolvePublicSharingTotp(env,token(links.find(link=>link.seatId==="seat1")!))).toBeNull();
-  database.exec(`UPDATE subscriptions SET extra_json='{"familyVerification":{"mode":"totp","totpAccountId":"foreign"}}' WHERE id='sub'`);
-  await expect(generate(env)).rejects.toThrow("2FA_ACCOUNT_NOT_MATCHED");expect(await resolvePublicSharingTotp(env,token(links.find(link=>!link.seatId)!))).toBeNull();
+ it("rotates only the default token and does not resurrect revoked tokens",async()=>{
+  const {env}=fixture();const {links}=await generate(env);const general=links[0]!;
+  const rotated=await readSuccessData<{links:SharingTotpLink[]}>(await sharingTotpLinks(request({seatId:"",reset:true}),env,"account"));
+  expect(await resolvePublicSharingTotp(env,token(general))).toBeNull();
+  await revokeSharingTotpLink(request(),env,"account",rotated.links[0]!.id);await generate(env);
+  expect(await resolvePublicSharingTotp(env,token(rotated.links[0]!))).toBeNull();
+ });
+ it("checks ownership, key ownership, disabled family sharing and blocks new seat links",async()=>{
+  const {env,database}=fixture();const {links}=await generate(env);auth.userId="other";
+  await expect(sharingTotpLinks(request(),env,"account")).rejects.toThrow("SHARING_ACCOUNT_NOT_FOUND");auth.userId="owner";
+  await expect(sharingTotpLinks(request({seatId:"seat1"}),env,"account")).rejects.toThrow("SEAT_LINKS_UNAVAILABLE");
+  database.exec("UPDATE subscriptions SET family_sharing_enabled=0 WHERE id='sub'");
+  await expect(sharingTotpLinks(request(),env,"account")).rejects.toThrow("2FA_SHARING_DISABLED");
+  expect(await resolvePublicSharingTotp(env,token(links[0]!))).toBeNull();
+  database.exec(`UPDATE subscriptions SET family_sharing_enabled=1,extra_json='{"familyVerification":{"mode":"totp","totpAccountId":"foreign"}}' WHERE id='sub'`);
+  await expect(generate(env)).rejects.toThrow("2FA_ACCOUNT_NOT_MATCHED");
  });
  it("rejects expired tokens, changed credentials, disabled TOTP and mailbox mode",async()=>{
   const {env,database}=fixture();const {links}=await generate(env);const general=links.find(link=>!link.seatId)!;

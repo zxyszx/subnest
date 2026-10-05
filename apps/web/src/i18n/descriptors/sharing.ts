@@ -1,6 +1,10 @@
 import { msg } from "@lingui/core/macro";
 
 export const messages = [
+  msg({ id: "sharing.linkLongTerm", message: "长期有效" }),
+  msg({ id: "sharing.genericLinkResetWarning", message: "旧通用链接将立即失效。" }),
+  msg({ id: "sharing.configureGenericMailbox", message: "请先在共享收件箱选择可查看的文件夹并开启通用分享。" }),
+  msg({ id: "sharing.manageGenericMailbox", message: "设置邮箱通用链接" }),
   msg({ id: "sharing.verificationMethod", message: "验证码共享方式" }),
   msg({ id: "sharing.emailMethod", message: "共享邮箱" }),
   msg({ id: "sharing.totpMethod", message: "在线 2FA 验证" }),

@@ -14,11 +14,11 @@ import (
 )
 
 type sharingTotpLink struct {
-	ID        string `json:"id"`
-	SeatID    string `json:"seatId"`
-	Path      string `json:"path"`
-	ExpiresAt string `json:"expiresAt"`
-	Valid     bool   `json:"valid"`
+	ID        string  `json:"id"`
+	SeatID    string  `json:"seatId"`
+	Path      string  `json:"path"`
+	ExpiresAt *string `json:"expiresAt"`
+	Valid     bool    `json:"valid"`
 }
 type sharingTotpLinkCommand struct {
 	SeatID *string `json:"seatId"`
@@ -26,14 +26,14 @@ type sharingTotpLinkCommand struct {
 }
 
 func ensureSharingTotpLinksCollection(app core.App, users *core.Collection) error {
-	return ensureCollection(app, "sharing_totp_links", func(c *core.Collection) error {
+	err := ensureCollection(app, "sharing_totp_links", func(c *core.Collection) error {
 		secretCollectionRules(c)
 		for _, f := range []core.Field{userRelation(users),
 			&core.TextField{Name: "accountId", Required: true, Max: 128}, &core.TextField{Name: "seatId", Max: 128},
 			&core.TextField{Name: "scopeKey", Required: true, Max: 160},
 			&core.TextField{Name: "totpId", Required: true, Max: 128}, &core.TextField{Name: "tokenHash", Required: true, Max: 128},
 			&core.TextField{Name: "tokenCiphertext", Required: true, Max: 16384}, &core.TextField{Name: "bindingHash", Required: true, Max: 128},
-			&core.TextField{Name: "expiresAt", Required: true, Max: 64}, &core.BoolField{Name: "revoked"},
+			&core.TextField{Name: "expiresAt", Max: 64}, &core.BoolField{Name: "revoked"},
 		} {
 			if err := upsertField(c, f); err != nil {
 				return err
@@ -43,6 +43,12 @@ func ensureSharingTotpLinksCollection(app core.App, users *core.Collection) erro
 		c.AddIndex("idx_sharing_totp_scope", true, "user, accountId, scopeKey", "")
 		return ensureAutodates(c)
 	})
+	if err != nil {
+		return err
+	}
+	// Upgrade live default tokens without reviving expired or revoked grants.
+	_, err = app.DB().NewQuery("UPDATE sharing_totp_links SET expiresAt='' WHERE seatId='' AND revoked=0 AND julianday(expiresAt)>julianday('now')").Execute()
+	return err
 }
 
 func familyVerificationMode(sub *core.Record) string {
@@ -94,7 +100,8 @@ func familyTotpBinding(app core.App, userID, accountID, seatID string) (*core.Re
 
 func sharingTotpLinkValid(app core.App, link *core.Record) bool {
 	expiry, err := time.Parse(time.RFC3339Nano, link.GetString("expiresAt"))
-	if err != nil || link.GetBool("revoked") || !expiry.After(time.Now()) {
+	permanentDefault := link.GetString("seatId") == "" && link.GetString("expiresAt") == ""
+	if link.GetBool("revoked") || (!permanentDefault && (err != nil || !expiry.After(time.Now()))) {
 		return false
 	}
 	_, hash, err := familyTotpBinding(app, link.GetString("user"), link.GetString("accountId"), link.GetString("seatId"))
@@ -154,7 +161,11 @@ func ensureFamilyTotpLink(app core.App, userID, accountID, seatID string, reset 
 			}
 		}
 	}
-	for key, value := range map[string]any{"user": userID, "accountId": accountID, "seatId": seatID, "scopeKey": scopeKey, "totpId": otp.Id, "tokenHash": onlineTotpShareHash(token), "tokenCiphertext": ciphertext, "bindingHash": hash, "expiresAt": expiry.UTC().Format(time.RFC3339), "revoked": false} {
+	expiresAt := ""
+	if seatID != "" {
+		expiresAt = expiry.UTC().Format(time.RFC3339)
+	}
+	for key, value := range map[string]any{"user": userID, "accountId": accountID, "seatId": seatID, "scopeKey": scopeKey, "totpId": otp.Id, "tokenHash": onlineTotpShareHash(token), "tokenCiphertext": ciphertext, "bindingHash": hash, "expiresAt": expiresAt, "revoked": false} {
 		record.Set(key, value)
 	}
 	if err := app.Save(record); err != nil {
@@ -174,21 +185,6 @@ func syncFamilyTotpLinks(app core.App, sub *core.Record) error {
 	if err := ensureFamilyTotpLink(app, sub.GetString("user"), account.Id, "", false); err != nil {
 		return err
 	}
-	seats, err := app.FindRecordsByFilter("sharing_seats", "user={:user} && sharingAccount={:account} && status='active' && memberName!=''", "seatNumber", 100, 0, dbx.Params{"user": sub.GetString("user"), "account": account.Id})
-	if err != nil {
-		return err
-	}
-	for _, seat := range seats {
-		if seat.GetInt("seatNumber") > sub.GetInt("sharingCapacity") {
-			continue
-		}
-		if date := seat.GetString("expiresAt"); date != "" && date < todayDateOnly(time.Now(), schedulerSettingsForUser(app, sub.GetString("user")).Timezone) {
-			continue
-		}
-		if err := ensureFamilyTotpLink(app, sub.GetString("user"), account.Id, seat.Id, false); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -198,12 +194,15 @@ func handleSharingTotpLinks(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError("SHARING_ACCOUNT_NOT_FOUND", err)
 	}
+	if _, _, err := familyTotpBinding(app, e.Auth.Id, accountID, ""); err != nil {
+		return e.ForbiddenError("2FA_SHARING_DISABLED", nil)
+	}
 	if e.Request.Method == http.MethodPost {
 		body, err := decodeStrictJSON[sharingTotpLinkCommand](e.Request, requestLocale(e.Request))
 		if err != nil {
 			return e.BadRequestError("INVALID_PAYLOAD", err)
 		}
-		if body.SeatID != nil && len(*body.SeatID) > 128 {
+		if body.SeatID != nil && *body.SeatID != "" {
 			return e.BadRequestError("INVALID_PAYLOAD", nil)
 		}
 		err = app.RunInTransaction(func(tx core.App) error {
@@ -220,7 +219,7 @@ func handleSharingTotpLinks(app core.App, e *core.RequestEvent) error {
 			return e.BadRequestError("2FA 账号未匹配、车位未启用或已过期", err)
 		}
 	}
-	records, err := app.FindRecordsByFilter("sharing_totp_links", "user={:user} && accountId={:account}", "seatId", 101, 0, dbx.Params{"user": e.Auth.Id, "account": accountID})
+	records, err := app.FindRecordsByFilter("sharing_totp_links", "user={:user} && accountId={:account} && scopeKey='default'", "", 1, 0, dbx.Params{"user": e.Auth.Id, "account": accountID})
 	if err != nil {
 		return e.InternalServerError("INTERNAL_ERROR", err)
 	}
@@ -235,7 +234,7 @@ func handleSharingTotpLinks(app core.App, e *core.RequestEvent) error {
 			}
 			path = "/otp/" + token
 		}
-		links = append(links, sharingTotpLink{ID: record.Id, SeatID: record.GetString("seatId"), Path: path, ExpiresAt: record.GetString("expiresAt"), Valid: valid})
+		links = append(links, sharingTotpLink{ID: record.Id, SeatID: record.GetString("seatId"), Path: path, ExpiresAt: nullableStringPointer(record.GetString("expiresAt")), Valid: valid})
 	}
 	e.Response.Header().Set("Cache-Control", "no-store")
 	return apiSuccessJSON(e, http.StatusOK, map[string]any{"links": links})

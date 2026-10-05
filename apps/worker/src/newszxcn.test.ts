@@ -61,6 +61,14 @@ describe("seat inbox link authorization", () => {
     expect(sharedInboxLinkRequestSchema.safeParse(body).success).toBe(true);
     expect(sharedInboxLinkRequestSchema.safeParse({ ...body, seatId: "seat1" }).success).toBe(false);
   });
+  it("does not overwrite a subscription configured for online 2FA", async () => {
+    const { database, env } = fixture();
+    database.exec(`UPDATE subscriptions SET extra_json='{"familyVerification":{"mode":"totp"}}',sharing_verification_link='existing-2fa-link'`);
+    const { link } = await readSuccessData<LinkPayload>(await createSharedInboxLink(request(undefined, null), env));
+    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-2fa-link" });
+    await revokeSharedInboxLink(new Request("https://example.test"), env, link.id);
+    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-2fa-link" });
+  });
   it("migrates, creates independent grants, and revokes only one seat", async () => {
     const { database, env } = fixture();
     const first = await readSuccessData<LinkPayload>(await createSharedInboxLink(request("seat1"), env));

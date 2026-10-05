@@ -230,6 +230,9 @@ func syncSharedInboxLinkToSubscriptions(app core.App, userID, mailboxAddress, ex
 			return err
 		}
 		for _, subscription := range records {
+			if familyVerificationMode(subscription) != "email" {
+				continue
+			}
 			if !strings.EqualFold(strings.TrimSpace(subscription.GetString("sharingLoginAccount")), mailboxAddress) {
 				continue
 			}

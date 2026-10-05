@@ -507,7 +507,7 @@ function SubscriptionCardComponent({
 
         <div className={cn("min-w-0 flex-1", viewMode === "grid" ? "contents" : "grid gap-3")}>
           <div className={cn(
-            "grid grid-cols-[minmax(0,1fr)_auto_auto] items-start",
+            "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start",
             viewMode === "grid" ? "gap-x-2 gap-y-1.5" : "gap-x-3 gap-y-2",
           )}>
             <div className="min-w-0">
@@ -518,11 +518,7 @@ function SubscriptionCardComponent({
                     <span className="sr-only">{t("subscription.pin")}</span>
                   </>
                 ) : null}
-                <TruncatedTooltipText
-                  as="h3"
-                  text={displayName}
-                  className="min-w-0 font-semibold text-foreground"
-                />
+                <h3 className="min-w-0 wrap-break-word font-semibold text-foreground">{displayName}</h3>
               </div>
               {serviceName && serviceName !== displayName ? (
                 <TruncatedTooltipText
@@ -537,7 +533,7 @@ function SubscriptionCardComponent({
               "min-w-0 shrink-0 text-right",
               viewMode === "grid" ? "max-w-none" : "max-w-35 sm:max-w-40",
             )}>
-              <p className={cn("font-bold text-foreground tabular-nums", viewMode === "grid" ? "whitespace-nowrap text-lg" : "truncate text-xl")}>
+              <p className={cn("wrap-break-word font-bold text-foreground tabular-nums", viewMode === "grid" ? "text-base" : "text-xl")}>
                 {formatCurrency(subscription.price, subscription.currency)}
                 {viewMode === "grid" ? <span className="ml-1 text-sm font-medium text-muted-foreground">/ {billingCycleLabel.replace(/^每/, "")}</span> : null}
               </p>
@@ -609,9 +605,8 @@ function SubscriptionCardComponent({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {familyAccount ? <p data-testid="subscription-card-family-account" className="col-span-full min-w-0 break-all text-xs leading-5 text-muted-foreground">{familyAccount}</p> : null}
-
+            {familyAccount ? <div data-testid="subscription-card-family-account" className="pointer-events-auto col-span-full min-w-0 text-xs leading-4 text-muted-foreground" title={familyAccount}><TruncatedTooltipText as="p" text={familyAccount} /></div> : null}
+            {viewMode === "grid" ? <span data-testid="subscription-card-badge-status" className="col-span-full inline-flex"><SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" /></span> : null}
             <div
               data-testid="subscription-card-badge-flow"
               className={cn(
@@ -630,9 +625,9 @@ function SubscriptionCardComponent({
               {((subscription as SubscriptionCollectionItem & { tags?: string[] }).tags ?? []).slice(0, viewMode === "grid" ? 0 : 3).map((tag) => (
                 <Badge key={tag} variant="secondary" className="max-w-28 truncate px-2 text-xs font-normal" title={tag}>{tag}</Badge>
               ))}
-              <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
+              {viewMode === "list" ? <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
                 <SubscriptionStatusBadge status={effectiveStatus} className="px-2 sm:px-2.5" />
-              </span>
+              </span> : null}
               <Badge
                 data-testid="subscription-card-badge-renewal"
                 variant={isBuyout || isFixedTermOneTime ? "secondary" : subscription.autoRenew ? "outline" : "secondary"}

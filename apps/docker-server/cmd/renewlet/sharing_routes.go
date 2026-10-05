@@ -40,6 +40,7 @@ type sharingAccountResponse struct {
 	LoginAccount             string                     `json:"loginAccount"`
 	HasPassword              bool                       `json:"hasPassword"`
 	VerificationMode         string                     `json:"verificationMode"`
+	FamilySharingEnabled     bool                       `json:"familySharingEnabled"`
 	VerificationLink         *string                    `json:"verificationLink"`
 	MonthlyCost              string                     `json:"monthlyCost"`
 	Currency                 string                     `json:"currency"`
@@ -552,6 +553,7 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 		LoginAccount:             loginAccount,
 		HasPassword:              encryptedCredentials != "",
 		VerificationMode:         familyVerificationMode(subscription),
+		FamilySharingEnabled:     subscription.GetBool("familySharingEnabled"),
 		VerificationLink:         safeSharingVerificationLink(verificationLink),
 		MonthlyCost:              moneyUnitsToString(monthlyCostUnits),
 		Currency:                 subscription.GetString("currency"),

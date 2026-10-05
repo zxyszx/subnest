@@ -2,7 +2,7 @@ import { expect, test } from "./support/test";
 import { createProductSubscriptionSeed, deleteProductSubscriptionsByName, productApiFetch } from "./support/product-api";
 import { uniqueE2EName } from "./support/subscriptions";
 
-test("family 2FA matches accounts, wraps long emails and isolates seat links", async ({ page }, testInfo) => {
+test("family 2FA matches accounts, wraps long emails and shows one general link", async ({ page }, testInfo) => {
   const name = uniqueE2EName(testInfo, "family-totp");
   const account = "primevideo02.long-family-account-name@verification.example.test";
   let otpId = "";
@@ -41,21 +41,25 @@ test("family 2FA matches accounts, wraps long emails and isolates seat links", a
     }
     const generated = await productApiFetch(page, `/api/app/sharing/accounts/${family.id}/totp-links`);
     expect(generated.ok, generated.body).toBe(true);
-    expect((generated.json as { data: { links: unknown[] } }).data.links).toHaveLength(3);
+    expect((generated.json as { data: { links: { expiresAt: string | null }[] } }).data.links).toHaveLength(1);
+    expect((generated.json as { data: { links: { expiresAt: string | null }[] } }).data.links[0]?.expiresAt).toBeNull();
     await page.reload();
     await page.getByRole("button", { name: "查看链接", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /在线 2FA 链接/ });
     await expect(dialog.getByText("默认链接", { exact: true })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(3);
+    await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(1);
+    await expect(dialog.getByText("长期有效", { exact: true })).toBeVisible();
+    expect(await dialog.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     await page.evaluate(() => document.documentElement.classList.remove("dark"));
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await dialog.screenshot({ path: testInfo.outputPath("totp-links-desktop.png") });
-    await dialog.getByRole("button", { name: "重置链接", exact: true }).nth(1).click();
+    await dialog.getByRole("button", { name: "重置链接", exact: true }).first().click();
     await page.getByRole("alertdialog").getByRole("button", { name: "确认", exact: true }).click();
-    await expect(dialog.getByRole("button", { name: "重置链接", exact: true }).nth(1)).toBeEnabled();
+    await expect(dialog.getByRole("button", { name: "重置链接", exact: true }).first()).toBeEnabled();
     await page.setViewportSize({ width: 375, height: 812 });
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    expect(await dialog.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     await dialog.screenshot({ path: testInfo.outputPath("totp-links-mobile.png") });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.evaluate(() => document.documentElement.classList.add("dark"));

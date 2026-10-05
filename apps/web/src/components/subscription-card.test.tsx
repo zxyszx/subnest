@@ -93,6 +93,11 @@ describe("SubscriptionCard", () => {
     expect(source).not.toContain("useCustomConfig");
   });
 
+  it("shows the trial status on grid cards", () => {
+    renderSubscriptionCard({ status: "trial", nextBillingDate: assertDateOnly("2099-01-01") });
+    expect(screen.getByTestId("subscription-card-badge-status")).toHaveTextContent("试用中");
+  });
+
   it("uses a compact information hierarchy in grid cards", () => {
     const source = readFileSync(join(process.cwd(), "src/components/subscription-card.tsx"), "utf8");
 
@@ -184,12 +189,13 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ familySharingLoginAccount: undefined });
     expect(screen.queryByText("netflix17@example.com")).not.toBeInTheDocument();
   });
-  it("keeps a long family account in a full-width wrapping row", () => {
+  it("keeps a long family account on one line with the full address available", () => {
     const account = "primevideo02.long-family-account-name@verification.example.test";
     renderSubscriptionCard({ familySharingLoginAccount: account }, {}, { viewMode: "grid" });
     expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent(account);
-    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("col-span-full", "break-all");
-    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("truncate");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("col-span-full");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveAttribute("title", account);
+    expect(screen.getByText(account)).toHaveClass("truncate");
   });
 
   it("uses a yellow renewal treatment from four to seven days", () => {
@@ -320,9 +326,9 @@ describe("SubscriptionCard", () => {
     }
 
     expect(badgeGroup).toHaveTextContent(mocks.shortCategoryLabel);
-    expect(badgeGroup).toHaveTextContent("活跃");
+    expect(screen.getByTestId("subscription-card-badge-status")).toHaveTextContent("活跃");
     expect(badgeGroup).not.toHaveTextContent("置顶");
-    expect(categoryBadge.compareDocumentPosition(statusBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(badgeGroup).not.toContainElement(statusBadge);
   });
 
   it("hides pin actions when the card is rendered without a pin handler", () => {
@@ -354,7 +360,7 @@ describe("SubscriptionCard", () => {
 
     expect(badgeGroup).toHaveClass("col-span-full", "hidden");
     expect(badgeGroup).not.toHaveClass("overflow-hidden");
-    expect(subscriptionName).toHaveAttribute("data-slot", "truncated-tooltip-text");
+    expect(subscriptionName).toHaveClass("wrap-break-word");
     expect(subscriptionName).not.toHaveAttribute("title");
     expect(categoryBadge).not.toHaveAttribute("title");
     expect(categoryBadge).toHaveClass(

@@ -26,6 +26,7 @@ export const sharingAccountSchema = z.object({
   accountNumber: z.number().int().positive(),
   loginAccount: z.string().min(1),
   hasPassword: z.boolean(),
+  familySharingEnabled: z.boolean().optional(),
   verificationMode: z.enum(["email", "totp"]).optional(),
   verificationLink: z.url().nullable(),
   monthlyCost: moneyStringSchema,
@@ -103,7 +104,7 @@ export const sharingAccountsResponseSchema = apiSuccessResponseSchema(sharingAcc
 export const sharingAccountResponseSchema = apiSuccessResponseSchema(sharingAccountPayloadSchema);
 export const sharingCredentialsResponseSchema = apiSuccessResponseSchema(sharingCredentialsPayloadSchema);
 export const sharingTotpLinkSchema = z.object({
-  id: z.string().min(1), seatId: z.string().max(128), path: z.string().regex(/^(?:|\/otp\/[A-Za-z0-9_-]{32,128})$/), expiresAt: z.iso.datetime(),
+  id: z.string().min(1), seatId: z.string().max(128), path: z.string().regex(/^(?:|\/otp\/[A-Za-z0-9_-]{32,128})$/), expiresAt: z.iso.datetime().nullable(),
   valid: z.boolean(),
 }).strict();
 export const sharingTotpLinksResponseSchema = apiSuccessResponseSchema(z.object({ links: z.array(sharingTotpLinkSchema) }).strict());

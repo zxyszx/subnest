@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, Inbox, Link2, Loader2, Mail, Plug, RefreshCw, Search, ShieldCheck, UsersRound } from "lucide-react";
+import { Check, Copy, ExternalLink, Inbox, Link2, Loader2, Mail, Plug, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { newszxcnService, type NewSzxcnFolder, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
 import { sharingQueryKeys } from "@/hooks/use-sharing";
 import { subscriptionQueryKeys } from "@/hooks/subscription-query-cache";
-import { SeatInboxLinksDialog } from "@/components/seat-inbox-links-dialog";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const ranges = [{ value: 30, label: "最近 30 分钟" }, { value: 60, label: "最近 1 小时" }, { value: 360, label: "最近 6 小时" }, { value: 1440, label: "最近 1 天" }, { value: 10080, label: "最近 7 天" }];
@@ -44,7 +43,6 @@ export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?:
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<NewSzxcnMailbox | null>(null);
-  const [seatMailbox, setSeatMailbox] = useState<NewSzxcnMailbox | null>(null);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 15000);
@@ -79,7 +77,7 @@ export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?:
   const sharedByMailbox = useMemo(() => {
     const result = new Map<string, { generic: boolean; seats: number }>();
     for (const link of links) {
-      if (link.status !== "active" || (link.expiresAt && !(Date.parse(link.expiresAt) > now))) continue;
+      if (link.seatId || link.status !== "active" || (link.expiresAt && !(Date.parse(link.expiresAt) > now))) continue;
       const summary = result.get(link.mailboxId) ?? { generic: false, seats: 0 };
       if (link.seatId) summary.seats += 1;
       else summary.generic = true;
@@ -134,31 +132,37 @@ export function NewSzxcnAdminPanel({ id, className }: { id?: string; className?:
         return <div key={mailbox.id} className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
           <div className="flex min-w-0 items-center gap-3"><Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" /><div className="min-w-0"><p className="truncate font-medium">{mailbox.address}</p>{hasDistinctDisplayName ? <p className="truncate text-xs text-muted-foreground">{displayName}</p> : null}</div></div>
           <span className={summary ? "w-fit rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-600" : "w-fit rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"}>{summary?.seats ? `${t("sharing.inboxLinkCount", { count: summary.seats })}${summary.generic ? ` · ${t("sharing.genericInboxShare")}` : ""}` : summary?.generic && link ? `${copy.shared} · ${ranges.find((item) => item.value === link.windowMinutes)?.label ?? `${link.windowMinutes} 分钟`}` : copy.unshared}</span>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setSeatMailbox(mailbox)}><UsersRound className="h-3.5 w-3.5" />{t("sharing.inboxLinks")}</Button><Button variant="outline" size="sm" onClick={() => setSelected(mailbox)}><Link2 className="h-3.5 w-3.5" />{t("sharing.genericInboxShare")}</Button></div>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setSelected(mailbox)}><Link2 className="h-3.5 w-3.5" />{t("sharing.genericInboxShare")}</Button></div>
         </div>;
       })}</div>}
     </div>
     <MailboxShareDialog mailbox={selected} link={selected ? activeByMailbox.get(selected.id) ?? null : null} onOpenChange={(open) => { if (!open) setSelected(null); }} onChanged={reloadAfterMutation} />
-    {seatMailbox ? <SeatInboxLinksDialog key={seatMailbox.id} mailbox={seatMailbox} links={links} onClose={() => setSeatMailbox(null)} onChanged={reloadAfterMutation} /> : null}
   </section>;
 }
 
 function MailboxShareDialog({ mailbox, link, onOpenChange, onChanged }: { mailbox: NewSzxcnMailbox | null; link: SharedInboxLink | null; onOpenChange: (open: boolean) => void; onChanged: () => Promise<void> }) {
   const [folders, setFolders] = useState<NewSzxcnFolder[]>([]); const [folderIds, setFolderIds] = useState<string[]>([]); const [windowMinutes, setWindowMinutes] = useState(30); const [working, setWorking] = useState(false);
+  const [foldersLoading, setFoldersLoading] = useState(false);
+  const [foldersFailed, setFoldersFailed] = useState(false);
+  const { t } = useI18n();
   useEffect(() => {
     if (!mailbox) return;
+    let cancelled = false;
+    setFolders([]); setFoldersLoading(true); setFoldersFailed(false);
     setWindowMinutes(link?.windowMinutes ?? 30); setFolderIds(link?.folderIds ?? []);
-    void newszxcnService.folders(mailbox.id).then((result) => { setFolders(result.items); if (!link) setFolderIds([]); }).catch((error) => toast.error(error instanceof Error ? error.message : "读取文件夹失败"));
+    void newszxcnService.folders(mailbox.id).then((result) => { if (!cancelled) { setFolders(result.items); setFolderIds((current) => current.filter((id) => result.items.some((folder) => folder.id === id))); } }).catch(() => { if (!cancelled) { setFoldersFailed(true); setFolderIds([]); } }).finally(() => { if (!cancelled) setFoldersLoading(false); });
+    return () => { cancelled = true; };
   }, [mailbox, link]);
   if (!mailbox) return null;
-  const create = async () => { if (folderIds.length === 0) { toast.error("请至少选择一个文件夹"); return; } setWorking(true); try { await newszxcnService.create({ mailboxId: mailbox.id, folderIds, windowMinutes }); toast.success("分享已开启"); await onChanged(); } catch (error) { toast.error(error instanceof Error ? error.message : "开启分享失败"); } finally { setWorking(false); } };
+  const create = async () => { if (foldersLoading || foldersFailed || folderIds.length === 0 || folderIds.some((id) => !folders.some((folder) => folder.id === id))) return; setWorking(true); try { await newszxcnService.create({ mailboxId: mailbox.id, folderIds, windowMinutes }); toast.success("分享已开启"); await onChanged(); } catch (error) { toast.error(error instanceof Error ? error.message : "开启分享失败"); } finally { setWorking(false); } };
   const revoke = async () => { if (!link) return; setWorking(true); try { await newszxcnService.revoke(link.id); toast.success("分享已关闭，旧链接立即失效"); await onChanged(); } catch (error) { toast.error(error instanceof Error ? error.message : "关闭分享失败"); } finally { setWorking(false); } };
-  const reset = async () => { if (!link) return; setWorking(true); try { await newszxcnService.revoke(link.id); await newszxcnService.create({ mailboxId: mailbox.id, folderIds, windowMinutes, expiresAt: link.expiresAt }); toast.success("短链接已重置，旧链接立即失效"); } catch (error) { toast.error(error instanceof Error ? error.message : "重置链接失败"); } finally { try { await onChanged(); } finally { setWorking(false); } } };
+  const reset = async () => { if (!link || foldersLoading || foldersFailed || folderIds.length === 0) return; setWorking(true); try { await newszxcnService.revoke(link.id); await newszxcnService.create({ mailboxId: mailbox.id, folderIds, windowMinutes, expiresAt: link.expiresAt && Date.parse(link.expiresAt) > Date.now() ? link.expiresAt : null }); toast.success("短链接已重置，旧链接立即失效"); } catch (error) { toast.error(error instanceof Error ? error.message : "重置链接失败"); } finally { try { await onChanged(); } finally { setWorking(false); } } };
   const copyLink = async () => { if (!link) return; const result = await copyTextToClipboard(link.shortUrl); toast[result.ok ? "success" : "error"](result.ok ? "链接已复制" : "复制失败"); };
-  return <Dialog open onOpenChange={onOpenChange}><DialogContent className="max-h-[min(88dvh,44rem)] max-w-lg overflow-y-auto" onOpenAutoFocus={(event) => event.preventDefault()}><DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />{copy.manageTitle}</DialogTitle><DialogDescription>{mailbox.address}</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={(open) => { if (!working) onOpenChange(open); }}><DialogContent className="max-h-[min(88dvh,44rem)] max-w-lg overflow-y-auto" onOpenAutoFocus={(event) => event.preventDefault()}><DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />{copy.manageTitle}</DialogTitle><DialogDescription className="break-all">{mailbox.address}</DialogDescription></DialogHeader>
+    {foldersLoading ? <p role="status" className="text-sm text-muted-foreground">{t("sharing.loadingLinks")}</p> : foldersFailed ? <p role="alert" className="text-sm text-destructive">{t("sharing.loadLinksFailed")}</p> : null}
     <div className="space-y-4 py-2"><div className="grid gap-2"><Label htmlFor="shared-range">{copy.range}</Label><Select value={String(windowMinutes)} onValueChange={(value) => setWindowMinutes(Number(value))} disabled={Boolean(link)}><SelectTrigger id="shared-range"><SelectValue /></SelectTrigger><SelectContent>{ranges.map((range) => <SelectItem key={range.value} value={String(range.value)}>{range.label}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">{copy.rollingRange}</p></div>
       <div className="grid gap-2"><Label>{copy.folders}</Label><div className="max-h-44 divide-y divide-border overflow-y-auto rounded-md border border-border">{folders.map((folder) => <label key={folder.id} className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 text-sm"><input type="checkbox" checked={folderIds.includes(folder.id)} disabled={Boolean(link)} onChange={(event) => setFolderIds((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))} /><span className="min-w-0 flex-1 truncate">{folderLabel(folder)}</span><span className="text-xs text-muted-foreground">{folder.totalCount ?? 0} {copy.mailUnit}</span></label>)}</div></div>
       {link ? <div className="grid gap-2"><Label>{copy.shortLink}</Label><div className="flex gap-2"><Input readOnly tabIndex={-1} value={link.shortUrl} className="min-w-0 font-mono text-xs" /><Button variant="outline" size="icon" onClick={() => void copyLink()} aria-label={copy.copyLink}><Copy className="h-4 w-4" /></Button><Button variant="outline" size="icon" asChild aria-label={copy.preview}><a href={link.shortUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button></div><p className="flex items-center gap-1 text-xs text-emerald-600"><Check className="h-3.5 w-3.5" />{copy.shared} · {ranges.find((item) => item.value === link.windowMinutes)?.label}</p></div> : null}
-    </div><DialogFooter className="gap-2 sm:justify-between">{link ? <Button variant="destructive" onClick={() => void revoke()} disabled={working}>{copy.close}</Button> : <span />}{link ? <Button variant="outline" onClick={() => void reset()} disabled={working}><RefreshCw className="mr-2 h-4 w-4" />{copy.reset}</Button> : <Button onClick={() => void create()} disabled={working || folderIds.length === 0}><Link2 className="mr-2 h-4 w-4" />{copy.open}</Button>}</DialogFooter>
+    </div><DialogFooter className="gap-2 sm:justify-between">{link ? <Button variant="destructive" onClick={() => void revoke()} disabled={working}>{copy.close}</Button> : <span />}{link ? <Button variant="outline" onClick={() => void reset()} disabled={working || foldersLoading || foldersFailed || folderIds.length === 0}><RefreshCw className="mr-2 h-4 w-4" />{copy.reset}</Button> : <Button onClick={() => void create()} disabled={working || foldersLoading || foldersFailed || folderIds.length === 0}><Link2 className="mr-2 h-4 w-4" />{copy.open}</Button>}</DialogFooter>
   </DialogContent></Dialog>;
 }

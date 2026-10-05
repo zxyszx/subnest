@@ -48,8 +48,8 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 	payload := decodeAPISuccessDataForTest[struct {
 		Links []sharingTotpLink `json:"links"`
 	}](t, get.Body.Bytes())
-	if len(payload.Links) != 3 {
-		t.Fatalf("expected default + two assigned seats, got %s", get.Body.String())
+	if len(payload.Links) != 1 {
+		t.Fatalf("expected only default link, got %s", get.Body.String())
 	}
 	bySeat := map[string]sharingTotpLink{}
 	for _, link := range payload.Links {
@@ -58,8 +58,8 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 			t.Fatal("new link invalid")
 		}
 	}
-	if bySeat[seats[0].Id].Path == bySeat[seats[1].Id].Path {
-		t.Fatal("shared seat token")
+	if bySeat[""].ExpiresAt != nil {
+		t.Fatal("default link must not have a fixed expiration")
 	}
 	public := func(path string) int {
 		return serveTestRequest(t, app, http.MethodGet, "/api/online-totp/"+strings.TrimPrefix(path, "/otp/"), "", "").Code
@@ -78,44 +78,52 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 			t.Fatalf("foreign %s status %d", method, r.Code)
 		}
 	}
-	old := bySeat[seats[0].Id]
-	rotated := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"`+seats[0].Id+`","reset":true}`, token)
+	blocked := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"`+seats[0].Id+`","reset":true}`, token)
+	if blocked.Code != http.StatusBadRequest {
+		t.Fatal("seat generation should be disabled")
+	}
+	old := bySeat[""]
+	rotated := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"","reset":true}`, token)
 	if rotated.Code != http.StatusOK {
 		t.Fatal(rotated.Body.String())
 	}
-	if public(old.Path) != http.StatusNotFound || public(bySeat[seats[1].Id].Path) != http.StatusOK || public(bySeat[""].Path) != http.StatusOK {
-		t.Fatal("reset affected other scopes or left old token valid")
+	if public(old.Path) != http.StatusNotFound {
+		t.Fatal("old default token still valid")
 	}
-	// Updating another seat's billing metadata must not invalidate its token.
-	seats[1].Set("notes", "renewed")
-	if err := app.Save(seats[1]); err != nil {
-		t.Fatal(err)
-	}
-	if public(bySeat[seats[1].Id].Path) != http.StatusOK {
-		t.Fatal("unrelated seat update invalidated token")
-	}
-	revoked := serveTestRequest(t, app, http.MethodDelete, route+"/"+bySeat[seats[1].Id].ID, "", token)
+	newPayload := decodeAPISuccessDataForTest[struct {
+		Links []sharingTotpLink `json:"links"`
+	}](t, rotated.Body.Bytes())
+	bySeat[""] = newPayload.Links[0]
+	revoked := serveTestRequest(t, app, http.MethodDelete, route+"/"+bySeat[""].ID, "", token)
 	if revoked.Code != http.StatusOK {
 		t.Fatal(revoked.Body.String())
 	}
 	if err := syncFamilyTotpLinks(app, sub); err != nil {
 		t.Fatal(err)
 	}
-	if public(bySeat[seats[1].Id].Path) != http.StatusNotFound {
+	if public(bySeat[""].Path) != http.StatusNotFound {
 		t.Fatal("revoked token resurrected")
 	}
-	if err := ensureFamilyTotpLink(app, owner.Id, account.Id, seats[2].Id, true); err == nil {
-		t.Fatal("vacant seat issued token")
+	if err := ensureFamilyTotpLink(app, owner.Id, account.Id, "", true); err != nil {
+		t.Fatal(err)
 	}
 	generic, err := app.FindRecordById("sharing_totp_links", bySeat[""].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	currentToken, err := transformOnlineTotpSecret(app, generic.GetString("tokenCiphertext"), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	currentPath := "/otp/" + currentToken
+	if public(currentPath) != http.StatusOK {
+		t.Fatal("new permanent default token unavailable")
+	}
 	generic.Set("expiresAt", time.Now().Add(-time.Minute).UTC().Format(time.RFC3339))
 	if err := app.Save(generic); err != nil {
 		t.Fatal(err)
 	}
-	if public(bySeat[""].Path) != http.StatusNotFound {
+	if public(currentPath) != http.StatusNotFound {
 		t.Fatal("expired token accepted")
 	}
 	otpRecord, err := app.FindRecordById("online_totp_accounts", otp.ID)
