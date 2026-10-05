@@ -402,6 +402,9 @@ func applySubscriptionDerivedMutation(app core.App, mutation subscriptionDerived
 		if err := syncSubscriptionSharingAccount(app, mutation.After); err != nil {
 			return err
 		}
+		if err := syncFamilyTotpLinks(app, mutation.After); err != nil {
+			return err
+		}
 	}
 	for _, userID := range uniqueNonEmptyStrings(beforeUser, afterUser) {
 		if err := applySubscriptionStatsDelta(app, userID, mutation.Before, mutation.After, now); err != nil {

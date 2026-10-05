@@ -129,6 +129,9 @@ func ensureCollectionsSchema(app core.App) error {
 	if err := ensureOnlineTotpAccountsCollection(app, users); err != nil {
 		return err
 	}
+	if err := ensureSharingTotpLinksCollection(app, users); err != nil {
+		return err
+	}
 	if err := ensureTelegramBotBindingsCollection(app, users); err != nil {
 		return err
 	}

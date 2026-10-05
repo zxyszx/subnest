@@ -184,6 +184,13 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ familySharingLoginAccount: undefined });
     expect(screen.queryByText("netflix17@example.com")).not.toBeInTheDocument();
   });
+  it("keeps a long family account in a full-width wrapping row", () => {
+    const account = "primevideo02.long-family-account-name@verification.example.test";
+    renderSubscriptionCard({ familySharingLoginAccount: account }, {}, { viewMode: "grid" });
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent(account);
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("col-span-full", "break-all");
+    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("truncate");
+  });
 
   it("uses a yellow renewal treatment from four to seven days", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-23") });

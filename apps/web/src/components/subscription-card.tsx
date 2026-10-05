@@ -531,13 +531,6 @@ function SubscriptionCardComponent({
                   className="mt-0.5 min-w-0 text-xs text-muted-foreground"
                 />
               ) : null}
-              {familyAccount ? (
-                <TruncatedTooltipText
-                  as="p"
-                  text={familyAccount}
-                  className={cn("min-w-0 text-xs text-muted-foreground", serviceName !== displayName && "mt-0.5")}
-                />
-              ) : null}
             </div>
 
             <div className={cn(
@@ -616,6 +609,8 @@ function SubscriptionCardComponent({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {familyAccount ? <p data-testid="subscription-card-family-account" className="col-span-full min-w-0 break-all text-xs leading-5 text-muted-foreground">{familyAccount}</p> : null}
 
             <div
               data-testid="subscription-card-badge-flow"

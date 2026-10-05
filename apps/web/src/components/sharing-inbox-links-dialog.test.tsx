@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({ session: { user: { role: "admin" } }, mailboxe
 vi.mock("@/lib/auth-client", () => ({ authClient: { useSession: () => ({ data: mocks.session }) } }));
 vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
 vi.mock("@/components/seat-inbox-links-dialog", () => ({ SeatInboxLinksDialog: ({ boundAccount, mailbox }: { boundAccount: SharingAccount; mailbox: { address: string } }) => <div>{boundAccount.id} · {mailbox.address}</div> }));
+vi.mock("@/components/sharing-totp-links-dialog", () => ({ SharingTotpLinksDialog: () => <div>独立 2FA 车位链接</div> }));
 const account = { id: "target-account", loginAccount: "TARGET@example.test", accountNumber: 17, subscription: { platformName: "Netflix" } } as SharingAccount;
 describe("SharingInboxLinksDialog", () => {
   beforeEach(() => {
@@ -18,6 +19,12 @@ describe("SharingInboxLinksDialog", () => {
   it("matches the selected account mailbox case insensitively", async () => {
     render(<SharingInboxLinksDialog account={account} onClose={vi.fn()} />);
     expect(await screen.findByText("target-account · target@example.test")).toBeInTheDocument();
+  });
+  it("opens the 2FA dialog without calling mailbox APIs", () => {
+    render(<SharingInboxLinksDialog account={{ ...account, verificationMode: "totp" }} onClose={vi.fn()} />);
+    expect(screen.getByText("独立 2FA 车位链接")).toBeInTheDocument();
+    expect(mocks.mailboxes).not.toHaveBeenCalled();
+    expect(mocks.links).not.toHaveBeenCalled();
   });
   it("does not request admin APIs for non-admin users", () => {
     mocks.session.user.role = "user";

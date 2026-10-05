@@ -1,4 +1,5 @@
 import { healthPayloadSchema } from "@renewlet/shared/schemas/app";
+import { sharingTotpLinks, revokeSharingTotpLink } from "./sharing-totp-links";
 import { Hono, type Context } from "hono";
 import {
   adminCreateUser,
@@ -315,6 +316,13 @@ defineRoute(subscriptionRoutes, "/:id", {
 app.route("/api/app/subscriptions", subscriptionRoutes);
 
 const sharingRoutes = newAppRouter();
+defineRoute(sharingRoutes, "/accounts/:id/totp-links", {
+  GET: (c) => sharingTotpLinks(c.req.raw, c.env, routeParam(c,"id")),
+  POST: (c) => sharingTotpLinks(c.req.raw, c.env, routeParam(c,"id")),
+});
+defineRoute(sharingRoutes, "/accounts/:id/totp-links/:linkId", {
+  DELETE: (c) => revokeSharingTotpLink(c.req.raw, c.env, routeParam(c,"id"), routeParam(c,"linkId")),
+});
 defineRoute(sharingRoutes, "/accounts", {
   GET: (context) => readSharingAccounts(context.req.raw, context.env),
   POST: (context) => rejectLegacySharingAccountMutation(context.req.raw, context.env),

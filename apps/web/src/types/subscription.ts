@@ -219,7 +219,7 @@ export type OneTimeBuyoutSubscription = Exclude<OneTimeSubscription, OneTimeFixe
 export type FixedCycleSubscription = RecurringCycleSubscription | OneTimeSubscription;
 
 type SubscriptionFormSubmissionFrom<T extends Subscription> = T extends Subscription
-  ? Omit<T, "id" | "pinned" | "extra" | "trialEndDate" | "familySharing"> & {
+  ? Omit<T, "id" | "pinned" | "extra" | "trialEndDate" | "familySharing"> & { extra?: Record<string, unknown>;
       familySharing?: SubscriptionFamilySharingWrite | null;
     }
   : never;

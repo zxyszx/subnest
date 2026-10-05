@@ -28,7 +28,7 @@ import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
-import { sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
@@ -121,6 +121,8 @@ export default function Sharing() {
     if (accountFilter === "available") return account.occupiedSeats < account.capacity;
     if (accountFilter === "full") return account.occupiedSeats >= account.capacity;
     if (accountFilter === "outstanding") return Number(account.outstandingAmount) > 0;
+    const accountDays = sharingSubscriptionExpiryDays(account, today);
+    if (accountDays !== null && (accountFilter === "overdue" ? accountDays < 0 : accountDays >= 0 && accountDays <= 7)) return true;
     const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
     if (!nearest) return false;
     return accountFilter === "overdue" ? nearest.daysUntilExpiry < 0 : nearest.daysUntilExpiry >= 0 && nearest.daysUntilExpiry <= 7;
@@ -187,6 +189,8 @@ export default function Sharing() {
 
   const AccountIdentity = ({ account }: { account: SharingAccount }) => {
     const platformName = subscriptionPlatformName(account.subscription);
+    const accountDays = sharingSubscriptionExpiryDays(account, today);
+    const accountExpired = accountDays !== null && accountDays < 0;
     const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
     const health = nearest && nearest.daysUntilExpiry < 0
       ? { label: "存在逾期", variant: "destructive" as const }
@@ -214,7 +218,8 @@ export default function Sharing() {
         <div className="min-w-0">
           <span className="block truncate font-medium text-foreground">{platformName}</span>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <SubscriptionStatusBadge status={account.subscription.status} className="h-5 px-1.5 text-[10px]" />
+            <SubscriptionStatusBadge status={accountExpired ? "expired" : account.subscription.status} className="h-5 px-1.5 text-[10px]" />
+            {accountExpired ? <Badge variant="destructive" className="h-auto min-h-5 px-1.5 text-[10px]">{t("sharing.subscriptionExpired", { days: Math.abs(accountDays!) })}</Badge> : null}
             <Badge variant={health.variant} className="h-5 px-1.5 text-[10px]">{health.label}</Badge>
           </div>
         </div>

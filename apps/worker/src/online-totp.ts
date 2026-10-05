@@ -14,7 +14,7 @@ import { HttpError, ok, readJson, requestLocale, successJson } from "./http";
 import { randomToken, sha256 } from "./crypto";
 import type { Env } from "./types";
 
-interface OnlineTotpRow {
+export interface OnlineTotpRow {
   id: string;
   user_id: string;
   platform_name: string;
@@ -109,14 +109,15 @@ export async function deleteOnlineTotpAccount(request: Request, env: Env, id: st
 }
 
 export async function readPublicOnlineTotp(request: Request, env: Env, shareKey: string): Promise<Response> {
-  const row = await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE share_key_hash=? AND sharing_enabled=1 AND enabled=1 LIMIT 1")
+  let row = await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE share_key_hash=? AND sharing_enabled=1 AND enabled=1 LIMIT 1")
     .bind(await sha256(shareKey)).first<OnlineTotpRow>();
+  if (!row) row = await (await import("./sharing-totp-links")).resolvePublicSharingTotp(env, shareKey);
   if (!row) throw new HttpError(404, "TOTP_SHARE_NOT_FOUND", "NOT_FOUND");
   const { code, validUntil } = await currentTotp(env, row.secret_ciphertext);
   return successJson(onlineTotpPublicPayloadSchema.parse({
     platformName: row.platform_name, serviceName: row.service_name, account: row.account,
     logo: row.logo, code, validUntil,
-  }));
+  }), { headers: { "cache-control": "no-store" } });
 }
 
 async function onlineTotpApi(env: Env, row: OnlineTotpRow) {
@@ -157,14 +158,14 @@ export function normalizeTotpSecret(input: string): string {
   return value;
 }
 
-async function encryptOnlineTotp(env: Env, plaintext: string): Promise<string> {
+export async function encryptOnlineTotp(env: Env, plaintext: string): Promise<string> {
   const key = (await accountSecurityKeyRing(env)).onlineTotp;
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, encoder.encode(plaintext));
   return `v1.${base64Url(nonce)}.${base64Url(new Uint8Array(ciphertext))}`;
 }
 
-async function decryptOnlineTotp(env: Env, value: string): Promise<string> {
+export async function decryptOnlineTotp(env: Env, value: string): Promise<string> {
   const [version, nonce, ciphertext, extra] = value.split(".");
   if (version !== "v1" || !nonce || !ciphertext || extra) throw new Error("invalid online TOTP ciphertext");
   const key = (await accountSecurityKeyRing(env)).onlineTotp;

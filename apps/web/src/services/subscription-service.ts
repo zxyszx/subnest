@@ -255,8 +255,8 @@ export function toSubscriptionCreatePayload(draft: SubscriptionDraft) {
 }
 
 export function toSubscriptionUpdatePayload(changes: SubscriptionFormSubmission) {
-  // 表单更新刻意省略 pinned、extra 与 trialEndDate；它们不归普通表单所有，PATCH 必须保留服务端当前值。
-  return toSubscriptionFormPayload(changes);
+  const payload = toSubscriptionFormPayload(changes);
+  return changes.extra === undefined ? payload : { ...payload, extra: changes.extra };
 }
 
 function toSubscriptionFieldPatchPayload(patch: SubscriptionFieldPatch) {

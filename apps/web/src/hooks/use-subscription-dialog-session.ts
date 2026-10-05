@@ -218,6 +218,8 @@ function isCreateFormPristine(formData: SubscriptionFormState): boolean {
     formData.familySharing.password === baseline.familySharing.password &&
     formData.familySharing.verificationLink === baseline.familySharing.verificationLink &&
     formData.familySharing.capacity === baseline.familySharing.capacity &&
+    formData.familySharing.verificationMode === baseline.familySharing.verificationMode &&
+    formData.familySharing.totpAccountId === baseline.familySharing.totpAccountId &&
     formData.website === baseline.website &&
     formData.notes === baseline.notes &&
     formData.tags.length === 0
@@ -267,6 +269,8 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
       passwordMask: subscription.familySharing.passwordMask,
       verificationLink: subscription.familySharing.verificationLink ?? "",
       capacity: String(subscription.familySharing.capacity),
+      verificationMode: (subscription.extra["familyVerification"] as { mode?: string } | undefined)?.mode === "totp" ? "totp" : "email",
+      totpAccountId: (subscription.extra["familyVerification"] as { totpAccountId?: string } | undefined)?.totpAccountId ?? "",
     } : createSubscriptionFormState().familySharing,
     website: subscription.website ?? "",
     notes: subscription.notes ?? "",

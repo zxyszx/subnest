@@ -13,6 +13,7 @@ import { decryptSharingCredential } from "./sharing-credential";
 import { HttpError, readJson, requestLocale, successJson } from "./http";
 import { newId, nowIso } from "./db";
 import type { Env, SubscriptionRow } from "./types";
+import { familyTotpSeatStatement } from "./sharing-totp-links";
 
 interface SharingAccountRow {
   id: string;
@@ -128,6 +129,9 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
   }
   const timestamp = nowIso();
   const statements: D1PreparedStatement[] = [];
+  statements.push(env.DB.prepare(`UPDATE sharing_totp_links SET revoked=1 WHERE user_id=? AND seat_id=? AND (
+    ?!='active' OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
+    .bind(auth.user.id,id,body.status,id,auth.user.id,body.memberName,body.contact,body.contactType));
   statements.push(env.DB.prepare(`UPDATE shared_inbox_links SET status='revoked', revoked_at=?, updated_at=?
     WHERE user_id=? AND seat_id=? AND status='active' AND (
       ?!='active' OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
@@ -162,6 +166,11 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
     `).bind(receivableId, auth.user.id, account.id, id, body.startDate, body.expiresAt, body.startDate, amount,
       paid ? amount : "0", body.currency, paid ? "paid" : "pending", paid ? timestamp : null, timestamp, timestamp));
   }
+  if (body.status === "active") {
+    const subscription = await subscriptionForAccount(env, account);
+    const linkStatement = await familyTotpSeatStatement(env, subscription, account.id, { ...seat, member_name: body.memberName, contact: body.contact || null, contact_type: body.contactType || null, expires_at: body.expiresAt || null, status: body.status }, seat.member_name!==body.memberName || (seat.contact ?? "")!==body.contact || (seat.contact_type ?? "")!==body.contactType);
+    if (linkStatement) statements.push(linkStatement);
+  }
   await env.DB.batch(statements);
   return readSharingAccountDetail(request, env, account.id);
 }
@@ -191,6 +200,7 @@ export async function moveSharingSeat(request: Request, env: Env, id: string): P
   }
   const timestamp = nowIso();
   await env.DB.batch([
+    env.DB.prepare("UPDATE sharing_totp_links SET revoked=1 WHERE user_id=? AND seat_id IN (?,?)").bind(auth.user.id,source.id,target.id),
     env.DB.prepare("UPDATE shared_inbox_links SET status='revoked', revoked_at=?, updated_at=? WHERE user_id=? AND seat_id IN (?,?) AND status='active'").bind(timestamp, timestamp, auth.user.id, source.id, target.id),
     env.DB.prepare(`
       UPDATE sharing_seats SET member_name = ?, contact = ?, contact_type = ?, monthly_price = ?, currency = ?,
@@ -260,12 +270,15 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
       platformName: subscription.platform_name || subscription.name,
       logo: subscription.logo,
       status: subscription.status,
+      billingCycle: subscription.billing_cycle,
+      oneTimeTermCount: subscription.one_time_term_count,
     },
     name: `编号 ${subscription.account_number ?? 1}`,
     accountNumber: subscription.account_number ?? 1,
     loginAccount: subscription.sharing_login_account ?? "",
     hasPassword: Boolean(subscription.sharing_encrypted_credentials),
-    verificationLink: subscription.sharing_verification_link ?? null,
+    verificationMode: JSON.parse(subscription.extra_json || "{}").familyVerification?.mode === "totp" ? "totp" : "email",
+    verificationLink: JSON.parse(subscription.extra_json || "{}").familyVerification?.mode === "totp" ? null : subscription.sharing_verification_link ?? null,
     monthlyCost: moneyFromNumber(monthlyCost),
     currency: subscription.currency,
     nextBillingDate: subscription.next_billing_date,

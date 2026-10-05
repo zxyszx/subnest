@@ -23,11 +23,13 @@ const sharingAccountsLimit = 500
 var sharingCurrencyPattern = regexp.MustCompile(`^[A-Z]{3}$`)
 
 type sharingSubscriptionSummary struct {
-	ID           string  `json:"id"`
-	Name         string  `json:"name"`
-	PlatformName string  `json:"platformName"`
-	Logo         *string `json:"logo"`
-	Status       string  `json:"status"`
+	ID               string  `json:"id"`
+	Name             string  `json:"name"`
+	PlatformName     string  `json:"platformName"`
+	Logo             *string `json:"logo"`
+	Status           string  `json:"status"`
+	BillingCycle     string  `json:"billingCycle"`
+	OneTimeTermCount int     `json:"oneTimeTermCount"`
 }
 
 type sharingAccountResponse struct {
@@ -37,6 +39,7 @@ type sharingAccountResponse struct {
 	AccountNumber            int                        `json:"accountNumber"`
 	LoginAccount             string                     `json:"loginAccount"`
 	HasPassword              bool                       `json:"hasPassword"`
+	VerificationMode         string                     `json:"verificationMode"`
 	VerificationLink         *string                    `json:"verificationLink"`
 	MonthlyCost              string                     `json:"monthlyCost"`
 	Currency                 string                     `json:"currency"`
@@ -521,6 +524,9 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 	loginAccount := subscription.GetString("sharingLoginAccount")
 	encryptedCredentials := subscription.GetString("sharingEncryptedCredentials")
 	verificationLink := subscription.GetString("sharingVerificationLink")
+	if familyVerificationMode(subscription) == "totp" {
+		verificationLink = ""
+	}
 	capacity := subscription.GetInt("sharingCapacity")
 	// Existing installations may contain manually-created accounts from before the
 	// subscription became the canonical source. Keep those rows readable during migration.
@@ -533,16 +539,19 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 	return sharingAccountResponse{
 		ID: record.Id,
 		Subscription: sharingSubscriptionSummary{
-			ID:           subscription.Id,
-			Name:         subscription.GetString("name"),
-			PlatformName: sharingPlatformName(subscription),
-			Logo:         optionalSharingString(subscription.GetString("logo")),
-			Status:       subscription.GetString("status"),
+			ID:               subscription.Id,
+			Name:             subscription.GetString("name"),
+			PlatformName:     sharingPlatformName(subscription),
+			Logo:             optionalSharingString(subscription.GetString("logo")),
+			Status:           subscription.GetString("status"),
+			BillingCycle:     subscription.GetString("billingCycle"),
+			OneTimeTermCount: subscription.GetInt("oneTimeTermCount"),
 		},
 		Name:                     record.GetString("name"),
 		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),
 		LoginAccount:             loginAccount,
 		HasPassword:              encryptedCredentials != "",
+		VerificationMode:         familyVerificationMode(subscription),
 		VerificationLink:         safeSharingVerificationLink(verificationLink),
 		MonthlyCost:              moneyUnitsToString(monthlyCostUnits),
 		Currency:                 subscription.GetString("currency"),

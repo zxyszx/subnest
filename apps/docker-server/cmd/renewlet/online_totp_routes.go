@@ -256,7 +256,11 @@ func handleOnlineTotpAccountDelete(app core.App, e *core.RequestEvent) error {
 }
 
 func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
+	e.Response.Header().Set("Cache-Control", "no-store")
 	record, err := app.FindFirstRecordByFilter("online_totp_accounts", "shareKeyHash = {:hash} && sharingEnabled = true && enabled = true", dbx.Params{"hash": onlineTotpShareHash(e.Request.PathValue("shareKey"))})
+	if err != nil {
+		record, err = resolvePublicSharingTotp(app, e.Request.PathValue("shareKey"))
+	}
 	if err != nil {
 		return e.NotFoundError("TOTP_SHARE_NOT_FOUND", err)
 	}

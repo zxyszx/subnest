@@ -366,6 +366,9 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
   }
   if (formData.familySharing.enabled) {
     const family = formData.familySharing;
+    if (family.verificationMode === "totp" && !family.totpAccountId) {
+      issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
+    }
     if (
       !family.loginAccount.trim() ||
       (!family.hasPassword && !family.password) ||

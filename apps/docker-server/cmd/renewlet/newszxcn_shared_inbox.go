@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -325,6 +326,9 @@ func validateInboxSeat(app core.App, userID, seatID, address string) error {
 	if err != nil || subscription.GetString("user") != userID || !subscription.GetBool("familySharingEnabled") || !strings.EqualFold(strings.TrimSpace(subscription.GetString("sharingLoginAccount")), strings.TrimSpace(address)) {
 		return fmt.Errorf("subscription unavailable")
 	}
+	if familyVerificationMode(subscription) == "totp" {
+		return fmt.Errorf("mailbox sharing disabled")
+	}
 	return nil
 }
 
@@ -349,6 +353,9 @@ func inboxSeatVersion(app core.App, userID, seatID, address string) (string, err
 
 // Local revocation is the access boundary; no external network call belongs in a seat transaction.
 func revokeInboxSeatLinks(app core.App, userID, seatID string) error {
+	if _, err := app.DB().NewQuery("UPDATE sharing_totp_links SET revoked=1 WHERE user={:user} AND seatId={:seat}").Bind(dbx.Params{"user": userID, "seat": seatID}).Execute(); err != nil {
+		return err
+	}
 	records, err := app.FindRecordsByFilter("shared_inbox_links", "user = {:user} && seatId = {:seat} && status = 'active'", "", 0, 0, map[string]any{"user": userID, "seat": seatID})
 	if err != nil {
 		return err

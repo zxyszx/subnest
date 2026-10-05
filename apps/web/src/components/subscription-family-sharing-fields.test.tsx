@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SubscriptionFamilySharingFields } from "@/components/subscription-family-sharing-fields";
 import type { FamilySharingFormState } from "@/types/subscription-form";
 
-const mocks = vi.hoisted(() => ({ mailboxes: vi.fn(), links: vi.fn(), create: vi.fn(), revoke: vi.fn() }));
+const mocks = vi.hoisted(() => ({ mailboxes: vi.fn(), links: vi.fn(), create: vi.fn(), revoke: vi.fn(), totpList: vi.fn() }));
+vi.mock("@/services/online-totp-service", () => ({ onlineTotpService: { list: mocks.totpList } }));
 vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
 vi.mock("@/i18n/I18nProvider", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
@@ -22,6 +23,7 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.mailboxes.mockResolvedValue({ items: [{ id: "mailbox-16", address: "netflix16@example.com" }] });
+    mocks.totpList.mockResolvedValue({ accounts: [{ id: "otp16", account: "NETFLIX16@example.com", platformName: "Netflix", accountNumber: 16, enabled: true }] });
   });
   it("keeps the master switch out of the focused editor", () => {
     render(<Harness showEnabledControl={false} />);
@@ -64,5 +66,20 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     await user.click(screen.getByRole("button", { name: "subscription.familySharing.generatePassword" }));
     expect(input).toHaveAttribute("type", "text");
     expect(input).not.toHaveValue("saved-password");
+  });
+  it("selects exactly one verification method and matches the existing 2FA account", async () => {
+    const user = userEvent.setup(); render(<Harness />);
+    await user.click(screen.getByRole("radio", { name: "sharing.totpMethod" }));
+    expect(screen.getByRole("radio", { name: "sharing.emailMethod" })).not.toBeChecked();
+    expect(await screen.findByText("sharing.totpMatchedNetflix #16")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText("subscription.familySharing.loginAccount"));
+    await user.type(screen.getByLabelText("subscription.familySharing.loginAccount"), "unmatched@example.com");
+    expect(screen.getByText("sharing.totpMissing")).toBeInTheDocument();
+  });
+  it("does not choose an arbitrary key when multiple records match", async () => {
+    mocks.totpList.mockResolvedValue({ accounts: [1,2].map((number) => ({ id: `otp${number}`, account: "netflix16@example.com", platformName: "Netflix", accountNumber: number, enabled: true })) });
+    const user = userEvent.setup(); render(<Harness />);
+    await user.click(screen.getByRole("radio", { name: "sharing.totpMethod" }));
+    expect(await screen.findByRole("combobox", { name: "sharing.totpRecord" })).toHaveValue("");
   });
 });

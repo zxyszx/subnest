@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import { assertDateOnly } from "@/lib/time/date-only";
-import { sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import { sharingSubscriptionExpiryDays, sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
+
+describe("subscription expiry is independent of seat expiry", () => {
+  const account = { nextBillingDate: "2026-10-03", subscription: { status: "active", billingCycle: "yearly" } } as SharingAccount;
+  it("shows an expired account even without assigned seats", () => {
+    expect(sharingSubscriptionExpiryDays(account, assertDateOnly("2026-10-04"))).toBe(-1);
+  });
+  it("does not call canceled or buyout subscriptions expired", () => {
+    expect(sharingSubscriptionExpiryDays({ ...account, subscription: { ...account.subscription, status: "cancelled" } }, assertDateOnly("2026-10-04"))).toBeNull();
+    expect(sharingSubscriptionExpiryDays({ ...account, subscription: { ...account.subscription, billingCycle: "one-time", oneTimeTermCount: null } }, assertDateOnly("2026-10-04"))).toBeNull();
+  });
+});
 
 describe("sharingUpcomingRenewalCount", () => {
   it("counts renewals from today through the next seven days", () => {

@@ -1,4 +1,6 @@
 import { apiFetch } from "@/lib/api-client";
+import { sharingTotpLinksResponseSchema } from "@renewlet/shared/schemas/sharing";
+import { apiEmptySuccessResponseSchema } from "@renewlet/shared/schemas/api";
 import {
   sharingAccountCreateSchema,
   sharingAccountDetailResponseSchema,
@@ -21,6 +23,13 @@ function signalInit(signal?: AbortSignal): RequestInit | undefined {
 }
 
 export const sharingService = {
+  async totpLinks(id: string, command?: { seatId?: string; reset?: boolean }) {
+    return apiFetch(`/api/app/sharing/accounts/${encodeURIComponent(id)}/totp-links`, sharingTotpLinksResponseSchema,
+      command ? { method: "POST", body: JSON.stringify(command) } : { cache: "no-store" });
+  },
+  async revokeTotpLink(id: string, linkId: string) {
+    await apiFetch(`/api/app/sharing/accounts/${encodeURIComponent(id)}/totp-links/${encodeURIComponent(linkId)}`, apiEmptySuccessResponseSchema, { method: "DELETE" });
+  },
   async list(signal?: AbortSignal): Promise<{ accounts: SharingAccount[]; total: number }> {
     return await apiFetch("/api/app/sharing/accounts", sharingAccountsResponseSchema, signalInit(signal));
   },

@@ -111,6 +111,7 @@ async function validateInboxSeat(env: Env, userId: string, seatId: string, addre
     JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
     WHERE seat.id=? AND seat.user_id=? AND seat.status='active' AND length(trim(seat.member_name))>0
       AND account.status='active' AND subscription.family_sharing_enabled=1
+      AND COALESCE(json_extract(subscription.extra_json,'$.familyVerification.mode'),'email')!='totp'
       AND lower(trim(subscription.sharing_login_account))=lower(trim(?))`).bind(seatId,userId,address).first<{seat_updated:string;account_updated:string;subscription_updated:string}>();
   if(!seat) throw new HttpError(403,"车位不存在、未启用合租或邮箱不匹配","SEAT_UNAVAILABLE");
   return seat;

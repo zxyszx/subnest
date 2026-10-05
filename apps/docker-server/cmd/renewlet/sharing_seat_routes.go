@@ -285,7 +285,8 @@ func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Re
 		if err != nil || seat.GetString("user") != userID {
 			return errors.New("sharing seat not found")
 		}
-		if body.Status != "active" || seat.GetString("memberName") != body.MemberName || seat.GetString("contact") != body.Contact || seat.GetString("contactType") != body.ContactType {
+		identityChanged := seat.GetString("memberName") != body.MemberName || seat.GetString("contact") != body.Contact || seat.GetString("contactType") != body.ContactType
+		if body.Status != "active" || identityChanged {
 			if err := revokeInboxSeatLinks(txApp, userID, seat.Id); err != nil {
 				return err
 			}
@@ -310,7 +311,21 @@ func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Re
 		if err := txApp.Save(seat); err != nil {
 			return err
 		}
-		return upsertSharingReceivable(txApp, userID, seat, body)
+		if err := upsertSharingReceivable(txApp, userID, seat, body); err != nil {
+			return err
+		}
+		account, err := findOwnedSharingAccount(txApp, userID, seat.GetString("sharingAccount"))
+		if err != nil {
+			return err
+		}
+		sub, err := txApp.FindRecordById("subscriptions", account.GetString("subscription"))
+		if err != nil {
+			return err
+		}
+		if body.Status == "active" && sub.GetBool("familySharingEnabled") && familyVerificationMode(sub) == "totp" && body.ExpiresAt >= todayDateOnly(time.Now(), schedulerSettingsForUser(txApp, userID).Timezone) {
+			return ensureFamilyTotpLink(txApp, userID, account.Id, seat.Id, identityChanged)
+		}
+		return nil
 	})
 }
 

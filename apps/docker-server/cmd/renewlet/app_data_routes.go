@@ -294,6 +294,7 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	}
 	previousFamilyEnabled := record.GetBool("familySharingEnabled")
 	previousMailboxAddress := record.GetString("sharingLoginAccount")
+	previousVerification := familyVerificationBindingKey(record)
 	if err := applySubscriptionWriteRequest(app, record, body, false); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
@@ -301,7 +302,11 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}
 	if err := app.RunInTransaction(func(txApp core.App) error {
-		if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || !strings.EqualFold(strings.TrimSpace(previousMailboxAddress), strings.TrimSpace(record.GetString("sharingLoginAccount")))) {
+		nextVerification := familyVerificationBindingKey(record)
+		if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || previousVerification != nextVerification || !strings.EqualFold(strings.TrimSpace(previousMailboxAddress), strings.TrimSpace(record.GetString("sharingLoginAccount")))) {
+			if _, err := txApp.DB().NewQuery("UPDATE sharing_totp_links SET revoked=1 WHERE user={:user} AND accountId IN (SELECT id FROM sharing_accounts WHERE user={:user} AND subscription={:sub})").Bind(dbx.Params{"user": record.GetString("user"), "sub": record.Id}).Execute(); err != nil {
+				return err
+			}
 			if err := revokeInboxSubscriptionLinks(txApp, record.GetString("user"), record.Id); err != nil {
 				return err
 			}

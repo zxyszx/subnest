@@ -12,6 +12,7 @@ import {
   subscriptionsListQuerySchema,
   subscriptionUpdateBodySchema,
 } from "@renewlet/shared/schemas/subscriptions";
+import { familyTotpProjectionStatements, familyVerificationConfig } from "./sharing-totp-links";
 import { boolToInt, getSettings, getSubscription, newId, nowIso, parseJsonObject, parseStringArray, SUBSCRIPTION_COLUMNS, subscriptionRowValues, toApiSubscription, toApiSubscriptionCollectionItem } from "./db";
 import { listSubscriptionsForQuery, parsePrivateSubscriptionCursor, privateSubscriptionCursor } from "./subscription-list-filters";
 import { subscriptionCollectionQueryInput } from "./subscription-query";
@@ -154,7 +155,8 @@ export async function updateSubscription(request: Request, env: Env, id: string)
   );
   const derived = subscriptionDerivedMutationPlan(env, { before: existing, after: merged, kind: "update" }, settings);
   const sharingStatements = await sharingProjectionStatements(env, merged, existing, timestamp);
-  if (existing.family_sharing_enabled && (!merged.family_sharing_enabled || existing.sharing_login_account !== merged.sharing_login_account)) {
+  if (existing.family_sharing_enabled && (!merged.family_sharing_enabled || existing.sharing_login_account !== merged.sharing_login_account || JSON.stringify(familyVerificationConfig(existing))!==JSON.stringify(familyVerificationConfig(merged)))) {
+    sharingStatements.unshift(env.DB.prepare("UPDATE sharing_totp_links SET revoked=1 WHERE user_id=? AND account_id IN (SELECT id FROM sharing_accounts WHERE user_id=? AND subscription_id=?)").bind(auth.user.id,auth.user.id,id));
     sharingStatements.unshift(env.DB.prepare("UPDATE shared_inbox_links SET status='revoked',revoked_at=?,updated_at=? WHERE user_id=? AND seat_id IN (SELECT seat.id FROM sharing_seats seat JOIN sharing_accounts account ON account.id=seat.sharing_account_id WHERE account.user_id=? AND account.subscription_id=?)").bind(timestamp,timestamp,auth.user.id,auth.user.id,id));
   }
   await env.DB.batch([...derived.beforeFact, factStatement, ...sharingStatements, ...derived.afterFact]);
@@ -536,6 +538,7 @@ async function sharingProjectionStatements(
     UPDATE sharing_seats SET status = 'archived', updated_at = ?
     WHERE user_id = ? AND sharing_account_id = ? AND seat_number > ? AND status = 'vacant'
   `).bind(timestamp, row.user_id, accountId, capacity));
+  statements.push(...await familyTotpProjectionStatements(env, row, accountId));
   return statements;
 }
 

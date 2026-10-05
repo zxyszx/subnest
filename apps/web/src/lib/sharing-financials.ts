@@ -3,6 +3,12 @@ import { daysBetweenDateOnly, type DateOnly } from "@/lib/time/date-only";
 
 type CurrencyConvert = (amount: number | string, fromCurrency: string, toCurrency: string) => number;
 
+export function sharingSubscriptionExpiryDays(account: SharingAccount, today: DateOnly): number | null {
+  if (!["active", "trial", "expired"].includes(account.subscription.status)
+    || (account.subscription.billingCycle === "one-time" && !account.subscription.oneTimeTermCount)) return null;
+  return daysBetweenDateOnly(today, account.nextBillingDate);
+}
+
 export function sharingMonthlyRevenue(
   account: SharingAccount,
   targetCurrency: string,

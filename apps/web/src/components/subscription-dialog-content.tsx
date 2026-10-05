@@ -225,6 +225,13 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     if (props.mode === "edit" && !props.subscription) return;
     setSubmitting(true);
     try {
+      if (submissionFormData.familySharing.enabled && submissionFormData.familySharing.verificationMode) {
+        if (submissionFormData.familySharing.verificationMode === "totp" && submission.familySharing) submission.familySharing.verificationLink = "";
+        submission.extra = { ...editSubscription?.extra, familyVerification: {
+          mode: submissionFormData.familySharing.verificationMode,
+          totpAccountId: submissionFormData.familySharing.verificationMode === "totp" ? submissionFormData.familySharing.totpAccountId : "",
+        } };
+      }
       await props.onSubmit(submission);
       setFormErrors({});
       props.onRequestClose();

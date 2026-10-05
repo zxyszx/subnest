@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 import { Loader2 } from "lucide-react";
 import { SeatInboxLinksDialog } from "@/components/seat-inbox-links-dialog";
+import { SharingTotpLinksDialog } from "@/components/sharing-totp-links-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { authClient } from "@/lib/auth-client";
@@ -10,6 +11,11 @@ import type { MessageKey } from "@/i18n/messages";
 import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
 
 export function SharingInboxLinksDialog({ account, onClose }: { account: SharingAccount; onClose: () => void }) {
+  if (account.verificationMode === "totp") return <SharingTotpLinksDialog account={account} onClose={onClose} />;
+  return <MailboxLinksDialog account={account} onClose={onClose} />;
+}
+
+function MailboxLinksDialog({ account, onClose }: { account: SharingAccount; onClose: () => void }) {
   const { t } = useI18n();
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user.role === "admin";
