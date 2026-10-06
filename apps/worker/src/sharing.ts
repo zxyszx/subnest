@@ -13,6 +13,7 @@ import { decryptSharingCredential } from "./sharing-credential";
 import { HttpError, readJson, requestLocale, successJson } from "./http";
 import { newId, nowIso } from "./db";
 import type { Env, SubscriptionRow } from "./types";
+import { familyTotpSeatStatement } from "./sharing-totp-links";
 
 interface SharingAccountRow {
   id: string;
@@ -164,6 +165,11 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
         currency = excluded.currency, status = excluded.status, paid_at = excluded.paid_at, updated_at = excluded.updated_at
     `).bind(receivableId, auth.user.id, account.id, id, body.startDate, body.expiresAt, body.startDate, amount,
       paid ? amount : "0", body.currency, paid ? "paid" : "pending", paid ? timestamp : null, timestamp, timestamp));
+  }
+  if (body.status === "active") {
+    const subscription = await subscriptionForAccount(env, account);
+    const linkStatement = await familyTotpSeatStatement(env, subscription, account.id, { ...seat, member_name: body.memberName, contact: body.contact || null, contact_type: body.contactType || null, expires_at: body.expiresAt || null, status: body.status }, seat.member_name !== body.memberName || (seat.contact ?? "") !== body.contact || (seat.contact_type ?? "") !== body.contactType);
+    if (linkStatement) statements.push(linkStatement);
   }
   await env.DB.batch(statements);
   return readSharingAccountDetail(request, env, account.id);

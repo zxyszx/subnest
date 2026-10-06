@@ -32,8 +32,9 @@ const token=(link:SharingTotpLink)=>link.path.replace("/otp/","");
 
 describe("family 2FA scopes",()=> {
  beforeEach(()=>{auth.userId="owner";});
- it("creates only a default token without exposing the key",async()=>{
-  const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(1);expect(links[0]!.expiresAt).toBeNull();
+ it("creates a permanent default token and independent occupied-seat tokens without exposing the key",async()=>{
+  const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(3);expect(links.find(link=>!link.seatId)!.expiresAt).toBeNull();
+  expect(links.filter(link=>link.seatId).every(link=>Boolean(link.expiresAt))).toBe(true);
   expect(JSON.stringify(links)).not.toContain("private-key");for(const link of links) expect(await resolvePublicSharingTotp(env,token(link))).toMatchObject({id:"otp"});
  });
  it("upgrades only live default grants without reviving revoked or expired grants",async()=>{
@@ -53,10 +54,11 @@ describe("family 2FA scopes",()=> {
   await revokeSharingTotpLink(request(),env,"account",rotated.links[0]!.id);await generate(env);
   expect(await resolvePublicSharingTotp(env,token(rotated.links[0]!))).toBeNull();
  });
- it("checks ownership, key ownership, disabled family sharing and blocks new seat links",async()=>{
+ it("checks ownership, key ownership, disabled family sharing and allows valid seat links",async()=>{
   const {env,database}=fixture();const {links}=await generate(env);auth.userId="other";
   await expect(sharingTotpLinks(request(),env,"account")).rejects.toThrow("SHARING_ACCOUNT_NOT_FOUND");auth.userId="owner";
-  await expect(sharingTotpLinks(request({seatId:"seat1"}),env,"account")).rejects.toThrow("SEAT_LINKS_UNAVAILABLE");
+  const seatLinks=await readSuccessData<{links:SharingTotpLink[]}>(await sharingTotpLinks(request({seatId:"seat1",reset:true}),env,"account"));
+  expect(seatLinks.links.find(link=>link.seatId==="seat1")?.valid).toBe(true);
   database.exec("UPDATE subscriptions SET family_sharing_enabled=0 WHERE id='sub'");
   await expect(sharingTotpLinks(request(),env,"account")).rejects.toThrow("2FA_SHARING_DISABLED");
   expect(await resolvePublicSharingTotp(env,token(links[0]!))).toBeNull();

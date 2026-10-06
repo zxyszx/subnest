@@ -18,9 +18,9 @@ describe("SharingInboxLinksDialog", () => {
     mocks.links.mockResolvedValue({ links: [] });
   });
   it("matches the selected account mailbox case insensitively", async () => {
+    mocks.links.mockResolvedValue({ links: [{ mailboxId: "target", status: "active", folderIds: ["inbox"], shortUrl: "https://example.test/s/generic" }] });
     render(<MemoryRouter><SharingInboxLinksDialog account={account} onClose={vi.fn()} /></MemoryRouter>);
-    expect(await screen.findByText(/请先在共享收件箱/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "设置邮箱通用链接" })).toHaveAttribute("href", "/shared-inboxes");
+    expect(await screen.findByText("target-account · target@example.test")).toBeInTheDocument();
   });
   it("opens the 2FA dialog without calling mailbox APIs", () => {
     render(<SharingInboxLinksDialog account={{ ...account, verificationMode: "totp" }} onClose={vi.fn()} />);
@@ -46,15 +46,14 @@ describe("SharingInboxLinksDialog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(mocks.links).not.toHaveBeenCalled();
   });
-  it("shows only the configured generic link, not seat or expired links", async () => {
+  it("opens the seat link manager only when a configured generic link exists", async () => {
     mocks.links.mockResolvedValue({ links: [
       { mailboxId: "target", seatId: "seat", status: "active", folderIds: ["inbox"], shortUrl: "https://example.test/s/seat" },
       { mailboxId: "target", status: "active", folderIds: [], shortUrl: "https://example.test/s/unscoped" },
       { mailboxId: "target", status: "active", folderIds: ["inbox"], shortUrl: "https://example.test/s/generic" },
     ] });
     render(<MemoryRouter><SharingInboxLinksDialog account={account} onClose={vi.fn()} /></MemoryRouter>);
-    expect(await screen.findByText("https://example.test/s/generic")).toBeInTheDocument();
-    expect(screen.queryByText("https://example.test/s/seat")).not.toBeInTheDocument();
-    expect(screen.queryByText("https://example.test/s/unscoped")).not.toBeInTheDocument();
+    expect(await screen.findByText("target-account · target@example.test")).toBeInTheDocument();
+    expect(screen.queryByText(/请先在共享收件箱/)).not.toBeInTheDocument();
   });
 });

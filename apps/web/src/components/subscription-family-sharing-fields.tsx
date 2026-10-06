@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, RefreshCw, UsersRound, X } from "lucide-react";
+import { Copy, Eye, EyeOff, Loader2, RefreshCw, Settings2, UsersRound, X } from "lucide-react";
+import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
@@ -12,7 +13,7 @@ import { subscriptionService } from "@/services/subscription-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { toast } from "@/components/ui/sonner";
 import { generateFamilySharingPassword } from "@/lib/family-sharing-password";
-import { newszxcnService, type NewSzxcnMailbox } from "@/services/newszxcn-service";
+import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
 import { onlineTotpService } from "@/services/online-totp-service";
 import type { OnlineTotpAccount } from "@renewlet/shared/schemas/online-totp";
 
@@ -29,23 +30,43 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
+  const [inboxLinks, setInboxLinks] = useState<SharedInboxLink[]>([]);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [inboxFailed, setInboxFailed] = useState(false);
+  const [inboxNow, setInboxNow] = useState(Date.now);
   const [totpAccounts, setTotpAccounts] = useState<OnlineTotpAccount[]>([]);
   const [totpLoading, setTotpLoading] = useState(false);
   const [totpFailed, setTotpFailed] = useState(false);
   const [totpLoaded, setTotpLoaded] = useState(false);
   const mode = value.verificationMode ?? "email";
+  const matchedMailbox = mailboxes.find((mailbox) => mailbox.address.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
+  const matchedInboxLink = matchedMailbox ? inboxLinks.find((link) => link.mailboxId === matchedMailbox.id && !link.seatId && link.status === "active" && link.folderIds.length > 0 && (!link.expiresAt || Date.parse(link.expiresAt) > inboxNow)) : undefined;
+  const inboxSetupRequired = Boolean(showEnabledControl && value.enabled && mode === "email");
+  const inboxSetupPending = inboxSetupRequired && (inboxLoading || inboxFailed || !matchedMailbox || !matchedInboxLink);
   const totpMatches = totpAccounts.filter((account) => account.enabled && account.account.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => onChange({ ...value, [key]: next });
 
   useEffect(() => {
-    onShareSetupPendingChange?.(false);
-  }, [onShareSetupPendingChange]);
+    onShareSetupPendingChange?.(inboxSetupPending);
+  }, [inboxSetupPending, onShareSetupPendingChange]);
   useEffect(() => {
     if (!value.enabled || mode !== "email") return;
     let cancelled = false;
-    void newszxcnService.mailboxes().then((result) => {
-      if (!cancelled) setMailboxes(result.items);
-    }).catch(() => { if (!cancelled) setMailboxes([]); });
+    setInboxLoading(true);
+    setInboxFailed(false);
+    void Promise.all([newszxcnService.mailboxes(), newszxcnService.links()]).then(([mailboxResult, linkResult]) => {
+      if (!cancelled) {
+        setMailboxes(mailboxResult.items);
+        setInboxLinks(linkResult.links);
+        setInboxNow(Date.now());
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setMailboxes([]);
+        setInboxLinks([]);
+        setInboxFailed(true);
+      }
+    }).finally(() => { if (!cancelled) setInboxLoading(false); });
     return () => { cancelled = true; };
   }, [value.enabled, mode]);
   useEffect(() => {
@@ -110,6 +131,12 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       </div>}</FormField>
       {mode === "totp" ? <div className="grid gap-2 text-xs" role="status">
         {totpLoading ? <span className="text-muted-foreground">{t("sharing.totpMatching")}</span> : totpFailed ? <span className="text-destructive">{t("sharing.totpLoadError")}</span> : totpMatches.length === 0 ? <span className="text-destructive">{t("sharing.totpMissing")}</span> : totpMatches.length === 1 ? <span className="text-primary">{t("sharing.totpMatched")}{totpMatches[0]!.platformName} #{totpMatches[0]!.accountNumber}</span> : <label className="grid gap-1">{t("sharing.totpSelect")}<select aria-label={t("sharing.totpRecord")} className="h-9 rounded-md border border-border bg-background px-2" value={value.totpAccountId ?? ""} onChange={(event) => update("totpAccountId", event.target.value)}><option value="">{t("sharing.totpSelectPlaceholder")}</option>{totpMatches.map((account) => <option key={account.id} value={account.id}>{account.platformName} #{account.accountNumber} · {account.serviceName}</option>)}</select></label>}
+      </div> : null}
+      {showEnabledControl && mode === "email" ? <div className="flex flex-col gap-3 rounded-md border border-border bg-muted/25 p-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+        <p className={matchedInboxLink ? "text-xs text-primary" : inboxFailed || (!inboxLoading && !matchedMailbox) ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+          {inboxLoading ? t("sharing.loadingLinks") : inboxFailed ? t("sharing.loadLinksFailed") : !matchedMailbox ? t("sharing.mailboxNotMatched") : matchedInboxLink ? `${t("sharing.linkFolders")}：${matchedInboxLink.folderIds.length}` : t("sharing.configureGenericMailbox")}
+        </p>
+        <Button type="button" variant="outline" size="sm" asChild className="shrink-0"><Link to="/shared-inboxes"><Settings2 className="h-4 w-4" />{t("sharing.manageGenericMailbox")}</Link></Button>
       </div> : null}
       {!showEnabledControl && mode === "email" ? <FormField id={id("familySharingVerificationLink")} label="验证码链接">{(field) => <div className="relative">
         <Input id={field.id} type="url" value={value.verificationLink} onChange={(event) => update("verificationLink", event.target.value)} placeholder={t("subscription.familySharing.verificationLinkPlaceholder")} aria-describedby={field.describedBy} className="pr-22" />

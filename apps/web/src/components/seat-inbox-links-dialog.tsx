@@ -28,21 +28,30 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
   boundAccount?: SharingAccount;
 }) {
   const { t } = useI18n();
+  const [loadedAt] = useState(Date.now);
+  const [now, setNow] = useState(Date.now);
+  const initialGenericLink = initialLinks.find((link) => !link.seatId && link.mailboxId === mailbox.id && link.status === "active" && (!link.expiresAt || Date.parse(link.expiresAt) > loadedAt));
   const [accounts, setAccounts] = useState<SharingAccount[]>([]);
   const [accountId, setAccountId] = useState("");
   const [seats, setSeats] = useState<SharingSeat[]>([]);
   const [folders, setFolders] = useState<NewSzxcnFolder[]>([]);
-  const [folderIds, setFolderIds] = useState<string[]>([]);
-  const [windowMinutes, setWindowMinutes] = useState(30);
+  const [folderIds, setFolderIds] = useState<string[]>(() => initialGenericLink?.folderIds ?? []);
+  const [windowMinutes, setWindowMinutes] = useState(() => initialGenericLink?.windowMinutes ?? 30);
   const [expiry, setExpiry] = useState<Record<string, string>>({});
   const [links, setLinks] = useState(initialLinks);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
-  const [now, setNow] = useState(Date.now);
   const [confirmation, setConfirmation] = useState<{ seat: SharingSeat; link: SharedInboxLink; action: "reset" | "revoke" } | null>(null);
   const [disableConfirmation, setDisableConfirmation] = useState(false);
-  useEffect(() => { setLinks(initialLinks); }, [initialLinks]);
+  useEffect(() => {
+    setLinks(initialLinks);
+    const generic = initialLinks.find((link) => !link.seatId && link.mailboxId === mailbox.id && link.status === "active" && (!link.expiresAt || Date.parse(link.expiresAt) > loadedAt));
+    if (generic) {
+      setFolderIds(generic.folderIds);
+      setWindowMinutes(generic.windowMinutes);
+    }
+  }, [initialLinks, mailbox.id, loadedAt]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 15000);
     return () => window.clearInterval(timer);

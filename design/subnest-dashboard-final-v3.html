@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SubNest 经营仪表盘</title>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7f9;
+      --surface: #ffffff;
+      --line: #e2e8ed;
+      --line-soft: #edf1f4;
+      --text: #17202d;
+      --muted: #738095;
+      --muted-2: #98a3b3;
+      --green: #0ab77d;
+      --green-dark: #079868;
+      --green-soft: #e9f9f3;
+      --blue: #3285ee;
+      --blue-soft: #edf5ff;
+      --amber: #f59e0b;
+      --amber-soft: #fff6e5;
+      --red: #ef4444;
+      --red-soft: #fff0f0;
+      --purple: #8b5cf6;
+      --sidebar: 216px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; min-height: 100%; background: var(--bg); }
+    body {
+      font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      font-size: 14px;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app { width: 1600px; height: 1000px; overflow: hidden; display: grid; grid-template-columns: var(--sidebar) 1fr; background: var(--bg); }
+    .sidebar {
+      height: 1000px; background: #fbfcfd; border-right: 1px solid var(--line);
+      padding: 24px 14px 18px; display: flex; flex-direction: column;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 0 10px 25px; }
+    .logo { width: 38px; height: 38px; border-radius: 9px; background: #111925; position: relative; box-shadow: 0 5px 12px rgba(15,23,42,.12); }
+    .logo::before, .logo::after { content: ""; position: absolute; left: 11px; height: 3px; border-radius: 2px; }
+    .logo::before { top: 12px; width: 16px; background: #48d9a9; }
+    .logo::after { top: 21px; width: 10px; background: #fff; }
+    .brand-name { font-size: 20px; font-weight: 760; }
+    .version { margin-left: auto; color: #7890b3; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 3px 7px; font-size: 10px; }
+    .nav { display: flex; flex-direction: column; gap: 5px; }
+    .nav-item { height: 46px; border: 0; background: transparent; color: #5d6b80; border-radius: 7px; display: flex; align-items: center; gap: 13px; padding: 0 14px; font-weight: 560; position: relative; }
+    .nav-item svg { width: 19px; height: 19px; stroke-width: 1.8; }
+    .nav-item.active { background: var(--green-soft); color: var(--green-dark); font-weight: 680; }
+    .nav-item.active::before { content: ""; position: absolute; left: 0; width: 3px; height: 22px; background: var(--green); border-radius: 0 3px 3px 0; }
+    .nav-sep { height: 1px; background: var(--line-soft); margin: 13px 10px; }
+    .nav-badge { margin-left: auto; min-width: 20px; height: 20px; border-radius: 10px; display: grid; place-items: center; background: var(--amber-soft); color: #c57300; font-size: 11px; }
+    .sidebar-foot { margin-top: auto; padding: 0 8px; }
+    .system-status { display: flex; align-items: center; gap: 8px; color: #627087; font-size: 12px; padding: 12px 8px; border-top: 1px solid var(--line-soft); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+    .collapse { width: 100%; height: 36px; border: 1px solid var(--line); background: #fff; color: #6e7b8f; border-radius: 7px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    .shell { min-width: 0; height: 1000px; overflow: hidden; }
+    .topbar { height: 68px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--line); padding: 0 28px; display: flex; align-items: center; gap: 14px; }
+    .crumb { color: #8692a5; font-size: 13px; }
+    .top-spacer { flex: 1; }
+    .month { height: 38px; min-width: 122px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #334155; display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 620; }
+    .month svg, .icon-btn svg { width: 17px; height: 17px; }
+    .search { width: 238px; height: 38px; background: #f7f9fb; border: 1px solid var(--line); border-radius: 7px; display: flex; align-items: center; gap: 9px; padding: 0 12px; color: #97a2b1; }
+    .search svg { width: 17px; }
+    .icon-btn { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #627087; display: grid; place-items: center; position: relative; }
+    .bell-dot { position: absolute; top: -4px; right: -3px; min-width: 17px; height: 17px; border-radius: 9px; color: #fff; background: var(--red); display: grid; place-items: center; font-size: 10px; border: 2px solid #fff; }
+    .create { height: 38px; background: var(--green); border: 0; color: #fff; border-radius: 7px; padding: 0 10px 0 16px; display: flex; align-items: center; gap: 11px; font-weight: 680; box-shadow: 0 4px 10px rgba(10,183,125,.18); }
+    .create-main { display: flex; align-items: center; gap: 7px; }
+    .create svg { width: 17px; height: 17px; }
+    .create-divider { width: 1px; height: 20px; background: rgba(255,255,255,.35); }
+    .user { display: flex; align-items: center; gap: 9px; margin-left: 2px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #173e35; color: #fff; display: grid; place-items: center; font-weight: 700; }
+    .user-name { font-size: 12px; font-weight: 630; }
+
+    main { height: 932px; overflow: hidden; padding: 24px 28px 26px; }
+    .heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+    h1 { margin: 0; font-size: 25px; line-height: 1.2; font-weight: 780; }
+    .subtitle { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .updated { color: #8a96a7; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .updated svg { width: 14px; height: 14px; }
+
+    .metrics { height: 100px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+    .metric { padding: 17px 20px; position: relative; }
+    .metric + .metric { border-left: 1px solid var(--line-soft); }
+    .metric-title { color: #68758a; font-size: 12px; display: flex; align-items: center; gap: 7px; }
+    .metric-title svg { width: 15px; height: 15px; }
+    .metric-value { margin-top: 8px; font-size: 25px; line-height: 1; font-weight: 760; }
+    .metric-value.green { color: #079e6c; }
+    .metric-note { margin-top: 7px; font-size: 11px; color: #8793a4; }
+    .up { color: var(--green-dark); font-weight: 650; }
+
+    .attention { height: 64px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; overflow: hidden; }
+    .attention-item { display: flex; align-items: center; gap: 12px; padding: 0 18px; position: relative; }
+    .attention-item + .attention-item { border-left: 1px solid var(--line-soft); }
+    .attention-icon { width: 34px; height: 34px; border-radius: 7px; display: grid; place-items: center; }
+    .attention-icon svg { width: 18px; height: 18px; stroke-width: 2; }
+    .attention-icon.red { color: var(--red); background: var(--red-soft); }
+    .attention-icon.amber { color: var(--amber); background: var(--amber-soft); }
+    .attention-icon.blue { color: var(--blue); background: var(--blue-soft); }
+    .attention-icon.green { color: var(--green); background: var(--green-soft); }
+    .attention-label { color: #707d90; font-size: 11px; }
+    .attention-value { margin-top: 3px; font-size: 17px; font-weight: 740; }
+    .attention-arrow { margin-left: auto; width: 16px; color: #a6b0bd; }
+
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+    .renewals { height: 431px; margin-bottom: 12px; overflow: hidden; }
+    .panel-head { height: 58px; padding: 0 17px; display: flex; align-items: center; border-bottom: 1px solid var(--line-soft); }
+    .panel-title { font-size: 16px; font-weight: 740; }
+    .panel-count { color: var(--muted); font-weight: 500; }
+    .tabs { display: flex; align-items: stretch; gap: 24px; height: 58px; margin-left: 28px; }
+    .tab { border: 0; background: transparent; color: #708097; padding: 2px 2px 0; position: relative; font-weight: 570; }
+    .tab.active { color: var(--green-dark); font-weight: 700; }
+    .tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--green); }
+    .panel-tools { margin-left: auto; display: flex; gap: 8px; }
+    .mini-search { width: 196px; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; color: #98a3b3; background: #fafbfc; font-size: 12px; }
+    .mini-search svg { width: 15px; }
+    .tool-button { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: #58677d; padding: 0 10px; display: flex; align-items: center; gap: 7px; font-size: 12px; }
+    .tool-button svg { width: 15px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead { height: 38px; background: #f7f9fa; color: #65758b; font-size: 12px; }
+    th { text-align: left; font-weight: 630; padding: 0 12px; }
+    td { height: 55px; padding: 0 12px; border-top: 1px solid var(--line-soft); vertical-align: middle; }
+    tbody tr:first-child td { border-top: 0; }
+    tbody tr:hover { background: #fbfdfc; }
+    .service { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .service-logo { width: 32px; height: 32px; border: 1px solid #dfe5ea; border-radius: 7px; display: grid; place-items: center; font-size: 15px; font-weight: 800; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04); flex: 0 0 auto; }
+    .service-logo.netflix { color: #e50914; font-size: 22px; }
+    .service-logo.openai { color: #fff; background: #17a47a; border-color: #17a47a; }
+    .service-logo.prime { color: #fff; background: #1788dc; border-color: #1788dc; font-size: 9px; }
+    .service-logo.server { color: #fff; background: #17243a; border-color: #17243a; }
+    .service-name { font-weight: 670; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .service-sub { margin-top: 2px; font-size: 10px; color: #8b96a6; }
+    .tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 5px; font-size: 11px; font-weight: 620; }
+    .tag.share { color: #07885e; background: var(--green-soft); }
+    .tag.sub { color: #7152c4; background: #f2edff; }
+    .tag.vps { color: #2477cf; background: var(--blue-soft); }
+    .due { font-weight: 640; }
+    .due.overdue { color: var(--red); }
+    .due.soon { color: #d68100; }
+    .secondary { display: block; margin-top: 3px; color: #7d8a9d; font-size: 11px; }
+    .money { font-weight: 670; }
+    .direction { display: inline-flex; margin-right: 5px; font-size: 10px; color: #758197; font-weight: 560; }
+    .state { display: inline-flex; height: 22px; align-items: center; gap: 5px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 650; }
+    .state::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .state.red { color: #d83333; background: var(--red-soft); }
+    .state.amber { color: #ca7900; background: var(--amber-soft); }
+    .state.blue { color: #4b6c95; background: #f0f4f8; }
+    .action { height: 29px; border-radius: 5px; padding: 0 10px; font-size: 11px; font-weight: 650; }
+    .action.primary { color: #fff; background: var(--green); border: 1px solid var(--green); }
+    .action.secondary-btn { color: #4f6076; background: #fff; border: 1px solid #dce3e9; }
+    .row-actions { display: flex; align-items: center; gap: 7px; }
+    .more { width: 28px; height: 28px; border: 0; background: transparent; color: #7b8798; display: grid; place-items: center; }
+    .more svg { width: 16px; }
+
+    .bottom-grid { height: 189px; display: grid; grid-template-columns: .9fr 1.1fr; gap: 12px; }
+    .bottom-panel { overflow: hidden; }
+    .bottom-head { height: 49px; padding: 0 17px; display: flex; align-items: center; border-bottom: 1px solid var(--line-soft); }
+    .bottom-head .panel-title { font-size: 15px; }
+    .period { margin-left: 7px; color: #8490a2; font-size: 11px; font-weight: 500; }
+    .total { margin-left: auto; color: #6e7b8f; font-size: 11px; }
+    .total strong { color: var(--text); font-size: 15px; margin-left: 7px; }
+    .text-link { color: var(--blue); font-weight: 650; display: flex; align-items: center; gap: 3px; }
+    .text-link svg { width: 14px; height: 14px; }
+    .bars { padding: 13px 18px; display: grid; gap: 11px; }
+    .bar-row { display: grid; grid-template-columns: 88px 1fr 74px 36px; align-items: center; gap: 10px; font-size: 11px; }
+    .bar-track { height: 8px; border-radius: 4px; background: #edf1f4; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; }
+    .bar-amount { text-align: right; font-weight: 650; }
+    .bar-pct { color: #8490a2; }
+    .ranking { font-size: 11px; }
+    .ranking thead { height: 31px; }
+    .ranking td { height: 27px; padding-top: 0; padding-bottom: 0; }
+    .rank-service { display: flex; align-items: center; gap: 6px; font-weight: 620; }
+    .mini-logo { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font-size: 9px; font-weight: 800; border: 1px solid #e0e6eb; }
+    .profit { color: #079e6c; font-weight: 670; }
+    .loss { color: var(--red); font-weight: 670; }
+    .margin { display: flex; align-items: center; gap: 7px; }
+    .margin-track { width: 42px; height: 5px; border-radius: 3px; background: #edf1f4; overflow: hidden; }
+    .margin-fill { height: 100%; background: var(--green); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="logo"></div><span class="brand-name">SubNest</span><span class="version">v0.3.6</span></div>
+      <nav class="nav">
+        <button class="nav-item active"><i data-lucide="layout-dashboard"></i><span>仪表盘</span></button>
+        <button class="nav-item"><i data-lucide="list"></i><span>订阅列表</span><span class="nav-badge">34</span></button>
+        <button class="nav-item"><i data-lucide="users"></i><span>合租管理</span></button>
+        <button class="nav-item"><i data-lucide="shield-check"></i><span>在线 2FA</span></button>
+        <button class="nav-item"><i data-lucide="calendar-days"></i><span>日历</span></button>
+        <button class="nav-item"><i data-lucide="chart-no-axes-column"></i><span>统计分析</span></button>
+        <div class="nav-sep"></div>
+        <button class="nav-item"><i data-lucide="settings"></i><span>设置</span></button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="system-status"><span class="status-dot"></span><span>所有服务运行正常</span></div>
+        <button class="collapse"><i data-lucide="panel-left-close" style="width:16px"></i><span>收起导航</span></button>
+      </div>
+    </aside>
+
+    <section class="shell">
+      <header class="topbar">
+        <span class="crumb">工作台 / 经营总览</span>
+        <div class="top-spacer"></div>
+        <button class="month"><i data-lucide="calendar"></i><span>2026 年 9 月</span><i data-lucide="chevron-down"></i></button>
+        <div class="search"><i data-lucide="search"></i><span>全局搜索订阅、账号或备注...</span></div>
+        <button class="icon-btn"><i data-lucide="bell"></i><span class="bell-dot">3</span></button>
+        <button class="create"><span class="create-main"><i data-lucide="plus"></i>新建</span><span class="create-divider"></span><i data-lucide="chevron-down"></i></button>
+        <div class="user"><span class="avatar">S</span><span class="user-name">shenzhenho</span><i data-lucide="chevron-down" style="width:14px;color:#8490a2"></i></div>
+      </header>
+
+      <main>
+        <div class="heading">
+          <div><h1>经营总览</h1><div class="subtitle">订阅续费（含 VPS）、合租收款与经营成本统一管理</div></div>
+          <div class="updated"><i data-lucide="refresh-cw"></i>数据更新于 2 分钟前</div>
+        </div>
+
+        <section class="metrics">
+          <div class="metric"><div class="metric-title"><i data-lucide="credit-card"></i>总支出</div><div class="metric-value">¥1,214.46</div><div class="metric-note">较上月 <span class="up">-12% ↓</span></div></div>
+          <div class="metric"><div class="metric-title"><i data-lucide="receipt-text"></i>合租应收</div><div class="metric-value">¥1,438.00</div><div class="metric-note">本月共 25 个合租账号</div></div>
+          <div class="metric"><div class="metric-title"><i data-lucide="circle-check-big"></i>已收</div><div class="metric-value">¥980.00</div><div class="metric-note">收款率 68% · 待收 ¥458.00</div></div>
+          <div class="metric"><div class="metric-title"><i data-lucide="badge-dollar-sign"></i>预计合租净利润</div><div class="metric-value green">¥455.54</div><div class="metric-note">应收口径 · 已收口径 -¥2.46</div></div>
+        </section>
+
+        <section class="attention">
+          <div class="attention-item"><span class="attention-icon red"><i data-lucide="circle-alert"></i></span><div><div class="attention-label">已过期 1 · 今日到期 2</div><div class="attention-value">3 项待处理</div></div><i class="attention-arrow" data-lucide="chevron-right"></i></div>
+          <div class="attention-item"><span class="attention-icon amber"><i data-lucide="clock-3"></i></span><div><div class="attention-label">未来 1–3 天</div><div class="attention-value">4 项</div></div><i class="attention-arrow" data-lucide="chevron-right"></i></div>
+          <div class="attention-item"><span class="attention-icon blue"><i data-lucide="calendar-clock"></i></span><div><div class="attention-label">未来 4–7 天</div><div class="attention-value">5 项</div></div><i class="attention-arrow" data-lucide="chevron-right"></i></div>
+          <div class="attention-item"><span class="attention-icon green"><i data-lucide="wallet-cards"></i></span><div><div class="attention-label">未来 7 天待续费金额</div><div class="attention-value">¥2,498.63</div></div><i class="attention-arrow" data-lucide="chevron-right"></i></div>
+        </section>
+
+        <section class="panel renewals">
+          <div class="panel-head">
+            <div class="panel-title">最近到期 <span class="panel-count">(12)</span></div>
+            <div class="tabs"><button class="tab active">全部 12</button><button class="tab">普通订阅 7</button><button class="tab">合租 4</button><button class="tab">VPS 1</button></div>
+            <div class="panel-tools"><div class="mini-search"><i data-lucide="search"></i>筛选最近到期</div><button class="tool-button"><i data-lucide="sliders-horizontal"></i>筛选</button><button class="tool-button"><i data-lucide="arrow-down-narrow-wide"></i>到期最近<i data-lucide="chevron-down"></i></button></div>
+          </div>
+          <table>
+            <colgroup><col style="width:24%"><col style="width:9%"><col style="width:15%"><col style="width:14%"><col style="width:13%"><col style="width:13%"><col style="width:12%"></colgroup>
+            <thead><tr><th>订阅 / 账号</th><th>类型</th><th>席位 / 备注</th><th>到期时间</th><th>金额</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td><div class="service"><span class="service-logo openai">◎</span><div><div class="service-name">ChatGPT Plus</div><div class="service-sub">账号 #1 · 张三</div></div></div></td><td><span class="tag share">合租</span></td><td>1 号位 · 待收款</td><td><span class="due overdue">2026-09-26</span><span class="secondary">已过期 2 天</span></td><td><span class="direction">应收</span><span class="money">¥20.00</span></td><td><span class="state red">已过期</span></td><td><div class="row-actions"><button class="action primary">联系车友</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+              <tr><td><div class="service"><span class="service-logo netflix">N</span><div><div class="service-name">Netflix</div><div class="service-sub">账号 #8 · 5 / 5 席位</div></div></div></td><td><span class="tag share">合租</span></td><td>整组续费</td><td><span class="due overdue">2026-09-28</span><span class="secondary">今天到期</span></td><td><span class="direction">应付</span><span class="money">¥42.93</span></td><td><span class="state red">今天到期</span></td><td><div class="row-actions"><button class="action primary">立即续费</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+              <tr><td><div class="service"><span class="service-logo prime">prime</span><div><div class="service-name">Prime Video</div><div class="service-sub">账号 #3 · 6 / 6 席位</div></div></div></td><td><span class="tag share">合租</span></td><td>整组续费</td><td><span class="due soon">2026-09-29</span><span class="secondary">1 天后</span></td><td><span class="direction">应付</span><span class="money">¥261.82</span></td><td><span class="state amber">即将到期</span></td><td><div class="row-actions"><button class="action primary">立即续费</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+              <tr><td><div class="service"><span class="service-logo server">▤</span><div><div class="service-name">Hostdzire</div><div class="service-sub">VPS #1 · 新加坡</div></div></div></td><td><span class="tag vps">VPS</span></td><td>生产服务器</td><td><span class="due soon">2026-10-01</span><span class="secondary">3 天后</span></td><td><span class="direction">应付</span><span class="money">¥1,987.78</span></td><td><span class="state amber">即将到期</span></td><td><div class="row-actions"><button class="action secondary-btn">查看</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+              <tr><td><div class="service"><span class="service-logo openai">◎</span><div><div class="service-name">ChatGPT Plus</div><div class="service-sub">个人订阅 · 账号 #4</div></div></div></td><td><span class="tag sub">订阅</span></td><td>工作账号</td><td><span class="due">2026-10-03</span><span class="secondary">5 天后</span></td><td><span class="direction">应付</span><span class="money">¥117.89</span></td><td><span class="state blue">5 天后</span></td><td><div class="row-actions"><button class="action secondary-btn">查看</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+              <tr><td><div class="service"><span class="service-logo">D+</span><div><div class="service-name">Disney+</div><div class="service-sub">账号 #2 · 3 / 4 席位</div></div></div></td><td><span class="tag share">合租</span></td><td>2 号位 · 李四</td><td><span class="due">2026-10-05</span><span class="secondary">7 天后</span></td><td><span class="direction">应收</span><span class="money">¥25.00</span></td><td><span class="state blue">7 天后</span></td><td><div class="row-actions"><button class="action secondary-btn">查看</button><button class="more"><i data-lucide="ellipsis"></i></button></div></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="bottom-grid">
+          <div class="panel bottom-panel">
+            <div class="bottom-head"><div class="panel-title">支出构成 <span class="period">2026 年 9 月</span></div><div class="total">总支出 <strong>¥1,214.46</strong></div></div>
+            <div class="bars">
+              <div class="bar-row"><span>合租账号</span><div class="bar-track"><div class="bar-fill" style="width:80%;background:#16b985"></div></div><span class="bar-amount">¥982.46</span><span class="bar-pct">80%</span></div>
+              <div class="bar-row"><span>VPS 服务器</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:#3b82f6"></div></div><span class="bar-amount">¥160.00</span><span class="bar-pct">13%</span></div>
+              <div class="bar-row"><span>个人订阅</span><div class="bar-track"><div class="bar-fill" style="width:6%;background:#8b5cf6"></div></div><span class="bar-amount">¥72.00</span><span class="bar-pct">6%</span></div>
+              <div class="bar-row"><span>其他</span><div class="bar-track"><div class="bar-fill" style="width:0%;background:#94a3b8"></div></div><span class="bar-amount">¥0.00</span><span class="bar-pct">0%</span></div>
+            </div>
+          </div>
+          <div class="panel bottom-panel">
+            <div class="bottom-head"><div class="panel-title">合租收益排行 <span class="period">2026 年 9 月</span></div><div class="total text-link">查看全部<i data-lucide="chevron-right"></i></div></div>
+            <table class="ranking">
+              <colgroup><col style="width:7%"><col style="width:25%"><col style="width:15%"><col style="width:14%"><col style="width:14%"><col style="width:13%"><col style="width:12%"></colgroup>
+              <thead><tr><th>#</th><th>平台</th><th>已用 / 总席位</th><th>收入</th><th>成本</th><th>净利润</th><th>利润率</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td><div class="rank-service"><span class="mini-logo" style="color:#e50914">N</span>Netflix</div></td><td>77 / 81</td><td>¥585.00</td><td>¥320.00</td><td class="profit">¥265.00</td><td><div class="margin"><span>45%</span><div class="margin-track"><div class="margin-fill" style="width:45%"></div></div></div></td></tr>
+                <tr><td>2</td><td><div class="rank-service"><span class="mini-logo" style="color:#1788dc">P</span>Prime Video</div></td><td>28 / 36</td><td>¥420.00</td><td>¥310.00</td><td class="profit">¥110.00</td><td><div class="margin"><span>26%</span><div class="margin-track"><div class="margin-fill" style="width:26%"></div></div></div></td></tr>
+                <tr><td>3</td><td><div class="rank-service"><span class="mini-logo" style="color:#159978">◎</span>ChatGPT</div></td><td>12 / 16</td><td>¥240.00</td><td>¥200.00</td><td class="profit">¥40.00</td><td><div class="margin"><span>17%</span><div class="margin-track"><div class="margin-fill" style="width:17%"></div></div></div></td></tr>
+                <tr><td>4</td><td><div class="rank-service"><span class="mini-logo">D+</span>Disney+</div></td><td>5 / 8</td><td>¥125.00</td><td>¥132.46</td><td class="loss">-¥7.46</td><td><div class="margin"><span>-6%</span><div class="margin-track"><div class="margin-fill" style="width:6%;background:#ef4444"></div></div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

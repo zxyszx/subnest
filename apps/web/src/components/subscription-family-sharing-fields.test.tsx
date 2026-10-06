@@ -2,6 +2,7 @@ import { useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router";
 import { SubscriptionFamilySharingFields } from "@/components/subscription-family-sharing-fields";
 import type { FamilySharingFormState } from "@/types/subscription-form";
 
@@ -16,13 +17,14 @@ function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verific
   verificationLink?: string;
 }) {
   const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink, capacity: "5" });
-  return <SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} />;
+  return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
 }
 
 describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.mailboxes.mockResolvedValue({ items: [{ id: "mailbox-16", address: "netflix16@example.com" }] });
+    mocks.links.mockResolvedValue({ links: [{ id: "generic", mailboxId: "mailbox-16", status: "active", folderIds: ["inbox"], windowMinutes: 30 }] });
     mocks.totpList.mockResolvedValue({ accounts: [{ id: "otp16", account: "NETFLIX16@example.com", platformName: "Netflix", accountNumber: 16, enabled: true }] });
   });
   it("keeps the master switch out of the focused editor", () => {
@@ -31,17 +33,26 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
     expect(screen.getByLabelText("subscription.familySharing.capacity")).toHaveValue(5);
   });
-  it("does not expose or mutate the mailbox-wide sharing switch", async () => {
+  it("requires a configured mailbox-wide link before saving email sharing", async () => {
     const user = userEvent.setup();
     const pending = vi.fn();
     render(<Harness onPendingChange={pending} />);
     await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
-    expect(screen.queryByRole("switch", { name: "开启共享收件箱" })).not.toBeInTheDocument();
+    expect(mocks.links).toHaveBeenCalled();
+    expect(screen.getByText("sharing.linkFolders：1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "sharing.manageGenericMailbox" })).toHaveAttribute("href", "/shared-inboxes");
+    await waitFor(() => expect(pending).toHaveBeenLastCalledWith(false));
     await user.click(screen.getByRole("switch", { name: "subscription.familySharing.title" }));
     expect(mocks.revoke).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
-    expect(mocks.links).not.toHaveBeenCalled();
     expect(pending).toHaveBeenLastCalledWith(false);
+  });
+  it("keeps email sharing pending when no folder-scoped generic link exists", async () => {
+    const pending = vi.fn();
+    mocks.links.mockResolvedValue({ links: [] });
+    render(<Harness onPendingChange={pending} />);
+    expect(await screen.findByText("sharing.configureGenericMailbox")).toBeInTheDocument();
+    await waitFor(() => expect(pending).toHaveBeenLastCalledWith(true));
   });
   it("preserves an external verification link and allows clearing it", async () => {
     const user = userEvent.setup();

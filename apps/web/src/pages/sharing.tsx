@@ -54,6 +54,12 @@ function currencyMetric(formatted: string, currency: string) {
   );
 }
 
+function linkSharingReady(account: SharingAccount) {
+  return account.familySharingEnabled
+    && account.status === "active"
+    && (account.verificationMode === "totp" || Boolean(account.verificationLink));
+}
+
 type SharingFilter = "all" | "available" | "full" | "expiring" | "overdue" | "outstanding";
 type SharingSortField = "expiry" | "account" | "vacancies" | "revenue" | "profit";
 
@@ -421,7 +427,7 @@ export default function Sharing() {
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1.5">
                       <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                      <Button type="button" size="sm" variant="outline" disabled={!account.familySharingEnabled || account.status !== "active"} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
+                      <Button type="button" size="sm" variant="outline" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
                       <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
                   </tr>
@@ -444,7 +450,7 @@ export default function Sharing() {
                   </dl>
                   <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
                     <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                    <Button type="button" variant="outline" className="min-w-0" disabled={!account.familySharingEnabled || account.status !== "active"} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
+                    <Button type="button" variant="outline" className="min-w-0" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
                     <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                   </div>
                 </article>

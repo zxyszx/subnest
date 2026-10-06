@@ -43,6 +43,13 @@ describe("SeatInboxLinksDialog", () => {
     expect(mocks.create).toHaveBeenCalledTimes(1);
     expect(mocks.revoke).not.toHaveBeenCalled();
   });
+  it("inherits the generic link folder scope and rolling window for new seat links", async () => {
+    const user = userEvent.setup();
+    const generic = { ...link, id: "generic", seatId: null, folderIds: ["inbox"], windowMinutes: 360 };
+    renderDialog([generic]);
+    await user.click((await screen.findAllByRole("button", { name: "生成链接" }))[0]!);
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1", folderIds: ["inbox"], windowMinutes: 360 })));
+  });
   it("confirms a single-seat reset and preserves its scope and expiry", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }]);

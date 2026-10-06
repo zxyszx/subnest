@@ -58,6 +58,12 @@ export async function familyTotpProjectionStatements(env:Env,sub:SubscriptionRow
  if(!sub.family_sharing_enabled || familyVerificationConfig(sub).mode!=="totp") return [];
  const result:D1PreparedStatement[]=[];
  const general=await linkStatement(env,sub.user_id,accountId,"",false,sub); if(general) result.push(general);
+ const seats=await env.DB.prepare("SELECT * FROM sharing_seats WHERE user_id=? AND sharing_account_id=? AND status='active' AND length(trim(member_name))>0 AND seat_number<=?").bind(sub.user_id,accountId,sub.sharing_capacity).all<SeatRow>();
+ const today=dateOnlyInZone(new Date(),(await getSettings(env,sub.user_id)).timezone);
+ for(const seat of seats.results) {
+  if(seat.expires_at && seat.expires_at<today) continue;
+  const statement=await linkStatement(env,sub.user_id,accountId,seat.id,false,sub); if(statement) result.push(statement);
+ }
  return result;
 }
 
@@ -74,11 +80,10 @@ export async function sharingTotpLinks(request:Request,env:Env,accountId:string)
  await binding(env,auth.user.id,accountId,"");
  if(request.method==="POST") {
   const body=await readJson(request,sharingTotpLinkCommandSchema,requestLocale(request));
-  if(body.seatId) throw new HttpError(400,"SEAT_LINKS_UNAVAILABLE","INVALID_PAYLOAD");
   if(body.seatId!==undefined) { const statement=await linkStatement(env,auth.user.id,accountId,body.seatId,body.reset); if(statement) await statement.run(); }
   else { const sub=await env.DB.prepare("SELECT * FROM subscriptions WHERE id=? AND user_id=?").bind(account.subscription_id,auth.user.id).first<SubscriptionRow>(); const statements=await familyTotpProjectionStatements(env,sub!,accountId); if(statements.length) await env.DB.batch(statements); }
  }
- const rows=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE user_id=? AND account_id=? AND seat_id='' LIMIT 1").bind(auth.user.id,accountId).all<LinkRow>();
+ const rows=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE user_id=? AND account_id=? ORDER BY seat_id LIMIT 101").bind(auth.user.id,accountId).all<LinkRow>();
  const links=await Promise.all(rows.results.map(async row=> { const active=await valid(env,row); return {id:row.id,seatId:row.seat_id,path:active?`/otp/${await decryptOnlineTotp(env,row.token_ciphertext)}`:"",expiresAt:row.expires_at || null,valid:active}; }));
  return successJson(sharingTotpLinksResponseSchema.shape.data.parse({links}),{headers:{"cache-control":"no-store"}});
 }

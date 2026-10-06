@@ -5,10 +5,11 @@ import { createAdminManagedUser, deleteProductSubscriptionsByName, updateProduct
 import { subscriptionCard, uniqueE2EName } from "./support/subscriptions";
 import { createStoredZip } from "./support/zip";
 
-test("general inbox links require folders and stay compact without seat controls", async ({ page }, testInfo) => {
+test("general inbox links require folders and provide seat-scoped member links", async ({ page }, testInfo) => {
   let enabled = true;
   const account = { id: "inbox-account", subscription: { id: "inbox-subscription", name: "Netflix", platformName: "Netflix", logo: null, status: "active" }, name: "Netflix", accountNumber: 17, loginAccount: "shared@example.test", hasPassword: true, verificationLink: null, familySharingEnabled: true, monthlyCost: "10", currency: "CNY", nextBillingDate: "2099-01-01", paymentMethod: null, cardLast4: null, capacity: 5, occupiedSeats: 0, monthlyRevenue: "0", monthlyRevenueByCurrency: {}, outstandingAmount: "0", monthlyProfit: -10, status: "active", notes: null, createdAt: "2026-01-01" };
-  type Link = { id: string; seatId: null; shortUrl: string; mailboxId: string; mailboxAddress: string; folderIds: string[]; windowMinutes: number; expiresAt: null; status: string; createdAt: string; updatedAt: string };
+  const seats = [1, 2].map((number) => ({ id: `seat-${number}`, seatNumber: number, memberName: `Member ${number}`, contact: null, contactType: null, monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "active", notes: null, currentReceivable: null }));
+  type Link = { id: string; seatId: string | null; shortUrl: string; mailboxId: string; mailboxAddress: string; folderIds: string[]; windowMinutes: number; expiresAt: string | null; status: string; createdAt: string; updatedAt: string };
   let links: Link[] = [];
   const revoked: string[] = [];
   await page.route("**/api/app/admin/newszxcn**", async (route) => {
@@ -17,7 +18,10 @@ test("general inbox links require folders and stay compact without seat controls
     await route.fulfill({ json: { ok: true, data } });
   });
   await page.route("**/api/app/sharing/accounts**", async (route) => {
-    await route.fulfill({ json: { ok: true, data: { accounts: [{ ...account, familySharingEnabled: enabled }], total: 1 } } });
+    const activeGeneric = links.find((link) => !link.seatId && link.status === "active");
+    const currentAccount = { ...account, familySharingEnabled: enabled, verificationLink: activeGeneric?.shortUrl ?? null, occupiedSeats: seats.length };
+    if (new URL(route.request().url()).pathname.endsWith(`/${account.id}`)) await route.fulfill({ json: { ok: true, data: { account: currentAccount, seats, totals: { monthlyRevenue: "10", contractedRevenue: "10", collectedRevenue: "10", outstandingAmount: "0", monthlyProfit: 0 } } } });
+    else await route.fulfill({ json: { ok: true, data: { accounts: [currentAccount], total: 1 } } });
   });
   await page.route("**/api/app/admin/shared-inbox-links**", async (route) => {
     if (route.request().method() === "DELETE") {
@@ -26,9 +30,9 @@ test("general inbox links require folders and stay compact without seat controls
       await route.fulfill({ json: { ok: true, data: {} } });
     } else if (route.request().method() === "POST") {
       const body = route.request().postDataJSON() as { seatId?: string; folderIds: string[]; windowMinutes: number };
-      expect(body.seatId).toBeUndefined();
       expect(body.folderIds).toEqual(["inbox"]);
-      const link: Link = { id: "general-" + links.length, seatId: null, shortUrl: "http://127.0.0.1:45173/s/general-" + links.length, mailboxId: "inbox-mailbox", mailboxAddress: account.loginAccount, folderIds: body.folderIds, windowMinutes: body.windowMinutes, expiresAt: null, status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+      const suffix = body.seatId ?? "general";
+      const link: Link = { id: `${suffix}-${links.length}`, seatId: body.seatId ?? null, shortUrl: `http://127.0.0.1:45173/s/${suffix}-${links.length}`, mailboxId: "inbox-mailbox", mailboxAddress: account.loginAccount, folderIds: body.folderIds, windowMinutes: body.windowMinutes, expiresAt: body.seatId ? "2099-01-01T23:59:00.000Z" : null, status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
       links.unshift(link);
       await route.fulfill({ status: 201, json: { ok: true, data: { link } } });
     } else await route.fulfill({ json: { ok: true, data: { links } } });
@@ -53,10 +57,16 @@ test("general inbox links require folders and stay compact without seat controls
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/sharing");
   await page.getByRole("button", { name: "查看链接", exact: true }).click();
-  const view = page.getByRole("dialog", { name: /查看链接/ });
-  await expect(view.getByText(links[0]!.shortUrl, { exact: true })).toBeVisible();
-  await expect(view.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(0);
-  await expect(view.getByRole("link", { name: "设置邮箱通用链接" })).toBeVisible();
+  const view = page.getByRole("dialog", { name: /车位链接/ });
+  await expect(view.locator("input").first()).toHaveValue(links[0]!.shortUrl);
+  await expect(view.getByRole("button", { name: "生成链接", exact: true })).toHaveCount(2);
+  await view.getByRole("button", { name: "生成链接", exact: true }).first().click();
+  await expect(view.getByRole("button", { name: "复制链接", exact: true })).toHaveCount(1);
+  expect(links.find((link) => link.seatId === "seat-1")).toMatchObject({ folderIds: ["inbox"], windowMinutes: 30 });
+  await view.screenshot({ path: testInfo.outputPath("seat-inbox-links-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await view.evaluate((element) => element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+  await view.screenshot({ path: testInfo.outputPath("seat-inbox-links-mobile.png") });
   await view.getByRole("button", { name: "Close", exact: true }).click();
   enabled = false;
   await page.reload();

@@ -2,7 +2,7 @@ import { expect, test } from "./support/test";
 import { createProductSubscriptionSeed, deleteProductSubscriptionsByName, productApiFetch } from "./support/product-api";
 import { uniqueE2EName } from "./support/subscriptions";
 
-test("family 2FA matches accounts, wraps long emails and shows one general link", async ({ page }, testInfo) => {
+test("family 2FA matches accounts, wraps long emails and shows general and seat links", async ({ page }, testInfo) => {
   const name = uniqueE2EName(testInfo, "family-totp");
   const account = "primevideo02.long-family-account-name@verification.example.test";
   let otpId = "";
@@ -41,13 +41,17 @@ test("family 2FA matches accounts, wraps long emails and shows one general link"
     }
     const generated = await productApiFetch(page, `/api/app/sharing/accounts/${family.id}/totp-links`);
     expect(generated.ok, generated.body).toBe(true);
-    expect((generated.json as { data: { links: { expiresAt: string | null }[] } }).data.links).toHaveLength(1);
-    expect((generated.json as { data: { links: { expiresAt: string | null }[] } }).data.links[0]?.expiresAt).toBeNull();
+    const generatedLinks = (generated.json as { data: { links: { seatId: string; expiresAt: string | null }[] } }).data.links;
+    expect(generatedLinks).toHaveLength(3);
+    expect(generatedLinks.find((link) => !link.seatId)?.expiresAt).toBeNull();
+    expect(generatedLinks.filter((link) => link.seatId).every((link) => Boolean(link.expiresAt))).toBe(true);
     await page.reload();
     await page.getByRole("button", { name: "查看链接", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /在线 2FA 链接/ });
     await expect(dialog.getByText("默认链接", { exact: true })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(1);
+    await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toHaveCount(3);
+    await expect(dialog.getByText(/车位 1/)).toBeVisible();
+    await expect(dialog.getByText(/车位 2/)).toBeVisible();
     await expect(dialog.getByText("长期有效", { exact: true })).toBeVisible();
     expect(await dialog.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     await page.evaluate(() => document.documentElement.classList.remove("dark"));

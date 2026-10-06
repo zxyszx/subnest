@@ -48,8 +48,8 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 	payload := decodeAPISuccessDataForTest[struct {
 		Links []sharingTotpLink `json:"links"`
 	}](t, get.Body.Bytes())
-	if len(payload.Links) != 1 {
-		t.Fatalf("expected only default link, got %s", get.Body.String())
+	if len(payload.Links) != 3 {
+		t.Fatalf("expected default and two seat links, got %s", get.Body.String())
 	}
 	bySeat := map[string]sharingTotpLink{}
 	for _, link := range payload.Links {
@@ -78,9 +78,9 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 			t.Fatalf("foreign %s status %d", method, r.Code)
 		}
 	}
-	blocked := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"`+seats[0].Id+`","reset":true}`, token)
-	if blocked.Code != http.StatusBadRequest {
-		t.Fatal("seat generation should be disabled")
+	seatReset := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"`+seats[0].Id+`","reset":true}`, token)
+	if seatReset.Code != http.StatusOK {
+		t.Fatal(seatReset.Body.String())
 	}
 	old := bySeat[""]
 	rotated := serveTestRequest(t, app, http.MethodPost, route, `{"seatId":"","reset":true}`, token)

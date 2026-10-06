@@ -185,6 +185,21 @@ func syncFamilyTotpLinks(app core.App, sub *core.Record) error {
 	if err := ensureFamilyTotpLink(app, sub.GetString("user"), account.Id, "", false); err != nil {
 		return err
 	}
+	seats, err := app.FindRecordsByFilter("sharing_seats", "user={:user} && sharingAccount={:account} && status='active' && memberName!=''", "seatNumber", 100, 0, dbx.Params{"user": sub.GetString("user"), "account": account.Id})
+	if err != nil {
+		return err
+	}
+	for _, seat := range seats {
+		if seat.GetInt("seatNumber") > sub.GetInt("sharingCapacity") {
+			continue
+		}
+		if date := seat.GetString("expiresAt"); date != "" && date < todayDateOnly(time.Now(), schedulerSettingsForUser(app, sub.GetString("user")).Timezone) {
+			continue
+		}
+		if err := ensureFamilyTotpLink(app, sub.GetString("user"), account.Id, seat.Id, false); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -202,7 +217,7 @@ func handleSharingTotpLinks(app core.App, e *core.RequestEvent) error {
 		if err != nil {
 			return e.BadRequestError("INVALID_PAYLOAD", err)
 		}
-		if body.SeatID != nil && *body.SeatID != "" {
+		if body.SeatID != nil && len(*body.SeatID) > 128 {
 			return e.BadRequestError("INVALID_PAYLOAD", nil)
 		}
 		err = app.RunInTransaction(func(tx core.App) error {
@@ -219,7 +234,7 @@ func handleSharingTotpLinks(app core.App, e *core.RequestEvent) error {
 			return e.BadRequestError("2FA 账号未匹配、车位未启用或已过期", err)
 		}
 	}
-	records, err := app.FindRecordsByFilter("sharing_totp_links", "user={:user} && accountId={:account} && scopeKey='default'", "", 1, 0, dbx.Params{"user": e.Auth.Id, "account": accountID})
+	records, err := app.FindRecordsByFilter("sharing_totp_links", "user={:user} && accountId={:account}", "seatId", 101, 0, dbx.Params{"user": e.Auth.Id, "account": accountID})
 	if err != nil {
 		return e.InternalServerError("INTERNAL_ERROR", err)
 	}
