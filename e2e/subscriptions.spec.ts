@@ -86,6 +86,54 @@ test("desktop tall subscription dialog keeps footer tight to the panel bottom", 
   );
 });
 
+test("family sharing switch and verification mode changes keep the edit dialog visible", async ({ page }, testInfo) => {
+  const subscriptionName = uniqueE2EName(testInfo, "Family Sharing Toggle");
+  await page.route("**/api/app/admin/newszxcn/mailboxes", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, data: { items: [] } }),
+  }));
+  await page.route("**/api/app/admin/shared-inbox-links", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, data: { links: [] } }),
+  }));
+  await page.goto("/subscriptions");
+  await createProductSubscriptionSeed(page, {
+    name: subscriptionName,
+    price: "49.9",
+    currency: "USD",
+    startDate: "2026-09-03",
+    nextBillingDate: "2026-11-03",
+  });
+
+  try {
+    await page.reload();
+    const dialog = await openSubscriptionEditDialog(page, subscriptionName);
+    const title = dialog.getByRole("heading", { name: "编辑订阅" });
+    const footer = dialog.locator("[data-subscription-dialog-footer]");
+    const masterSwitch = dialog.getByRole("switch", { name: "家庭共享" });
+
+    await masterSwitch.scrollIntoViewIfNeeded();
+    await expect(masterSwitch).not.toBeChecked();
+    await masterSwitch.click();
+    await expect(masterSwitch).toBeChecked();
+    await dialog.getByText("在线 2FA 验证", { exact: true }).click();
+    await expect(dialog.getByLabel("登录账号", { exact: true })).toBeVisible();
+    await expect(title).toBeVisible();
+    await expect(footer.getByRole("button", { name: "保存修改" })).toBeVisible();
+
+    await masterSwitch.click();
+    await expect(masterSwitch).not.toBeChecked();
+    await expect(dialog.getByRole("radio", { name: "在线 2FA 验证" })).toBeHidden();
+    await expect(title).toBeVisible();
+    await expect(footer.getByRole("button", { name: "保存修改" })).toBeVisible();
+    await dialog.screenshot({ path: testInfo.outputPath("family-sharing-disabled.png") });
+  } finally {
+    await deleteProductSubscriptionsByName(page, [subscriptionName]);
+  }
+});
+
 test("short desktop calendar and long detail keep their scroll and footer geometry", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 600 });
   await page.goto("/");

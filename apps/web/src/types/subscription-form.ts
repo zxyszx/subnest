@@ -30,6 +30,7 @@ export type OneTimePurchaseMode = "term" | "buyout";
 
 export type FamilySharingFormState = {
   enabled: boolean;
+  occupiedSeats?: number;
   loginAccount: string;
   password: string;
   hasPassword: boolean;
@@ -120,6 +121,7 @@ export function createSubscriptionFormState(
     costSharing: undefined,
     familySharing: {
       enabled: false,
+      occupiedSeats: 0,
       loginAccount: "",
       password: "",
       hasPassword: false,

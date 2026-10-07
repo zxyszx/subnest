@@ -388,7 +388,7 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
   return apiSubscriptionCollectionItemSchema.parse(normalized);
 }
 
-export function toApiSubscription(row: SubscriptionRow): ApiSubscription {
+export function toApiSubscription(row: SubscriptionRow, occupiedSeats = 0): ApiSubscription {
   const extra = parseJsonObject(row.extra_json);
   const normalized = {
     ...toApiSubscriptionCollectionItem(row),
@@ -405,6 +405,7 @@ export function toApiSubscription(row: SubscriptionRow): ApiSubscription {
       passwordMask: row.sharing_password_mask ?? "",
       verificationLink: row.sharing_verification_link ?? null,
       capacity: Math.max(1, row.sharing_capacity ?? 5),
+      occupiedSeats,
     } : null,
     extra,
     createdAt: row.created_at,
@@ -452,6 +453,17 @@ export function toPublicApiSubscription(row: SubscriptionRow) {
 
 export async function getSubscription(env: Env, userId: string, id: string): Promise<SubscriptionRow | null> {
   return await env.DB.prepare(`SELECT ${SUBSCRIPTION_COLUMNS} FROM subscriptions WHERE user_id = ? AND id = ? LIMIT 1`).bind(userId, id).first<SubscriptionRow>();
+}
+
+export async function countOccupiedSharingSeats(env: Env, userId: string, subscriptionId: string): Promise<number> {
+  const row = await env.DB.prepare(`
+    SELECT COUNT(*) AS count
+    FROM sharing_seats seat
+    JOIN sharing_accounts account ON account.id = seat.sharing_account_id
+    WHERE account.user_id = ? AND account.subscription_id = ?
+      AND seat.user_id = ? AND seat.status NOT IN ('vacant', 'archived')
+  `).bind(userId, subscriptionId, userId).first<{ count: number }>();
+  return row?.count ?? 0;
 }
 
 /** countSubscriptions 只统计当前用户，是分页元数据和管理概览的用户隔离边界。 */

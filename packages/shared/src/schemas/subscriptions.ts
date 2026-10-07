@@ -84,6 +84,8 @@ export const subscriptionFamilySharingSchema = z.object({
   passwordMask: z.string(),
   verificationLink: z.string().nullable(),
   capacity: z.number().int().min(1).max(100),
+  // Older servers omit this field; zero keeps rolling upgrades readable while new detail routes expose the real count.
+  occupiedSeats: z.number().int().nonnegative().default(0),
 }).strict();
 
 export const logoReferenceSchema = z

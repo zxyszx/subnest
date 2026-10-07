@@ -11,12 +11,13 @@ vi.mock("@/services/online-totp-service", () => ({ onlineTotpService: { list: mo
 vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
 vi.mock("@/i18n/I18nProvider", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
-function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "" }: {
+function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "", occupiedSeats = 0 }: {
   onPendingChange?: (pending: boolean) => void;
   showEnabledControl?: boolean;
   verificationLink?: string;
+  occupiedSeats?: number;
 }) {
-  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink, capacity: "5" });
+  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, occupiedSeats, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink, capacity: "5" });
   return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
 }
 
@@ -32,6 +33,25 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
     expect(screen.getByLabelText("subscription.familySharing.capacity")).toHaveValue(5);
+  });
+  it("uses a master switch and only shows verification methods while sharing is enabled", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const masterSwitch = screen.getByRole("switch", { name: "subscription.familySharing.title" });
+    expect(masterSwitch).toBeChecked();
+    expect(screen.getByRole("radio", { name: "sharing.emailMethod" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "sharing.totpMethod" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "sharing.disabledMethod" })).not.toBeInTheDocument();
+
+    await user.click(masterSwitch);
+    expect(masterSwitch).not.toBeChecked();
+    expect(screen.queryByRole("radio", { name: "sharing.emailMethod" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "sharing.totpMethod" })).not.toBeInTheDocument();
+  });
+  it("prevents disabling family sharing until every seat is vacant", () => {
+    render(<Harness occupiedSeats={2} />);
+    expect(screen.getByRole("switch", { name: "subscription.familySharing.title" })).toBeDisabled();
+    expect(screen.getByText("subscription.familySharing.disableBlocked")).toBeInTheDocument();
   });
   it("selects a mailbox in place and reuses its configured general link", async () => {
     const pending = vi.fn();

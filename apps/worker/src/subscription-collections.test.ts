@@ -20,6 +20,7 @@ import type { Env } from "./types";
 import { dateOnlyInZone } from "./subscription-renewal";
 
 const mocks = vi.hoisted(() => ({
+  countOccupiedSharingSeats: vi.fn(),
   getSettings: vi.fn(),
   getSubscription: vi.fn(),
   listSubscriptions: vi.fn(),
@@ -36,10 +37,16 @@ vi.mock("./subscription-facets", () => ({
   readSubscriptionFacetsForUser: mocks.readSubscriptionFacetsForUser,
 }));
 vi.mock("./db", () => ({
+  countOccupiedSharingSeats: mocks.countOccupiedSharingSeats,
   getSettings: mocks.getSettings,
   getSubscription: mocks.getSubscription,
   listSubscriptions: mocks.listSubscriptions,
-  toApiSubscription: (row: unknown) => row,
+  toApiSubscription: (row: unknown, occupiedSeats = 0) => {
+    if (!row || typeof row !== "object") return row;
+    const value = row as Record<string, unknown>;
+    if (!value["familySharing"] || typeof value["familySharing"] !== "object") return row;
+    return { ...value, familySharing: { ...value["familySharing"] as Record<string, unknown>, occupiedSeats } };
+  },
   toApiSubscriptionCollectionItem: (row: unknown) => row,
 }));
 
@@ -71,6 +78,7 @@ describe("Cloudflare subscription collection routes", () => {
       session: { id: "ses" },
     });
     mocks.getSettings.mockResolvedValue({ timezone: "UTC" });
+    mocks.countOccupiedSharingSeats.mockResolvedValue(2);
     mocks.getSubscription.mockResolvedValue(completeSubscription);
     mocks.listSubscriptions.mockResolvedValue([completeSubscription]);
     mocks.listBoundedSubscriptionsForQuery.mockResolvedValue({
@@ -157,12 +165,38 @@ describe("Cloudflare subscription collection routes", () => {
       notes: "private detail",
       tags: ["AI"],
     });
+    if (detail.subscription.familySharing) {
+      expect(detail.subscription.familySharing.occupiedSeats).toBe(2);
+    }
     expect(mocks.getSubscription).toHaveBeenCalledWith(env, USER_ID, "sub_collection");
 
     const exportResponse = await readSubscriptionExport(request("/api/app/subscriptions/export"), env);
     const exported = subscriptionsExportPayloadSchema.parse(await readSuccessData<unknown>(exportResponse));
     expect(exported.subscriptions).toEqual([completeSubscription]);
     expect(mocks.listSubscriptions).toHaveBeenCalledWith(env, USER_ID);
+  });
+
+  it("includes the current occupied seat count in family-sharing detail", async () => {
+    const env = envFixture();
+    const familyRow = {
+      ...completeSubscription,
+      familySharing: {
+        enabled: true,
+        loginAccount: "family@example.com",
+        hasPassword: true,
+        passwordMask: "s***d",
+        verificationLink: null,
+        capacity: 5,
+      },
+    };
+    Object.defineProperty(familyRow, "family_sharing_enabled", { value: 1, enumerable: false });
+    mocks.getSubscription.mockResolvedValueOnce(familyRow);
+
+    const response = await readSubscriptionDetail(request("/api/app/subscriptions/sub_collection"), env, "sub_collection");
+    const detail = subscriptionPayloadSchema.parse(await readSuccessData<unknown>(response));
+
+    expect(detail.subscription.familySharing?.occupiedSeats).toBe(2);
+    expect(mocks.countOccupiedSharingSeats).toHaveBeenCalledWith(env, USER_ID, "sub_collection");
   });
 
   it("reads facets from three owner-scoped aggregates", async () => {

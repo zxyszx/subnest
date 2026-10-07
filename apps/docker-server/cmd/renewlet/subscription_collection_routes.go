@@ -169,7 +169,11 @@ func handleSubscriptionRead(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
 	}
-	return apiSuccessJSON(e, http.StatusOK, subscriptionResponse{Subscription: subscriptionAPIFromRecord(record)})
+	subscription, err := subscriptionAPIWithSharingState(app, record)
+	if err != nil {
+		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
+	}
+	return apiSuccessJSON(e, http.StatusOK, subscriptionResponse{Subscription: subscription})
 }
 
 func handleSubscriptionsExport(app core.App, e *core.RequestEvent) error {

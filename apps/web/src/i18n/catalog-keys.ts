@@ -2219,6 +2219,7 @@ export const MESSAGE_KEYS = [
   "subscription.familySharing.confirmResetLinkDescription",
   "subscription.familySharing.confirmResetLinkTitle",
   "subscription.familySharing.copyPassword",
+  "subscription.familySharing.disableBlocked",
   "subscription.familySharing.generatePassword",
   "subscription.familySharing.help",
   "subscription.familySharing.hidePassword",

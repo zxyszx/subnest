@@ -11,6 +11,7 @@ import {
 } from "@renewlet/shared/schemas/subscriptions";
 import { requireAuth } from "./auth";
 import {
+  countOccupiedSharingSeats,
   getSettings,
   getSubscription,
   listSubscriptions,
@@ -60,7 +61,10 @@ export async function readSubscriptionDetail(request: Request, env: Env, id: str
   const auth = await requireAuth(request, env);
   const row = await getSubscription(env, auth.user.id, id);
   if (!row) throw new HttpError(404, serverText(requestLocale(request), "subscription.notFound"));
-  return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(row) }));
+  const occupiedSeats = row.family_sharing_enabled
+    ? await countOccupiedSharingSeats(env, auth.user.id, id)
+    : 0;
+  return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(row, occupiedSeats) }));
 }
 
 export async function readSubscriptionExport(request: Request, env: Env): Promise<Response> {

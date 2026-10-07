@@ -507,8 +507,10 @@ function SubscriptionCardComponent({
 
         <div className={cn("min-w-0 flex-1", viewMode === "grid" ? "contents" : "grid gap-3")}>
           <div className={cn(
-            "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start",
-            viewMode === "grid" ? "gap-x-2 gap-y-1.5" : "gap-x-3 gap-y-2",
+            "grid items-start",
+            viewMode === "grid"
+              ? "grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-2"
+              : "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-3 gap-y-2",
           )}>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
@@ -518,7 +520,12 @@ function SubscriptionCardComponent({
                     <span className="sr-only">{t("subscription.pin")}</span>
                   </>
                 ) : null}
-                <h3 className="min-w-0 wrap-break-word font-semibold text-foreground">{displayName}</h3>
+                <h3 className="min-w-0 flex-1 truncate font-semibold text-foreground" title={displayName}>{displayName}</h3>
+                {viewMode === "grid" ? (
+                  <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
+                    <SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" />
+                  </span>
+                ) : null}
               </div>
               {serviceName && serviceName !== displayName ? (
                 <TruncatedTooltipText
@@ -528,18 +535,28 @@ function SubscriptionCardComponent({
                 />
               ) : null}
               {viewMode === "grid" ? (
-                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                  {familyAccount ? <div data-testid="subscription-card-family-account" className="pointer-events-auto min-w-0 max-w-full text-xs leading-4 text-muted-foreground" title={familyAccount}><TruncatedTooltipText as="p" text={familyAccount} /></div> : null}
-                  <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0"><SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" /></span>
-                </div>
+                familyAccount ? (
+                  <p
+                    data-testid="subscription-card-family-account"
+                    className="mt-1 min-w-0 break-all text-xs leading-4 text-muted-foreground"
+                    title={familyAccount}
+                  >
+                    {familyAccount}
+                  </p>
+                ) : null
               ) : null}
             </div>
 
             <div className={cn(
-              "min-w-0 shrink-0 text-right",
-              viewMode === "grid" ? "max-w-none" : "max-w-35 sm:max-w-40",
+              "min-w-0 shrink-0",
+              viewMode === "grid"
+                ? "col-span-2 row-start-2 flex items-baseline justify-between gap-3 border-t border-border/60 pt-2 text-left"
+                : "max-w-35 text-right sm:max-w-40",
             )}>
-              <p className={cn("wrap-break-word font-bold text-foreground tabular-nums", viewMode === "grid" ? "text-base" : "text-xl")}>
+              <p
+                data-testid="subscription-card-price"
+                className={cn("font-bold text-foreground tabular-nums", viewMode === "grid" ? "shrink-0 whitespace-nowrap text-base" : "wrap-break-word text-xl")}
+              >
                 {formatCurrency(subscription.price, subscription.currency)}
                 {viewMode === "grid" ? <span className="ml-1 text-sm font-medium text-muted-foreground">/ {billingCycleLabel.replace(/^每/, "")}</span> : null}
               </p>
@@ -547,7 +564,7 @@ function SubscriptionCardComponent({
                 {billingCycleLabel}
               </p>
               {priceReferenceLabel ? (
-                <p className="truncate text-xs tabular-nums text-muted-foreground">
+                <p className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                   {priceReferenceLabel}
                 </p>
               ) : null}
@@ -558,7 +575,10 @@ function SubscriptionCardComponent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="pointer-events-auto h-8 w-8 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                  className={cn(
+                    "pointer-events-auto h-8 w-8 shrink-0 text-muted-foreground transition-colors hover:text-foreground",
+                    viewMode === "grid" && "col-start-2 row-start-1",
+                  )}
                   aria-label={t("subscription.moreActions")}
                 >
                   <MoreHorizontal className="h-4 w-4" />

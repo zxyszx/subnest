@@ -295,6 +295,15 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	previousFamilyEnabled := record.GetBool("familySharingEnabled")
 	previousMailboxAddress := record.GetString("sharingLoginAccount")
 	previousVerification := familyVerificationBindingKey(record)
+	if previousFamilyEnabled && body.FamilySharing.Set && (body.FamilySharing.Null || !body.FamilySharing.Value.Enabled) {
+		occupiedSeats, countErr := occupiedSharingSeatsForSubscription(app, e.Auth.Id, record.Id)
+		if countErr != nil {
+			return e.InternalServerError(serverText(locale, "common.internalError"), countErr)
+		}
+		if occupiedSeats > 0 {
+			return apiErrorJSON(e, http.StatusConflict, "FAMILY_SHARING_OCCUPIED_SEATS", "Set every sharing seat to vacant before disabling family sharing.", map[string]int{"occupiedSeats": occupiedSeats})
+		}
+	}
 	if err := applySubscriptionWriteRequest(app, record, body, false); err != nil {
 		return e.BadRequestError(validationErrorMessage(locale, "common.invalidRequestBody", err), err)
 	}

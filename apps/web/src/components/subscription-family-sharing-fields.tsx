@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { CircleOff, Copy, Eye, EyeOff, Loader2, Mail, RefreshCw, ShieldCheck, UsersRound, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Copy, Eye, EyeOff, Loader2, Mail, RefreshCw, ShieldCheck, UsersRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { FamilySharingFormState } from "@/types/subscription-form";
 import { subscriptionService } from "@/services/subscription-service";
@@ -26,6 +27,7 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   showEnabledControl?: boolean | undefined;
 }) {
   const { t } = useI18n();
+  const sectionRef = useRef<HTMLElement>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
@@ -42,8 +44,34 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   const matchedInboxLink = matchedMailbox ? inboxLinks.find((link) => link.mailboxId === matchedMailbox.id && !link.seatId && link.status === "active" && link.folderIds.length > 0 && (!link.expiresAt || Date.parse(link.expiresAt) > inboxNow)) : undefined;
   const inboxSetupRequired = Boolean(showEnabledControl && value.enabled && mode === "email");
   const inboxSetupPending = inboxSetupRequired && (inboxLoading || inboxFailed || !matchedMailbox);
-  const totpMatches = totpAccounts.filter((account) => account.enabled && account.account.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
+  const normalizedLoginAccount = value.loginAccount.trim().toLowerCase();
+  const totpMatches = useMemo(
+    () => totpAccounts.filter((account) => account.enabled && account.account.trim().toLowerCase() === normalizedLoginAccount),
+    [normalizedLoginAccount, totpAccounts],
+  );
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => onChange({ ...value, [key]: next });
+  const occupiedSeats = value.occupiedSeats ?? 0;
+  const disableBlocked = showEnabledControl && value.enabled && occupiedSeats > 0;
+  const keepSharingControlsVisible = () => requestAnimationFrame(() => {
+    const section = sectionRef.current;
+    const scrollRegion = section?.closest<HTMLElement>("[data-subscription-dialog-scroll]");
+    if (!section || !scrollRegion) return;
+    scrollRegion.scrollTop = Math.max(0, section.offsetTop - 16);
+  });
+  const setSharingEnabled = (enabled: boolean) => {
+    update("enabled", enabled);
+    keepSharingControlsVisible();
+  };
+  const setVerificationMode = (verificationMode: "email" | "totp") => {
+    onChange({
+      ...value,
+      enabled: true,
+      verificationMode,
+      verificationLink: verificationMode === "totp" ? "" : value.verificationLink,
+      totpAccountId: verificationMode === "email" ? "" : value.totpAccountId ?? "",
+    });
+    keepSharingControlsVisible();
+  };
 
   useEffect(() => {
     onShareSetupPendingChange?.(inboxSetupPending);
@@ -114,15 +142,18 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
     toast[result.ok ? "success" : "error"](t(result.ok ? "subscription.familySharing.passwordCopied" : "subscription.familySharing.passwordCopyFailed"));
   };
 
-  return <section className="grid gap-4">
-    {showEnabledControl ? <div className="min-w-0"><Label className="flex items-center gap-2 text-sm font-medium"><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">{t("subscription.familySharing.help")}</p></div> : null}
-    <fieldset className="grid gap-2"><legend className="text-sm font-medium">{t("sharing.verificationMethod")}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-      {([ ["email", "sharing.emailMethod", Mail], ["totp", "sharing.totpMethod", ShieldCheck], ["none", "sharing.disabledMethod", CircleOff] ] as const).filter(([choice]) => showEnabledControl || choice !== "none").map(([choice, label, Icon]) => {
-        const selected = choice === "none" ? !value.enabled : value.enabled && mode === choice;
-        return <label key={choice} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted/50"}`}><input className="sr-only" type="radio" name={id("verificationMode")} value={choice} checked={selected} onChange={() => choice === "none" ? onChange({ ...value, enabled: false, verificationLink: "", totpAccountId: "" }) : onChange({ ...value, enabled: true, verificationMode: choice, verificationLink: choice === "totp" ? "" : value.verificationLink, totpAccountId: choice === "email" ? "" : value.totpAccountId ?? "" })} /><Icon className="h-4 w-4" />{t(label)}</label>;
-      })}
-    </div></fieldset>
-    {value.enabled ? <div className="grid gap-4 border-t border-border pt-3">
+  return <section ref={sectionRef} className="grid gap-4">
+    {showEnabledControl ? <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0"><Label htmlFor={id("familySharingEnabled")} className={`flex items-center gap-2 text-sm font-medium ${disableBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p id={id("familySharingHelp")} className={`mt-1 text-xs leading-5 ${disableBlocked ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>{t(disableBlocked ? "subscription.familySharing.disableBlocked" : "subscription.familySharing.help", disableBlocked ? { count: occupiedSeats } : undefined)}</p></div>
+      <Switch id={id("familySharingEnabled")} checked={value.enabled} disabled={disableBlocked} onCheckedChange={setSharingEnabled} aria-label={t("subscription.familySharing.title")} aria-describedby={id("familySharingHelp")} />
+    </div> : null}
+    {value.enabled ? <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-3" : "grid gap-4"}>
+      <fieldset className="grid gap-2"><legend className="text-sm font-medium">{t("sharing.verificationMethod")}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {([ ["email", "sharing.emailMethod", Mail], ["totp", "sharing.totpMethod", ShieldCheck] ] as const).map(([choice, label, Icon]) => {
+          const selected = mode === choice;
+          return <label key={choice} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted/50"}`}><input className="sr-only" type="radio" name={id("verificationMode")} value={choice} checked={selected} onChange={() => setVerificationMode(choice)} /><Icon className="h-4 w-4" />{t(label)}</label>;
+        })}
+      </div></fieldset>
       {showEnabledControl && mode === "email" ? <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
         <FormField id={id("familySharingMailbox")} label={t("sharing.mailboxSelection")}>{(field) => <Select value={matchedMailbox?.id ?? ""} onValueChange={(mailboxId) => { const mailbox = mailboxes.find((item) => item.id === mailboxId); const link = inboxLinks.find((item) => item.mailboxId === mailboxId && !item.seatId && item.status === "active" && item.folderIds.length > 0 && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())); onChange({ ...value, mailboxId, loginAccount: mailbox?.address ?? "", verificationLink: link?.shortUrl ?? "" }); }} disabled={inboxLoading}><SelectTrigger id={field.id} aria-describedby={field.describedBy}><SelectValue placeholder={inboxLoading ? t("sharing.loadingLinks") : t("sharing.selectMailboxPlaceholder")} /></SelectTrigger><SelectContent>{mailboxes.map((mailbox) => <SelectItem key={mailbox.id} value={mailbox.id}>{mailbox.displayName ? `${mailbox.displayName} · ` : ""}{mailbox.address}</SelectItem>)}</SelectContent></Select>}</FormField>
         <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>{(field) => <Input id={field.id} type="number" min={1} max={100} value={value.capacity} onChange={(event) => update("capacity", event.target.value)} required aria-describedby={field.describedBy} />}</FormField>

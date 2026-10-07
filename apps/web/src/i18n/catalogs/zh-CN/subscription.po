@@ -1579,6 +1579,11 @@ msgid "subscription.familySharing.help"
 msgstr "开启后自动在会员共享页生成此订阅对应的账号和车位。"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:130
+msgid "subscription.familySharing.disableBlocked"
+msgstr "会员共享中还有 {count} 个非空闲车位。请先将全部车位设为空闲，再关闭家庭共享。"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:76
 msgid "subscription.validation.startDateRequiredForAutoCalculate"
 msgstr "开启自动计算时需要开始日期"

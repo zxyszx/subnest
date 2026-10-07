@@ -4,7 +4,9 @@ package main
 //
 // 这里输出前端稳定 DTO，并把手动续订限制在当前 owner、非自动续订、非 one-time 订阅上。
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -38,6 +40,46 @@ type subscriptionFamilySharingResponse struct {
 	PasswordMask     string  `json:"passwordMask"`
 	VerificationLink *string `json:"verificationLink"`
 	Capacity         int     `json:"capacity"`
+	OccupiedSeats    int     `json:"occupiedSeats"`
+}
+
+func subscriptionAPIWithSharingState(app core.App, record *core.Record) (subscriptionDetailResponse, error) {
+	out := subscriptionAPIFromRecord(record)
+	if out.FamilySharing == nil {
+		return out, nil
+	}
+	occupiedSeats, err := occupiedSharingSeatsForSubscription(app, record.GetString("user"), record.Id)
+	if err != nil {
+		return subscriptionDetailResponse{}, err
+	}
+	out.FamilySharing.OccupiedSeats = occupiedSeats
+	return out, nil
+}
+
+func occupiedSharingSeatsForSubscription(app core.App, userID, subscriptionID string) (int, error) {
+	account, err := app.FindFirstRecordByFilter(
+		"sharing_accounts",
+		"user = {:user} && subscription = {:subscription}",
+		dbx.Params{"user": userID, "subscription": subscriptionID},
+	)
+	if errors.Is(err, sql.ErrNoRows) || account == nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	seats, err := app.FindRecordsByFilter(
+		"sharing_seats",
+		"user = {:user} && sharingAccount = {:account} && status != 'vacant' && status != 'archived'",
+		"",
+		100,
+		0,
+		dbx.Params{"user": userID, "account": account.Id},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return len(seats), nil
 }
 
 // handleSubscriptionRenew 按用户选择延续或重开当前订阅；Renewlet 只更新账本状态，不生成付款流水。

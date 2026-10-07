@@ -13,7 +13,7 @@ import {
   subscriptionUpdateBodySchema,
 } from "@renewlet/shared/schemas/subscriptions";
 import { familyTotpProjectionStatements, familyVerificationConfig } from "./sharing-totp-links";
-import { boolToInt, getSettings, getSubscription, newId, nowIso, parseJsonObject, parseStringArray, SUBSCRIPTION_COLUMNS, subscriptionRowValues, toApiSubscription, toApiSubscriptionCollectionItem } from "./db";
+import { boolToInt, countOccupiedSharingSeats, getSettings, getSubscription, newId, nowIso, parseJsonObject, parseStringArray, SUBSCRIPTION_COLUMNS, subscriptionRowValues, toApiSubscription, toApiSubscriptionCollectionItem } from "./db";
 import { listSubscriptionsForQuery, parsePrivateSubscriptionCursor, privateSubscriptionCursor } from "./subscription-list-filters";
 import { subscriptionCollectionQueryInput } from "./subscription-query";
 import { advanceSubscriptionRenewal, dateOnlyInZone } from "./subscription-renewal";
@@ -95,6 +95,12 @@ export async function updateSubscription(request: Request, env: Env, id: string)
   const settings = await getSettings(env, auth.user.id);
   // Worker 没有 PocketBase hook 可二次归一；切换计费类型时先清理互斥字段，再合并 patch 走同一套 create schema。
   const mergedBody = parseSubscriptionBodyForStorage(mergeSubscriptionPatchForStorage(toBody(existing), stripUndefined(patch)), locale);
+  const occupiedSeats = existing.family_sharing_enabled
+    ? await countOccupiedSharingSeats(env, auth.user.id, id)
+    : 0;
+  if (existing.family_sharing_enabled && !mergedBody.familySharing?.enabled && occupiedSeats > 0) {
+    throw new HttpError(409, "Set every sharing seat to vacant before disabling family sharing.", "FAMILY_SHARING_OCCUPIED_SEATS");
+  }
   const familySharing = await resolveFamilySharingStorage(env, mergedBody.familySharing ?? null, existing, locale);
   const merged = toSubscriptionRow(existing.id, auth.user.id, mergedBody, existing.created_at, timestamp, { settings, familySharing });
   await assertUniquePlatformAccountNumber(env, auth.user.id, merged.platform_name ?? merged.name, merged.account_number ?? 1, id, locale);
@@ -160,7 +166,7 @@ export async function updateSubscription(request: Request, env: Env, id: string)
     sharingStatements.unshift(env.DB.prepare("UPDATE shared_inbox_links SET status='revoked',revoked_at=?,updated_at=? WHERE user_id=? AND seat_id IN (SELECT seat.id FROM sharing_seats seat JOIN sharing_accounts account ON account.id=seat.sharing_account_id WHERE account.user_id=? AND account.subscription_id=?)").bind(timestamp,timestamp,auth.user.id,auth.user.id,id));
   }
   await env.DB.batch([...derived.beforeFact, factStatement, ...sharingStatements, ...derived.afterFact]);
-  return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(merged) }));
+  return successJson(subscriptionPayloadSchema.parse({ subscription: toApiSubscription(merged, merged.family_sharing_enabled ? occupiedSeats : 0) }));
 }
 
 export async function deleteSubscription(request: Request, env: Env, id: string): Promise<Response> {

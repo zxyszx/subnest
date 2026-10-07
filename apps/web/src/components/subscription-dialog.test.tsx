@@ -120,6 +120,7 @@ describe("SubscriptionDialog", () => {
           subscription={makeSubscription({
             familySharing: {
               enabled: true,
+              occupiedSeats: 0,
               loginAccount: "family@example.com",
               hasPassword: true,
               passwordMask: "s***d",
@@ -140,6 +141,37 @@ describe("SubscriptionDialog", () => {
     expect(within(dialog).queryByLabelText("平台名称")).not.toBeInTheDocument();
     expect(within(dialog).queryByLabelText("金额")).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "保存账号" })).toBeInTheDocument();
+  });
+
+  it("locks the family-sharing switch while membership seats are occupied", async () => {
+    render(
+      <TooltipProvider delayDuration={0}>
+        <SubscriptionDialog
+          loadingPreview={null}
+          mode="edit"
+          open
+          onOpenChange={vi.fn()}
+          onSubmit={vi.fn()}
+          subscription={makeSubscription({
+            familySharing: {
+              enabled: true,
+              occupiedSeats: 2,
+              loginAccount: "family@example.com",
+              hasPassword: true,
+              passwordMask: "s***d",
+              verificationLink: "https://example.com/verify",
+              capacity: 5,
+            },
+          })}
+        />
+      </TooltipProvider>,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "编辑订阅" });
+    const familySwitch = within(dialog).getByRole("switch", { name: "家庭共享" });
+    expect(familySwitch).toBeChecked();
+    expect(familySwitch).toBeDisabled();
+    expect(within(dialog).getByText("会员共享中还有 2 个非空闲车位。请先将全部车位设为空闲，再关闭家庭共享。")).toBeInTheDocument();
   });
 
   it("marks an existing platform account number as already added", async () => {

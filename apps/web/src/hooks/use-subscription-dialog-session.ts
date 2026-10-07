@@ -263,6 +263,7 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
     costSharing: subscription.costSharing,
     familySharing: subscription.familySharing ? {
       enabled: subscription.familySharing.enabled,
+      occupiedSeats: subscription.familySharing.occupiedSeats,
       loginAccount: subscription.familySharing.loginAccount,
       password: "",
       hasPassword: subscription.familySharing.hasPassword,

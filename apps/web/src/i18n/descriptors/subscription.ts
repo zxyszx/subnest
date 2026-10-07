@@ -127,6 +127,7 @@ export const messages = [
   msg({ id: "subscription.costSharing.title", message: "家庭共享" }),
   msg({ id: "subscription.familySharing.title", message: "家庭共享" }),
   msg({ id: "subscription.familySharing.help", message: "开启后自动在会员共享页生成此订阅对应的账号和车位。" }),
+  msg({ id: "subscription.familySharing.disableBlocked", message: "会员共享中还有 {count} 个非空闲车位。请先将全部车位设为空闲，再关闭家庭共享。" }),
   msg({ id: "subscription.familySharing.loginAccount", message: "登录账号" }),
   msg({ id: "subscription.familySharing.password", message: "登录密码" }),
   msg({ id: "subscription.familySharing.passwordPlaceholder", message: "输入登录密码" }),

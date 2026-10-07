@@ -82,8 +82,30 @@ func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
 	if err != nil || len(seats) != 5 {
 		t.Fatalf("projected seats = %d err=%v", len(seats), err)
 	}
+	seats[0].Set("status", "active")
+	seats[0].Set("memberName", "Alice")
+	if err := app.Save(seats[0]); err != nil {
+		t.Fatal(err)
+	}
+	detailResponse := serveTestRequest(t, app, http.MethodGet, "/api/app/subscriptions/"+envelope.Data.Subscription.ID, "", token)
+	if detailResponse.Code != http.StatusOK {
+		t.Fatalf("subscription detail status = %d body=%s", detailResponse.Code, detailResponse.Body.String())
+	}
+	detail := decodeAPISuccessDataForTest[subscriptionResponse](t, detailResponse.Body.Bytes()).Subscription
+	if detail.FamilySharing == nil || detail.FamilySharing.OccupiedSeats != 1 {
+		t.Fatalf("unexpected occupied seat count: %#v", detail.FamilySharing)
+	}
 
 	patch := `{"familySharing":null}`
+	blocked := serveTestRequest(t, app, http.MethodPatch, "/api/app/subscriptions/"+envelope.Data.Subscription.ID, patch, token)
+	if blocked.Code != http.StatusConflict {
+		t.Fatalf("occupied seats should block disabling family sharing, got %d body=%s", blocked.Code, blocked.Body.String())
+	}
+	seats[0].Set("status", "vacant")
+	seats[0].Set("memberName", "")
+	if err := app.Save(seats[0]); err != nil {
+		t.Fatal(err)
+	}
 	disabled := serveTestRequest(t, app, http.MethodPatch, "/api/app/subscriptions/"+envelope.Data.Subscription.ID, patch, token)
 	if disabled.Code != http.StatusOK {
 		t.Fatalf("disable status = %d body=%s", disabled.Code, disabled.Body.String())

@@ -422,6 +422,42 @@ describe("Cloudflare subscription mapper", () => {
     expect(schedulerMutationValues.at(-1)).toBe(USER_ID);
   });
 
+  it("rejects disabling family sharing while a seat is not vacant", async () => {
+    const existing = toSubscriptionRow("sub_family_occupied", USER_ID, subscriptionBody({
+      familySharing: {
+        enabled: true,
+        loginAccount: "family@example.com",
+        password: "secret-password",
+        verificationLink: "",
+        capacity: 5,
+      },
+    }), "2026-06-05T00:00:00.000Z", "2026-06-05T00:00:00.000Z");
+    const env = {
+      DB: {
+        prepare: (sql: string) => ({
+          bind: () => ({
+            first: async <T>() => {
+              if (sql.includes("FROM subscriptions")) return existing as T;
+              if (sql.includes("FROM sharing_seats seat")) return { count: 1 } as T;
+              return null;
+            },
+          }),
+        }),
+      } as unknown as D1Database,
+      ASSETS: {} as Fetcher,
+      ASSETS_BUCKET: {} as R2Bucket,
+    } satisfies Env;
+
+    await expect(updateSubscription(new Request("https://renewlet.test/api/app/subscriptions/sub_family_occupied", {
+      method: "PATCH",
+      headers: { "content-type": "application/json", authorization: "Bearer test" },
+      body: JSON.stringify({ familySharing: null }),
+    }), env, "sub_family_occupied")).rejects.toMatchObject({
+      status: 409,
+      code: "FAMILY_SHARING_OCCUPIED_SEATS",
+    });
+  });
+
   it("clears one-time term fields for recurring subscriptions", () => {
     const row = toSubscriptionRow("sub_monthly", "usr_custom", subscriptionBody({
       billingCycle: "monthly",

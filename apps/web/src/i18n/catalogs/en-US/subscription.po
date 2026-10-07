@@ -1579,6 +1579,11 @@ msgid "subscription.familySharing.help"
 msgstr "When enabled, this subscription automatically creates its account and seats in Sharing."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:130
+msgid "subscription.familySharing.disableBlocked"
+msgstr "Sharing still has {count} non-vacant seats. Set every seat to vacant before turning off family sharing."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:76
 msgid "subscription.validation.startDateRequiredForAutoCalculate"
 msgstr "Start date is required when automatic calculation is enabled."

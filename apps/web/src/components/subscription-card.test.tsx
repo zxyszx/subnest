@@ -189,13 +189,15 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ familySharingLoginAccount: undefined });
     expect(screen.queryByText("netflix17@example.com")).not.toBeInTheDocument();
   });
-  it("keeps a long family account on one line with the full address available", () => {
+  it("shows the full family account and keeps the grid price on one line", () => {
     const account = "primevideo02.long-family-account-name@verification.example.test";
-    renderSubscriptionCard({ familySharingLoginAccount: account }, {}, { viewMode: "grid" });
+    renderSubscriptionCard({ familySharingLoginAccount: account, price: "8500", currency: "NGN" }, {}, { viewMode: "grid" });
     expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent(account);
-    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("col-span-full");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("break-all");
     expect(screen.getByTestId("subscription-card-family-account")).toHaveAttribute("title", account);
-    expect(screen.getByText(account)).toHaveClass("truncate");
+    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("truncate");
+    expect(screen.getByTestId("subscription-card-price")).toHaveClass("whitespace-nowrap", "tabular-nums");
+    expect(screen.getByTestId("subscription-card-price")).toHaveTextContent("NGN");
   });
 
   it("uses a yellow renewal treatment from four to seven days", () => {
@@ -349,7 +351,7 @@ describe("SubscriptionCard", () => {
     expect(initials.closest(".subscription-logo-tile")).not.toBeNull();
   });
 
-  it("lets the badge group use the full header width before wrapping", () => {
+  it("keeps the compact header stable while preserving full text access", () => {
     renderSubscriptionCard();
 
     const categoryText = screen.getByText(mocks.longCategoryLabel);
@@ -360,8 +362,8 @@ describe("SubscriptionCard", () => {
 
     expect(badgeGroup).toHaveClass("col-span-full", "hidden");
     expect(badgeGroup).not.toHaveClass("overflow-hidden");
-    expect(subscriptionName).toHaveClass("wrap-break-word");
-    expect(subscriptionName).not.toHaveAttribute("title");
+    expect(subscriptionName).toHaveClass("truncate", "flex-1");
+    expect(subscriptionName).toHaveAttribute("title", baseSubscription.name);
     expect(categoryBadge).not.toHaveAttribute("title");
     expect(categoryBadge).toHaveClass(
       "max-w-full",
