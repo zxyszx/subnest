@@ -40,13 +40,16 @@ test("general inbox links require folders and provide seat-scoped member links",
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/shared-inboxes");
   await expect(page.getByRole("button", { name: "车位链接", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "通用分享", exact: true }).click();
+  await page.getByRole("button", { name: "管理分享", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "管理共享收件箱" });
   await expect(dialog.getByRole("button", { name: "开启分享", exact: true })).toBeDisabled();
   await dialog.getByRole("checkbox").check();
   await dialog.getByRole("button", { name: "开启分享", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toBeEnabled();
   await dialog.getByRole("button", { name: "重置链接", exact: true }).click();
+  const resetConfirmation = page.getByRole("alertdialog", { name: "确认重置链接？" });
+  await expect(resetConfirmation).toBeVisible();
+  await resetConfirmation.getByRole("button", { name: "确认", exact: true }).click();
   await expect.poll(() => revoked).toEqual(["general-0"]);
   await expect(dialog.getByRole("button", { name: "重置链接", exact: true })).toBeEnabled();
   await dialog.screenshot({ path: testInfo.outputPath("general-inbox-desktop.png") });
