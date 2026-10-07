@@ -23,7 +23,7 @@ export const sharedInboxLinkRequestSchema = z.object({
     z.literal(10080),
   ]),
   expiresAt: z.string().datetime().nullable().optional(),
-}).strict().refine((value) => !value.seatId || Boolean(value.expiresAt), { message: "车位链接必须设置有效期", path: ["expiresAt"] });
+}).strict();
 export const sharedInboxMessagesResponseSchema = apiSuccessResponseSchema(z.object({ messages: z.array(z.record(z.string(), z.unknown())), nextCursor: z.string().nullable().optional() }).strict());
 export const sharedInboxMessageResponseSchema = apiSuccessResponseSchema(z.object({ message: z.record(z.string(), z.unknown()) }).strict());
 export type NewSzxcnConfigRequest = z.infer<typeof newszxcnConfigRequestSchema>;

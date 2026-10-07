@@ -103,7 +103,7 @@ export async function revokeSharedInboxLink(request: Request, env: Env, id: stri
   return json({ok:true});
 }
 
-async function publicLink(env: Env, shortKey: string) { const hash=await sha256(shortKey); const row=await env.DB.prepare("SELECT * FROM shared_inbox_links WHERE short_key_hash=? AND status='active'").bind(hash).first<SharedLinkRow>(); if(!row) throw new HttpError(404,"短链接不存在或已失效","NOT_FOUND"); if((row.seat_id && !row.expires_at) || (row.expires_at && !(Date.parse(row.expires_at)>Date.now()))) throw new HttpError(403,"短链接已过期","LINK_EXPIRED"); if(row.seat_id) await validateInboxSeat(env,row.user_id,row.seat_id,row.mailbox_address); return row; }
+async function publicLink(env: Env, shortKey: string) { const hash=await sha256(shortKey); const row=await env.DB.prepare("SELECT * FROM shared_inbox_links WHERE short_key_hash=? AND status='active'").bind(hash).first<SharedLinkRow>(); if(!row) throw new HttpError(404,"短链接不存在或已失效","NOT_FOUND"); if(row.expires_at && !(Date.parse(row.expires_at)>Date.now())) throw new HttpError(403,"短链接已过期","LINK_EXPIRED"); if(row.seat_id) await validateInboxSeat(env,row.user_id,row.seat_id,row.mailbox_address); return row; }
 
 async function validateInboxSeat(env: Env, userId: string, seatId: string, address: string) {
   const seat = await env.DB.prepare(`SELECT seat.updated_at AS seat_updated, account.updated_at AS account_updated, subscription.updated_at AS subscription_updated FROM sharing_seats seat

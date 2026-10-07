@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, RefreshCw, Settings2, UsersRound, X } from "lucide-react";
-import { Link } from "react-router";
+import { CircleOff, Copy, Eye, EyeOff, Loader2, Mail, RefreshCw, ShieldCheck, UsersRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { FamilySharingFormState } from "@/types/subscription-form";
 import { subscriptionService } from "@/services/subscription-service";
@@ -39,10 +38,10 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   const [totpFailed, setTotpFailed] = useState(false);
   const [totpLoaded, setTotpLoaded] = useState(false);
   const mode = value.verificationMode ?? "email";
-  const matchedMailbox = mailboxes.find((mailbox) => mailbox.address.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
+  const matchedMailbox = mailboxes.find((mailbox) => mailbox.id === value.mailboxId) ?? mailboxes.find((mailbox) => mailbox.address.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
   const matchedInboxLink = matchedMailbox ? inboxLinks.find((link) => link.mailboxId === matchedMailbox.id && !link.seatId && link.status === "active" && link.folderIds.length > 0 && (!link.expiresAt || Date.parse(link.expiresAt) > inboxNow)) : undefined;
   const inboxSetupRequired = Boolean(showEnabledControl && value.enabled && mode === "email");
-  const inboxSetupPending = inboxSetupRequired && (inboxLoading || inboxFailed || !matchedMailbox || !matchedInboxLink);
+  const inboxSetupPending = inboxSetupRequired && (inboxLoading || inboxFailed || !matchedMailbox);
   const totpMatches = totpAccounts.filter((account) => account.enabled && account.account.trim().toLowerCase() === value.loginAccount.trim().toLowerCase());
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => onChange({ ...value, [key]: next });
 
@@ -69,6 +68,12 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
     }).finally(() => { if (!cancelled) setInboxLoading(false); });
     return () => { cancelled = true; };
   }, [value.enabled, mode]);
+  useEffect(() => {
+    if (!showEnabledControl || !value.enabled || mode !== "email" || !matchedMailbox) return;
+    const nextLink = matchedInboxLink?.shortUrl ?? "";
+    if (value.mailboxId === matchedMailbox.id && value.loginAccount === matchedMailbox.address && value.verificationLink === nextLink) return;
+    onChange({ ...value, mailboxId: matchedMailbox.id, loginAccount: matchedMailbox.address, verificationLink: nextLink });
+  }, [matchedInboxLink, matchedMailbox, mode, onChange, showEnabledControl, value]);
   useEffect(() => {
     if (!value.enabled || mode !== "totp") return;
     const controller = new AbortController();
@@ -110,18 +115,21 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   };
 
   return <section className="grid gap-4">
-    {showEnabledControl ? <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0"><Label htmlFor={id("familySharingEnabled")} className="flex cursor-pointer items-center gap-2 text-sm font-medium"><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">{t("subscription.familySharing.help")}</p></div>
-      <Switch id={id("familySharingEnabled")} checked={value.enabled} onCheckedChange={(enabled) => update("enabled", enabled)} />
-    </div> : null}
-    {value.enabled ? <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-3" : "grid gap-4"}>
-      <fieldset className="grid gap-2"><legend className="mb-2 text-sm font-medium">{t("sharing.verificationMethod")}</legend><div className="flex flex-wrap gap-4">
-        {([ ["email", "sharing.emailMethod"], ["totp", "sharing.totpMethod"] ] as const).map(([choice, label]) => <label key={choice} className="flex cursor-pointer items-center gap-2 text-sm"><input type="radio" name={id("verificationMode")} value={choice} checked={mode === choice} onChange={() => onChange({ ...value, verificationMode: choice, totpAccountId: "" })} />{t(label)}</label>)}
-      </div></fieldset>
-      <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
+    {showEnabledControl ? <div className="min-w-0"><Label className="flex items-center gap-2 text-sm font-medium"><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">{t("subscription.familySharing.help")}</p></div> : null}
+    <fieldset className="grid gap-2"><legend className="text-sm font-medium">{t("sharing.verificationMethod")}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      {([ ["email", "sharing.emailMethod", Mail], ["totp", "sharing.totpMethod", ShieldCheck], ["none", "sharing.disabledMethod", CircleOff] ] as const).filter(([choice]) => showEnabledControl || choice !== "none").map(([choice, label, Icon]) => {
+        const selected = choice === "none" ? !value.enabled : value.enabled && mode === choice;
+        return <label key={choice} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted/50"}`}><input className="sr-only" type="radio" name={id("verificationMode")} value={choice} checked={selected} onChange={() => choice === "none" ? onChange({ ...value, enabled: false, verificationLink: "", totpAccountId: "" }) : onChange({ ...value, enabled: true, verificationMode: choice, verificationLink: choice === "totp" ? "" : value.verificationLink, totpAccountId: choice === "email" ? "" : value.totpAccountId ?? "" })} /><Icon className="h-4 w-4" />{t(label)}</label>;
+      })}
+    </div></fieldset>
+    {value.enabled ? <div className="grid gap-4 border-t border-border pt-3">
+      {showEnabledControl && mode === "email" ? <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
+        <FormField id={id("familySharingMailbox")} label={t("sharing.mailboxSelection")}>{(field) => <Select value={matchedMailbox?.id ?? ""} onValueChange={(mailboxId) => { const mailbox = mailboxes.find((item) => item.id === mailboxId); const link = inboxLinks.find((item) => item.mailboxId === mailboxId && !item.seatId && item.status === "active" && item.folderIds.length > 0 && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())); onChange({ ...value, mailboxId, loginAccount: mailbox?.address ?? "", verificationLink: link?.shortUrl ?? "" }); }} disabled={inboxLoading}><SelectTrigger id={field.id} aria-describedby={field.describedBy}><SelectValue placeholder={inboxLoading ? t("sharing.loadingLinks") : t("sharing.selectMailboxPlaceholder")} /></SelectTrigger><SelectContent>{mailboxes.map((mailbox) => <SelectItem key={mailbox.id} value={mailbox.id}>{mailbox.displayName ? `${mailbox.displayName} · ` : ""}{mailbox.address}</SelectItem>)}</SelectContent></Select>}</FormField>
+        <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>{(field) => <Input id={field.id} type="number" min={1} max={100} value={value.capacity} onChange={(event) => update("capacity", event.target.value)} required aria-describedby={field.describedBy} />}</FormField>
+      </FormFieldRow> : <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
         <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>{(field) => <Input id={field.id} value={value.loginAccount} onChange={(event) => update("loginAccount", event.target.value)} autoComplete="username" required aria-describedby={field.describedBy} list={mailboxes.length ? id("newszxcn-mailboxes") : undefined} />}</FormField>
         <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>{(field) => <Input id={field.id} type="number" min={1} max={100} value={value.capacity} onChange={(event) => update("capacity", event.target.value)} required aria-describedby={field.describedBy} />}</FormField>
-      </FormFieldRow>
+      </FormFieldRow>}
       {mailboxes.length ? <datalist id={id("newszxcn-mailboxes")}>{mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.address} />)}</datalist> : null}
       <FormField id={id("familySharingPassword")} label={t("subscription.familySharing.password")}>{(field) => <div className="relative">
         <Input id={field.id} type={passwordVisible ? "text" : "password"} value={value.password} onChange={(event) => update("password", event.target.value)} placeholder={value.hasPassword ? value.passwordMask : t("subscription.familySharing.passwordPlaceholder")} autoComplete="new-password" required={!value.hasPassword} aria-describedby={field.describedBy} className="pr-32" />
@@ -132,11 +140,10 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       {mode === "totp" ? <div className="grid gap-2 text-xs" role="status">
         {totpLoading ? <span className="text-muted-foreground">{t("sharing.totpMatching")}</span> : totpFailed ? <span className="text-destructive">{t("sharing.totpLoadError")}</span> : totpMatches.length === 0 ? <span className="text-destructive">{t("sharing.totpMissing")}</span> : totpMatches.length === 1 ? <span className="text-primary">{t("sharing.totpMatched")}{totpMatches[0]!.platformName} #{totpMatches[0]!.accountNumber}</span> : <label className="grid gap-1">{t("sharing.totpSelect")}<select aria-label={t("sharing.totpRecord")} className="h-9 rounded-md border border-border bg-background px-2" value={value.totpAccountId ?? ""} onChange={(event) => update("totpAccountId", event.target.value)}><option value="">{t("sharing.totpSelectPlaceholder")}</option>{totpMatches.map((account) => <option key={account.id} value={account.id}>{account.platformName} #{account.accountNumber} · {account.serviceName}</option>)}</select></label>}
       </div> : null}
-      {showEnabledControl && mode === "email" ? <div className="flex flex-col gap-3 rounded-md border border-border bg-muted/25 p-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+      {showEnabledControl && mode === "email" ? <div className="rounded-md border border-border bg-muted/25 p-3" role="status">
         <p className={matchedInboxLink ? "text-xs text-primary" : inboxFailed || (!inboxLoading && !matchedMailbox) ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
-          {inboxLoading ? t("sharing.loadingLinks") : inboxFailed ? t("sharing.loadLinksFailed") : !matchedMailbox ? t("sharing.mailboxNotMatched") : matchedInboxLink ? `${t("sharing.linkFolders")}：${matchedInboxLink.folderIds.length}` : t("sharing.configureGenericMailbox")}
+          {inboxLoading ? t("sharing.loadingLinks") : inboxFailed ? t("sharing.loadLinksFailed") : !matchedMailbox ? t("sharing.selectMailboxPlaceholder") : matchedInboxLink ? t("sharing.mailboxLinkReady") : t("sharing.mailboxLinkWillCreate")}
         </p>
-        <Button type="button" variant="outline" size="sm" asChild className="shrink-0"><Link to="/shared-inboxes"><Settings2 className="h-4 w-4" />{t("sharing.manageGenericMailbox")}</Link></Button>
       </div> : null}
       {!showEnabledControl && mode === "email" ? <FormField id={id("familySharingVerificationLink")} label="验证码链接">{(field) => <div className="relative">
         <Input id={field.id} type="url" value={value.verificationLink} onChange={(event) => update("verificationLink", event.target.value)} placeholder={t("subscription.familySharing.verificationLinkPlaceholder")} aria-describedby={field.describedBy} className="pr-22" />

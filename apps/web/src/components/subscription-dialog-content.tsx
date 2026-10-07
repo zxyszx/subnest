@@ -36,6 +36,7 @@ import { todayDateOnlyInTimeZone } from "@/lib/time/date-only";
 import { getSystemTimeZone } from "@/lib/time/time-zone";
 import { withCurrentSubscriptionFormOptions } from "@/lib/subscription-form-config";
 import type { SubscriptionDialogContentProps } from "@/components/subscription-dialog-types";
+import { newszxcnService } from "@/services/newszxcn-service";
 
 type SubscriptionFormLoadingPreview = Subscription | SubscriptionCollectionItem | SubscriptionFormState | null;
 
@@ -227,6 +228,15 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     try {
       if (submissionFormData.familySharing.enabled && submissionFormData.familySharing.verificationMode) {
         if (submissionFormData.familySharing.verificationMode === "totp" && submission.familySharing) submission.familySharing.verificationLink = "";
+        if (submissionFormData.familySharing.verificationMode === "email" && submission.familySharing && !submission.familySharing.verificationLink) {
+          const mailboxId = submissionFormData.familySharing.mailboxId;
+          if (!mailboxId) throw new Error(t("sharing.selectMailboxPlaceholder"));
+          const folderResult = await newszxcnService.folders(mailboxId);
+          const inbox = folderResult.items.find((folder) => folder.role === "inbox");
+          if (!inbox) throw new Error(t("sharing.mailboxInboxMissing"));
+          const created = await newszxcnService.create({ mailboxId, folderIds: [inbox.id], windowMinutes: 30 });
+          submission.familySharing.verificationLink = created.link.shortUrl;
+        }
         submission.extra = { ...editSubscription?.extra, familyVerification: {
           mode: submissionFormData.familySharing.verificationMode,
           totpAccountId: submissionFormData.familySharing.verificationMode === "totp" ? submissionFormData.familySharing.totpAccountId : "",

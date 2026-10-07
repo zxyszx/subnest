@@ -58,8 +58,10 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 			t.Fatal("new link invalid")
 		}
 	}
-	if bySeat[""].ExpiresAt != nil {
-		t.Fatal("default link must not have a fixed expiration")
+	for _, link := range payload.Links {
+		if link.ExpiresAt != nil {
+			t.Fatal("2FA links must not have a fixed expiration")
+		}
 	}
 	public := func(path string) int {
 		return serveTestRequest(t, app, http.MethodGet, "/api/online-totp/"+strings.TrimPrefix(path, "/otp/"), "", "").Code

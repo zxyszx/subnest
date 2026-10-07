@@ -75,9 +75,6 @@ func handleSharedInboxLinkCreate(app core.App, e *core.RequestEvent) error {
 	if len(body.SeatID) > 256 {
 		return e.BadRequestError("车位编号无效", nil)
 	}
-	if body.SeatID != "" && body.ExpiresAt == nil {
-		return e.BadRequestError("车位链接必须设置有效期", nil)
-	}
 	if body.MailboxID == "" || len(body.FolderIDs) == 0 {
 		return e.BadRequestError("请选择邮箱和至少一个文件夹", nil)
 	}
@@ -264,9 +261,6 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 		return e.NotFoundError("短链接不存在或已失效", nil)
 	}
 	if seatID := record.GetString("seatId"); seatID != "" {
-		if strings.TrimSpace(record.GetString("expiresAt")) == "" {
-			return apiErrorJSON(e, http.StatusForbidden, "LINK_EXPIRED", "短链接已过期", nil)
-		}
 		if err := validateInboxSeat(app, record.GetString("user"), seatID, record.GetString("mailboxAddress")); err != nil {
 			return e.NotFoundError("车位分享已关闭", nil)
 		}

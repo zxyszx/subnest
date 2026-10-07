@@ -46,8 +46,8 @@ func ensureSharingTotpLinksCollection(app core.App, users *core.Collection) erro
 	if err != nil {
 		return err
 	}
-	// Upgrade live default tokens without reviving expired or revoked grants.
-	_, err = app.DB().NewQuery("UPDATE sharing_totp_links SET expiresAt='' WHERE seatId='' AND revoked=0 AND julianday(expiresAt)>julianday('now')").Execute()
+	// Upgrade every live token to the current permanent-link contract without reviving expired grants.
+	_, err = app.DB().NewQuery("UPDATE sharing_totp_links SET expiresAt='' WHERE revoked=0 AND julianday(expiresAt)>julianday('now')").Execute()
 	return err
 }
 
@@ -99,9 +99,9 @@ func familyTotpBinding(app core.App, userID, accountID, seatID string) (*core.Re
 }
 
 func sharingTotpLinkValid(app core.App, link *core.Record) bool {
-	expiry, err := time.Parse(time.RFC3339Nano, link.GetString("expiresAt"))
-	permanentDefault := link.GetString("seatId") == "" && link.GetString("expiresAt") == ""
-	if link.GetBool("revoked") || (!permanentDefault && (err != nil || !expiry.After(time.Now()))) {
+	expiresAt := link.GetString("expiresAt")
+	expiry, err := time.Parse(time.RFC3339Nano, expiresAt)
+	if link.GetBool("revoked") || (expiresAt != "" && (err != nil || !expiry.After(time.Now()))) {
 		return false
 	}
 	_, hash, err := familyTotpBinding(app, link.GetString("user"), link.GetString("accountId"), link.GetString("seatId"))
@@ -122,7 +122,7 @@ func ensureFamilyTotpLink(app core.App, userID, accountID, seatID string, reset 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("scope lookup: %w", err)
 	}
-	if err == nil && !reset && sharingTotpLinkValid(app, record) {
+	if err == nil && !reset && record.GetString("expiresAt") == "" && sharingTotpLinkValid(app, record) {
 		return nil
 	}
 	if err == nil && !reset && record.GetBool("revoked") && record.GetString("bindingHash") == hash {
@@ -140,31 +140,7 @@ func ensureFamilyTotpLink(app core.App, userID, accountID, seatID string, reset 
 	if err != nil {
 		return err
 	}
-	expiry := time.Now().Add(30 * 24 * time.Hour)
-	if seatID != "" {
-		seat, err := findOwnedSharingSeat(app, userID, seatID)
-		if err != nil {
-			return err
-		}
-		if date := seat.GetString("expiresAt"); date != "" {
-			location, err := time.LoadLocation(schedulerSettingsForUser(app, userID).Timezone)
-			if err != nil {
-				location = time.UTC
-			}
-			day, err := time.ParseInLocation("2006-01-02", date, location)
-			end := day.AddDate(0, 0, 1).Add(-time.Second)
-			if err != nil || !end.After(time.Now()) {
-				return fmt.Errorf("seat expired")
-			}
-			if end.Before(expiry) {
-				expiry = end
-			}
-		}
-	}
 	expiresAt := ""
-	if seatID != "" {
-		expiresAt = expiry.UTC().Format(time.RFC3339)
-	}
 	for key, value := range map[string]any{"user": userID, "accountId": accountID, "seatId": seatID, "scopeKey": scopeKey, "totpId": otp.Id, "tokenHash": onlineTotpShareHash(token), "tokenCiphertext": ciphertext, "bindingHash": hash, "expiresAt": expiresAt, "revoked": false} {
 		record.Set(key, value)
 	}

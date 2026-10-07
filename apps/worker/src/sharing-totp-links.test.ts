@@ -34,7 +34,7 @@ describe("family 2FA scopes",()=> {
  beforeEach(()=>{auth.userId="owner";});
  it("creates a permanent default token and independent occupied-seat tokens without exposing the key",async()=>{
   const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(3);expect(links.find(link=>!link.seatId)!.expiresAt).toBeNull();
-  expect(links.filter(link=>link.seatId).every(link=>Boolean(link.expiresAt))).toBe(true);
+  expect(links.every(link=>link.expiresAt===null)).toBe(true);
   expect(JSON.stringify(links)).not.toContain("private-key");for(const link of links) expect(await resolvePublicSharingTotp(env,token(link))).toMatchObject({id:"otp"});
  });
  it("upgrades only live default grants without reviving revoked or expired grants",async()=>{

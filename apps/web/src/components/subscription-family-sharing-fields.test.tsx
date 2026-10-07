@@ -33,26 +33,25 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
     expect(screen.getByLabelText("subscription.familySharing.capacity")).toHaveValue(5);
   });
-  it("requires a configured mailbox-wide link before saving email sharing", async () => {
-    const user = userEvent.setup();
+  it("selects a mailbox in place and reuses its configured general link", async () => {
     const pending = vi.fn();
     render(<Harness onPendingChange={pending} />);
     await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
     expect(mocks.links).toHaveBeenCalled();
-    expect(screen.getByText("sharing.linkFolders：1")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "sharing.manageGenericMailbox" })).toHaveAttribute("href", "/shared-inboxes");
+    expect(screen.getByText("sharing.mailboxLinkReady")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "sharing.mailboxSelection" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "sharing.manageGenericMailbox" })).not.toBeInTheDocument();
     await waitFor(() => expect(pending).toHaveBeenLastCalledWith(false));
-    await user.click(screen.getByRole("switch", { name: "subscription.familySharing.title" }));
     expect(mocks.revoke).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
     expect(pending).toHaveBeenLastCalledWith(false);
   });
-  it("keeps email sharing pending when no folder-scoped generic link exists", async () => {
+  it("allows saving a selected mailbox when a general link must be created", async () => {
     const pending = vi.fn();
     mocks.links.mockResolvedValue({ links: [] });
     render(<Harness onPendingChange={pending} />);
-    expect(await screen.findByText("sharing.configureGenericMailbox")).toBeInTheDocument();
-    await waitFor(() => expect(pending).toHaveBeenLastCalledWith(true));
+    expect(await screen.findByText("sharing.mailboxLinkWillCreate")).toBeInTheDocument();
+    await waitFor(() => expect(pending).toHaveBeenLastCalledWith(false));
   });
   it("preserves an external verification link and allows clearing it", async () => {
     const user = userEvent.setup();
@@ -67,7 +66,7 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     render(<Harness verificationLink="https://example.com/otp" />);
     await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
     expect(screen.queryByDisplayValue("https://example.com/otp")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "sharing.mailboxSelection" })).toBeInTheDocument();
   });
   it("retains password generation and visibility controls", async () => {
     const user = userEvent.setup();

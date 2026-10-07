@@ -56,10 +56,10 @@ describe("seat inbox link authorization", () => {
       return Response.json({ messages: [] });
     });
   });
-  it("requires an expiration for seat grants but keeps generic grants compatible", () => {
+  it("allows permanent seat and generic grants", () => {
     const body = { mailboxId: "mailbox", folderIds: ["inbox"], windowMinutes: 30 };
     expect(sharedInboxLinkRequestSchema.safeParse(body).success).toBe(true);
-    expect(sharedInboxLinkRequestSchema.safeParse({ ...body, seatId: "seat1" }).success).toBe(false);
+    expect(sharedInboxLinkRequestSchema.safeParse({ ...body, seatId: "seat1" }).success).toBe(true);
   });
   it("does not overwrite a subscription configured for online 2FA", async () => {
     const { database, env } = fixture();

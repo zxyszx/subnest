@@ -91,7 +91,7 @@ func TestSeatInboxProxyFailsClosedWithoutUpstreamRequest(t *testing.T) {
 	}
 }
 
-func TestSeatInboxCreationRequiresExpiryAndAdmin(t *testing.T) {
+func TestSeatInboxCreationAllowsPermanentLinksAndRequiresAdmin(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {
 		t.Fatal(err)
@@ -100,8 +100,8 @@ func TestSeatInboxCreationRequiresExpiryAndAdmin(t *testing.T) {
 	_, userToken := createRouteTestUser(t, app, "user")
 	body := `{"mailboxId":"mailbox","seatId":"seat","folderIds":["inbox"],"windowMinutes":30}`
 	response := serveTestRequest(t, app, http.MethodPost, "/api/app/admin/shared-inbox-links", body, adminToken)
-	if response.Code != http.StatusBadRequest {
-		t.Fatalf("missing expiry status = %d", response.Code)
+	if response.Code == http.StatusBadRequest {
+		t.Fatalf("permanent seat link was rejected: %s", response.Body.String())
 	}
 	response = serveTestRequest(t, app, http.MethodPost, "/api/app/admin/shared-inbox-links", body, userToken)
 	if response.Code != http.StatusForbidden {

@@ -193,7 +193,7 @@ describe("SubscriptionCard", () => {
     const account = "primevideo02.long-family-account-name@verification.example.test";
     renderSubscriptionCard({ familySharingLoginAccount: account }, {}, { viewMode: "grid" });
     expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent(account);
-    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("col-span-full");
+    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("col-span-full");
     expect(screen.getByTestId("subscription-card-family-account")).toHaveAttribute("title", account);
     expect(screen.getByText(account)).toHaveClass("truncate");
   });

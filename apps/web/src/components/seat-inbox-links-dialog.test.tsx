@@ -15,7 +15,7 @@ const account: SharingAccount = {
   monthlyCost: "10", currency: "CNY", nextBillingDate: "2099-01-01", paymentMethod: null, cardLast4: null, capacity: 2, occupiedSeats: 2, monthlyRevenue: "10", monthlyRevenueByCurrency: { CNY: "10" }, outstandingAmount: "0", monthlyProfit: 0, status: "active", notes: null, createdAt: "2026-01-01",
 };
 const seat: SharingSeat = { id: "seat1", seatNumber: 1, memberName: "Alice", contact: null, contactType: null, monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "active", notes: null, currentReceivable: null };
-const link: SharedInboxLink = { id: "link1", seatId: "seat1", shortUrl: "https://example.test/s/seat1", mailboxId: "mailbox", mailboxAddress: "shared@example.test", folderIds: ["private-folder"], windowMinutes: 60, expiresAt: "2099-01-01T12:00:00Z", status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+const link: SharedInboxLink = { id: "link1", seatId: "seat1", shortUrl: "https://example.test/s/seat1", mailboxId: "mailbox", mailboxAddress: "shared@example.test", folderIds: ["private-folder"], windowMinutes: 60, expiresAt: null, status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
 function renderDialog(links: SharedInboxLink[] = []) {
   return render(<SeatInboxLinksDialog mailbox={{ id: "mailbox", address: "shared@example.test" }} links={links} onClose={vi.fn()} onChanged={mocks.changed} />);
 }
@@ -30,7 +30,7 @@ describe("SeatInboxLinksDialog", () => {
     mocks.changed.mockResolvedValue(undefined);
     mocks.clipboard.mockResolvedValue({ ok: true });
   });
-  it("requires a folder and future expiry, then creates only the chosen seat", async () => {
+  it("requires a folder, then creates only the chosen permanent seat link", async () => {
     const user = userEvent.setup();
     renderDialog();
     const buttons = await screen.findAllByRole("button", { name: "生成链接" });
@@ -38,8 +38,7 @@ describe("SeatInboxLinksDialog", () => {
     await user.click(screen.getByRole("checkbox", { name: "收件箱" }));
     await user.click(buttons[0]!);
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1", mailboxId: "mailbox", folderIds: ["inbox"], windowMinutes: 30 })));
-    const payload = mocks.create.mock.calls[0]?.[0] as { expiresAt: string };
-    expect(Date.parse(payload.expiresAt)).toBeGreaterThan(Date.now());
+    expect(mocks.create.mock.calls[0]?.[0]).not.toHaveProperty("expiresAt");
     expect(mocks.create).toHaveBeenCalledTimes(1);
     expect(mocks.revoke).not.toHaveBeenCalled();
   });
@@ -50,7 +49,7 @@ describe("SeatInboxLinksDialog", () => {
     await user.click((await screen.findAllByRole("button", { name: "生成链接" }))[0]!);
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1", folderIds: ["inbox"], windowMinutes: 360 })));
   });
-  it("confirms a single-seat reset and preserves its scope and expiry", async () => {
+  it("confirms a single-seat reset and preserves its scope", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }]);
     await user.click((await screen.findAllByRole("button", { name: "重置" }))[0]!);
@@ -58,13 +57,13 @@ describe("SeatInboxLinksDialog", () => {
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "确认" }));
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link1"));
     expect(mocks.revoke).toHaveBeenCalledTimes(1);
-    expect(mocks.create).toHaveBeenCalledWith({ seatId: "seat1", mailboxId: "mailbox", folderIds: ["private-folder"], windowMinutes: 60, expiresAt: "2099-01-01T12:00:00.000Z" });
+    expect(mocks.create).toHaveBeenCalledWith({ seatId: "seat1", mailboxId: "mailbox", folderIds: ["private-folder"], windowMinutes: 60 });
   });
   it("does not offer an expired link for copying", async () => {
     renderDialog([{ ...link, expiresAt: "2020-01-01T00:00:00Z" }]);
     expect(await screen.findByText("链接不可用")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "复制链接" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "重置" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重置" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "撤销" })).toBeEnabled();
   });
   it("refreshes and removes the revoked link if replacement creation fails", async () => {

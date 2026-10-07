@@ -6,8 +6,7 @@ import { HttpError, ok, readJson, requestLocale, successJson } from "./http";
 import { decryptOnlineTotp, encryptOnlineTotp, type OnlineTotpRow } from "./online-totp";
 import type { Env, SubscriptionRow } from "./types";
 import { getSettings } from "./db";
-import { addDays, dateOnlyInZone } from "./time";
-import { scheduleOccurrence } from "./notification-schedule";
+import { dateOnlyInZone } from "./time";
 
 interface LinkRow { id:string; user_id:string; account_id:string; seat_id:string; totp_id:string; token_hash:string; token_ciphertext:string; binding_hash:string; expires_at:string; revoked:number }
 interface SeatRow { id:string; seat_number:number; status:string; member_name:string|null; contact:string|null; contact_type:string|null; expires_at:string|null; updated_at:string }
@@ -37,21 +36,19 @@ async function binding(env:Env,userId:string,accountId:string,seatId:string, sup
 }
 
 async function valid(env:Env,row:LinkRow) {
- if(row.revoked || (!(row.seat_id==="" && row.expires_at==="") && !(Date.parse(row.expires_at)>Date.now()))) return false;
+ if(row.revoked || (row.expires_at!=="" && !(Date.parse(row.expires_at)>Date.now()))) return false;
  try { return (await binding(env,row.user_id,row.account_id,row.seat_id)).hash===row.binding_hash; } catch { return false; }
 }
 
 async function linkStatement(env:Env,userId:string,accountId:string,seatId:string,reset=false,sub?:SubscriptionRow,seatOverride?:SeatRow) {
  const context=await binding(env,userId,accountId,seatId,sub,seatOverride);
  const existing=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE user_id=? AND account_id=? AND seat_id=?").bind(userId,accountId,seatId).first<LinkRow>();
- if(existing && !reset && !existing.revoked && existing.binding_hash===context.hash && ((seatId==="" && existing.expires_at==="") || Date.parse(existing.expires_at)>Date.now())) return null;
+ if(existing && !reset && !existing.revoked && existing.binding_hash===context.hash && existing.expires_at==="") return null;
  if(existing && !reset && existing.revoked && existing.binding_hash===context.hash) return null;
- let expiry=Date.now()+30*86400000;
- if(context.seat?.expires_at) { const timezone=(await getSettings(env,userId)).timezone; const seatExpiry=Date.parse(scheduleOccurrence(addDays(context.seat.expires_at,1),"00:00",timezone).scheduledInstantUtc)-1000; if(!(seatExpiry>Date.now())) throw new HttpError(400,"SEAT_EXPIRED","INVALID_PAYLOAD"); expiry=Math.min(expiry,seatExpiry); }
  const token=randomToken(24);
  return env.DB.prepare(`INSERT INTO sharing_totp_links(id,user_id,account_id,seat_id,totp_id,token_hash,token_ciphertext,binding_hash,expires_at,revoked)
  VALUES(?,?,?,?,?,?,?,?,?,0) ON CONFLICT(user_id,account_id,seat_id) DO UPDATE SET totp_id=excluded.totp_id,token_hash=excluded.token_hash,token_ciphertext=excluded.token_ciphertext,binding_hash=excluded.binding_hash,expires_at=excluded.expires_at,revoked=0`)
- .bind(existing?.id??newId("otplink"),userId,accountId,seatId,context.otp.id,await sha256(token),await encryptOnlineTotp(env,token),context.hash,seatId ? new Date(expiry).toISOString() : "");
+ .bind(existing?.id??newId("otplink"),userId,accountId,seatId,context.otp.id,await sha256(token),await encryptOnlineTotp(env,token),context.hash,"");
 }
 
 export async function familyTotpProjectionStatements(env:Env,sub:SubscriptionRow,accountId:string):Promise<D1PreparedStatement[]> {
@@ -83,6 +80,7 @@ export async function sharingTotpLinks(request:Request,env:Env,accountId:string)
   if(body.seatId!==undefined) { const statement=await linkStatement(env,auth.user.id,accountId,body.seatId,body.reset); if(statement) await statement.run(); }
   else { const sub=await env.DB.prepare("SELECT * FROM subscriptions WHERE id=? AND user_id=?").bind(account.subscription_id,auth.user.id).first<SubscriptionRow>(); const statements=await familyTotpProjectionStatements(env,sub!,accountId); if(statements.length) await env.DB.batch(statements); }
  }
+ await env.DB.prepare("UPDATE sharing_totp_links SET expires_at='' WHERE user_id=? AND account_id=? AND revoked=0 AND expires_at<>'' AND datetime(expires_at)>datetime('now')").bind(auth.user.id,accountId).run();
  const rows=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE user_id=? AND account_id=? ORDER BY seat_id LIMIT 101").bind(auth.user.id,accountId).all<LinkRow>();
  const links=await Promise.all(rows.results.map(async row=> { const active=await valid(env,row); return {id:row.id,seatId:row.seat_id,path:active?`/otp/${await decryptOnlineTotp(env,row.token_ciphertext)}`:"",expiresAt:row.expires_at || null,valid:active}; }));
  return successJson(sharingTotpLinksResponseSchema.shape.data.parse({links}),{headers:{"cache-control":"no-store"}});

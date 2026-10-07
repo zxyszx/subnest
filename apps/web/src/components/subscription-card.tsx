@@ -527,6 +527,12 @@ function SubscriptionCardComponent({
                   className="mt-0.5 min-w-0 text-xs text-muted-foreground"
                 />
               ) : null}
+              {viewMode === "grid" ? (
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  {familyAccount ? <div data-testid="subscription-card-family-account" className="pointer-events-auto min-w-0 max-w-full text-xs leading-4 text-muted-foreground" title={familyAccount}><TruncatedTooltipText as="p" text={familyAccount} /></div> : null}
+                  <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0"><SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" /></span>
+                </div>
+              ) : null}
             </div>
 
             <div className={cn(
@@ -605,8 +611,6 @@ function SubscriptionCardComponent({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {familyAccount ? <div data-testid="subscription-card-family-account" className="pointer-events-auto col-span-full min-w-0 text-xs leading-4 text-muted-foreground" title={familyAccount}><TruncatedTooltipText as="p" text={familyAccount} /></div> : null}
-            {viewMode === "grid" ? <span data-testid="subscription-card-badge-status" className="col-span-full inline-flex"><SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" /></span> : null}
             <div
               data-testid="subscription-card-badge-flow"
               className={cn(

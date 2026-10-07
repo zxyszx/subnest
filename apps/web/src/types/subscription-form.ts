@@ -35,6 +35,7 @@ export type FamilySharingFormState = {
   hasPassword: boolean;
   passwordMask: string;
   verificationLink: string;
+  mailboxId?: string;
   capacity: string;
   verificationMode?: "email" | "totp";
   totpAccountId?: string;
@@ -124,6 +125,7 @@ export function createSubscriptionFormState(
       hasPassword: false,
       passwordMask: "",
       verificationLink: "",
+      mailboxId: "",
       capacity: "5",
     },
     website: "",
