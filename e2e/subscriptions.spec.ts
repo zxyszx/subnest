@@ -118,8 +118,11 @@ test("family sharing switch and verification mode changes keep the edit dialog v
     await expect(masterSwitch).not.toBeChecked();
     await masterSwitch.click();
     await expect(masterSwitch).toBeChecked();
-    await dialog.getByText("在线 2FA 验证", { exact: true }).click();
-    await expect(dialog.getByLabel("登录账号", { exact: true })).toBeVisible();
+    const totpMode = dialog.getByText("在线 2FA 验证", { exact: true });
+    await totpMode.click();
+    await expect(totpMode).toBeInViewport();
+    await expect(dialog.getByLabel("登录账号", { exact: true })).toBeInViewport();
+    await expect(masterSwitch).toBeInViewport();
     await expect(title).toBeVisible();
     await expect(footer.getByRole("button", { name: "保存修改" })).toBeVisible();
 

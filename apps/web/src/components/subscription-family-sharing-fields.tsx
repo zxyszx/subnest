@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, EyeOff, Loader2, Mail, RefreshCw, ShieldCheck, UsersRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -27,7 +27,6 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   showEnabledControl?: boolean | undefined;
 }) {
   const { t } = useI18n();
-  const sectionRef = useRef<HTMLElement>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
@@ -52,15 +51,8 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   const update = <K extends keyof FamilySharingFormState>(key: K, next: FamilySharingFormState[K]) => onChange({ ...value, [key]: next });
   const occupiedSeats = value.occupiedSeats ?? 0;
   const disableBlocked = showEnabledControl && value.enabled && occupiedSeats > 0;
-  const keepSharingControlsVisible = () => requestAnimationFrame(() => {
-    const section = sectionRef.current;
-    const scrollRegion = section?.closest<HTMLElement>("[data-subscription-dialog-scroll]");
-    if (!section || !scrollRegion) return;
-    scrollRegion.scrollTop = Math.max(0, section.offsetTop - 16);
-  });
   const setSharingEnabled = (enabled: boolean) => {
     update("enabled", enabled);
-    keepSharingControlsVisible();
   };
   const setVerificationMode = (verificationMode: "email" | "totp") => {
     onChange({
@@ -70,7 +62,6 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       verificationLink: verificationMode === "totp" ? "" : value.verificationLink,
       totpAccountId: verificationMode === "email" ? "" : value.totpAccountId ?? "",
     });
-    keepSharingControlsVisible();
   };
 
   useEffect(() => {
@@ -142,7 +133,7 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
     toast[result.ok ? "success" : "error"](t(result.ok ? "subscription.familySharing.passwordCopied" : "subscription.familySharing.passwordCopyFailed"));
   };
 
-  return <section ref={sectionRef} className="grid gap-4">
+  return <section className="grid gap-4">
     {showEnabledControl ? <div className="flex items-center justify-between gap-4">
       <div className="min-w-0"><Label htmlFor={id("familySharingEnabled")} className={`flex items-center gap-2 text-sm font-medium ${disableBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p id={id("familySharingHelp")} className={`mt-1 text-xs leading-5 ${disableBlocked ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>{t(disableBlocked ? "subscription.familySharing.disableBlocked" : "subscription.familySharing.help", disableBlocked ? { count: occupiedSeats } : undefined)}</p></div>
       <Switch id={id("familySharingEnabled")} checked={value.enabled} disabled={disableBlocked} onCheckedChange={setSharingEnabled} aria-label={t("subscription.familySharing.title")} aria-describedby={id("familySharingHelp")} />
@@ -151,7 +142,7 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       <fieldset className="grid gap-2"><legend className="text-sm font-medium">{t("sharing.verificationMethod")}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {([ ["email", "sharing.emailMethod", Mail], ["totp", "sharing.totpMethod", ShieldCheck] ] as const).map(([choice, label, Icon]) => {
           const selected = mode === choice;
-          return <label key={choice} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted/50"}`}><input className="sr-only" type="radio" name={id("verificationMode")} value={choice} checked={selected} onChange={() => setVerificationMode(choice)} /><Icon className="h-4 w-4" />{t(label)}</label>;
+          return <label key={choice} className={`relative flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-muted/50"}`}><input className="absolute inset-0 cursor-pointer opacity-0" type="radio" name={id("verificationMode")} value={choice} checked={selected} onChange={() => setVerificationMode(choice)} /><Icon className="h-4 w-4" />{t(label)}</label>;
         })}
       </div></fieldset>
       {showEnabledControl && mode === "email" ? <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
