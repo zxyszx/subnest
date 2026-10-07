@@ -172,6 +172,8 @@ function SubscriptionCardGridMeta({
   startDateValue,
   paymentMethodLabel,
   paymentMethodFallback,
+  paymentMethodName,
+  cardLast4,
 }: {
   items: readonly SubscriptionCardMetaItem[];
   action?: ReactNode;
@@ -182,6 +184,8 @@ function SubscriptionCardGridMeta({
   startDateValue: string;
   paymentMethodLabel: string;
   paymentMethodFallback: string;
+  paymentMethodName: string | null;
+  cardLast4: string | null;
 }) {
   const relativeBilling = items.find((item) => item.key === "relative-billing");
   const paymentMethod = items.find((item) => item.key === "payment-method");
@@ -237,10 +241,14 @@ function SubscriptionCardGridMeta({
         </div>
         <div data-testid="subscription-card-meta-payment-method" className="flex min-w-0 items-center gap-2.5 px-3 py-2.5">
           {paymentMethod?.icon ?? <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] leading-4 text-muted-foreground">{paymentMethodLabel}</p>
             {paymentMethod ? (
-              <span className="block truncate text-xs text-foreground">{paymentMethod.text}</span>
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-1 text-xs leading-4 text-foreground">
+                {paymentMethodName ? <span className="min-w-0 wrap-break-word">{paymentMethodName}</span> : null}
+                {paymentMethodName && cardLast4 ? <span aria-hidden="true" className="text-muted-foreground">·</span> : null}
+                {cardLast4 ? <span className="shrink-0 whitespace-nowrap tabular-nums">•••• {cardLast4}</span> : null}
+              </span>
             ) : (
               <span className="block truncate text-xs text-muted-foreground">{paymentMethodFallback}</span>
             )}
@@ -678,6 +686,8 @@ function SubscriptionCardComponent({
                     startDateValue={subscription.startDate ? formatDateOnly(subscription.startDate) : "-"}
                     paymentMethodLabel={t("subscription.field.paymentMethod")}
                     paymentMethodFallback={t("subscriptions.advanced.paymentMethodNone")}
+                    paymentMethodName={paymentMethodLabel}
+                    cardLast4={subscription.cardLast4 ?? null}
                   />
                 )
               : <SubscriptionCardMetaFlow items={metaItems} />}

@@ -17,6 +17,14 @@ import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/s
 import { onlineTotpService } from "@/services/online-totp-service";
 import type { OnlineTotpAccount } from "@renewlet/shared/schemas/online-totp";
 
+function formatMailboxLabel(mailbox: NewSzxcnMailbox) {
+  const displayName = mailbox.displayName?.trim();
+  const address = mailbox.address.trim();
+  return displayName && displayName.toLocaleLowerCase() !== address.toLocaleLowerCase()
+    ? `${displayName} · ${address}`
+    : address;
+}
+
 export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onChange, error, onShareSetupPendingChange, showEnabledControl = true }: {
   id: (name: string) => string;
   subscriptionId?: string | undefined;
@@ -60,7 +68,8 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       enabled: true,
       verificationMode,
       verificationLink: verificationMode === "totp" ? "" : value.verificationLink,
-      totpAccountId: verificationMode === "email" ? "" : value.totpAccountId ?? "",
+      // Keep each mode's selected record in the form draft so switching modes is reversible.
+      totpAccountId: value.totpAccountId ?? "",
     });
   };
 
@@ -146,7 +155,7 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
         })}
       </div></fieldset>
       {showEnabledControl && mode === "email" ? <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
-        <FormField id={id("familySharingMailbox")} label={t("sharing.mailboxSelection")}>{(field) => <Select value={matchedMailbox?.id ?? ""} onValueChange={(mailboxId) => { const mailbox = mailboxes.find((item) => item.id === mailboxId); const link = inboxLinks.find((item) => item.mailboxId === mailboxId && !item.seatId && item.status === "active" && item.folderIds.length > 0 && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())); onChange({ ...value, mailboxId, loginAccount: mailbox?.address ?? "", verificationLink: link?.shortUrl ?? "" }); }} disabled={inboxLoading}><SelectTrigger id={field.id} aria-describedby={field.describedBy}><SelectValue placeholder={inboxLoading ? t("sharing.loadingLinks") : t("sharing.selectMailboxPlaceholder")} /></SelectTrigger><SelectContent>{mailboxes.map((mailbox) => <SelectItem key={mailbox.id} value={mailbox.id}>{mailbox.displayName ? `${mailbox.displayName} · ` : ""}{mailbox.address}</SelectItem>)}</SelectContent></Select>}</FormField>
+        <FormField id={id("familySharingMailbox")} label={t("sharing.mailboxSelection")}>{(field) => <Select value={matchedMailbox?.id ?? ""} onValueChange={(mailboxId) => { const mailbox = mailboxes.find((item) => item.id === mailboxId); const link = inboxLinks.find((item) => item.mailboxId === mailboxId && !item.seatId && item.status === "active" && item.folderIds.length > 0 && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())); onChange({ ...value, mailboxId, loginAccount: mailbox?.address ?? "", verificationLink: link?.shortUrl ?? "" }); }} disabled={inboxLoading}><SelectTrigger id={field.id} aria-describedby={field.describedBy}><SelectValue placeholder={inboxLoading ? t("sharing.loadingLinks") : t("sharing.selectMailboxPlaceholder")} /></SelectTrigger><SelectContent>{mailboxes.map((mailbox) => <SelectItem key={mailbox.id} value={mailbox.id}>{formatMailboxLabel(mailbox)}</SelectItem>)}</SelectContent></Select>}</FormField>
         <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>{(field) => <Input id={field.id} type="number" min={1} max={100} value={value.capacity} onChange={(event) => update("capacity", event.target.value)} required aria-describedby={field.describedBy} />}</FormField>
       </FormFieldRow> : <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
         <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")}>{(field) => <Input id={field.id} value={value.loginAccount} onChange={(event) => update("loginAccount", event.target.value)} autoComplete="username" required aria-describedby={field.describedBy} list={mailboxes.length ? id("newszxcn-mailboxes") : undefined} />}</FormField>

@@ -126,7 +126,9 @@ describe("SubscriptionCard", () => {
     expect(screen.queryByText(/日均/)).not.toBeInTheDocument();
     expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
-    expect(within(paymentMethodMeta).getByText("信用卡 · •••• 6109")).toBeInTheDocument();
+    expect(within(paymentMethodMeta).getByText("信用卡")).toHaveClass("wrap-break-word");
+    expect(within(paymentMethodMeta).getByText("信用卡")).not.toHaveClass("truncate");
+    expect(within(paymentMethodMeta).getByText("•••• 6109")).toHaveClass("shrink-0", "whitespace-nowrap", "tabular-nums");
     expect(badgeFlow).toHaveClass("col-span-full", "hidden");
   });
 
@@ -139,7 +141,7 @@ describe("SubscriptionCard", () => {
 
     const paymentDetails = screen.getByTestId("subscription-card-meta-payment-method");
     expect(paymentDetails.querySelector("img")).toHaveAttribute("src", "/icons/payment-methods/credit_card.svg");
-    expect(paymentDetails).toHaveTextContent("信用卡 · •••• 6109");
+    expect(paymentDetails).toHaveTextContent("信用卡·•••• 6109");
 
     const renewButton = screen.getByRole("button", { name: "续费" });
     expect(renewButton).toHaveClass("bg-primary", "text-primary-foreground");
@@ -586,7 +588,8 @@ describe("SubscriptionCard", () => {
     expect(metaFlow).toContainElement(paymentMethodMeta);
     expect(paymentMethodMeta).toHaveClass("flex", "min-w-0");
     expect(paymentMethodMeta).not.toHaveClass("shrink-0");
-    expect(paymentMethodText).toHaveClass("block", "truncate", "text-xs");
+    expect(paymentMethodText).toHaveClass("min-w-0", "wrap-break-word");
+    expect(paymentMethodText).not.toHaveClass("truncate");
   });
 
   it("keeps relative billing after the billing date when there is no payment method", () => {

@@ -21,6 +21,11 @@ function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verific
   return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
 }
 
+function ModeSwitchHarness() {
+  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink: "", mailboxId: "mailbox-16", capacity: "5", verificationMode: "totp", totpAccountId: "otp2" });
+  return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `switch-${name}`} value={value} onChange={setValue} /></MemoryRouter>;
+}
+
 describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,6 +70,14 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(mocks.revoke).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
     expect(pending).toHaveBeenLastCalledWith(false);
+  });
+  it("does not repeat an address when the mailbox display name is identical", async () => {
+    mocks.mailboxes.mockResolvedValue({ items: [{ id: "mailbox-16", address: "netflix16@example.com", displayName: "netflix16@example.com" }] });
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(await screen.findByRole("combobox", { name: "sharing.mailboxSelection" }));
+    expect(screen.getByRole("option", { name: "netflix16@example.com" })).toBeInTheDocument();
+    expect(screen.queryByText("netflix16@example.com · netflix16@example.com")).not.toBeInTheDocument();
   });
   it("allows saving a selected mailbox when a general link must be created", async () => {
     const pending = vi.fn();
@@ -111,5 +124,14 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     const user = userEvent.setup(); render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "sharing.totpMethod" }));
     expect(await screen.findByRole("combobox", { name: "sharing.totpRecord" })).toHaveValue("");
+  });
+  it("preserves the selected 2FA record while switching through shared inbox", async () => {
+    mocks.totpList.mockResolvedValue({ accounts: [1, 2].map((number) => ({ id: `otp${number}`, account: "netflix16@example.com", platformName: "Netflix", accountNumber: number, enabled: true })) });
+    const user = userEvent.setup();
+    render(<ModeSwitchHarness />);
+    expect(await screen.findByRole("combobox", { name: "sharing.totpRecord" })).toHaveValue("otp2");
+    await user.click(screen.getByRole("radio", { name: "sharing.emailMethod" }));
+    await user.click(screen.getByRole("radio", { name: "sharing.totpMethod" }));
+    expect(await screen.findByRole("combobox", { name: "sharing.totpRecord" })).toHaveValue("otp2");
   });
 });
