@@ -7,7 +7,7 @@ describe("HeaderSkeleton", () => {
   it("shares the real header responsive layout contract", () => {
     render(<DashboardPageSkeleton />);
 
-    expect(screen.getByTestId("app-header-skeleton")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
+    expect(screen.getByTestId("app-header-skeleton")).toHaveClass("sticky", "top-0", "z-50", "bg-card", "lg:bg-card/80", "lg:backdrop-blur-xl");
     expect(screen.getByTestId("app-header-skeleton")).not.toHaveClass("lg:fixed", "lg:w-64");
     expect(screen.getByTestId("route-progress")).toHaveClass("absolute", "bottom-0", "h-0.5", "opacity-0");
     expect(screen.getByTestId("app-header-skeleton-inner")).toHaveClass("max-w-[120rem]", "justify-between", "gap-3");
@@ -19,7 +19,7 @@ describe("HeaderSkeleton", () => {
     const firstDesktopLabel = firstDesktopItem?.lastElementChild;
 
     expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "items-center", "gap-1");
-    expect(mobileNav).toHaveClass("flex", "border-t", "lg:hidden");
+    expect(mobileNav).toHaveClass("fixed", "inset-x-0", "bottom-0", "grid", "grid-cols-5", "border-t", "lg:hidden");
     expect(firstDesktopItem).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-3", "xl:px-4");
     expect(firstDesktopLabel).toHaveClass("h-4", "w-16");
     expect(firstDesktopLabel).not.toHaveClass("hidden", "xl:block");

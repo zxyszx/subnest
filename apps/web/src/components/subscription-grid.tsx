@@ -76,7 +76,12 @@ export function SubscriptionGrid({
   const isFourColumnGrid = useMediaQuery("(min-width: 1280px)");
   const columnCount = getSubscriptionColumnCount(viewMode, isTwoColumnGrid, isThreeColumnGrid, isFourColumnGrid);
   const rows = useMemo(() => chunkSubscriptions(subscriptions, columnCount), [columnCount, subscriptions]);
-  const estimatedRowSize = viewMode === "grid" ? SUBSCRIPTION_GRID_ROW_ESTIMATE : SUBSCRIPTION_LIST_ROW_ESTIMATE;
+  const estimatedRowSize = !isTwoColumnGrid
+    ? 88
+    : viewMode === "grid"
+      ? SUBSCRIPTION_GRID_ROW_ESTIMATE
+      : SUBSCRIPTION_LIST_ROW_ESTIMATE;
+  const rowGap = isTwoColumnGrid ? SUBSCRIPTION_GRID_ROW_GAP : 8;
   const getRowKey = useCallback(
     (rowIndex: number) => rows[rowIndex]?.map((subscription) => subscription.id).join("|") ?? rowIndex,
     [rows],
@@ -135,11 +140,11 @@ export function SubscriptionGrid({
     <VirtualizedList
       count={rows.length}
       estimatedItemSize={estimatedRowSize}
-      gap={SUBSCRIPTION_GRID_ROW_GAP}
+      gap={rowGap}
       getItemKey={getRowKey}
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
-        "grid gap-4",
+        "grid gap-2 sm:gap-4",
         viewMode === "grid" ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 items-start",
       )}
       testId="virtualized-subscription-list"

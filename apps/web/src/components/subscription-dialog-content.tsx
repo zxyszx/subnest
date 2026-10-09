@@ -34,6 +34,7 @@ import type { SubscriptionFormState } from "@/types/subscription-form";
 import { useI18n } from "@/i18n/I18nProvider";
 import { todayDateOnlyInTimeZone } from "@/lib/time/date-only";
 import { getSystemTimeZone } from "@/lib/time/time-zone";
+import { getDisplayErrorMessage } from "@/lib/display-error";
 import { withCurrentSubscriptionFormOptions } from "@/lib/subscription-form-config";
 import type { SubscriptionDialogContentProps } from "@/components/subscription-dialog-types";
 import { newszxcnService } from "@/services/newszxcn-service";
@@ -248,7 +249,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
       setFormErrors({});
       props.onRequestClose();
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : t("common.unknown"));
+      setSubmitError(getDisplayErrorMessage(error, t("common.unknown")));
     } finally {
       setSubmitting(false);
     }

@@ -76,6 +76,26 @@ vi.mock("@/hooks/use-settings", () => ({
 }));
 
 describe("SubscriptionCard", () => {
+  it("uses a compact mobile summary with an explicit expandable detail control", () => {
+    renderSubscriptionCard({
+      familySharingLoginAccount: "chatgpt@example.com",
+      accountNumber: 3,
+      nextBillingDate: assertDateOnly("2026-06-15"),
+    });
+
+    const card = screen.getByTestId("subscription-card");
+    const toggle = screen.getByTestId("subscription-card-mobile-expand");
+    expect(card).toHaveAttribute("data-mobile-expanded", "false");
+    expect(screen.getByTestId("subscription-card-mobile-expiry")).toHaveTextContent("2026/6/15");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent("chatgpt@example.com");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+    expect(card).toHaveAttribute("data-mobile-expanded", "true");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByTestId("subscription-card-mobile-expiry")).not.toBeInTheDocument();
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-18T00:00:00.000Z"));
@@ -195,9 +215,9 @@ describe("SubscriptionCard", () => {
     const account = "primevideo02.long-family-account-name@verification.example.test";
     renderSubscriptionCard({ familySharingLoginAccount: account, price: "8500", currency: "NGN" }, {}, { viewMode: "grid" });
     expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent(account);
-    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("break-all");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("truncate", "sm:break-all");
     expect(screen.getByTestId("subscription-card-family-account")).toHaveAttribute("title", account);
-    expect(screen.getByTestId("subscription-card-family-account")).not.toHaveClass("truncate");
+    expect(screen.getByTestId("subscription-card-family-account")).toHaveClass("sm:overflow-visible", "sm:whitespace-normal");
     expect(screen.getByTestId("subscription-card-price")).toHaveClass("whitespace-nowrap", "tabular-nums");
     expect(screen.getByTestId("subscription-card-price")).toHaveTextContent("NGN");
   });
@@ -296,7 +316,7 @@ describe("SubscriptionCard", () => {
     const pinnedIcon = screen.getByTestId("subscription-pinned-title-icon");
     const subscriptionName = screen.getByText(baseSubscription.name);
     const card = screen.getByTestId("subscription-card");
-    const cardContent = card.firstElementChild;
+    const cardContent = card.querySelector(":scope > div.relative.z-10");
 
     expect(screen.queryByTestId("subscription-pinned-accent")).not.toBeInTheDocument();
     expect(pinnedIcon).toHaveClass("h-3.5", "w-3.5", "shrink-0", "text-primary");
@@ -311,7 +331,7 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ pinned: false }, { onTogglePinned: vi.fn() });
 
     const card = screen.getByTestId("subscription-card");
-    const cardContent = card.firstElementChild;
+    const cardContent = card.querySelector(":scope > div.relative.z-10");
 
     expect(screen.queryByTestId("subscription-pinned-accent")).not.toBeInTheDocument();
     expect(screen.queryByTestId("subscription-pinned-title-icon")).not.toBeInTheDocument();

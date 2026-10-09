@@ -11,13 +11,14 @@ vi.mock("@/services/online-totp-service", () => ({ onlineTotpService: { list: mo
 vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
 vi.mock("@/i18n/I18nProvider", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
-function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "", occupiedSeats = 0 }: {
+function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "", occupiedSeats = 0, passwordless = false }: {
   onPendingChange?: (pending: boolean) => void;
   showEnabledControl?: boolean;
   verificationLink?: string;
   occupiedSeats?: number;
+  passwordless?: boolean;
 }) {
-  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, occupiedSeats, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink, capacity: "5" });
+  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, occupiedSeats, loginAccount: "netflix16@example.com", password: passwordless ? "" : "saved-password", hasPassword: !passwordless, passwordMask: passwordless ? "" : "s***d", verificationLink, capacity: "5" });
   return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
 }
 
@@ -116,6 +117,12 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     await user.click(screen.getByRole("button", { name: "subscription.familySharing.generatePassword" }));
     expect(input).toHaveAttribute("type", "text");
     expect(input).not.toHaveValue("saved-password");
+  });
+  it("allows family sharing without a password", () => {
+    render(<Harness passwordless />);
+    const input = screen.getByLabelText("subscription.familySharing.password");
+    expect(input).not.toBeRequired();
+    expect(screen.getByText("subscription.familySharing.passwordOptionalHint")).toBeInTheDocument();
   });
   it("selects exactly one verification method and matches the existing 2FA account", async () => {
     const user = userEvent.setup(); render(<Harness />);

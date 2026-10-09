@@ -236,7 +236,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(screen.getByRole("table").parentElement).toHaveClass("max-h-[min(24rem,45vh)]");
   });
 
-  it("selects a searchable target account before exposing its vacant seats", async () => {
+  it("selects a searchable target account before exposing its seats", async () => {
     const user = userEvent.setup();
     const movingSeat: SharingSeat = {
       id: "seat-moving",
@@ -287,7 +287,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     );
     await user.click(screen.getAllByRole("button", { name: "sharing.moveSeat" })[0]!);
 
-    expect(screen.queryByLabelText("sharing.targetVacantSeat")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("sharing.targetSeat")).not.toBeInTheDocument();
     expect(screen.getByText("sharing.selectAccountBeforeSeat")).toBeInTheDocument();
 
     await user.click(screen.getByRole("combobox", { name: "sharing.targetAccount" }));
@@ -298,7 +298,54 @@ describe("SharingAccountDetailDialog account credentials", () => {
     await user.type(accountSearch, "18");
     await user.click(screen.getByText("Netflix #18 · netflix18@example.com"));
 
-    expect(screen.getByLabelText("sharing.targetVacantSeat")).toBeInTheDocument();
+    expect(screen.getByLabelText("sharing.targetSeat")).toBeInTheDocument();
+  });
+
+  it("allows swapping two occupied seats in the same account", async () => {
+    const user = userEvent.setup();
+    const movingSeat: SharingSeat = {
+      id: "seat-moving",
+      seatNumber: 2,
+      memberName: "Alice",
+      contact: "alice",
+      contactType: "wechat",
+      monthlyPrice: "15",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: "2026-09-25",
+      expiresAt: "2026-10-25",
+      status: "active",
+      notes: null,
+      currentReceivable: null,
+    };
+    const occupiedTarget: SharingSeat = {
+      ...movingSeat,
+      id: "seat-occupied-target",
+      seatNumber: 3,
+      memberName: "Bob",
+      contact: "bob",
+    };
+    mocks.seats = [movingSeat, occupiedTarget];
+    mocks.accounts = [account];
+    mocks.details = new Map([
+      [account.id, {
+        account,
+        seats: [movingSeat, occupiedTarget],
+        totals: { monthlyRevenue: "30", contractedRevenue: "0", collectedRevenue: "0", outstandingAmount: "0", monthlyProfit: -12.93 },
+      }],
+    ]);
+
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getAllByRole("button", { name: "sharing.moveSeat" })[0]!);
+    await user.click(screen.getByRole("combobox", { name: "sharing.targetAccount" }));
+    await user.click(screen.getByText("Netflix #17 · netflix17@newszxcn.com"));
+
+    await user.click(screen.getByRole("combobox", { name: "sharing.targetSeat" }));
+    expect(screen.getByText("sharing.seatNumber 3 · Bob")).toBeInTheDocument();
   });
 });
 

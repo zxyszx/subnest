@@ -149,7 +149,7 @@ func handleSharingSeatMove(app core.App, e *core.RequestEvent) error {
 	if targetPlatform == "" {
 		targetPlatform = strings.TrimSpace(targetSubscription.GetString("name"))
 	}
-	if !strings.EqualFold(sourcePlatform, targetPlatform) || source.GetString("status") == "vacant" || source.GetString("memberName") == "" || target.GetString("status") != "vacant" {
+	if !strings.EqualFold(sourcePlatform, targetPlatform) || source.GetString("status") == "vacant" || source.GetString("status") == "archived" || source.GetString("memberName") == "" || target.GetString("status") == "archived" || target.GetString("status") != "vacant" && target.GetString("memberName") == "" {
 		return e.BadRequestError("SHARING_SEAT_MOVE_NOT_ALLOWED", nil)
 	}
 	if err := moveSharingSeat(app, e.Auth.Id, source.Id, target.Id); err != nil {
@@ -165,15 +165,23 @@ func handleSharingSeatMove(app core.App, e *core.RequestEvent) error {
 func moveSharingSeat(app core.App, userID, sourceID, targetID string) error {
 	return app.RunInTransaction(func(txApp core.App) error {
 		source, err := txApp.FindRecordById("sharing_seats", sourceID)
-		if err != nil || source.GetString("user") != userID || source.GetString("status") == "vacant" || source.GetString("memberName") == "" {
+		if err != nil || source.GetString("user") != userID || source.GetString("status") == "vacant" || source.GetString("status") == "archived" || source.GetString("memberName") == "" {
 			return errors.New("source sharing seat is unavailable")
 		}
 		target, err := txApp.FindRecordById("sharing_seats", targetID)
-		if err != nil || target.GetString("user") != userID || target.GetString("status") != "vacant" {
+		if err != nil || target.GetString("user") != userID || target.GetString("status") == "archived" || target.GetString("status") != "vacant" && target.GetString("memberName") == "" {
 			return errors.New("target sharing seat is unavailable")
 		}
-		for _, field := range []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "billingMonths", "startDate", "expiresAt", "status", "notes"} {
-			target.Set(field, source.Get(field))
+		fields := []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "billingMonths", "startDate", "expiresAt", "status", "notes"}
+		sourceValues := make(map[string]interface{}, len(fields))
+		targetValues := make(map[string]interface{}, len(fields))
+		for _, field := range fields {
+			sourceValues[field] = source.Get(field)
+			targetValues[field] = target.Get(field)
+		}
+		for _, field := range fields {
+			target.Set(field, sourceValues[field])
+			source.Set(field, targetValues[field])
 		}
 		for _, seatID := range []string{sourceID, targetID} {
 			if err := revokeInboxSeatLinks(txApp, userID, seatID); err != nil {
@@ -185,24 +193,24 @@ func moveSharingSeat(app core.App, userID, sourceID, targetID string) error {
 		}
 		receivables, err := txApp.FindRecordsByFilter(
 			"sharing_receivables",
-			"user = {:user} && seat = {:seat} && (status = 'pending' || status = 'partial' || status = 'overdue')",
-			"created", 500, 0, dbx.Params{"user": userID, "seat": sourceID},
+			"user = {:user} && (seat = {:source} || seat = {:target}) && (status = 'pending' || status = 'partial' || status = 'overdue')",
+			"created", 1000, 0, dbx.Params{"user": userID, "source": sourceID, "target": targetID},
 		)
 		if err != nil {
 			return err
 		}
 		for _, receivable := range receivables {
-			receivable.Set("sharingAccount", target.GetString("sharingAccount"))
-			receivable.Set("seat", target.Id)
+			if receivable.GetString("seat") == sourceID {
+				receivable.Set("sharingAccount", target.GetString("sharingAccount"))
+				receivable.Set("seat", target.Id)
+			} else {
+				receivable.Set("sharingAccount", source.GetString("sharingAccount"))
+				receivable.Set("seat", source.Id)
+			}
 			if err := txApp.Save(receivable); err != nil {
 				return err
 			}
 		}
-		for _, field := range []string{"memberName", "contact", "contactType", "monthlyPrice", "currency", "startDate", "expiresAt", "notes"} {
-			source.Set(field, "")
-		}
-		source.Set("billingMonths", nil)
-		source.Set("status", "vacant")
 		return txApp.Save(source)
 	})
 }

@@ -116,6 +116,45 @@ func TestSubscriptionFamilySharingAutomaticallyProjectsAccount(t *testing.T) {
 	}
 }
 
+func TestSubscriptionFamilySharingAllowsPasswordlessAccount(t *testing.T) {
+	app := newSchemaTestApp(t)
+	if err := ensureSchema(app); err != nil {
+		t.Fatal(err)
+	}
+	registerRecordHooks(app)
+	_, token := createRouteTestUser(t, app, "passwordless-family-sharing-owner")
+	var body map[string]interface{}
+	if err := json.Unmarshal([]byte(subscriptionCreateBody("Passwordless Shared Plan")), &body); err != nil {
+		t.Fatal(err)
+	}
+	body["familySharing"] = map[string]interface{}{
+		"enabled": true, "loginAccount": "passwordless@example.com", "password": "",
+		"verificationLink": "", "capacity": 2,
+	}
+	encoded, _ := json.Marshal(body)
+	created := serveTestRequest(t, app, http.MethodPost, "/api/app/subscriptions", string(encoded), token)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("passwordless subscription create status = %d body=%s", created.Code, created.Body.String())
+	}
+	var envelope struct {
+		Data subscriptionResponse `json:"data"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	sharing := envelope.Data.Subscription.FamilySharing
+	if sharing == nil || sharing.LoginAccount != "passwordless@example.com" || sharing.HasPassword || sharing.PasswordMask != "" || sharing.Capacity != 2 {
+		t.Fatalf("unexpected passwordless family sharing response: %#v", sharing)
+	}
+	accounts, err := app.FindRecordsByFilter("sharing_accounts", "subscription = {:subscription}", "created", 10, 0, map[string]interface{}{"subscription": envelope.Data.Subscription.ID})
+	if err != nil || len(accounts) != 1 {
+		t.Fatalf("passwordless projected accounts = %d err=%v", len(accounts), err)
+	}
+	if accounts[0].GetString("loginAccount") != "passwordless@example.com" || accounts[0].GetString("encryptedCredentials") != "" {
+		t.Fatalf("unexpected passwordless projected account: %#v", accounts[0])
+	}
+}
+
 func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	app := newSchemaTestApp(t)
 	if err := ensureSchema(app); err != nil {
@@ -257,8 +296,105 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 		t.Fatalf("paid receivable must remain on its original seat: rows=%#v err=%v", paidReceivables, err)
 	}
 	moveIntoOccupied := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[0].Id+"/move", `{"targetSeatId":"`+seats[2].Id+`"}`, token)
-	if moveIntoOccupied.Code != http.StatusBadRequest {
-		t.Fatalf("move into occupied seat status = %d, want 400", moveIntoOccupied.Code)
+	if moveIntoOccupied.Code != http.StatusOK {
+		t.Fatalf("swap occupied seats status = %d body=%s", moveIntoOccupied.Code, moveIntoOccupied.Body.String())
+	}
+	swappedSource, err := app.FindRecordById("sharing_seats", seats[0].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	swappedTarget, err := app.FindRecordById("sharing_seats", seats[2].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if swappedSource.GetString("memberName") != "Bob" || swappedTarget.GetString("memberName") != "Alice" {
+		t.Fatalf("occupied seats were not swapped: source=%q target=%q", swappedSource.GetString("memberName"), swappedTarget.GetString("memberName"))
+	}
+	pendingReceivables, err = app.FindRecordsByFilter(
+		"sharing_receivables",
+		"user = {:user} && status = 'pending'",
+		"created",
+		10,
+		0,
+		map[string]interface{}{"user": user.Id},
+	)
+	if err != nil || len(pendingReceivables) != 1 || pendingReceivables[0].GetString("seat") != seats[0].Id {
+		t.Fatalf("pending receivable did not follow swapped member: rows=%#v err=%v", pendingReceivables, err)
+	}
+	secondSubscription := createRouteTestSubscription(t, app, user.Id, map[string]interface{}{
+		"name":            "Netflix second car",
+		"platformName":    "Netflix",
+		"accountNumber":   2,
+		"price":           "45",
+		"currency":        "CNY",
+		"billingCycle":    "monthly",
+		"nextBillingDate": "2026-10-01",
+	})
+	secondBody := `{
+		"subscriptionId":"` + secondSubscription.Id + `",
+		"name":"Netflix #2",
+		"accountNumber":2,
+		"loginAccount":"netflix02@example.com",
+		"password":"second-secret",
+		"verificationLink":"",
+		"monthlyCost":"45",
+		"currency":"CNY",
+		"nextBillingDate":"2026-10-01",
+		"paymentMethod":"",
+		"cardLast4":"",
+		"capacity":2,
+		"status":"active",
+		"notes":"secondary account"
+	}`
+	secondCreated := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/accounts", secondBody, token)
+	if secondCreated.Code != http.StatusCreated {
+		t.Fatalf("second account create status = %d body=%s", secondCreated.Code, secondCreated.Body.String())
+	}
+	var secondEnvelope struct {
+		Data sharingAccountPayload `json:"data"`
+	}
+	if err := json.Unmarshal(secondCreated.Body.Bytes(), &secondEnvelope); err != nil {
+		t.Fatal(err)
+	}
+	secondSeats, err := app.FindRecordsByFilter("sharing_seats", "sharingAccount = {:account}", "seatNumber", 10, 0, map[string]interface{}{"account": secondEnvelope.Data.Account.ID})
+	if err != nil || len(secondSeats) != 2 {
+		t.Fatalf("second account seats = %d err=%v", len(secondSeats), err)
+	}
+	charlieSeatBody := `{
+		"memberName":"Charlie","contact":"charlie","contactType":"telegram",
+		"monthlyPrice":"20","currency":"CNY","billingMonths":1,
+		"startDate":"2026-10-01","expiresAt":"2026-10-31","status":"active",
+		"paymentStatus":"pending","notes":"cross account"
+	}`
+	charlieSeat := serveTestRequest(t, app, http.MethodPut, "/api/app/sharing/seats/"+secondSeats[0].Id, charlieSeatBody, token)
+	if charlieSeat.Code != http.StatusOK {
+		t.Fatalf("second account seat update status = %d body=%s", charlieSeat.Code, charlieSeat.Body.String())
+	}
+	crossAccountSwap := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[2].Id+"/move", `{"targetSeatId":"`+secondSeats[0].Id+`"}`, token)
+	if crossAccountSwap.Code != http.StatusOK {
+		t.Fatalf("cross account swap status = %d body=%s", crossAccountSwap.Code, crossAccountSwap.Body.String())
+	}
+	firstAccountSeat, err := app.FindRecordById("sharing_seats", seats[2].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondAccountSeat, err := app.FindRecordById("sharing_seats", secondSeats[0].Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if firstAccountSeat.GetString("memberName") != "Charlie" || secondAccountSeat.GetString("memberName") != "Alice" {
+		t.Fatalf("cross account seats were not swapped: first=%q second=%q", firstAccountSeat.GetString("memberName"), secondAccountSeat.GetString("memberName"))
+	}
+	charlieReceivables, err := app.FindRecordsByFilter(
+		"sharing_receivables",
+		"user = {:user} && seat = {:seat} && status = 'pending'",
+		"created",
+		10,
+		0,
+		map[string]interface{}{"user": user.Id, "seat": seats[2].Id},
+	)
+	if err != nil || len(charlieReceivables) != 1 || charlieReceivables[0].GetString("sharingAccount") != accountID {
+		t.Fatalf("cross-account pending receivable did not follow Charlie: rows=%#v err=%v", charlieReceivables, err)
 	}
 	foreignMove := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[0].Id+"/move", `{"targetSeatId":"`+seats[3].Id+`"}`, foreignToken)
 	if foreignMove.Code != http.StatusNotFound {

@@ -93,6 +93,16 @@
       0 1px 2px hsl(0 0% 0% / 0.24);
   }
 
+  /* 日历里的 Logo 尺寸小，使用中性高对比底板保证纯白和纯黑品牌图都可辨认。 */
+  .subscription-logo-tile.subscription-logo-contrast,
+  .dark .subscription-logo-tile.subscription-logo-contrast {
+    background: hsl(215 12% 48%);
+    border-color: hsl(215 14% 38% / 0.72);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.3),
+      0 1px 2px hsl(220 25% 10% / 0.16);
+  }
+
   .subscription-logo-image {
     position: relative;
     z-index: 1;

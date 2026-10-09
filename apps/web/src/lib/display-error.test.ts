@@ -17,6 +17,7 @@ describe("display-error", () => {
   it("localizes stable backend validation codes", () => {
     expect(getDisplayErrorMessage(new ApiError("SUBSCRIPTION_NAME_REQUIRED", 400))).toBe("请输入订阅名称");
     expect(getDisplayErrorMessage(new ApiError("NEXT_BILLING_DATE_BEFORE_START_DATE", 400))).toBe("到期日期不能早于开始日期");
+    expect(getDisplayErrorMessage(new ApiError("FAMILY_SHARING_PASSWORD_REQUIRED", 400))).toBe("登录密码可以留空，请刷新页面后重试");
     expect(getDisplayErrorMessage(new ApiError(
       "Invalid request parameters",
       422,

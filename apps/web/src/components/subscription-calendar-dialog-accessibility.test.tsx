@@ -285,6 +285,7 @@ describe("SubscriptionCalendar dialogs", () => {
     expect(logo).toHaveClass("subscription-logo-image", "object-contain");
     expect(logo).not.toHaveClass("object-cover");
     expect(logoTile).not.toBeNull();
+    expect(logoTile).toHaveClass("subscription-logo-contrast");
     expect(logoTile).not.toHaveClass("media-thumbnail-canvas");
     expect(logoTile).not.toHaveClass("bg-linear-to-br");
   });

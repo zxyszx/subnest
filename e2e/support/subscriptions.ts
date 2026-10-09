@@ -27,6 +27,8 @@ export async function openAddSubscriptionDialog(page: Page) {
 export async function openSubscriptionEditDialog(page: Page, subscriptionName: string) {
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
+  const mobileExpand = card.getByRole("button", { name: "展开全部信息" });
+  if (await mobileExpand.isVisible().catch(() => false)) await mobileExpand.click();
   await card.getByRole("button", { name: "更多操作" }).click();
   const editAction = page
     .getByRole("menuitem", { name: "编辑" })
@@ -59,6 +61,8 @@ export async function openSubscriptionCalendarDialog(page: Page, subscriptionNam
   await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
+  const mobileExpand = card.getByRole("button", { name: "展开全部信息" });
+  if (await mobileExpand.isVisible().catch(() => false)) await mobileExpand.click();
   await card.getByRole("button", { name: "更多操作" }).click();
   await page.getByRole("menuitem", { name: "添加到日历" }).click();
   const dialog = page.getByRole("dialog", { name: "添加到日历" });

@@ -755,8 +755,6 @@ func applySubscriptionFamilySharing(app core.App, record *core.Record, field opt
 		}
 		record.Set("sharingEncryptedCredentials", ciphertext)
 		record.Set("sharingPasswordMask", maskSharingPassword(value.Password))
-	} else if strings.TrimSpace(record.GetString("sharingEncryptedCredentials")) == "" {
-		return errors.New("FAMILY_SHARING_PASSWORD_REQUIRED")
 	}
 	record.Set("familySharingEnabled", true)
 	record.Set("sharingLoginAccount", value.LoginAccount)

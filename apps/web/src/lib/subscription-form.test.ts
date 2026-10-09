@@ -76,6 +76,28 @@ describe("subscription-form", () => {
     expect(isOptionalHttpUrl("not a url")).toBe(false);
   });
 
+  it("allows family sharing without a login password", () => {
+    const form = createSubscriptionFormState({
+      name: "Passwordless family plan",
+      price: "20",
+      startDate: assertDateOnly("2026-01-01"),
+      nextBillingDate: assertDateOnly("2026-02-01"),
+      familySharing: {
+        enabled: true,
+        loginAccount: "account@example.com",
+        password: "",
+        hasPassword: false,
+        passwordMask: "",
+        verificationLink: "",
+        capacity: "5",
+        verificationMode: "none",
+      },
+    });
+
+    expect(getSubscriptionFormValidationError(form)).toBeNull();
+    expect(toSubscriptionFormSubmission(form)?.familySharing).toMatchObject({ password: "" });
+  });
+
   it("returns null draft and a clear error for invalid price", () => {
     const form = createSubscriptionFormState({
       name: "Netflix",

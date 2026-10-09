@@ -484,7 +484,7 @@ async function resolveFamilySharingStorage(
   const encryptedCredentials = password
     ? await encryptSharingCredential(env, password)
     : existing?.sharing_encrypted_credentials ?? "";
-  if (!value.loginAccount.trim() || !encryptedCredentials) {
+  if (!value.loginAccount.trim()) {
     throw new HttpError(400, serverText(locale, "common.invalidPayload"), "FAMILY_SHARING_CREDENTIALS_REQUIRED");
   }
   return {

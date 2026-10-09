@@ -374,7 +374,6 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
     }
     if (
       !family.loginAccount.trim() ||
-      (!family.hasPassword && !family.password) ||
       !isOptionalHttpUrl(family.verificationLink) ||
       parsePositiveIntegerInput(family.capacity, 100) === null
     ) {

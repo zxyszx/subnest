@@ -17,7 +17,11 @@ import {
   expectScrollableRegionReachesTarget,
   getRequiredLocatorBoundingBox,
 } from "./support/layout";
-import { createProductSubscriptionSeed, deleteProductSubscriptionsByName } from "./support/product-api";
+import {
+  createProductSubscriptionSeed,
+  deleteProductSubscriptionsByName,
+  productApiFetch,
+} from "./support/product-api";
 
 type SubscriptionCardLayoutSeed = {
   name: string;
@@ -193,6 +197,13 @@ test("mobile subscription card keeps date metadata naturally on the first availa
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
   await expect(card).toBeInViewport();
+  await expect(card).toHaveAttribute("data-mobile-expanded", "false");
+  await expect(card.getByTestId("subscription-card-mobile-expiry")).toBeVisible();
+  await expect(card.getByTestId("subscription-card-meta-flow")).toBeHidden();
+  await card.screenshot({ path: testInfo.outputPath("mobile-subscription-compact.png") });
+  await card.getByRole("button", { name: "展开全部信息" }).click();
+  await expect(card).toHaveAttribute("data-mobile-expanded", "true");
+  await expect(card.getByTestId("subscription-card-meta-flow")).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile subscription card metadata");
 
   const layout = await captureSubscriptionCardLayout(card);
@@ -202,6 +213,88 @@ test("mobile subscription card keeps date metadata naturally on the first availa
   expect(layout.startDate.top, "detail row should follow the renewal reminder").toBeGreaterThan(layout.billingDate.top);
   expect(layout.billingDate.right, "renewal date should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
   expect(layout.paymentMethod.right, "payment method should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
+});
+
+test("mobile sharing accounts stay compact until details are expanded", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.goto("/subscriptions");
+  const subscriptionName = uniqueE2EName(testInfo, "Mobile Sharing");
+  const loginAccount = `mobile-sharing-${testInfo.workerIndex}-${testInfo.repeatEachIndex}@example.test`;
+
+  try {
+    const subscriptionId = await createProductSubscriptionSeed(page, {
+      name: subscriptionName,
+      price: "49.9",
+      currency: "USD",
+      startDate: "2098-12-01",
+      nextBillingDate: "2099-01-01",
+    });
+    const patched = await productApiFetch(page, `/api/app/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      body: {
+        platformName: "ChatGPT",
+        accountNumber: 9,
+        familySharing: {
+          enabled: true,
+          loginAccount,
+          password: "",
+          verificationLink: "",
+          capacity: 2,
+        },
+      },
+    });
+    expect(patched.ok, patched.body).toBe(true);
+
+    const accountsResult = await productApiFetch(page, "/api/app/sharing/accounts");
+    expect(accountsResult.ok, accountsResult.body).toBe(true);
+    const family = (accountsResult.json as {
+      data: { accounts: { id: string; subscription: { id: string } }[] };
+    }).data.accounts.find((item) => item.subscription.id === subscriptionId);
+    expect(family).toBeTruthy();
+
+    const detailResult = await productApiFetch(page, `/api/app/sharing/accounts/${family!.id}`);
+    expect(detailResult.ok, detailResult.body).toBe(true);
+    const firstSeat = (detailResult.json as { data: { seats: { id: string }[] } }).data.seats[0];
+    expect(firstSeat).toBeTruthy();
+    const assigned = await productApiFetch(page, `/api/app/sharing/seats/${firstSeat!.id}`, {
+      method: "PUT",
+      body: {
+        memberName: "Mobile Member",
+        contact: "",
+        contactType: "",
+        monthlyPrice: "8",
+        currency: "USD",
+        billingMonths: 1,
+        startDate: "2098-12-01",
+        expiresAt: "2099-01-01",
+        status: "active",
+        notes: "",
+        paymentStatus: "paid",
+      },
+    });
+    expect(assigned.ok, assigned.body).toBe(true);
+
+    await page.goto("/sharing");
+    const account = page.getByTestId("sharing-mobile-account").filter({ hasText: loginAccount });
+    await expect(account).toBeVisible();
+    await expect(account).toHaveAttribute("data-expanded", "false");
+    await expect(account.getByText("ChatGPT", { exact: true })).toBeVisible();
+    await expect(account.getByText(loginAccount, { exact: true })).toBeVisible();
+    await expect(account.getByText(/最近到期/)).toBeVisible();
+    await expect(account.getByTestId("sharing-mobile-account-details")).toBeHidden();
+    await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
+
+    await account.getByRole("button", { name: "展开全部信息" }).click();
+    await expect(account).toHaveAttribute("data-expanded", "true");
+    await expect(account.getByTestId("sharing-mobile-account-details")).toBeVisible();
+    await expect(account.getByText("每月成本", { exact: true })).toBeVisible();
+    await expect(account.getByRole("button", { name: "未设置密码" })).toBeDisabled();
+    await expect(account.getByRole("button", { name: "管理账号" })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "mobile sharing account details");
+    await account.screenshot({ path: testInfo.outputPath("mobile-sharing-expanded.png") });
+  } finally {
+    await deleteProductSubscriptionsByName(page, [subscriptionName]);
+  }
 });
 
 test("mobile upcoming renewal amounts stay single-line and right-aligned without page overflow", async ({ page }, testInfo) => {

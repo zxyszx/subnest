@@ -71,7 +71,7 @@ const optionalUrlSchema = z
 export const subscriptionFamilySharingWriteSchema = z.object({
   enabled: z.boolean(),
   loginAccount: z.string().trim().max(320),
-  // 空密码在更新时表示保留已有密钥；创建时的必填约束由写入事务根据 enabled/已有状态判断。
+  // 新建时空密码表示不设置密码；编辑已有密码时空值表示保留现有密钥。
   password: z.string().max(1024),
   verificationLink: z.string().trim().max(2048).refine((value) => !value || isHttpUrl(value), "Invalid URL"),
   capacity: z.number().int().min(1).max(100),

@@ -46,6 +46,7 @@ export const messages = [
   msg({ id: "error.code.COST_SHARING_COLLECTION_ANCHOR_REQUIRED", message: "请为成员设置上车日期，或先填写订阅开始日期" }),
   msg({ id: "error.code.COST_SHARING_MEMBER_JOINED_DATE_OUT_OF_RANGE", message: "成员上车日期必须在订阅日期范围内" }),
   msg({ id: "error.code.COST_SHARING_COLLECTION_REMINDER_ONE_TIME_BUYOUT_INVALID", message: "长期有效的一次性购买不支持收款提醒" }),
+  msg({ id: "error.code.FAMILY_SHARING_PASSWORD_REQUIRED", message: "登录密码可以留空，请刷新页面后重试" }),
   msg({ id: "error.code.SETTINGS_JSON_INVALID", message: "设置数据无效" }),
   msg({ id: "error.code.CUSTOM_CONFIG_JSON_INVALID", message: "自定义配置数据无效" }),
   msg({ id: "error.code.CUSTOM_CONFIG_GROUP_NOT_ARRAY", message: "自定义配置分组必须是数组" }),

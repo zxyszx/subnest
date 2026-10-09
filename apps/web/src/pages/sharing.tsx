@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronUp, CircleDollarSign, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
 
 import { Header } from "@/components/header";
@@ -80,6 +80,7 @@ export default function Sharing() {
   const [accountFilter, setAccountFilter] = useState<SharingFilter>("all");
   const [sortField, setSortField] = useState<SharingSortField>("expiry");
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
+  const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
@@ -426,7 +427,7 @@ export default function Sharing() {
                       </dl>
                     </td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-1.5">
-                      <Button type="button" size="icon" variant="outline" title={t("sharing.copyPassword")} aria-label={t("sharing.copyPassword")} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
+                      <Button type="button" size="icon" variant="outline" title={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} aria-label={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} disabled={!account.hasPassword} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                       <Button type="button" size="sm" variant="outline" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
                       <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     </div></td>
@@ -437,24 +438,74 @@ export default function Sharing() {
             <div className="divide-y divide-border sm:hidden">
               {visibleAccounts.length === 0 ? (
                 <p className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</p>
-              ) : visibleAccounts.map((account) => (
-                <article key={account.id} className={cn("space-y-4 p-4", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
-                  <AccountIdentity account={account} />
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    <div className="col-span-2 min-w-0"><dt className="text-muted-foreground">{t("sharing.loginAccount")}</dt><dd className="mt-1"><button type="button" className="max-w-full truncate text-left text-primary" onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
-                    <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
-                    <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
-                  </dl>
-                  <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
-                    <Button type="button" size="icon" variant="outline" aria-label={t("sharing.copyPassword")} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                    <Button type="button" variant="outline" className="min-w-0" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
-                    <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
-                  </div>
-                </article>
-              ))}
+              ) : visibleAccounts.map((account) => {
+                const platformName = subscriptionPlatformName(account.subscription);
+                const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
+                const expanded = expandedMobileAccountId === account.id;
+                const accountDays = sharingSubscriptionExpiryDays(account, today);
+                return (
+                  <article
+                    key={account.id}
+                    data-testid="sharing-mobile-account"
+                    data-expanded={expanded ? "true" : "false"}
+                    className={cn("p-3", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}
+                  >
+                    <div className="flex min-h-16 min-w-0 items-center gap-3">
+                      <button
+                        type="button"
+                        className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-label={t("sharing.accountDetails")}
+                        onClick={() => setViewingAccount(account)}
+                      >
+                        <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
+                        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
+                          {account.accountNumber}
+                        </span>
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{platformName}</p>
+                        <button type="button" className="mt-0.5 block max-w-full truncate text-left text-xs text-muted-foreground" onClick={() => void copy(account.loginAccount)}>
+                          {account.loginAccount}
+                        </button>
+                        <p className="mt-1 truncate text-xs font-medium tabular-nums text-foreground/80">
+                          {nearest ? <>{t("sharing.nearestExpiry")} · <DenseDate value={nearest.expiresAt} /></> : <>{t("sharing.noMember")}</>}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11 shrink-0 rounded-full text-muted-foreground"
+                        aria-label={t(expanded ? "subscription.card.collapseDetails" : "subscription.card.expandDetails")}
+                        aria-expanded={expanded}
+                        onClick={() => setExpandedMobileAccountId((current) => current === account.id ? null : account.id)}
+                      >
+                        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} />
+                      </Button>
+                    </div>
+                    {expanded ? (
+                      <div className="mt-3 grid gap-3 border-t border-border pt-3" data-testid="sharing-mobile-account-details">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <SubscriptionStatusBadge status={accountDays !== null && accountDays < 0 ? "expired" : account.subscription.status} className="h-5 px-1.5 text-[10px]" />
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px]">{account.occupiedSeats} / {account.capacity} {t("sharing.seats")}</Badge>
+                        </div>
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                          <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></dd></div>
+                          <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
+                          <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
+                          <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
+                          <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
+                        </dl>
+                        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+                          <Button type="button" size="icon" variant="outline" aria-label={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} title={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} disabled={!account.hasPassword} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
+                          <Button type="button" variant="outline" className="min-w-0" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
+                          <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}

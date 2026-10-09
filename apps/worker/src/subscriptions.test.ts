@@ -134,6 +134,26 @@ describe("Cloudflare subscription mapper", () => {
     expect(toApiSubscriptionCollectionItem(disabled)).not.toHaveProperty("familySharingLoginAccount");
   });
 
+  it("maps an enabled family-sharing account without a password", () => {
+    const row = toSubscriptionRow("sub_passwordless_family", USER_ID, subscriptionBody({
+      familySharing: {
+        enabled: true,
+        loginAccount: "passwordless@example.com",
+        password: "",
+        verificationLink: "",
+        capacity: 2,
+      },
+    }), "2026-06-05T00:00:00.000Z", "2026-06-05T00:00:00.000Z");
+
+    expect(toApiSubscription(row).familySharing).toMatchObject({
+      enabled: true,
+      loginAccount: "passwordless@example.com",
+      hasPassword: false,
+      passwordMask: "",
+      capacity: 2,
+    });
+  });
+
   it("persists and exposes custom cycle units", () => {
     const row = toSubscriptionRow("sub_custom", "usr_custom", subscriptionBody({
       billingCycle: "custom",

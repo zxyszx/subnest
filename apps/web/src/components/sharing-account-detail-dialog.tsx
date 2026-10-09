@@ -142,18 +142,23 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   ));
   const candidateDetailQueries = useSharingAccountDetails(open && mode === "seats" ? samePlatformAccounts.map((candidate) => candidate.id) : []);
   const moveSeat = useMoveSharingSeat();
-  const targetAccountOptions = samePlatformAccounts.map((candidate) => ({
-    value: candidate.id,
-    label: `${candidate.subscription.platformName} #${candidate.accountNumber} · ${candidate.loginAccount}`,
-    keywords: [String(candidate.accountNumber), candidate.loginAccount, candidate.name],
-  }));
+  const candidateDetailsPending = candidateDetailQueries.some((query) => query.isPending);
+  const targetAccountOptions = samePlatformAccounts.flatMap((candidate, index) => {
+    const candidateSeats = candidateDetailQueries[index]?.data?.seats ?? [];
+    const hasTargetSeat = candidateSeats.some((seat) => seat.id !== movingSeat?.id && seat.status !== "archived");
+    return hasTargetSeat ? [{
+      value: candidate.id,
+      label: `${candidate.subscription.platformName} #${candidate.accountNumber} · ${candidate.loginAccount}`,
+      keywords: [String(candidate.accountNumber), candidate.loginAccount, candidate.name],
+    }] : [];
+  });
   const selectedTargetAccountIndex = samePlatformAccounts.findIndex((candidate) => candidate.id === targetAccountId);
   const selectedTargetAccountQuery = selectedTargetAccountIndex >= 0 ? candidateDetailQueries[selectedTargetAccountIndex] : undefined;
   const targetSeatOptions = selectedTargetAccountQuery?.data ? selectedTargetAccountQuery.data.seats
-    .filter((seat) => seat.status === "vacant" && seat.id !== movingSeat?.id)
+    .filter((seat) => seat.status !== "archived" && seat.id !== movingSeat?.id)
     .map((seat) => ({
       id: seat.id,
-      label: `${t("sharing.seatNumber")} ${seat.seatNumber}`,
+      label: `${t("sharing.seatNumber")} ${seat.seatNumber} · ${seat.status === "vacant" ? t("sharing.vacant") : seat.memberName ?? t("sharing.noMember")}`,
     })) : [];
   useEffect(() => {
     setPassword(null);
@@ -289,7 +294,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                   <AccountCopyRow
                     icon={<KeyRound />}
                     label={t("sharing.password")}
-                    value={detail.account.hasPassword ? (passwordVisible && password !== null ? password : "••••••••") : "-"}
+                    value={detail.account.hasPassword ? (passwordVisible && password !== null ? password : "••••••••") : t("sharing.passwordNotSet")}
                     copyLabel={t("sharing.copyPassword")}
                     onCopy={detail.account.hasPassword ? () => void copyPassword() : undefined}
                     trailing={detail.account.hasPassword ? (
@@ -384,7 +389,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       <Dialog open={Boolean(movingSeat)} onOpenChange={(nextOpen) => !nextOpen && setMovingSeat(null)}>
         <DialogContent className="max-w-lg" closeLabel={t("sharing.cancel")} dismissMode="explicit">
           <DialogHeader>
-          <DialogTitle>{t("sharing.samePlatformMoveSeat")}</DialogTitle>
+            <DialogTitle>{t("sharing.samePlatformMoveSeat")}</DialogTitle>
             <DialogDescription>
               {movingSeat ? `${movingSeat.memberName ?? ""} · ${account?.subscription.platformName ?? ""} #${account?.accountNumber ?? ""} · ${t("sharing.seatNumber")} ${movingSeat.seatNumber}` : ""}
             </DialogDescription>
@@ -404,19 +409,21 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 placeholder={t("sharing.selectTargetAccount")}
                 searchPlaceholder={t("sharing.searchTargetAccount")}
                 emptyMessage={t("sharing.noTargetAccounts")}
+                disabled={candidateDetailsPending || targetAccountOptions.length === 0}
                 className="min-h-11 bg-secondary"
                 aria-label={t("sharing.targetAccount")}
               />
+              {!candidateDetailsPending && targetAccountOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noTargetSeatsOnPlatform")}</p> : null}
             </div>
             {targetAccountId ? <div className="grid gap-2">
-              <Label htmlFor="sharing-target-seat">{t("sharing.targetVacantSeat")}</Label>
+              <Label htmlFor="sharing-target-seat">{t("sharing.targetSeat")}</Label>
               <Select value={targetSeatId} onValueChange={setTargetSeatId} disabled={Boolean(selectedTargetAccountQuery?.isPending)}>
-                <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label={t("sharing.targetVacantSeat")}><SelectValue placeholder={t("sharing.selectVacantSeat")} /></SelectTrigger>
-                <SelectContent mobileTitle={t("sharing.targetVacantSeat")}>
+                <SelectTrigger id="sharing-target-seat" className="min-h-11 bg-secondary" aria-label={t("sharing.targetSeat")}><SelectValue placeholder={t("sharing.selectTargetSeat")} /></SelectTrigger>
+                <SelectContent mobileTitle={t("sharing.targetSeat")}>
                   {targetSeatOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {!selectedTargetAccountQuery?.isPending && targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noVacantSeats")}</p> : null}
+              {!selectedTargetAccountQuery?.isPending && targetSeatOptions.length === 0 ? <p className="text-sm text-muted-foreground">{t("sharing.noTargetSeats")}</p> : null}
             </div> : <p className="text-sm text-muted-foreground">{t("sharing.selectAccountBeforeSeat")}</p>}
             <p className="text-xs leading-5 text-muted-foreground">{t("sharing.moveSeatHint")}</p>
           </div>

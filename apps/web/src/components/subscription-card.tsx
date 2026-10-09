@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { colorWithAlpha } from '@/lib/color';
-import { Calendar, MoreHorizontal, CalendarClock, Bell, ChevronRight, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
+import { Calendar, MoreHorizontal, CalendarClock, Bell, ChevronDown, ChevronRight, CreditCard, CalendarPlus, Copy, Eye, EyeOff, Pencil, Pin, PinOff, RotateCw, Trash2 } from 'lucide-react';
 import {
   daysBetweenDateOnly,
   type DateOnly,
@@ -311,6 +311,7 @@ function SubscriptionCardComponent({
   };
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const daysUntilRenewal = daysBetweenDateOnly(today, subscription.nextBillingDate);
   const daysUntilTrialEnd = subscription.trialEndDate ? daysBetweenDateOnly(today, subscription.trialEndDate) : null;
   const isBuyout = isOneTimeBuyout(subscription);
@@ -473,11 +474,14 @@ function SubscriptionCardComponent({
     <div
       data-testid="subscription-card"
       data-view-mode={viewMode}
+      data-mobile-expanded={mobileExpanded ? "true" : "false"}
       onPointerEnter={() => onPrefetchDetails?.(subscription.id)}
       onFocusCapture={() => onPrefetchDetails?.(subscription.id)}
       className={cn(
         "group relative h-full overflow-hidden border border-border bg-card transition-colors duration-200 hover:bg-card-hover",
-        viewMode === "list" ? "rounded-xl p-5 shadow-card" : "rounded-lg p-4 shadow-sm sm:p-5",
+        viewMode === "list"
+          ? cn("rounded-xl shadow-card sm:p-5", mobileExpanded ? "p-4" : "p-3")
+          : cn("rounded-lg shadow-sm sm:p-5", mobileExpanded ? "p-4" : "p-3"),
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
         isExpired && "border-destructive/45 bg-linear-to-br from-destructive/12 via-card to-card hover:from-destructive/18",
@@ -498,13 +502,28 @@ function SubscriptionCardComponent({
           data-testid="subscription-card-primary-action"
         />
       ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className={cn(
+          "pointer-events-auto absolute right-2 z-20 h-11 w-11 rounded-full text-muted-foreground sm:hidden",
+          mobileExpanded ? "top-2" : "top-1/2 -translate-y-1/2",
+        )}
+        aria-label={t(mobileExpanded ? "subscription.card.collapseDetails" : "subscription.card.expandDetails")}
+        aria-expanded={mobileExpanded}
+        onClick={() => setMobileExpanded((expanded) => !expanded)}
+        data-testid="subscription-card-mobile-expand"
+      >
+        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", mobileExpanded && "rotate-180")} />
+      </Button>
       <div className={cn(
-        "relative z-10 items-start",
+        "relative z-10 items-start pr-11 sm:pr-0",
         viewMode === "grid" ? "grid grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-3" : "flex gap-4",
         onViewDetails && "pointer-events-none",
       )}>
         <div className="relative shrink-0">
-          <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" />
+          <SubscriptionLogo name={displayName} logo={subscription.logo} fallbackColor={categoryColor} size="md" className="h-10 w-10 sm:h-12 sm:w-12" />
           <span
             aria-label={t("subscription.accountNumberBadge", { number: accountNumber })}
             className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums"
@@ -519,6 +538,7 @@ function SubscriptionCardComponent({
             viewMode === "grid"
               ? "grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-2"
               : "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-3 gap-y-2",
+            !mobileExpanded && "max-sm:grid-cols-1",
           )}>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
@@ -530,7 +550,7 @@ function SubscriptionCardComponent({
                 ) : null}
                 <h3 className="min-w-0 flex-1 truncate font-semibold text-foreground" title={displayName}>{displayName}</h3>
                 {viewMode === "grid" ? (
-                  <span data-testid="subscription-card-badge-status" className="inline-flex shrink-0">
+                  <span data-testid="subscription-card-badge-status" className={cn("shrink-0 sm:inline-flex", mobileExpanded ? "inline-flex" : "hidden")}>
                     <SubscriptionStatusBadge status={effectiveStatus} className="px-2 text-[11px]" />
                   </span>
                 ) : null}
@@ -539,19 +559,26 @@ function SubscriptionCardComponent({
                 <TruncatedTooltipText
                   as="p"
                   text={serviceName}
-                  className="mt-0.5 min-w-0 text-xs text-muted-foreground"
+                  className={cn("mt-0.5 min-w-0 text-xs text-muted-foreground", !mobileExpanded && "max-sm:hidden")}
                 />
               ) : null}
-              {viewMode === "grid" ? (
-                familyAccount ? (
+              {familyAccount ? (
                   <p
                     data-testid="subscription-card-family-account"
-                    className="mt-1 min-w-0 break-all text-xs leading-4 text-muted-foreground"
+                    className={cn(
+                      "mt-1 min-w-0 text-xs leading-4 text-muted-foreground",
+                      mobileExpanded ? "break-all" : "truncate sm:overflow-visible sm:whitespace-normal sm:break-all",
+                      viewMode === "list" && "sm:hidden",
+                    )}
                     title={familyAccount}
                   >
                     {familyAccount}
                   </p>
-                ) : null
+              ) : null}
+              {!mobileExpanded ? (
+                <p className="mt-1 truncate text-xs font-medium tabular-nums text-foreground/80 sm:hidden" data-testid="subscription-card-mobile-expiry">
+                  {billingDateText ?? formatDateOnly(subscription.nextBillingDate)}
+                </p>
               ) : null}
             </div>
 
@@ -560,6 +587,7 @@ function SubscriptionCardComponent({
               viewMode === "grid"
                 ? "col-span-2 row-start-2 flex items-baseline justify-between gap-3 border-t border-border/60 pt-2 text-left"
                 : "max-w-35 text-right sm:max-w-40",
+              !mobileExpanded && "hidden sm:flex",
             )}>
               <p
                 data-testid="subscription-card-price"
@@ -586,6 +614,7 @@ function SubscriptionCardComponent({
                   className={cn(
                     "pointer-events-auto h-8 w-8 shrink-0 text-muted-foreground transition-colors hover:text-foreground",
                     viewMode === "grid" && "col-start-2 row-start-1",
+                    !mobileExpanded && "hidden sm:inline-flex",
                   )}
                   aria-label={t("subscription.moreActions")}
                 >
@@ -644,6 +673,7 @@ function SubscriptionCardComponent({
               className={cn(
                 "col-span-full flex flex-wrap items-center",
                 viewMode === "grid" ? "hidden" : "gap-x-1.5 gap-y-2 sm:gap-2",
+                !mobileExpanded && "max-sm:hidden",
               )}
             >
               <Badge
@@ -673,6 +703,7 @@ function SubscriptionCardComponent({
           <div className={cn(
             "grid min-w-0 text-sm",
             viewMode === "grid" ? "col-span-full gap-y-1" : "gap-y-1.5",
+            !mobileExpanded && "max-sm:hidden",
           )}>
             {viewMode === "grid"
               ? (
@@ -707,11 +738,11 @@ function SubscriptionCardComponent({
           </div>
 
           {viewMode === "list" && renewAction ? (
-            <div className="flex justify-end border-t border-border/60 pt-2">{renewAction}</div>
+            <div className={cn("justify-end border-t border-border/60 pt-2 sm:flex", mobileExpanded ? "flex" : "hidden")}>{renewAction}</div>
           ) : null}
 
           {viewMode === "list" && isTrialEndingSoon && subscription.trialEndDate && (
-            <div className="flex items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
+            <div className={cn("items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning sm:flex", mobileExpanded ? "flex" : "hidden")}>
               <span className="font-medium">
                 {t("subscription.card.trialEnds", { date: formatDateOnly(subscription.trialEndDate, "monthDay") })}
               </span>

@@ -29,27 +29,27 @@ msgid "sharing.nextSevenDays"
 msgstr "Next 7 days"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:189
+#: src/i18n/descriptors/sharing.ts:191
 msgid "sharing.expiringWithinSevenDays"
 msgstr "Expiring within 7 days"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:167
+#: src/i18n/descriptors/sharing.ts:168
 msgid "sharing.upcomingDialogTitle"
 msgstr "Renewing within 7 days"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:150
+#: src/i18n/descriptors/sharing.ts:151
 msgid "sharing.nsMark"
 msgstr "N"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:149
+#: src/i18n/descriptors/sharing.ts:150
 msgid "sharing.ns"
 msgstr "NS Forum"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:148
+#: src/i18n/descriptors/sharing.ts:149
 msgid "sharing.telegram"
 msgstr "Telegram"
 
@@ -64,7 +64,7 @@ msgid "sharing.nextBillingDate"
 msgstr "Next renewal"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:157
+#: src/i18n/descriptors/sharing.ts:158
 msgid "sharing.renewSeatDescription"
 msgstr "Extend from the current expiry date. Early renewal is supported."
 
@@ -79,17 +79,17 @@ msgid "sharing.title"
 msgstr "Sharing"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:133
+#: src/i18n/descriptors/sharing.ts:134
 msgid "sharing.active"
 msgstr "Active"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:138
+#: src/i18n/descriptors/sharing.ts:139
 msgid "sharing.saving"
 msgstr "Saving…"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:116
+#: src/i18n/descriptors/sharing.ts:117
 msgid "sharing.vacantClearsSeat"
 msgstr "Saving as vacant clears the current member and billing information."
 
@@ -99,22 +99,22 @@ msgid "sharing.mailboxLinkWillCreate"
 msgstr "Saving will create a permanent general link for the Inbox folder"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:163
+#: src/i18n/descriptors/sharing.ts:164
 msgid "sharing.accountSaveFailed"
 msgstr "Unable to save. Check the account details."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:140
+#: src/i18n/descriptors/sharing.ts:141
 msgid "sharing.seatSaveFailed"
 msgstr "Could not save. Check the member and billing details."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:161
+#: src/i18n/descriptors/sharing.ts:162
 msgid "sharing.saveAccount"
 msgstr "Save account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:137
+#: src/i18n/descriptors/sharing.ts:138
 msgid "sharing.saveSeat"
 msgstr "Save seat"
 
@@ -124,7 +124,7 @@ msgid "sharing.emptyDescription"
 msgstr "Create a platform subscription first, then add its shared accounts here."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:174
+#: src/i18n/descriptors/sharing.ts:175
 msgid "sharing.selectTargetAccount"
 msgstr "Select a target account first"
 
@@ -134,7 +134,7 @@ msgid "sharing.allPlatforms"
 msgstr "All platforms"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:186
+#: src/i18n/descriptors/sharing.ts:188
 msgid "sharing.allStatus"
 msgstr "All statuses"
 
@@ -149,7 +149,7 @@ msgid "sharing.createSuccess"
 msgstr "Shared account created"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:162
+#: src/i18n/descriptors/sharing.ts:163
 msgid "sharing.accountSaved"
 msgstr "Sharing account updated"
 
@@ -164,22 +164,22 @@ msgid "sharing.mailboxSelection"
 msgstr "Shared mailbox"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:227
+#: src/i18n/descriptors/sharing.ts:229
 msgid "sharing.disableSeatLinksTitle"
 msgstr "Disable link sharing for this family group?"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:154
+#: src/i18n/descriptors/sharing.ts:155
 msgid "sharing.other"
 msgstr "Other"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:170
+#: src/i18n/descriptors/sharing.ts:171
 msgid "sharing.nearestExpiry"
 msgstr "Nearest expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:202
+#: src/i18n/descriptors/sharing.ts:204
 msgid "sharing.recentMailRange"
 msgstr "Recent mail range"
 
@@ -199,17 +199,17 @@ msgid "sharing.create"
 msgstr "Create account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:134
+#: src/i18n/descriptors/sharing.ts:135
 msgid "sharing.paused"
 msgstr "Stop at expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:115
+#: src/i18n/descriptors/sharing.ts:116
 msgid "sharing.dateRangeInvalid"
 msgstr "The expiry date cannot be earlier than the start date"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:238
+#: src/i18n/descriptors/sharing.ts:240
 msgid "sharing.reloadLinksFailed"
 msgstr "Refresh failed. Reopen the links dialog."
 
@@ -224,7 +224,7 @@ msgid "sharing.totpLoading"
 msgstr "Loading"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:122
+#: src/i18n/descriptors/sharing.ts:123
 msgid "sharing.semiAnnual"
 msgstr "Semiannual"
 
@@ -239,17 +239,17 @@ msgid "sharing.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:218
+#: src/i18n/descriptors/sharing.ts:220
 msgid "sharing.inboxCancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:101
+#: src/i18n/descriptors/sharing.ts:102
 msgid "sharing.contractedRevenue"
 msgstr "Contracted revenue"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:172
+#: src/i18n/descriptors/sharing.ts:173
 msgid "sharing.samePlatformMoveSeat"
 msgstr "Move seat within platform"
 
@@ -299,7 +299,7 @@ msgid "sharing.copyPassword"
 msgstr "Copy password"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:108
+#: src/i18n/descriptors/sharing.ts:109
 msgid "sharing.copyContact"
 msgstr "Copy contact"
 
@@ -309,12 +309,12 @@ msgid "sharing.copyAccount"
 msgstr "Copy account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:223
+#: src/i18n/descriptors/sharing.ts:225
 msgid "sharing.copyGenericLink"
 msgstr "Copy general link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:195
+#: src/i18n/descriptors/sharing.ts:197
 msgid "sharing.copyInboxLink"
 msgstr "Copy link"
 
@@ -324,17 +324,17 @@ msgid "sharing.copyLink"
 msgstr "Copy verification link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:191
+#: src/i18n/descriptors/sharing.ts:193
 msgid "sharing.hasOutstanding"
 msgstr "Has outstanding payments"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:190
+#: src/i18n/descriptors/sharing.ts:192
 msgid "sharing.hasOverdue"
 msgstr "Has overdue seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:121
+#: src/i18n/descriptors/sharing.ts:122
 msgid "sharing.quarterly"
 msgstr "Quarterly"
 
@@ -379,27 +379,27 @@ msgid "sharing.totpInvalid"
 msgstr "Invalid"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:225
+#: src/i18n/descriptors/sharing.ts:227
 msgid "sharing.seatLinkSharingOn"
 msgstr "Enabled · Disabling revokes this group's seat links"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:135
+#: src/i18n/descriptors/sharing.ts:136
 msgid "sharing.archived"
 msgstr "Archived"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:130
+#: src/i18n/descriptors/sharing.ts:131
 msgid "sharing.paid"
 msgstr "Paid"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:102
+#: src/i18n/descriptors/sharing.ts:103
 msgid "sharing.collectedRevenue"
 msgstr "Collected"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:188
+#: src/i18n/descriptors/sharing.ts:190
 msgid "sharing.accountFull"
 msgstr "Full"
 
@@ -409,42 +409,42 @@ msgid "sharing.subscription"
 msgstr "Platform subscription"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:123
+#: src/i18n/descriptors/sharing.ts:124
 msgid "sharing.annual"
 msgstr "Annual"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:127
+#: src/i18n/descriptors/sharing.ts:128
 msgid "sharing.startDate"
 msgstr "Start date"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:236
+#: src/i18n/descriptors/sharing.ts:238
 msgid "sharing.groupLinksDisabled"
 msgstr "This group's seat links are disabled. General links are unchanged."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:235
+#: src/i18n/descriptors/sharing.ts:237
 msgid "sharing.groupLinksEnabled"
 msgstr "This group's seat links are enabled."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:180
-msgid "sharing.noVacantSeats"
-msgstr "No vacant seats are available on this platform."
+#: src/i18n/descriptors/sharing.ts:182
+msgid "sharing.noTargetSeatsOnPlatform"
+msgstr "There are no other seats available for swapping on this platform."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:131
+#: src/i18n/descriptors/sharing.ts:132
 msgid "sharing.pending"
 msgstr "Pending"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:103
+#: src/i18n/descriptors/sharing.ts:104
 msgid "sharing.outstandingAmount"
 msgstr "Outstanding"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:147
+#: src/i18n/descriptors/sharing.ts:148
 msgid "sharing.wechat"
 msgstr "WeChat"
 
@@ -464,7 +464,7 @@ msgid "sharing.mailboxInboxMissing"
 msgstr "The selected mailbox has no available Inbox folder"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:117
+#: src/i18n/descriptors/sharing.ts:118
 msgid "sharing.monthlyEquivalent"
 msgstr "Monthly equivalent"
 
@@ -474,27 +474,27 @@ msgid "sharing.platformFilter"
 msgstr "Filter shared accounts by platform"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:168
+#: src/i18n/descriptors/sharing.ts:169
 msgid "sharing.upcomingDialogDescription"
 msgstr "Sorted by urgency, with the nearest expiry first."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:171
+#: src/i18n/descriptors/sharing.ts:172
 msgid "sharing.moveSeat"
 msgstr "Move seat"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:184
+#: src/i18n/descriptors/sharing.ts:186
 msgid "sharing.moveSeatFailed"
-msgstr "Move failed. Confirm that the target seat is still vacant."
+msgstr "Move failed. Confirm that both seats are available and belong to the same platform."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:164
+#: src/i18n/descriptors/sharing.ts:165
 msgid "sharing.searchPlaceholder"
 msgstr "Search account number or platform"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:175
+#: src/i18n/descriptors/sharing.ts:176
 msgid "sharing.searchTargetAccount"
 msgstr "Search by account number, login, or email"
 
@@ -509,17 +509,17 @@ msgid "sharing.totpRevoke"
 msgstr "Revoke"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:213
+#: src/i18n/descriptors/sharing.ts:215
 msgid "sharing.revokeInboxLink"
 msgstr "Revoke"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:216
+#: src/i18n/descriptors/sharing.ts:218
 msgid "sharing.revokeInboxLinkConfirm"
 msgstr "Revoke this seat link?"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:205
+#: src/i18n/descriptors/sharing.ts:207
 msgid "sharing.operationColumn"
 msgstr "Actions"
 
@@ -534,27 +534,27 @@ msgid "sharing.paymentMethod"
 msgstr "Payment method"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:206
+#: src/i18n/descriptors/sharing.ts:208
 msgid "sharing.inboxFolder"
 msgstr "Inbox"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:129
+#: src/i18n/descriptors/sharing.ts:130
 msgid "sharing.paymentStatus"
 msgstr "Payment status"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:143
+#: src/i18n/descriptors/sharing.ts:144
 msgid "sharing.billingDetails"
 msgstr "Billing and term"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:119
+#: src/i18n/descriptors/sharing.ts:120
 msgid "sharing.billingCycle"
 msgstr "Billing cycle"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:118
+#: src/i18n/descriptors/sharing.ts:119
 msgid "sharing.billingMonths"
 msgstr "Billing months"
 
@@ -564,7 +564,7 @@ msgid "sharing.addAccount"
 msgstr "Add shared account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:201
+#: src/i18n/descriptors/sharing.ts:203
 msgid "sharing.linkFolders"
 msgstr "Folders visible to new links"
 
@@ -574,12 +574,12 @@ msgid "sharing.loadFailed"
 msgstr "Could not load shared accounts"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:146
+#: src/i18n/descriptors/sharing.ts:147
 msgid "sharing.loadDetailFailed"
 msgstr "Could not load account details"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:233
+#: src/i18n/descriptors/sharing.ts:235
 msgid "sharing.loadLinksFailed"
 msgstr "Unable to load shared mailboxes. Check the connection and retry."
 
@@ -609,17 +609,17 @@ msgid "sharing.morePlatforms"
 msgstr "More"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:120
+#: src/i18n/descriptors/sharing.ts:121
 msgid "sharing.monthly"
 msgstr "Monthly"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:100
+#: src/i18n/descriptors/sharing.ts:101
 msgid "sharing.monthlyProfit"
 msgstr "Monthly net profit"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:99
+#: src/i18n/descriptors/sharing.ts:100
 msgid "sharing.monthlyRevenue"
 msgstr "Monthly revenue"
 
@@ -634,12 +634,12 @@ msgid "sharing.totpExpiry"
 msgstr "Expires {date}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:187
+#: src/i18n/descriptors/sharing.ts:189
 msgid "sharing.hasVacancies"
 msgstr "Has vacant seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:226
+#: src/i18n/descriptors/sharing.ts:228
 msgid "sharing.seatLinkSharingOff"
 msgstr "Disabled · Select folders and future expiry dates to enable"
 
@@ -649,7 +649,7 @@ msgid "sharing.mailboxNoMatches"
 msgstr "No matching mailbox found"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:169
+#: src/i18n/descriptors/sharing.ts:170
 msgid "sharing.upcomingDialogEmpty"
 msgstr "No members expire within the next 7 days"
 
@@ -659,9 +659,14 @@ msgid "sharing.totpUncreated"
 msgstr "Not generated"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:211
+#: src/i18n/descriptors/sharing.ts:213
 msgid "sharing.linkNotCreated"
 msgstr "No link generated"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:96
+msgid "sharing.passwordNotSet"
+msgstr "No password set"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:94
@@ -669,32 +674,32 @@ msgid "sharing.noVerificationLink"
 msgstr "No verification link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:144
+#: src/i18n/descriptors/sharing.ts:145
 msgid "sharing.calculatedReceivable"
 msgstr "Receivable for this term"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:110
+#: src/i18n/descriptors/sharing.ts:111
 msgid "sharing.periodCharge"
 msgstr "Charge for this period"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:228
+#: src/i18n/descriptors/sharing.ts:230
 msgid "sharing.disableSeatLinksHelp"
 msgstr "All seat links in this group will immediately stop working. Credentials, other groups and general mailbox links are unchanged. Enabling again creates new links."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:166
+#: src/i18n/descriptors/sharing.ts:167
 msgid "sharing.openUpcomingRenewals"
 msgstr "View members renewing within 7 days"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:221
+#: src/i18n/descriptors/sharing.ts:223
 msgid "sharing.viewLinks"
 msgstr "View links"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:126
+#: src/i18n/descriptors/sharing.ts:127
 msgid "sharing.expiryAutoHint"
 msgstr "Calculated from the start date and billing cycle. You can still adjust it manually."
 
@@ -704,22 +709,22 @@ msgid "sharing.totpMatching"
 msgstr "Matching online 2FA accounts…"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:230
+#: src/i18n/descriptors/sharing.ts:232
 msgid "sharing.loadingLinks"
 msgstr "Loading shared links..."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:199
+#: src/i18n/descriptors/sharing.ts:201
 msgid "sharing.loadingSeats"
 msgstr "Loading seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:217
+#: src/i18n/descriptors/sharing.ts:219
 msgid "sharing.inboxLinkConfirmHelp"
 msgstr "The old link for this seat will stop working. Other seats and general mailbox sharing will not be affected."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:200
+#: src/i18n/descriptors/sharing.ts:202
 msgid "sharing.noInboxSubscription"
 msgstr "This mailbox is not linked to a subscription with family sharing enabled."
 
@@ -729,12 +734,12 @@ msgid "sharing.monthlyCost"
 msgstr "Monthly cost"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:109
+#: src/i18n/descriptors/sharing.ts:110
 msgid "sharing.monthlyPrice"
 msgstr "Monthly charge"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:176
+#: src/i18n/descriptors/sharing.ts:177
 msgid "sharing.noTargetAccounts"
 msgstr "No matching accounts on this platform"
 
@@ -744,17 +749,17 @@ msgid "sharing.totpMissing"
 msgstr "No matching online 2FA account. Add and enable the same account in Online 2FA first."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:165
+#: src/i18n/descriptors/sharing.ts:166
 msgid "sharing.noSearchResults"
 msgstr "No matching sharing accounts found"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:220
+#: src/i18n/descriptors/sharing.ts:222
 msgid "sharing.clearInboxLink"
 msgstr "Clear inbox link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:204
+#: src/i18n/descriptors/sharing.ts:206
 msgid "sharing.statusColumn"
 msgstr "Status"
 
@@ -764,17 +769,17 @@ msgid "sharing.totpGenerate"
 msgstr "Generate link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:214
+#: src/i18n/descriptors/sharing.ts:216
 msgid "sharing.createInboxLink"
 msgstr "Generate link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:153
+#: src/i18n/descriptors/sharing.ts:154
 msgid "sharing.phone"
 msgstr "Phone"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:160
+#: src/i18n/descriptors/sharing.ts:161
 msgid "sharing.passwordKeepHint"
 msgstr "Leave blank to keep the current password"
 
@@ -784,14 +789,19 @@ msgid "sharing.loginAccount"
 msgstr "Login account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:178
-msgid "sharing.targetVacantSeat"
-msgstr "Target vacant seat"
+#: src/i18n/descriptors/sharing.ts:183
+msgid "sharing.moveSeatHint"
+msgstr "Moving to a vacant seat transfers the member. If the target is occupied, the two members swap seats. Outstanding receivables follow each member; completed payment history stays on the original seat."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:173
+#: src/i18n/descriptors/sharing.ts:174
 msgid "sharing.targetAccount"
 msgstr "Target account"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:179
+msgid "sharing.targetSeat"
+msgstr "Target seat"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:42
@@ -799,17 +809,17 @@ msgid "sharing.totpConfirm"
 msgstr "Confirm"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:219
+#: src/i18n/descriptors/sharing.ts:221
 msgid "sharing.inboxConfirm"
 msgstr "Confirm"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:182
+#: src/i18n/descriptors/sharing.ts:184
 msgid "sharing.confirmMoveSeat"
 msgstr "Confirm move"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:158
+#: src/i18n/descriptors/sharing.ts:159
 msgid "sharing.confirmRenewal"
 msgstr "Confirm renewal"
 
@@ -819,17 +829,17 @@ msgid "sharing.totpVacant"
 msgstr "Vacant"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:193
+#: src/i18n/descriptors/sharing.ts:195
 msgid "sharing.vacantSeatsSort"
 msgstr "Vacant seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:132
+#: src/i18n/descriptors/sharing.ts:133
 msgid "sharing.vacant"
 msgstr "Vacant"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:208
+#: src/i18n/descriptors/sharing.ts:210
 msgid "sharing.inboxVacant"
 msgstr "Vacant"
 
@@ -839,7 +849,7 @@ msgid "sharing.availableSeats"
 msgstr "Available seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:145
+#: src/i18n/descriptors/sharing.ts:146
 msgid "sharing.noMember"
 msgstr "Waiting for a member"
 
@@ -849,42 +859,42 @@ msgid "sharing.subtitle"
 msgstr "Manage shared accounts, seats, members, receivables, and payments"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:97
+#: src/i18n/descriptors/sharing.ts:98
 msgid "sharing.manageAccount"
 msgstr "Manage account"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:136
+#: src/i18n/descriptors/sharing.ts:137
 msgid "sharing.editSeat"
 msgstr "Manage seat"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:156
+#: src/i18n/descriptors/sharing.ts:157
 msgid "sharing.renewSeat"
 msgstr "Renew"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:155
+#: src/i18n/descriptors/sharing.ts:156
 msgid "sharing.editAccount"
 msgstr "Edit family sharing"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:107
+#: src/i18n/descriptors/sharing.ts:108
 msgid "sharing.contact"
 msgstr "Contact"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:106
+#: src/i18n/descriptors/sharing.ts:107
 msgid "sharing.contactType"
 msgstr "Contact type"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:124
+#: src/i18n/descriptors/sharing.ts:125
 msgid "sharing.custom"
 msgstr "Custom"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:125
+#: src/i18n/descriptors/sharing.ts:126
 msgid "sharing.customMonths"
 msgstr "Custom months"
 
@@ -899,9 +909,14 @@ msgid "sharing.manageGenericMailbox"
 msgstr "Configure mailbox link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:232
+#: src/i18n/descriptors/sharing.ts:234
 msgid "sharing.mailboxNotMatched"
 msgstr "No mailbox matches this account. Check the login address and mailbox connection."
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:181
+msgid "sharing.noTargetSeats"
+msgstr "This account has no other seats available for swapping."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:6
@@ -909,12 +924,12 @@ msgid "sharing.configureGenericMailbox"
 msgstr "Select allowed folders and enable general sharing in Shared Inboxes first."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:112
+#: src/i18n/descriptors/sharing.ts:113
 msgid "sharing.memberRequired"
 msgstr "Enter a member name"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:113
+#: src/i18n/descriptors/sharing.ts:114
 msgid "sharing.periodChargeRequired"
 msgstr "Enter a valid charge for this period"
 
@@ -924,17 +939,17 @@ msgid "sharing.totpSelectPlaceholder"
 msgstr "Select a record"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:114
+#: src/i18n/descriptors/sharing.ts:115
 msgid "sharing.datesRequired"
 msgstr "Select a start date and expiry date"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:234
+#: src/i18n/descriptors/sharing.ts:236
 msgid "sharing.enableLinksValidation"
 msgstr "Select mail folders and future link expiry dates for occupied seats."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:96
+#: src/i18n/descriptors/sharing.ts:97
 msgid "sharing.accountCopyTemplate"
 msgstr "Account: {account}\n"
 "Password: {password}\n"
@@ -946,17 +961,17 @@ msgid "sharing.accountName"
 msgstr "Account name"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:192
+#: src/i18n/descriptors/sharing.ts:194
 msgid "sharing.accountNumberSort"
 msgstr "Account number"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:185
+#: src/i18n/descriptors/sharing.ts:187
 msgid "sharing.accountStatusFilter"
 msgstr "Account status"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:98
+#: src/i18n/descriptors/sharing.ts:99
 msgid "sharing.accountSummary"
 msgstr "Account performance"
 
@@ -966,7 +981,7 @@ msgid "sharing.accountNumber"
 msgstr "Account number"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:159
+#: src/i18n/descriptors/sharing.ts:160
 msgid "sharing.accountDetails"
 msgstr "Account details"
 
@@ -981,12 +996,12 @@ msgid "sharing.seats"
 msgstr "Seats"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:104
+#: src/i18n/descriptors/sharing.ts:105
 msgid "sharing.seatNumber"
 msgstr "Seat"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:207
+#: src/i18n/descriptors/sharing.ts:209
 msgid "sharing.inboxSeat"
 msgstr "Seat {number}"
 
@@ -996,17 +1011,17 @@ msgid "sharing.totpSeat"
 msgstr "Seat {number} · {member}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:203
+#: src/i18n/descriptors/sharing.ts:205
 msgid "sharing.seatMemberColumn"
 msgstr "Seat / member"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:139
+#: src/i18n/descriptors/sharing.ts:140
 msgid "sharing.seatSaved"
 msgstr "Seat and receivable updated"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:183
+#: src/i18n/descriptors/sharing.ts:185
 msgid "sharing.moveSeatSuccess"
 msgstr "Seat moved"
 
@@ -1016,32 +1031,32 @@ msgid "sharing.capacity"
 msgstr "Seat capacity"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:141
+#: src/i18n/descriptors/sharing.ts:142
 msgid "sharing.status"
 msgstr "Seat status"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:224
+#: src/i18n/descriptors/sharing.ts:226
 msgid "sharing.seatLinkSharing"
 msgstr "Seat mailbox link sharing"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:194
+#: src/i18n/descriptors/sharing.ts:196
 msgid "sharing.inboxLinks"
 msgstr "Seat links"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:197
+#: src/i18n/descriptors/sharing.ts:199
 msgid "sharing.inboxLinkCount"
 msgstr "Seat links {count}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:128
+#: src/i18n/descriptors/sharing.ts:129
 msgid "sharing.expiresAt"
 msgstr "Member expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:105
+#: src/i18n/descriptors/sharing.ts:106
 msgid "sharing.memberName"
 msgstr "Member name"
 
@@ -1051,17 +1066,12 @@ msgid "sharing.upcomingRenewals"
 msgstr "Member renewals / charges"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:142
+#: src/i18n/descriptors/sharing.ts:143
 msgid "sharing.memberDetails"
 msgstr "Member details"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:181
-msgid "sharing.moveSeatHint"
-msgstr "Member details and unpaid receivables will move to the target seat; completed payment history stays with the original seat."
-
-#. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:111
+#: src/i18n/descriptors/sharing.ts:112
 msgid "sharing.periodChargePlaceholder"
 msgstr "Enter the total amount for this period"
 
@@ -1071,9 +1081,9 @@ msgid "sharing.emptyTitle"
 msgstr "No shared accounts yet"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:179
-msgid "sharing.selectVacantSeat"
-msgstr "Select a vacant seat on this platform"
+#: src/i18n/descriptors/sharing.ts:180
+msgid "sharing.selectTargetSeat"
+msgstr "Select another seat on this platform"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:24
@@ -1086,37 +1096,37 @@ msgid "sharing.selectMailboxPlaceholder"
 msgstr "Select the mailbox that receives verification codes"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:177
+#: src/i18n/descriptors/sharing.ts:178
 msgid "sharing.selectAccountBeforeSeat"
-msgstr "Select a target account, then choose one of its vacant seats."
+msgstr "Select a target account, then choose the seat to move to or swap with."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:196
+#: src/i18n/descriptors/sharing.ts:198
 msgid "sharing.genericInboxShare"
 msgstr "General sharing"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:198
+#: src/i18n/descriptors/sharing.ts:200
 msgid "sharing.genericLinkWarning"
 msgstr "General sharing is still enabled. Existing general links remain valid and can be revoked separately under General sharing."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:222
+#: src/i18n/descriptors/sharing.ts:224
 msgid "sharing.genericLink"
 msgstr "General link"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:152
+#: src/i18n/descriptors/sharing.ts:153
 msgid "sharing.email"
 msgstr "Email"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:229
+#: src/i18n/descriptors/sharing.ts:231
 msgid "sharing.linkAdminOnly"
 msgstr "Only administrators can manage mailbox links. Account and seat management remain available."
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:237
+#: src/i18n/descriptors/sharing.ts:239
 msgid "sharing.partialLinkFailure"
 msgstr "Some seats may have changed. Check the list before retrying."
 
@@ -1126,12 +1136,12 @@ msgid "sharing.totpResetAction"
 msgstr "Reset"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:212
+#: src/i18n/descriptors/sharing.ts:214
 msgid "sharing.resetInboxLink"
 msgstr "Reset"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:215
+#: src/i18n/descriptors/sharing.ts:217
 msgid "sharing.resetInboxLinkConfirm"
 msgstr "Reset this seat link?"
 
@@ -1146,12 +1156,12 @@ msgid "sharing.totpRetry"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:231
+#: src/i18n/descriptors/sharing.ts:233
 msgid "sharing.retryLinks"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:210
+#: src/i18n/descriptors/sharing.ts:212
 msgid "sharing.linkUnavailable"
 msgstr "Link unavailable"
 
@@ -1161,7 +1171,7 @@ msgid "sharing.totpCopied"
 msgstr "Link copied"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:209
+#: src/i18n/descriptors/sharing.ts:211
 msgid "sharing.linkValidUntil"
 msgstr "Link active · Expires {date}"
 
@@ -1171,7 +1181,7 @@ msgid "sharing.linkLongTerm"
 msgstr "No fixed expiry"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:151
+#: src/i18n/descriptors/sharing.ts:152
 msgid "sharing.xianyu"
 msgstr "Xianyu"
 

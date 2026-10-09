@@ -32,7 +32,7 @@ export function CalendarAccountIdentity({
           logo={logo}
           fallbackColor={fallbackColor}
           size={size}
-          className={compact ? "h-5 w-5 rounded" : undefined}
+          className={cn("subscription-logo-contrast", compact && "h-5 w-5 rounded")}
         />
         {accountNumber ? (
           <span
