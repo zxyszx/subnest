@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export const headerLayout = {
-  shell: "sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-xl relative",
+  shell: "relative sticky top-0 z-50 border-b border-border bg-card lg:bg-card/80 lg:backdrop-blur-xl",
   inner: "mx-auto flex max-w-[120rem] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-2.5",
   primaryCluster: "flex min-w-0 items-center gap-3 lg:gap-5 xl:gap-8",
   brandCluster: "flex min-w-0 items-start gap-3",
@@ -14,7 +14,7 @@ export const headerLayout = {
   desktopNavLabel: "whitespace-nowrap",
   desktopNavSkeletonLabel: "h-4 w-16",
   actions: "flex min-w-0 shrink-0 items-center justify-end gap-2",
-  mobileNav: "flex overflow-x-auto overscroll-x-contain border-t border-border lg:hidden",
+  mobileNav: "fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden",
   mobileNavIcon: "h-5 w-5",
 } as const;
 
@@ -24,7 +24,7 @@ const headerDesktopNavLinkBase =
 const headerDesktopNavSkeletonItem =
   "flex h-10 w-auto items-center justify-start gap-2 rounded-lg px-3 xl:px-4";
 
-const headerMobileNavLinkBase = "flex min-w-20 flex-none flex-col items-center gap-1 whitespace-nowrap py-3 text-xs font-medium transition-colors";
+const headerMobileNavLinkBase = "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium leading-tight transition-colors";
 
 export function getHeaderDesktopNavLinkClass(isActive: boolean) {
   return cn(

@@ -61,13 +61,24 @@ describe("seat inbox link authorization", () => {
     expect(sharedInboxLinkRequestSchema.safeParse(body).success).toBe(true);
     expect(sharedInboxLinkRequestSchema.safeParse({ ...body, seatId: "seat1" }).success).toBe(true);
   });
-  it("does not overwrite a subscription configured for online 2FA", async () => {
+  it.each(["totp", "none"])("does not overwrite a subscription configured for %s verification", async (mode) => {
     const { database, env } = fixture();
-    database.exec(`UPDATE subscriptions SET extra_json='{"familyVerification":{"mode":"totp"}}',sharing_verification_link='existing-2fa-link'`);
+    database.exec(`UPDATE subscriptions SET extra_json='{"familyVerification":{"mode":"${mode}"}}',sharing_verification_link='existing-verification-link'`);
     const { link } = await readSuccessData<LinkPayload>(await createSharedInboxLink(request(undefined, null), env));
-    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-2fa-link" });
+    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-verification-link" });
     await revokeSharedInboxLink(new Request("https://example.test"), env, link.id);
-    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-2fa-link" });
+    expect(database.prepare("SELECT sharing_verification_link FROM subscriptions").get()).toEqual({ sharing_verification_link: "existing-verification-link" });
+  });
+  it("binds inbox links by mailbox id without replacing the platform login account", async () => {
+    const { database, env } = fixture();
+    database.exec(`UPDATE subscriptions SET sharing_login_account='netflix-login@gmail.com',extra_json='{"familyVerification":{"mode":"email","mailboxId":"mailbox"}}'`);
+    const seat = await readSuccessData<LinkPayload>(await createSharedInboxLink(request("seat1"), env));
+    const generic = await readSuccessData<LinkPayload>(await createSharedInboxLink(request(undefined, null), env));
+    expect(seat.link.seatId).toBe("seat1");
+    expect(database.prepare("SELECT sharing_login_account,sharing_verification_link FROM subscriptions").get()).toEqual({
+      sharing_login_account: "netflix-login@gmail.com",
+      sharing_verification_link: generic.link.shortUrl,
+    });
   });
   it("migrates, creates independent grants, and revokes only one seat", async () => {
     const { database, env } = fixture();

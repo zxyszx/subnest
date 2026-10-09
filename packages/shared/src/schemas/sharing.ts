@@ -27,7 +27,7 @@ export const sharingAccountSchema = z.object({
   loginAccount: z.string().min(1),
   hasPassword: z.boolean(),
   familySharingEnabled: z.boolean().optional(),
-  verificationMode: z.enum(["email", "totp"]).optional(),
+  verificationMode: z.enum(["email", "totp", "none"]).optional(),
   verificationLink: z.url().nullable(),
   monthlyCost: moneyStringSchema,
   currency: z.string().regex(/^[A-Z]{3}$/),

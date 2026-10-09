@@ -13,8 +13,18 @@ interface SeatRow { id:string; seat_number:number; status:string; member_name:st
 
 export function familyVerificationConfig(row: SubscriptionRow) {
  const extra = JSON.parse(row.extra_json || "{}");
- const mode=extra.familyVerification?.mode === "totp" ? "totp" : "email";
+ const rawMode=extra.familyVerification?.mode;
+ const mode=rawMode === "totp" || rawMode === "none" ? rawMode : "email";
  return { mode, totpAccountId: mode==="totp" ? String(extra.familyVerification?.totpAccountId || "") : "" };
+}
+
+export function familyVerificationBindingKey(row: SubscriptionRow) {
+ const extra = JSON.parse(row.extra_json || "{}");
+ const config = familyVerificationConfig(row);
+ if(config.mode === "none") return "none";
+ if(config.mode === "totp") return `totp:${config.totpAccountId}`;
+ const mailboxId=String(extra.familyVerification?.mailboxId || "").trim();
+ return mailboxId ? `email:${mailboxId}` : `email:legacy:${String(row.sharing_login_account || "").trim().toLowerCase()}`;
 }
 
 async function binding(env:Env,userId:string,accountId:string,seatId:string, supplied?:SubscriptionRow,seatOverride?:SeatRow) {

@@ -14,6 +14,7 @@ import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/s
 export function SharingInboxLinksDialog({ account, onClose }: { account: SharingAccount; onClose: () => void }) {
   if (!account.familySharingEnabled || account.status !== "active") return null;
   if (account.verificationMode === "totp") return <SharingTotpLinksDialog account={account} onClose={onClose} />;
+  if (account.verificationMode === "none") return null;
   return <MailboxLinksDialog account={account} onClose={onClose} />;
 }
 
@@ -38,7 +39,9 @@ function MailboxLinksDialog({ account, onClose }: { account: SharingAccount; onC
     setError("");
     void Promise.all([newszxcnService.mailboxes(), newszxcnService.links()]).then(([mailboxes, result]) => {
       if (cancelled) return;
-      const match = mailboxes.items.find((item) => item.address.trim().toLowerCase() === account.loginAccount.trim().toLowerCase());
+      const boundLink = result.links.find((item) => !item.seatId && item.status === "active" && item.shortUrl === account.verificationLink);
+      const match = mailboxes.items.find((item) => item.id === boundLink?.mailboxId)
+        ?? mailboxes.items.find((item) => item.address.trim().toLowerCase() === account.loginAccount.trim().toLowerCase());
       setMailbox(match ?? null);
       setLinks(result.links);
       setNow(Date.now());

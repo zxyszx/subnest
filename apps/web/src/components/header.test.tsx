@@ -66,6 +66,8 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "theme.dark": "夜间",
         "nav.calendar": "日历",
         "nav.dashboard": "仪表盘",
+        "nav.more": "更多",
+        "nav.moreDescription": "打开其他页面或管理当前应用",
         "nav.online2fa": "在线 2FA",
         "nav.sharedInbox": "共享收件箱",
         "nav.settings": "设置",
@@ -290,7 +292,7 @@ describe("Header system version entry", () => {
 
     renderHeader();
 
-    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card/80");
+    expect(screen.getByTestId("app-header")).toHaveClass("sticky", "top-0", "z-50", "bg-card", "lg:bg-card/80", "lg:backdrop-blur-xl");
     expect(screen.getByTestId("app-header")).not.toHaveClass("lg:fixed", "lg:w-64", "lg:border-r");
     expect(screen.getByTestId("app-header-inner")).toHaveClass("max-w-[120rem]", "justify-between", "gap-3");
     expect(screen.getByTestId("app-header-actions")).toHaveClass("min-w-0", "shrink-0", "justify-end");
@@ -298,7 +300,9 @@ describe("Header system version entry", () => {
     const desktopNav = screen.getByTestId("app-header-desktop-nav");
     const mobileNav = screen.getByTestId("app-header-mobile-nav");
     expect(desktopNav).toHaveClass("hidden", "min-w-0", "lg:flex", "items-center", "gap-1");
-    expect(mobileNav).toHaveClass("flex", "overflow-x-auto", "overscroll-x-contain", "border-t", "lg:hidden");
+    expect(mobileNav).toHaveClass("fixed", "inset-x-0", "bottom-0", "grid", "grid-cols-5", "border-t", "lg:hidden");
+    expect(within(mobileNav).getAllByRole("link")).toHaveLength(4);
+    expect(within(mobileNav).getByRole("button", { name: "更多" })).toBeInTheDocument();
 
     const subscriptionLink = within(desktopNav).getByRole("link", { name: "订阅" });
     expect(subscriptionLink).toHaveAttribute("title", "订阅");

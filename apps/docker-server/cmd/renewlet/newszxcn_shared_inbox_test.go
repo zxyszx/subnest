@@ -22,14 +22,14 @@ func TestSeatInboxLinksAreIndependentAndOwnershipChecked(t *testing.T) {
 	seat1 := saveInboxTestRecord(t, app, "sharing_seats", map[string]any{"user": user.Id, "sharingAccount": account.Id, "seatNumber": 1, "memberName": "Alice", "status": "active"})
 	seat2 := saveInboxTestRecord(t, app, "sharing_seats", map[string]any{"user": user.Id, "sharingAccount": account.Id, "seatNumber": 2, "memberName": "Bob", "status": "active"})
 	for _, seat := range []*core.Record{seat1, seat2} {
-		if err := validateInboxSeat(app, user.Id, seat.Id, " SHARED@example.com "); err != nil {
+		if err := validateInboxSeat(app, user.Id, seat.Id, "", " SHARED@example.com "); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := validateInboxSeat(app, "another-owner", seat1.Id, "shared@example.com"); err == nil {
+	if err := validateInboxSeat(app, "another-owner", seat1.Id, "", "shared@example.com"); err == nil {
 		t.Fatal("another owner was allowed")
 	}
-	if err := validateInboxSeat(app, user.Id, seat1.Id, "other@example.com"); err == nil {
+	if err := validateInboxSeat(app, user.Id, seat1.Id, "", "other@example.com"); err == nil {
 		t.Fatal("another mailbox was allowed")
 	}
 
@@ -52,7 +52,7 @@ func TestSeatInboxLinksAreIndependentAndOwnershipChecked(t *testing.T) {
 	if err := app.SaveNoValidate(seat1); err != nil {
 		t.Fatal(err)
 	}
-	if err := validateInboxSeat(app, user.Id, seat1.Id, "shared@example.com"); err == nil {
+	if err := validateInboxSeat(app, user.Id, seat1.Id, "", "shared@example.com"); err == nil {
 		t.Fatal("paused seat was allowed")
 	}
 	seat1.Set("status", "active")
@@ -60,7 +60,7 @@ func TestSeatInboxLinksAreIndependentAndOwnershipChecked(t *testing.T) {
 	if err := app.SaveNoValidate(seat1); err != nil {
 		t.Fatal(err)
 	}
-	if err := validateInboxSeat(app, user.Id, seat1.Id, "shared@example.com"); err == nil {
+	if err := validateInboxSeat(app, user.Id, seat1.Id, "", "shared@example.com"); err == nil {
 		t.Fatal("empty seat was allowed")
 	}
 }
@@ -174,14 +174,29 @@ func TestSyncSharedInboxLinkToSubscriptionsScopesUpdates(t *testing.T) {
 		"sharingLoginAccount":     "netflix16@newszxcn.com",
 		"sharingVerificationLink": "https://dingyue.xzys.me/s/disabled",
 	})
+	forwardedMailbox := createSchemaTestSubscriptionNoValidate(t, app, user.Id, map[string]interface{}{
+		"name":                    "Forwarded mailbox",
+		"familySharingEnabled":    true,
+		"sharingLoginAccount":     "netflix-login@gmail.com",
+		"sharingVerificationLink": "https://dingyue.xzys.me/s/forwarded-old",
+		"extra": map[string]any{"familyVerification": map[string]any{
+			"mode": "email", "mailboxId": "mailbox-16",
+		}},
+	})
 
-	if err := syncSharedInboxLinkToSubscriptions(app, user.Id, "netflix16@newszxcn.com", "", "https://dingyue.xzys.me/s/new"); err != nil {
+	if err := syncSharedInboxLinkToSubscriptions(app, user.Id, "", "netflix16@newszxcn.com", "", "https://dingyue.xzys.me/s/new"); err != nil {
 		t.Fatal(err)
 	}
 	assertSharedInboxSubscriptionLink(t, app, matching.Id, "https://dingyue.xzys.me/s/new")
 	assertSharedInboxSubscriptionLink(t, app, matchingSecond.Id, "https://dingyue.xzys.me/s/new")
 	assertSharedInboxSubscriptionLink(t, app, otherMailbox.Id, "https://dingyue.xzys.me/s/other")
 	assertSharedInboxSubscriptionLink(t, app, disabled.Id, "https://dingyue.xzys.me/s/disabled")
+	assertSharedInboxSubscriptionLink(t, app, forwardedMailbox.Id, "https://dingyue.xzys.me/s/forwarded-old")
+
+	if err := syncSharedInboxLinkToSubscriptions(app, user.Id, "mailbox-16", "forwarded@newszxcn.com", "", "https://dingyue.xzys.me/s/forwarded-new"); err != nil {
+		t.Fatal(err)
+	}
+	assertSharedInboxSubscriptionLink(t, app, forwardedMailbox.Id, "https://dingyue.xzys.me/s/forwarded-new")
 
 	matchingRecord, err := app.FindRecordById("subscriptions", matching.Id)
 	if err != nil {
@@ -191,7 +206,7 @@ func TestSyncSharedInboxLinkToSubscriptionsScopesUpdates(t *testing.T) {
 	if err := app.SaveNoValidate(matchingRecord); err != nil {
 		t.Fatal(err)
 	}
-	if err := syncSharedInboxLinkToSubscriptions(app, user.Id, "netflix16@newszxcn.com", "https://dingyue.xzys.me/s/new", ""); err != nil {
+	if err := syncSharedInboxLinkToSubscriptions(app, user.Id, "", "netflix16@newszxcn.com", "https://dingyue.xzys.me/s/new", ""); err != nil {
 		t.Fatal(err)
 	}
 	assertSharedInboxSubscriptionLink(t, app, matching.Id, "https://example.com/manual")

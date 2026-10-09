@@ -10,12 +10,13 @@
  */
 
 import Link, { NavLink } from '@/components/router-link';
-import { useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck, Inbox } from 'lucide-react';
+import { usePathname, useRouter } from '@/lib/router';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck, Inbox, MoreHorizontal } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/lib/theme-provider';
 import { toast } from '@/components/ui/sonner';
 import { RenewletBrandMark } from '@/components/brand/renewlet-brand-mark';
@@ -45,9 +46,10 @@ interface HeaderProps {
 }
 
 type NavIconKey = "dashboard" | "subscriptions" | "sharing" | "sharedInbox" | "online2fa" | "calendar" | "statistics" | "settings";
+type NavItem = { path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean };
 
 /** 导航项配置：路径 / 文案 / 图标 key。 */
-const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; adminOnly?: boolean }> = [
+const navItems: NavItem[] = [
   { path: '/', labelKey: 'nav.dashboard', icon: "dashboard" },
   { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: "subscriptions" },
   { path: '/sharing', labelKey: 'nav.sharing', icon: "sharing" },
@@ -57,6 +59,7 @@ const navItems: Array<{ path: string; labelKey: MessageKey; icon: NavIconKey; ad
   { path: '/statistics', labelKey: 'nav.statistics', icon: "statistics" },
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
 ];
+const mobilePrimaryPaths = new Set(["/", "/subscriptions", "/sharing", "/online-2fa"]);
 
 function renderNavIcon(icon: NavIconKey, className: string) {
   switch (icon) {
@@ -82,12 +85,16 @@ function renderNavIcon(icon: NavIconKey, className: string) {
 /** Header 组件：全局导航 + 主题切换 + 新增订阅入口。 */
 export function Header({ onAddSubscription, availableTags, platformSuggestions, subscriptionActions, pageActions }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
   const { data: sessionData } = authClient.useSession();
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
   const isAuthenticated = Boolean(sessionData?.user);
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
+  const mobilePrimaryItems = visibleNavItems.filter((item) => mobilePrimaryPaths.has(item.path));
+  const mobileMoreItems = visibleNavItems.filter((item) => !mobilePrimaryPaths.has(item.path));
+  const mobileMoreActive = mobileMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
 
   /** Header 快捷开关只写本机偏好；账户级外观仍由设置页保存。 */
   const handleToggleTheme = () => {
@@ -162,7 +169,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             variant="ghost"
             size="icon"
             onClick={handleToggleTheme}
-            className="h-9 w-9"
+            className="hidden h-9 w-9 lg:inline-flex"
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -173,7 +180,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className="h-9 w-9 text-muted-foreground hover:text-destructive"
+            className="hidden h-9 w-9 text-muted-foreground hover:text-destructive lg:inline-flex"
             title={t("header.logout")}
           >
             <LogOut className="h-4 w-4" />
@@ -185,7 +192,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
 
       {/* 移动端导航 */}
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav">
-        {visibleNavItems.map((item) => (
+        {mobilePrimaryItems.map((item) => (
           <NavLink
             key={item.path}
             href={item.path}
@@ -196,6 +203,44 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             {t(item.labelKey)}
           </NavLink>
         ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={getHeaderMobileNavLinkClass(mobileMoreActive)}
+              aria-label={t("nav.more")}
+              aria-current={mobileMoreActive ? "page" : undefined}
+            >
+              <MoreHorizontal className={headerLayout.mobileNavIcon} />
+              <span>{t("nav.more")}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            mobileTitle={t("nav.more")}
+            aria-label={t("nav.moreDescription")}
+          >
+            {mobileMoreItems.map((item) => (
+              <DropdownMenuItem
+                key={item.path}
+                className={pathname === item.path || pathname.startsWith(`${item.path}/`) ? "text-primary" : undefined}
+                onSelect={() => router.push(item.path)}
+              >
+                {renderNavIcon(item.icon, "mr-3 h-5 w-5 shrink-0")}
+                <span>{t(item.labelKey)}</span>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={handleToggleTheme}>
+              {theme === 'dark' ? <Sun className="mr-3 h-5 w-5" /> : <Moon className="mr-3 h-5 w-5" />}
+              <span>{t("header.toggleTheme")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => void handleLogout()}>
+              <LogOut className="mr-3 h-5 w-5" />
+              <span>{t("header.logout")}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
     </header>
   );

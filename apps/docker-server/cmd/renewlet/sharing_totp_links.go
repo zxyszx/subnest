@@ -56,14 +56,25 @@ func familyVerificationMode(sub *core.Record) string {
 	if config["mode"] == "totp" {
 		return "totp"
 	}
+	if config["mode"] == "none" {
+		return "none"
+	}
 	return "email"
 }
 
 func familyVerificationBindingKey(sub *core.Record) string {
-	if familyVerificationMode(sub) != "totp" {
-		return "email"
-	}
+	mode := familyVerificationMode(sub)
 	config, _ := subscriptionRecordJSONMap(sub, "extra")["familyVerification"].(map[string]interface{})
+	if mode == "none" {
+		return "none"
+	}
+	if mode == "email" {
+		mailboxID, _ := config["mailboxId"].(string)
+		if strings.TrimSpace(mailboxID) != "" {
+			return "email:" + strings.TrimSpace(mailboxID)
+		}
+		return "email:legacy:" + strings.ToLower(strings.TrimSpace(sub.GetString("sharingLoginAccount")))
+	}
 	id, _ := config["totpAccountId"].(string)
 	return "totp:" + id
 }

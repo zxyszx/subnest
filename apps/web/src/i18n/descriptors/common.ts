@@ -56,6 +56,8 @@ export const messages = [
   msg({ id: "nav.calendar", message: "日历" }),
   msg({ id: "nav.statistics", message: "统计" }),
   msg({ id: "nav.settings", message: "设置" }),
+  msg({ id: "nav.more", message: "更多" }),
+  msg({ id: "nav.moreDescription", message: "打开其他页面或管理当前应用" }),
   msg({ id: "header.toggleTheme", message: "切换主题" }),
   msg({ id: "header.logout", message: "退出登录" }),
   msg({ id: "header.logoutSuccessTitle", message: "已退出登录" }),

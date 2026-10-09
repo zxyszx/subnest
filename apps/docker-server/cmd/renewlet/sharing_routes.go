@@ -525,7 +525,7 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 	loginAccount := subscription.GetString("sharingLoginAccount")
 	encryptedCredentials := subscription.GetString("sharingEncryptedCredentials")
 	verificationLink := subscription.GetString("sharingVerificationLink")
-	if familyVerificationMode(subscription) == "totp" {
+	if familyVerificationMode(subscription) != "email" {
 		verificationLink = ""
 	}
 	capacity := subscription.GetInt("sharingCapacity")

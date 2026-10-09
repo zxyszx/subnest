@@ -46,12 +46,13 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(masterSwitch).toBeChecked();
     expect(screen.getByRole("radio", { name: "sharing.emailMethod" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "sharing.totpMethod" })).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: "sharing.disabledMethod" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "sharing.disabledMethod" })).toBeInTheDocument();
 
     await user.click(masterSwitch);
     expect(masterSwitch).not.toBeChecked();
     expect(screen.queryByRole("radio", { name: "sharing.emailMethod" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "sharing.totpMethod" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "sharing.disabledMethod" })).not.toBeInTheDocument();
   });
   it("prevents disabling family sharing until every seat is vacant", () => {
     render(<Harness occupiedSeats={2} />);
@@ -86,14 +87,20 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     expect(await screen.findByText("sharing.mailboxLinkWillCreate")).toBeInTheDocument();
     await waitFor(() => expect(pending).toHaveBeenLastCalledWith(false));
   });
-  it("preserves an external verification link and allows clearing it", async () => {
+  it("keeps the platform login account independent when selecting a forwarding mailbox", async () => {
+    mocks.mailboxes.mockResolvedValue({ items: [
+      { id: "mailbox-16", address: "netflix16@example.com" },
+      { id: "forwarded-mailbox", address: "netflix@newszxcn.com" },
+    ] });
     const user = userEvent.setup();
-    render(<Harness showEnabledControl={false} verificationLink="https://example.com/otp" />);
-    const input = screen.getByDisplayValue("https://example.com/otp");
+    render(<Harness />);
     await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
-    expect(input).toHaveValue("https://example.com/otp");
-    await user.click(screen.getByRole("button", { name: "sharing.clearInboxLink" }));
-    expect(input).toHaveValue("");
+    await user.click(screen.getByRole("combobox", { name: "sharing.mailboxSelection" }));
+    await user.type(screen.getByPlaceholderText("sharing.searchMailbox"), "NEWSZXCN");
+    expect(screen.queryByRole("option", { name: "netflix16@example.com" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "netflix@newszxcn.com" }));
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
+    expect(screen.getByRole("combobox", { name: "sharing.mailboxSelection" })).toHaveTextContent("netflix@newszxcn.com");
   });
   it("keeps link controls out of the subscription family settings", async () => {
     render(<Harness verificationLink="https://example.com/otp" />);
@@ -124,6 +131,27 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     const user = userEvent.setup(); render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "sharing.totpMethod" }));
     expect(await screen.findByRole("combobox", { name: "sharing.totpRecord" })).toHaveValue("");
+  });
+  it("keeps credentials and mailbox draft while temporarily choosing no verification sharing", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await waitFor(() => expect(mocks.mailboxes).toHaveBeenCalled());
+    await user.click(screen.getByRole("radio", { name: "sharing.disabledMethod" }));
+    expect(screen.getByRole("radio", { name: "sharing.disabledMethod" })).toBeChecked();
+    expect(screen.queryByRole("combobox", { name: "sharing.mailboxSelection" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
+    expect(screen.getByLabelText("subscription.familySharing.password")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "sharing.emailMethod" }));
+    expect(screen.getByRole("combobox", { name: "sharing.mailboxSelection" })).toHaveTextContent("netflix16@example.com");
+  });
+  it("supports clearing a selected shared mailbox", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const mailbox = await screen.findByRole("combobox", { name: "sharing.mailboxSelection" });
+    await user.click(mailbox);
+    await user.click(screen.getByRole("option", { name: "sharing.mailboxUnselected" }));
+    expect(mailbox).toHaveTextContent("sharing.mailboxUnselected");
+    expect(screen.getByLabelText("subscription.familySharing.loginAccount")).toHaveValue("netflix16@example.com");
   });
   it("preserves the selected 2FA record while switching through shared inbox", async () => {
     mocks.totpList.mockResolvedValue({ accounts: [1, 2].map((number) => ({ id: `otp${number}`, account: "netflix16@example.com", platformName: "Netflix", accountNumber: number, enabled: true })) });

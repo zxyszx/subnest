@@ -49,6 +49,15 @@ describe("SeatInboxLinksDialog", () => {
     await user.click((await screen.findAllByRole("button", { name: "生成链接" }))[0]!);
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1", folderIds: ["inbox"], windowMinutes: 360 })));
   });
+  it("shows the existing seat scope after refresh instead of the generic inbox scope", async () => {
+    const generic = { ...link, id: "generic", seatId: null, folderIds: ["inbox"], windowMinutes: 30 };
+    const netflixSeatLink = { ...link, folderIds: ["netflix"], windowMinutes: 360 };
+    mocks.folders.mockResolvedValue({ items: [{ id: "inbox", role: "inbox", name: "Inbox" }, { id: "netflix", name: "Netflix" }] });
+    renderDialog([generic, netflixSeatLink]);
+    expect(await screen.findByRole("checkbox", { name: "Netflix" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "收件箱" })).not.toBeChecked();
+    expect(screen.getByRole("combobox", { name: "最近可查看邮件范围" })).toHaveTextContent("6 小时");
+  });
   it("confirms a single-seat reset and preserves its scope", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }]);

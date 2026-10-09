@@ -47,8 +47,8 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
         </div>
       </div>
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav-skeleton">
-        {range(7).map((index) => (
-          <div key={index} className="flex min-w-20 flex-none flex-col items-center gap-1 py-3">
+        {range(5).map((index) => (
+          <div key={index} className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 py-2">
             <SkeletonBox className="h-5 w-5 rounded" />
             <SkeletonBox className="h-3 w-10" />
           </div>

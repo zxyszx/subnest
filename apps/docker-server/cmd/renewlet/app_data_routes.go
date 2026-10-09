@@ -293,7 +293,6 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 		return e.NotFoundError(serverText(locale, "subscription.notFound"), err)
 	}
 	previousFamilyEnabled := record.GetBool("familySharingEnabled")
-	previousMailboxAddress := record.GetString("sharingLoginAccount")
 	previousVerification := familyVerificationBindingKey(record)
 	if previousFamilyEnabled && body.FamilySharing.Set && (body.FamilySharing.Null || !body.FamilySharing.Value.Enabled) {
 		occupiedSeats, countErr := occupiedSharingSeatsForSubscription(app, e.Auth.Id, record.Id)
@@ -312,7 +311,7 @@ func handleSubscriptionUpdate(app core.App, e *core.RequestEvent) error {
 	}
 	if err := app.RunInTransaction(func(txApp core.App) error {
 		nextVerification := familyVerificationBindingKey(record)
-		if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || previousVerification != nextVerification || !strings.EqualFold(strings.TrimSpace(previousMailboxAddress), strings.TrimSpace(record.GetString("sharingLoginAccount")))) {
+		if previousFamilyEnabled && (!record.GetBool("familySharingEnabled") || previousVerification != nextVerification) {
 			if _, err := txApp.DB().NewQuery("UPDATE sharing_totp_links SET revoked=1 WHERE user={:user} AND accountId IN (SELECT id FROM sharing_accounts WHERE user={:user} AND subscription={:sub})").Bind(dbx.Params{"user": record.GetString("user"), "sub": record.Id}).Execute(); err != nil {
 				return err
 			}

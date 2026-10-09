@@ -369,6 +369,9 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
     if (family.verificationMode === "totp" && !family.totpAccountId) {
       issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
     }
+    if ((family.verificationMode ?? "email") === "email" && !family.mailboxId && !family.verificationLink.trim()) {
+      issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
+    }
     if (
       !family.loginAccount.trim() ||
       (!family.hasPassword && !family.password) ||

@@ -270,7 +270,11 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
       passwordMask: subscription.familySharing.passwordMask,
       verificationLink: subscription.familySharing.verificationLink ?? "",
       capacity: String(subscription.familySharing.capacity),
-      verificationMode: (subscription.extra["familyVerification"] as { mode?: string } | undefined)?.mode === "totp" ? "totp" : "email",
+      verificationMode: (() => {
+        const mode = (subscription.extra["familyVerification"] as { mode?: string } | undefined)?.mode;
+        return mode === "totp" || mode === "none" ? mode : "email";
+      })(),
+      mailboxId: (subscription.extra["familyVerification"] as { mailboxId?: string } | undefined)?.mailboxId ?? "",
       totpAccountId: (subscription.extra["familyVerification"] as { totpAccountId?: string } | undefined)?.totpAccountId ?? "",
     } : createSubscriptionFormState().familySharing,
     website: subscription.website ?? "",

@@ -13,7 +13,7 @@ import { decryptSharingCredential } from "./sharing-credential";
 import { HttpError, readJson, requestLocale, successJson } from "./http";
 import { newId, nowIso } from "./db";
 import type { Env, SubscriptionRow } from "./types";
-import { familyTotpSeatStatement } from "./sharing-totp-links";
+import { familyTotpSeatStatement, familyVerificationConfig } from "./sharing-totp-links";
 
 interface SharingAccountRow {
   id: string;
@@ -278,8 +278,8 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
     loginAccount: subscription.sharing_login_account ?? "",
     hasPassword: Boolean(subscription.sharing_encrypted_credentials),
     familySharingEnabled: Boolean(subscription.family_sharing_enabled),
-    verificationMode: JSON.parse(subscription.extra_json || "{}").familyVerification?.mode === "totp" ? "totp" : "email",
-    verificationLink: JSON.parse(subscription.extra_json || "{}").familyVerification?.mode === "totp" ? null : subscription.sharing_verification_link ?? null,
+    verificationMode: familyVerificationConfig(subscription).mode,
+    verificationLink: familyVerificationConfig(subscription).mode === "email" ? subscription.sharing_verification_link ?? null : null,
     monthlyCost: moneyFromNumber(monthlyCost),
     currency: subscription.currency,
     nextBillingDate: subscription.next_billing_date,

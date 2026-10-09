@@ -1,0 +1,22 @@
+{
+  "name": "SubNest",
+  "short_name": "SubNest",
+  "description": "Subscription and sharing management",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#101720",
+  "icons": [
+    { "src": "/icons/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "订阅列表", "short_name": "订阅", "url": "/subscriptions", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "会员共享", "short_name": "共享", "url": "/sharing", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "在线 2FA", "short_name": "2FA", "url": "/online-2fa", "icons": [{ "src": "/icons/app-icon-192.png", "sizes": "192x192" }] }
+  ]
+}

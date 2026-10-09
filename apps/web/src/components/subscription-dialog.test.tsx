@@ -136,7 +136,7 @@ describe("SubscriptionDialog", () => {
     expect(within(dialog).getByLabelText("登录账号")).toHaveValue("family@example.com");
     expect(within(dialog).getByLabelText("车位数")).toHaveValue(5);
     expect(within(dialog).getByLabelText("登录密码")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("验证码链接")).toHaveValue("https://example.com/verify");
+    expect(within(dialog).getByRole("combobox", { name: "共享邮箱" })).toBeInTheDocument();
     expect(within(dialog).queryByRole("switch", { name: "家庭共享" })).not.toBeInTheDocument();
     expect(within(dialog).queryByLabelText("平台名称")).not.toBeInTheDocument();
     expect(within(dialog).queryByLabelText("金额")).not.toBeInTheDocument();

@@ -228,6 +228,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
     try {
       if (submissionFormData.familySharing.enabled && submissionFormData.familySharing.verificationMode) {
         if (submissionFormData.familySharing.verificationMode === "totp" && submission.familySharing) submission.familySharing.verificationLink = "";
+        if (submissionFormData.familySharing.verificationMode === "none" && submission.familySharing) submission.familySharing.verificationLink = "";
         if (submissionFormData.familySharing.verificationMode === "email" && submission.familySharing && !submission.familySharing.verificationLink) {
           const mailboxId = submissionFormData.familySharing.mailboxId;
           if (!mailboxId) throw new Error(t("sharing.selectMailboxPlaceholder"));
@@ -240,6 +241,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
         submission.extra = { ...editSubscription?.extra, familyVerification: {
           mode: submissionFormData.familySharing.verificationMode,
           totpAccountId: submissionFormData.familySharing.verificationMode === "totp" ? submissionFormData.familySharing.totpAccountId : "",
+          mailboxId: submissionFormData.familySharing.verificationMode === "email" ? submissionFormData.familySharing.mailboxId : "",
         } };
       }
       await props.onSubmit(submission);

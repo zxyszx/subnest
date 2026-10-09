@@ -38,7 +38,7 @@ export type FamilySharingFormState = {
   verificationLink: string;
   mailboxId?: string;
   capacity: string;
-  verificationMode?: "email" | "totp";
+  verificationMode?: "email" | "totp" | "none";
   totpAccountId?: string;
 };
 

@@ -33,6 +33,16 @@
       calc(1rem + env(safe-area-inset-left));
   }
 
+  @media (max-width: 1023px) {
+    .app-page {
+      padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+    }
+
+    .h5-bottom-bar {
+      bottom: calc(4rem + env(safe-area-inset-bottom));
+    }
+  }
+
   /* 认证页保持单面板 Flex 居中，使移动端视口高度与 safe area 约束维持单一布局链。 */
   .auth-page {
     min-height: var(--app-viewport-height);
