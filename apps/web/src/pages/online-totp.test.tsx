@@ -29,7 +29,6 @@ const account: OnlineTotpAccount = {
   sharingEnabled: true,
   sharePath: "/s/example",
   createdAt: "2026-10-10T00:00:00.000Z",
-  updatedAt: "2026-10-10T00:00:00.000Z",
 };
 
 describe("OnlineTotpAccountRow", () => {
