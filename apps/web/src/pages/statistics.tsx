@@ -200,7 +200,7 @@ const Statistics = () => {
       <Header />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-foreground">{t("statistics.title")}</h1>
             {lastUpdated && !ratesLoading ? (
@@ -221,8 +221,8 @@ const Statistics = () => {
           <ExchangeRateErrorFeedback error={ratesError} details={ratesErrorDetails} />
         ) : null}
 
-        <section className="mb-8" data-testid="statistics-cashflow-overview">
-          <h2 className="mb-4 text-lg font-semibold text-foreground">{t("statistics.cashflowOverview")}</h2>
+        <section className="mb-5 sm:mb-8" data-testid="statistics-cashflow-overview">
+          <h2 className="mb-3 text-lg font-semibold text-foreground sm:mb-4">{t("statistics.cashflowOverview")}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatBox
               value={formatCurrency(stats.thisMonthDue, defaultCurrency)}
@@ -235,8 +235,8 @@ const Statistics = () => {
         </section>
 
         {/* 总体统计 */}
-        <section className="mb-8">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="mb-5 sm:mb-8">
+          <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-foreground">{t("statistics.overview")}</h2>
             <label className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground">
               <Switch checked={personalCostBasis} onCheckedChange={setPersonalCostBasis} aria-label={t("statistics.personalCostBasis")} />

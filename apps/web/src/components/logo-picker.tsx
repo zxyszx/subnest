@@ -17,7 +17,7 @@
  * 注意： 外层表单必须关注 uploadStatus，上传中不允许保存订阅，避免临时预览值被持久化。
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DeferredImageCropDialog, preloadImageCropDialog } from '@/components/image-crop-dialog-loader';
 import { Label } from '@/components/ui/label';
@@ -73,6 +73,7 @@ export function LogoPicker({
   const uploadedLogos = useUploadedLogoAssets();
   const [uploadedLogosOpen, setUploadedLogosOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   const search = useMediaCandidates({
     kind: "logo",
     autoQuery: serviceName,
@@ -100,6 +101,10 @@ export function LogoPicker({
   });
 
   const displayedLogo = previewUrl ?? value;
+
+  useEffect(() => {
+    setPreviewFailed(false);
+  }, [displayedLogo]);
 
   const handleSearchOpenChange = (nextOpen: boolean) => {
     search.onOpenChange(nextOpen);
@@ -144,13 +149,13 @@ export function LogoPicker({
             onPointerEnter={preloadImageCropDialog}
             onTouchStart={preloadImageCropDialog}
           >
-            {displayedLogo ? (
+            {displayedLogo && !previewFailed ? (
               <div className="relative z-10 h-full w-full p-1">
                 <FaviconResultImage
                   src={displayedLogo}
                   alt={t("media.logo")}
                   className="media-thumbnail-image"
-                  onError={() => applyValue(undefined)}
+                  onError={() => setPreviewFailed(true)}
                 />
               </div>
             ) : (
@@ -176,6 +181,7 @@ export function LogoPicker({
             ref={fileInputRef}
             type="file"
             accept={IMAGE_UPLOAD_ACCEPT}
+            aria-label={t("media.uploadLogoImage")}
             onChange={handleFileUpload}
             className="hidden"
           />

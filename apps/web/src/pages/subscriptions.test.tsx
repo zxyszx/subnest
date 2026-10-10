@@ -124,6 +124,11 @@ vi.mock("@/contexts/CustomConfigContext", () => ({
       ],
       paymentMethods: [],
       currencies: [],
+      platforms: [{
+        id: "unused-platform",
+        value: "Unused Platform",
+        labels: { "zh-CN": "空平台", "en-US": "Unused Platform" },
+      }],
     },
     updateCategories: vi.fn(),
     updatePlatforms: vi.fn(),
@@ -290,6 +295,25 @@ describe("Subscriptions page sorting", () => {
     expect(await within(toolbar).findByRole("navigation", { name: "按平台筛选订阅" })).toBeInTheDocument();
     expect(within(toolbar).getByRole("searchbox")).toHaveAttribute("placeholder", "搜索序号、订阅、标签或备注...");
     expect(within(toolbar).getByRole("combobox", { name: "排序" })).toHaveTextContent("最近到期");
+  });
+
+  it("does not show configured platforms without subscriptions in the filter bar", async () => {
+    renderSubscriptionsPage();
+
+    const toolbar = screen.getByTestId("desktop-subscription-toolbar");
+    expect(await within(toolbar).findByRole("navigation", { name: "按平台筛选订阅" })).toBeInTheDocument();
+    expect(within(toolbar).queryByRole("button", { name: "空平台" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the unbound filter when unbound subscriptions exist", async () => {
+    const unbound = subscription({ id: "unbound-1", name: "独立服务", platformName: "__unbound__" });
+    mocks.useInfiniteSubscriptions.mockReturnValue({ subscriptions: [unbound], total: 1, isPending: false });
+    mocks.useSubscriptionIndex.mockReturnValue(subscriptionIndexQueryFixture([unbound]));
+
+    renderSubscriptionsPage();
+
+    const toolbar = screen.getByTestId("desktop-subscription-toolbar");
+    expect(await within(toolbar).findByRole("button", { name: "未绑定" })).toBeInTheDocument();
   });
 
   it("renders a page-isomorphic skeleton while the first subscription page is pending", () => {

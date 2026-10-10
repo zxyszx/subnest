@@ -297,6 +297,57 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
   }
 });
 
+test("mobile online 2FA keeps codes compact and secondary actions collapsed", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.goto("/online-2fa");
+  const serviceName = uniqueE2EName(testInfo, "Mobile 2FA");
+  const accountName = `mobile-2fa-${testInfo.workerIndex}-${testInfo.repeatEachIndex}@example.test`;
+  let accountId = "";
+
+  try {
+    const created = await productApiFetch(page, "/api/app/online-totp/accounts", {
+      method: "POST",
+      body: {
+        platformName: "PrimeVideo",
+        serviceName,
+        accountNumber: 7,
+        account: accountName,
+        logo: "",
+        secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        enabled: true,
+        sharingEnabled: true,
+      },
+    });
+    expect(created.ok, created.body).toBe(true);
+    accountId = (created.json as { data: { account: { id: string } } }).data.account.id;
+    await page.reload();
+
+    const addButton = page.getByRole("button", { name: "添加 2FA 账号" });
+    const row = page.getByTestId("online-totp-account").filter({ hasText: accountName });
+    await expect(addButton).toBeVisible();
+    await expect(row).toBeVisible();
+    await expect(row).toHaveAttribute("data-mobile-expanded", "false");
+    await expect(row.getByText("PrimeVideo", { exact: true }).first()).toBeVisible();
+    await expect(row.getByText(accountName, { exact: true }).first()).toBeVisible();
+    await expect(row.getByRole("button", { name: "展开全部信息" })).toBeVisible();
+    const [addBox, rowBox] = await Promise.all([
+      getRequiredLocatorBoundingBox(addButton, "mobile 2FA add action"),
+      getRequiredLocatorBoundingBox(row, "mobile 2FA account row"),
+    ]);
+    expect(addBox.y, "add action should stay in the top header").toBeLessThan(rowBox.y);
+    await row.screenshot({ path: testInfo.outputPath("mobile-online-2fa-compact.png") });
+
+    await row.getByRole("button", { name: "展开全部信息" }).click();
+    await expect(row).toHaveAttribute("data-mobile-expanded", "true");
+    await expect(row.getByRole("button", { name: "分享链接", exact: true }).first()).toBeVisible();
+    await expect(row.getByRole("button", { name: "编辑", exact: true }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page, "mobile online 2FA account");
+    await row.screenshot({ path: testInfo.outputPath("mobile-online-2fa-expanded.png") });
+  } finally {
+    if (accountId) await productApiFetch(page, `/api/app/online-totp/accounts/${accountId}`, { method: "DELETE" });
+  }
+});
+
 test("mobile upcoming renewal amounts stay single-line and right-aligned without page overflow", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await page.goto("/");

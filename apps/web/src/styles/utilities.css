@@ -28,8 +28,8 @@
 
   /* 主内容区叠加 safe area，避免浏览器底部工具栏或异形屏遮挡操作区。 */
   .app-main {
-    padding: 1.5rem calc(1rem + env(safe-area-inset-right))
-      calc(2rem + env(safe-area-inset-bottom))
+    padding: 1rem calc(1rem + env(safe-area-inset-right))
+      calc(1.5rem + env(safe-area-inset-bottom))
       calc(1rem + env(safe-area-inset-left));
   }
 

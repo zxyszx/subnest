@@ -316,7 +316,7 @@ export default function Sharing() {
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-6 rounded-t-lg border border-b-0 bg-card p-2 sm:flex sm:items-center sm:p-0">
+          <div className="mt-4 rounded-t-lg border border-b-0 bg-card p-2 sm:mt-6 sm:flex sm:items-center sm:p-0">
             {isMobile ? (
               <>
                 <div className="flex min-w-0 items-center gap-2">
@@ -391,9 +391,9 @@ export default function Sharing() {
         ) : null}
 
         {accountsQuery.isError ? (
-          <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadFailed")}</div>
+          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive sm:mt-6">{t("sharing.loadFailed")}</div>
         ) : accounts.length === 0 && !accountsQuery.isPending ? (
-          <section className="mt-6 flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-6 py-12 text-center">
+          <section className="mt-4 flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-6 py-12 text-center sm:mt-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary"><UsersRound className="h-6 w-6" /></div>
             <h3 className="mt-4 text-base font-semibold text-foreground">{t("sharing.emptyTitle")}</h3>
             <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t("sharing.emptyDescription")}</p>
@@ -404,7 +404,7 @@ export default function Sharing() {
             "overflow-hidden border border-border bg-card",
             platformOptions.length > 0
               ? "rounded-b-lg rounded-t-none border-t-0"
-              : "mt-6 rounded-lg",
+              : "mt-4 rounded-lg sm:mt-6",
           )}>
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">

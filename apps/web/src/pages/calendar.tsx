@@ -86,7 +86,7 @@ const Calendar = () => {
         className="app-main mx-auto max-w-[120rem]"
         aria-busy={subscriptionsQuery.isFetching ? true : undefined}
       >
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl font-bold text-foreground">{t("calendar.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("calendar.pageSubtitle")}</p>
         </div>
@@ -98,7 +98,7 @@ const Calendar = () => {
           onEditSubscription={handleEditSubscription}
         />
 
-        <section className="mt-6 overflow-hidden rounded-lg border border-border bg-card" aria-label={t("calendar.sharingExpiries")}>
+        <section className="mt-4 overflow-hidden rounded-lg border border-border bg-card sm:mt-6" aria-label={t("calendar.sharingExpiries")}>
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold text-foreground">{t("calendar.sharingExpiries")}</h2>
             <p className="mt-1 text-xs text-muted-foreground">{t("calendar.sharingExpiriesHelp")}</p>

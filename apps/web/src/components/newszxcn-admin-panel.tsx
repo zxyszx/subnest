@@ -86,7 +86,7 @@ export function NewSzxcnAdminPanel({ id, className, showHeader = true }: { id?: 
   const sharedByMailbox = useMemo(() => {
     const result = new Map<string, { generic: boolean; seats: number }>();
     for (const link of links) {
-      if (link.seatId || link.status !== "active" || (link.expiresAt && !(Date.parse(link.expiresAt) > now))) continue;
+      if (link.status !== "active" || (link.expiresAt && !(Date.parse(link.expiresAt) > now))) continue;
       const summary = result.get(link.mailboxId) ?? { generic: false, seats: 0 };
       if (link.seatId) summary.seats += 1;
       else summary.generic = true;
@@ -158,9 +158,9 @@ export function NewSzxcnAdminPanel({ id, className, showHeader = true }: { id?: 
     </div>
 
     <div>
-      <div className="flex flex-col gap-3 border-b border-border py-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border py-3 sm:py-4 md:flex-row md:items-center md:justify-between">
         <div><h2 className="text-lg font-semibold">{copy.myMailboxes} <span className="text-muted-foreground">({mailboxes.length})</span></h2><p className="text-sm text-muted-foreground">{copy.mailboxHelp}</p></div>
-        <div className="flex flex-col gap-2 sm:flex-row"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="pl-9 sm:w-72" /></div><Select value={filter} onValueChange={(value) => setFilter(value as Filter)}><SelectTrigger className="sm:w-36" aria-label={copy.all}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.all}</SelectItem><SelectItem value="shared">{copy.shared}</SelectItem><SelectItem value="closed">{copy.unshared}</SelectItem></SelectContent></Select><Button variant="outline" size="icon" onClick={() => void reload()} aria-label={copy.refresh}><RefreshCw className="h-4 w-4" /></Button></div>
+        <div className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2 sm:flex"><div className="relative col-span-2 sm:col-span-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="pl-9 sm:w-72" /></div><Select value={filter} onValueChange={(value) => setFilter(value as Filter)}><SelectTrigger className="w-full sm:w-36" aria-label={copy.all}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.all}</SelectItem><SelectItem value="shared">{copy.shared}</SelectItem><SelectItem value="closed">{copy.unshared}</SelectItem></SelectContent></Select><Button variant="outline" size="icon" className="h-10 w-10" onClick={() => void reload()} aria-label={copy.refresh}><RefreshCw className="h-4 w-4" /></Button></div>
       </div>
       {loading ? <div className="flex min-h-48 items-center justify-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4" />{copy.loading}</div> : visible.length === 0 ? <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center text-muted-foreground"><Inbox className="mb-2 h-8 w-8" /><p>{configured ? copy.empty : copy.configureFirst}</p></div> : <div className="divide-y divide-border">{visible.map((mailbox) => {
         const link = activeByMailbox.get(mailbox.id);
@@ -171,10 +171,13 @@ export function NewSzxcnAdminPanel({ id, className, showHeader = true }: { id?: 
         const sharingDetails = link
           ? [folderNames?.join("、"), rangeLabel(link.windowMinutes)].filter(Boolean).join(" · ")
           : "";
-        return <div key={mailbox.id} className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-          <div className="flex min-w-0 items-center gap-3"><Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" /><div className="min-w-0"><p className="truncate font-medium">{mailbox.address}</p>{hasDistinctDisplayName ? <p className="truncate text-xs text-muted-foreground">{displayName}</p> : null}</div></div>
-          <span className={summary ? "w-fit rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-600" : "w-fit rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"}>{summary?.seats ? `${t("sharing.inboxLinkCount", { count: summary.seats })}${summary.generic ? ` · ${sharingDetails}` : ""}` : summary?.generic && link ? `${copy.shared} · ${sharingDetails}` : copy.unshared}</span>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setSelected(mailbox)}><Link2 className="h-3.5 w-3.5" />{copy.manageShare}</Button></div>
+        const status = summary?.seats
+          ? `${t("sharing.inboxLinkCount", { count: summary.seats })}${summary.generic ? ` · ${sharingDetails}` : ""}`
+          : summary?.generic && link ? `${copy.shared} · ${sharingDetails}` : copy.unshared;
+        return <div key={mailbox.id} className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-3 sm:px-4 sm:py-3">
+          <div className="flex min-w-0 items-center gap-3"><Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" /><div className="min-w-0"><p className="truncate text-sm font-medium sm:text-base">{mailbox.address}</p>{hasDistinctDisplayName ? <p className="truncate text-xs text-muted-foreground">{displayName}</p> : null}</div></div>
+          <span className={cn("col-start-1 row-start-2 ml-7 mt-0.5 inline-flex w-fit max-w-[calc(100%-1.75rem)] truncate rounded-md px-1.5 py-0.5 text-[11px] sm:col-auto sm:row-auto sm:ml-0 sm:mt-0 sm:max-w-none sm:px-2 sm:py-1 sm:text-xs", summary ? "bg-emerald-500/10 font-medium text-emerald-600" : "bg-muted text-muted-foreground")}>{status}</span>
+          <Button variant="outline" size="sm" className="col-start-2 row-span-2 row-start-1 h-10 w-10 p-0 sm:col-auto sm:row-auto sm:h-9 sm:w-auto sm:px-3" aria-label={copy.manageShare} title={copy.manageShare} onClick={() => setSelected(mailbox)}><Link2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">{copy.manageShare}</span></Button>
         </div>;
       })}</div>}
     </div>

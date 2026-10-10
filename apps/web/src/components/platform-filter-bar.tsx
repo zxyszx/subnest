@@ -29,6 +29,7 @@ interface PlatformFilterBarProps {
     compact?: number;
     regular?: number;
     wide?: number;
+    spacious?: number;
   };
   moreIconOnly?: boolean;
 }
@@ -46,9 +47,12 @@ export function PlatformFilterBar({
 }: PlatformFilterBarProps) {
   const compact = useMediaQuery("(max-width: 767px)");
   const wide = useMediaQuery("(min-width: 1280px)");
+  const spacious = useMediaQuery("(min-width: 1600px)");
   const visibleLimit = compact
     ? (visibleLimits?.compact ?? 2)
-    : wide
+    : spacious
+      ? (visibleLimits?.spacious ?? visibleLimits?.wide ?? 8)
+      : wide
       ? (visibleLimits?.wide ?? 6)
       : (visibleLimits?.regular ?? 4);
   const ordered = useMemo(() => {
@@ -73,6 +77,7 @@ export function PlatformFilterBar({
       key={platform.name}
       type="button"
       variant="ghost"
+      aria-label={platform.label ?? platform.name}
       aria-pressed={value === platform.name}
       onClick={() => onValueChange(platform.name)}
       className={cn(
@@ -80,7 +85,7 @@ export function PlatformFilterBar({
         value === platform.name && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
       )}
     >
-      <SubscriptionLogo name={platform.name} logo={platform.logo} size="xs" />
+      <SubscriptionLogo name={platform.label ?? platform.name} logo={platform.logo} size="xs" />
       <span>{platform.label ?? platform.name}</span>
     </Button>
   );
@@ -131,7 +136,7 @@ export function PlatformFilterBar({
                 onSelect={() => onValueChange(platform.name)}
                 className="gap-2"
               >
-                <SubscriptionLogo name={platform.name} logo={platform.logo} size="xs" />
+                <SubscriptionLogo name={platform.label ?? platform.name} logo={platform.logo} size="xs" />
                 <span className="min-w-0 flex-1 truncate">{platform.label ?? platform.name}</span>
                 {value === platform.name ? <Check className="h-4 w-4 text-primary" /> : null}
               </DropdownMenuItem>

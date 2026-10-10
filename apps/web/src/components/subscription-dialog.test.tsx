@@ -16,6 +16,7 @@ import type {
 import { preloadSubscriptionDialog, SubscriptionDialog } from "./subscription-dialog";
 
 const mocks = vi.hoisted(() => ({
+  logoPickerProps: null as null | { value?: string; serviceName?: string },
   config: {
     categories: [{ id: "productivity", value: "productivity", labels: { "zh-CN": "效率工具", "en-US": "Productivity" } }],
     statuses: [{ id: "active", value: "active", labels: { "zh-CN": "活跃", "en-US": "Active" } }],
@@ -46,7 +47,10 @@ vi.mock("@/hooks/use-exchange-rates", () => ({
 }));
 
 vi.mock("@/components/logo-picker", () => ({
-  LogoPicker: () => null,
+  LogoPicker: (props: { value?: string; serviceName?: string }) => {
+    mocks.logoPickerProps = props;
+    return null;
+  },
 }));
 
 vi.mock("@/services/newszxcn-service", () => ({
@@ -64,6 +68,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  mocks.logoPickerProps = null;
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(FIXED_DIALOG_NOW);
 });
@@ -199,6 +204,35 @@ describe("SubscriptionDialog", () => {
     expect(screen.getByLabelText("账号编号")).toHaveAttribute("aria-invalid", "true");
     expect(document.querySelector("datalist")).toBeNull();
     expect(screen.getByLabelText("服务名称")).toHaveValue("Netflix");
+  });
+
+  it("keeps a service Logo and search name when the platform binding changes", async () => {
+    const user = setupUser();
+    render(
+      <TooltipProvider delayDuration={0}>
+        <SubscriptionDialog
+          loadingPreview={null}
+          mode="edit"
+          open
+          onOpenChange={vi.fn()}
+          onSubmit={vi.fn()}
+          subscription={makeSubscription({
+            name: "Termius",
+            platformName: "Termius",
+            logo: "/api/app/assets/termius-logo",
+          })}
+          platformSuggestions={[{ name: "Apple", logo: "https://example.com/apple.svg" }]}
+        />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole("combobox", { name: "平台名称" }));
+    await user.click(await screen.findByRole("option", { name: "Apple" }));
+
+    expect(mocks.logoPickerProps).toMatchObject({
+      value: "/api/app/assets/termius-logo",
+      serviceName: "Termius",
+    });
   });
 
   it("shows field errors on empty create submit instead of relying on native validation", async () => {

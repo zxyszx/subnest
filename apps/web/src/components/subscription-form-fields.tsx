@@ -237,8 +237,6 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
               onValueChange={(value) => {
                 const platformName = value === UNBOUND_PLATFORM_VALUE ? "" : value;
                 update("platformName", platformName);
-                const match = platformSuggestions.find((platform) => (platform.value ?? platform.name) === value);
-                if (match?.logo) update("logo", match.logo);
               }}
               placeholder={t("subscription.platformSelectPlaceholder")}
               searchPlaceholder={t("subscription.platformSearchPlaceholder")}
@@ -307,7 +305,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           value={formData.logo}
           onChange={(logo) => update("logo", logo)}
           onUploadStatusChange={onLogoUploadStatusChange}
-          serviceName={formData.platformName || formData.name}
+          serviceName={formData.name}
           website={formData.website}
           compact
         />

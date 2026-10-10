@@ -1,6 +1,6 @@
 // LogoPicker 测试覆盖私有资产、远端 URL、内置候选和上传状态，防止订阅 logo 契约回退到 data URL。
 import type { ReactNode } from "react";
-import { render as renderComponent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render as renderComponent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -384,6 +384,16 @@ describe("LogoPicker", () => {
     await user.click(clearLogoButton);
 
     expect(onChange).toHaveBeenCalledWith(undefined);
+  });
+
+  it("keeps the saved Logo value when its preview fails to load", async () => {
+    const onChange = vi.fn();
+    render(<LogoPicker value="https://example.com/private-logo.png" onChange={onChange} />);
+
+    fireEvent.error(await screen.findByAltText("Logo"));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "更换 Logo" })).toBeInTheDocument();
   });
 
   it("allows SVG files in the custom Logo file picker", () => {

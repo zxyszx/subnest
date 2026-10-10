@@ -187,25 +187,33 @@ const Subscriptions = () => {
     }
     for (const subscription of platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS) {
       const platformName = subscriptionPlatformName(subscription);
-      const platform: PlatformOption = platforms.get(platformName) ?? {
-        name: platformName,
-        value: platformName,
-        logo: subscription.logo,
+      const platformValue = platformName || UNBOUND_PLATFORM_VALUE;
+      const platform: PlatformOption = platforms.get(platformValue) ?? {
+        name: platformValue,
+        value: platformValue,
+        ...(platformName ? {} : { label: "未绑定" }),
+        logo: platformName ? subscription.logo : null,
         accounts: [],
       };
       platform.accounts.push({ id: subscription.id, accountNumber: subscription.accountNumber ?? 1 });
       if (!platform.logo && subscription.logo) platform.logo = subscription.logo;
-      platforms.set(platformName, platform);
+      platforms.set(platformValue, platform);
     }
-    platforms.set(UNBOUND_PLATFORM_VALUE, {
-      name: UNBOUND_PLATFORM_VALUE,
-      label: "未绑定",
-      value: UNBOUND_PLATFORM_VALUE,
-      logo: null,
-      accounts: [],
-    });
+    if (!platforms.has(UNBOUND_PLATFORM_VALUE)) {
+      platforms.set(UNBOUND_PLATFORM_VALUE, {
+        name: UNBOUND_PLATFORM_VALUE,
+        label: "未绑定",
+        value: UNBOUND_PLATFORM_VALUE,
+        logo: null,
+        accounts: [],
+      });
+    }
     return Array.from(platforms.values());
   }, [config.platforms, locale, platformIndexQuery.data?.subscriptions]);
+  const activePlatformOptions = useMemo(
+    () => platformOptions.filter((platform) => platform.accounts.length > 0),
+    [platformOptions],
+  );
   const indexedSubscriptions = indexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS;
   const displaySourceSubscriptions = numericAccountSearch
     ? (platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS)
@@ -364,7 +372,7 @@ const Subscriptions = () => {
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between sm:mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{t("subscriptions.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -421,7 +429,7 @@ const Subscriptions = () => {
         </div>
 
         {isMobileTagFilter ? (
-          <div className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-3">
+          <div className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-3 sm:mb-6">
             <>
               <div className="flex min-w-0 items-center gap-2" data-testid="mobile-compact-filter-toolbar">
                 <div className="relative min-w-0 flex-1">
@@ -451,10 +459,10 @@ const Subscriptions = () => {
 
               {mobileFiltersExpanded ? (
                 <div id="mobile-subscription-filters" className="grid gap-3 border-t border-border pt-3" data-testid="mobile-expanded-filters">
-                  {platformOptions.length > 0 ? (
+                  {activePlatformOptions.length > 0 ? (
                     <Suspense fallback={<div className="h-11 rounded-lg bg-secondary" />}>
                       <PlatformFilterBar
-                        platforms={platformOptions}
+                        platforms={activePlatformOptions}
                         value={selectedPlatform}
                         onValueChange={setSelectedPlatform}
                         allLabel={t("subscriptions.allPlatforms")}
@@ -478,22 +486,22 @@ const Subscriptions = () => {
             className="mb-6 flex min-w-0 items-center rounded-lg border border-border bg-card"
             data-testid="desktop-subscription-toolbar"
           >
-            {platformOptions.length > 0 ? (
+            {activePlatformOptions.length > 0 ? (
               <Suspense fallback={<div className="h-12 min-w-0 flex-1" />}>
                 <PlatformFilterBar
-                  platforms={platformOptions}
+                  platforms={activePlatformOptions}
                   value={selectedPlatform}
                   onValueChange={setSelectedPlatform}
                   allLabel={t("subscriptions.allPlatforms")}
                   moreLabel={t("subscriptions.morePlatforms")}
                   ariaLabel={t("subscriptions.platformFilter")}
                   className="min-w-0 flex-1 border-0 px-2"
-                  visibleLimits={{ regular: 2, wide: 4 }}
+                  visibleLimits={{ regular: 3, wide: 5, spacious: 8 }}
                   moreIconOnly
                 />
               </Suspense>
             ) : null}
-            <div className={cn("flex min-w-0 shrink-0 items-center gap-2 p-2", platformOptions.length > 0 && "pl-0")}>
+            <div className={cn("flex min-w-0 shrink-0 items-center gap-2 p-2", activePlatformOptions.length > 0 && "pl-0")}>
                 <div className="relative w-[clamp(11rem,18vw,18rem)] min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input

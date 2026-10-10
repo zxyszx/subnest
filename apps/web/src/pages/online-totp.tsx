@@ -23,7 +23,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import type { OnlineTotpAccount, OnlineTotpAccountCreate, OnlineTotpAccountUpdate } from "@renewlet/shared/schemas/online-totp";
 import { onlineTotpCopy } from "@/pages/online-totp-copy";
-import { findOnlineTotpPlatform, onlineTotpAccountNumberExists } from "@/lib/online-totp-form";
+import { onlineTotpAccountNumberExists } from "@/lib/online-totp-form";
 
 type AccountForm = Omit<OnlineTotpAccountCreate, "accountNumber"> & { accountNumber: string };
 const EMPTY_FORM: AccountForm = { platformName: "", serviceName: "", accountNumber: "", account: "", logo: "", secret: "", enabled: true, sharingEnabled: true };
@@ -66,14 +66,12 @@ export default function OnlineTotpPage() {
   };
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (account: OnlineTotpAccount) => { setEditing(account); setDialogOpen(true); };
-  const headerAction = <Button className="hidden gap-2 sm:inline-flex" onClick={openCreate}><Plus className="h-4 w-4" />{text.createTitle}</Button>;
+  const headerAction = <Button className="h-10 gap-2 px-3" onClick={openCreate}><Plus className="h-4 w-4" /><span className="hidden min-[390px]:inline">{text.createTitle}</span><span className="sr-only min-[390px]:hidden">{text.createTitle}</span></Button>;
 
   return (
     <div className="app-page bg-background">
       <Header pageActions={headerAction} />
       <main className="app-main mx-auto max-w-[120rem]">
-        <div className="mb-4 flex justify-end sm:hidden"><Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" />{text.createTitle}</Button></div>
-
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center">
@@ -86,14 +84,7 @@ export default function OnlineTotpPage() {
             <div className="hidden grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] gap-4 border-b bg-muted/35 px-5 py-3 text-sm font-medium text-muted-foreground md:grid">
               <span>{t("subscription.field.platformName")}</span><span>{text.account}</span><span>{text.code}</span><span className="text-right">{t("sharing.actions")}</span>
             </div>
-            {query.isPending ? <div className="py-20 text-center text-sm text-muted-foreground">{t("common.loading")}</div> : filtered.length === 0 ? <div className="py-20 text-center"><ShieldCheck className="mx-auto mb-3 h-9 w-9 text-muted-foreground" /><p className="text-sm text-muted-foreground">{accounts.length ? t("sharing.noSearchResults") : text.empty}</p></div> : filtered.map((account) => (
-              <div key={account.id} className="grid gap-3 border-b px-4 py-4 last:border-b-0 md:grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] md:items-center md:gap-4 md:px-5">
-                <div className="flex min-w-0 items-center gap-3"><div className="relative shrink-0"><SubscriptionLogo name={account.platformName} logo={account.logo} size="sm" /><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">{account.accountNumber}</span></div><div className="min-w-0"><p className="truncate font-semibold">{account.platformName}</p>{account.serviceName && account.serviceName.trim().toLocaleLowerCase() !== account.platformName.trim().toLocaleLowerCase() ? <p className="truncate text-sm text-muted-foreground">{account.serviceName}</p> : null}</div></div>
-                <button type="button" className="flex min-h-12 min-w-0 items-center gap-3 rounded-md border bg-secondary/30 px-3 text-left transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => void copy(account.account)}><UserRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 truncate text-sm">{account.account}</span></button>
-                <TotpCode account={account} onCopy={copy} />
-                <div className="flex justify-start gap-2 md:justify-end"><Button variant="outline" className="h-10 gap-2 px-3" title={t("sharing.copyLink")} disabled={!account.sharingEnabled} onClick={() => void copy(`${window.location.origin}${account.sharePath}`)}><Link2 className="h-4 w-4" />{text.shareLink}</Button><Button variant="outline" size="icon" className="h-10 w-10" title={t("common.edit")} onClick={() => openEdit(account)}><Pencil className="h-4 w-4" /></Button></div>
-              </div>
-            ))}
+            {query.isPending ? <div className="py-20 text-center text-sm text-muted-foreground">{t("common.loading")}</div> : filtered.length === 0 ? <div className="py-20 text-center"><ShieldCheck className="mx-auto mb-3 h-9 w-9 text-muted-foreground" /><p className="text-sm text-muted-foreground">{accounts.length ? t("sharing.noSearchResults") : text.empty}</p></div> : filtered.map((account) => <OnlineTotpAccountRow key={account.id} account={account} onCopy={copy} onEdit={openEdit} />)}
           </div>
         )}
       </main>
@@ -102,14 +93,39 @@ export default function OnlineTotpPage() {
   );
 }
 
-function TotpCode({ account, onCopy }: { account: OnlineTotpAccount; onCopy: (value: string) => Promise<void> }) {
+export function OnlineTotpAccountRow({ account, onCopy, onEdit }: { account: OnlineTotpAccount; onCopy: (value: string) => Promise<void>; onEdit: (account: OnlineTotpAccount) => void }) {
+  const { t, locale } = useI18n();
+  const text = onlineTotpCopy(locale);
+  const [expanded, setExpanded] = useState(false);
+  const shareUrl = `${window.location.origin}${account.sharePath}`;
+  return <div className="border-b last:border-b-0" data-testid="online-totp-account" data-mobile-expanded={expanded}>
+    <div className="flex min-h-16 items-center gap-2 px-3 py-2 md:hidden">
+      <div className="relative shrink-0"><SubscriptionLogo name={account.serviceName || account.platformName} logo={account.logo} size="sm" /><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">{account.accountNumber}</span></div>
+      <button type="button" className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => void onCopy(account.account)}>
+        <span className="block truncate text-sm font-semibold">{account.platformName}</span>
+        <span className="block truncate text-xs text-muted-foreground">{account.account}</span>
+      </button>
+      <TotpCode account={account} onCopy={onCopy} compact />
+      <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label={expanded ? t("subscription.card.collapseDetails") : t("subscription.card.expandDetails")} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}><ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} /></Button>
+    </div>
+    {expanded ? <div className="flex items-center justify-end gap-2 border-t bg-secondary/20 px-3 py-2 md:hidden"><Button variant="outline" className="h-10 gap-2 px-3" title={t("sharing.copyLink")} disabled={!account.sharingEnabled} onClick={() => void onCopy(shareUrl)}><Link2 className="h-4 w-4" />{text.shareLink}</Button><Button variant="outline" className="h-10 gap-2 px-3" onClick={() => onEdit(account)}><Pencil className="h-4 w-4" />{t("common.edit")}</Button></div> : null}
+    <div className="hidden grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] items-center gap-4 px-5 py-4 md:grid">
+      <div className="flex min-w-0 items-center gap-3"><div className="relative shrink-0"><SubscriptionLogo name={account.serviceName || account.platformName} logo={account.logo} size="sm" /><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">{account.accountNumber}</span></div><div className="min-w-0"><p className="truncate font-semibold">{account.platformName}</p>{account.serviceName && account.serviceName.trim().toLocaleLowerCase() !== account.platformName.trim().toLocaleLowerCase() ? <p className="truncate text-sm text-muted-foreground">{account.serviceName}</p> : null}</div></div>
+      <button type="button" className="flex min-h-12 min-w-0 items-center gap-3 rounded-md border bg-secondary/30 px-3 text-left transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => void onCopy(account.account)}><UserRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 truncate text-sm">{account.account}</span></button>
+      <TotpCode account={account} onCopy={onCopy} />
+      <div className="flex justify-end gap-2"><Button variant="outline" className="h-10 gap-2 px-3" title={t("sharing.copyLink")} disabled={!account.sharingEnabled} onClick={() => void onCopy(shareUrl)}><Link2 className="h-4 w-4" />{text.shareLink}</Button><Button variant="outline" size="icon" className="h-10 w-10" title={t("common.edit")} onClick={() => onEdit(account)}><Pencil className="h-4 w-4" /></Button></div>
+    </div>
+  </div>;
+}
+
+function TotpCode({ account, onCopy, compact = false }: { account: OnlineTotpAccount; onCopy: (value: string) => Promise<void>; compact?: boolean }) {
   const { locale } = useI18n();
   const text = onlineTotpCopy(locale);
   const [now, setNow] = useState(0);
   useEffect(() => { setNow(Date.now()); const timer = window.setInterval(() => setNow(Date.now()), 1_000); return () => window.clearInterval(timer); }, []);
   const seconds = Math.max(0, Math.ceil((Date.parse(account.validUntil) - now) / 1_000));
-  if (!account.enabled) return <span className="inline-flex min-h-11 items-center rounded-md bg-muted px-3 text-sm text-muted-foreground">{text.paused}</span>;
-  return <button type="button" onClick={() => void onCopy(account.code)} className="flex min-h-12 items-center gap-3 rounded-md border bg-primary/5 px-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" /><span className="font-mono text-lg font-bold tabular-nums tracking-normal">{account.code.slice(0, 3)} {account.code.slice(3)}</span><span className="text-xs tabular-nums text-muted-foreground">{text.remaining(seconds)}</span></button>;
+  if (!account.enabled) return <span className={compact ? "inline-flex h-10 shrink-0 items-center rounded-md bg-muted px-2 text-xs text-muted-foreground" : "inline-flex min-h-11 items-center rounded-md bg-muted px-3 text-sm text-muted-foreground"}>{text.paused}</span>;
+  return <button type="button" onClick={() => void onCopy(account.code)} className={compact ? "flex h-10 shrink-0 items-center rounded-md bg-primary/5 px-2 font-mono text-sm font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : "flex min-h-12 items-center gap-3 rounded-md border bg-primary/5 px-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}>{compact ? <span>{account.code.slice(0, 3)} {account.code.slice(3)}</span> : <><ShieldCheck className="h-4 w-4 shrink-0 text-primary" /><span className="font-mono text-lg font-bold tabular-nums tracking-normal">{account.code.slice(0, 3)} {account.code.slice(3)}</span><span className="text-xs tabular-nums text-muted-foreground">{text.remaining(seconds)}</span></>}</button>;
 }
 
 function PlatformNameCombobox({ id, value, accounts, placeholder, onChange }: { id: string; value: string; accounts: readonly OnlineTotpAccount[]; placeholder: string; onChange: (value: string) => void }) {
@@ -169,11 +185,9 @@ function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutatio
     : false;
   const set = <K extends keyof AccountForm>(key: K, value: AccountForm[K]) => setForm((current) => ({ ...current, [key]: value }));
   const setPlatformName = (platformName: string) => {
-    const existingPlatform = findOnlineTotpPlatform(accounts, platformName);
     setForm((current) => ({
       ...current,
       platformName,
-      ...(existingPlatform ? { logo: existingPlatform.logo ?? "" } : {}),
     }));
   };
   const submit = async (event: FormEvent) => {
@@ -203,7 +217,7 @@ function OnlineTotpDialog({ open, onOpenChange, account, accounts, createMutatio
         <FormField id="otp-service" label={t("subscription.field.name")}>{(field) => <Input id={field.id} name="online-totp-service" autoComplete="off" data-1p-ignore="true" data-lpignore="true" value={form.serviceName} onChange={(event) => set("serviceName", event.target.value)} />}</FormField>
         <FormField id="otp-number" label={t("sharing.accountNumber")} error={duplicateAccountNumber ? text.alreadyAdded : undefined}>{(field) => <Input id={field.id} name="online-totp-number" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" type="number" inputMode="numeric" min={1} max={10000} required aria-invalid={duplicateAccountNumber || undefined} value={form.accountNumber} onChange={(event) => set("accountNumber", event.target.value)} />}</FormField>
       </FormFieldRow>
-      <Suspense fallback={<div className="h-24 animate-pulse rounded-md border bg-secondary/30" aria-label={t("common.loading")} />}><DeferredLogoPicker compact value={form.logo || undefined} onChange={(logo) => set("logo", logo ?? "")} onUploadStatusChange={setLogoUploadStatus} serviceName={form.platformName || form.serviceName} /></Suspense>
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-md border bg-secondary/30" aria-label={t("common.loading")} />}><DeferredLogoPicker compact value={form.logo || undefined} onChange={(logo) => set("logo", logo ?? "")} onUploadStatusChange={setLogoUploadStatus} serviceName={form.serviceName} /></Suspense>
       <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
         <FormField id="otp-account" label={text.account}>{(field) => <Input id={field.id} name="online-totp-account" autoComplete="username" required value={form.account} onChange={(event) => set("account", event.target.value)} />}</FormField>
         <FormField id="otp-secret" label={text.secret}>{(field) => <Input id={field.id} name="online-totp-secret" autoComplete="new-password" data-1p-ignore="true" data-lpignore="true" required={!account} value={form.secret} placeholder={account ? text.secretKeep : text.secretPlaceholder} onChange={(event) => set("secret", event.target.value)} />}</FormField>
