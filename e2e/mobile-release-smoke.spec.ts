@@ -57,7 +57,7 @@ const mobileReleasePages: Array<{ path: string; label: string; assertReady: (pag
     path: "/settings",
     label: "release mobile settings",
     assertReady: async (page) => {
-      await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+      await expect(page.getByTestId("settings-mobile-page-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
     },
   },
 ];

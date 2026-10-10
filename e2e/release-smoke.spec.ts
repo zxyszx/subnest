@@ -89,7 +89,7 @@ test.describe("release smoke", () => {
     await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
 
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+    await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
   });
 
   test("release smoke @release restores a Renewlet ZIP export", async ({ page }, testInfo) => {
@@ -241,7 +241,7 @@ test.describe("release smoke", () => {
     }
 
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+    await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
   });
 });
 
@@ -362,7 +362,7 @@ function createAIRecognitionResponse(subscriptionName: string) {
 
 async function changeCurrentUserPassword(page: Page, currentPassword: string, newPassword: string) {
   await page.goto("/settings");
-  await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+  await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
   await page.getByRole("button", { name: "修改密码" }).click();
   const dialog = page.getByRole("dialog", { name: "修改密码" });
   await expect(dialog).toBeVisible();
