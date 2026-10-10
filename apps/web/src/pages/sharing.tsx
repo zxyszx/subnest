@@ -354,6 +354,7 @@ export default function Sharing() {
                       allLabel={t("sharing.allPlatforms")}
                       moreLabel={t("sharing.morePlatforms")}
                       ariaLabel={t("sharing.platformFilter")}
+                      visibleLimits={{ compact: 3, regular: 5, wide: 8, spacious: 10 }}
                       className="rounded-lg border bg-secondary/50 px-1"
                     />
                     {sharingFilterControls}
@@ -369,10 +370,11 @@ export default function Sharing() {
                   allLabel={t("sharing.allPlatforms")}
                   moreLabel={t("sharing.morePlatforms")}
                   ariaLabel={t("sharing.platformFilter")}
+                  visibleLimits={{ compact: 3, regular: 5, wide: 8, spacious: 10 }}
                   className="min-w-0 flex-1 border-0 px-2"
                 />
                 <div className="mx-2 mb-2 flex shrink-0 items-center gap-1 sm:mb-0 sm:ml-0">
-                  <div className="relative min-w-0 flex-1 sm:w-64">
+                  <div className="relative min-w-0 flex-1 sm:w-56">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="search"

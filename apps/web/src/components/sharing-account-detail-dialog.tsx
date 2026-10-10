@@ -63,12 +63,18 @@ const contactTypeLabelKeys: Record<(typeof contactTypes)[number], MessageKey> = 
   xianyu: "sharing.xianyu",
 };
 
-function ContactTypeIcon({ type }: { type: string | null | undefined }) {
+function inferLegacyContactType(contact: string | null | undefined) {
+  const value = contact?.trim().toLowerCase() ?? "";
+  return value.startsWith("wxid_") ? "wechat" : null;
+}
+
+function ContactTypeIcon({ type, contact }: { type: string | null | undefined; contact?: string | null }) {
   const { t } = useI18n();
-  if (type === "wechat") return <MessageCircle className="h-4 w-4 shrink-0 text-[#07c160]" aria-label={t("sharing.wechat")} />;
-  if (type === "telegram") return <Send className="h-4 w-4 shrink-0 text-[#229ed9]" aria-label={t("sharing.telegram")} />;
-  if (type === "ns") return <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-xs font-black text-black dark:text-white" aria-label={t("sharing.ns")}>{t("sharing.nsMark")}</span>;
-  if (type === "xianyu") return <ShoppingBag className="h-4 w-4 shrink-0 text-amber-500" aria-label={t("sharing.xianyu")} />;
+  const resolvedType = type || inferLegacyContactType(contact);
+  if (resolvedType === "wechat") return <MessageCircle className="h-4 w-4 shrink-0 text-[#07c160]" aria-label={t("sharing.wechat")} />;
+  if (resolvedType === "telegram") return <Send className="h-4 w-4 shrink-0 text-[#229ed9]" aria-label={t("sharing.telegram")} />;
+  if (resolvedType === "ns") return <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-xs font-black text-black dark:text-white" aria-label={t("sharing.ns")}>{t("sharing.nsMark")}</span>;
+  if (resolvedType === "xianyu") return <ShoppingBag className="h-4 w-4 shrink-0 text-amber-500" aria-label={t("sharing.xianyu")} />;
   return <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />;
 }
 
@@ -337,7 +343,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                           <td className="px-3 py-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span></td>
                           <td className="px-3 py-2">
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
-                            {seat.contact && <button type="button" className="mt-0.5 flex max-w-56 items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
+                            {seat.contact && <button type="button" className="mt-0.5 flex max-w-56 items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} contact={seat.contact} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                           </td>
                           <td className="px-3 py-2"><Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge></td>
                           <td className="px-3 py-2 tabular-nums">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</td>
@@ -362,7 +368,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                         <div className="min-w-0">
                           <div className="flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span><span className="text-xs text-muted-foreground">{t("sharing.seatNumber")}</span></div>
                           <div className="mt-1 truncate font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
-                          {seat.contact && <button type="button" className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
+                          {seat.contact && <button type="button" className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} contact={seat.contact} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                         </div>
                         <Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge>
                       </div>
@@ -515,7 +521,7 @@ function emptySeatDraft(seat: SharingSeat, mode: "edit" | "renew"): SharingSeatD
   return {
     memberName: seat.memberName ?? "",
     contact: seat.contact ?? "",
-    contactType: contactTypes.includes(seat.contactType as (typeof contactTypes)[number]) ? seat.contactType ?? "" : "",
+    contactType: contactTypes.includes(seat.contactType as (typeof contactTypes)[number]) ? seat.contactType ?? "" : inferLegacyContactType(seat.contact) ?? "",
     monthlyPrice: seat.monthlyPrice ?? "",
     // 本期收费是用户本次实际收款的总额，留空便于直接录入；历史应收仍然回显。
     billingAmount: seat.currentReceivable && Number(seat.currentReceivable.amount) > 0

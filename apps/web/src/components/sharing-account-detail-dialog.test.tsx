@@ -196,6 +196,32 @@ describe("SharingAccountDetailDialog account credentials", () => {
     });
   });
 
+  it("shows the WeChat icon for legacy wxid contacts without a saved type", () => {
+    mocks.seats = [{
+      id: "legacy-wxid-seat",
+      seatNumber: 1,
+      memberName: "Legacy member",
+      contact: "wxid_legacy123",
+      contactType: null,
+      monthlyPrice: "5",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: "2026-09-25",
+      expiresAt: "2026-10-25",
+      status: "active",
+      notes: null,
+      currentReceivable: null,
+    }];
+
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getAllByLabelText("sharing.wechat")).toHaveLength(2);
+  });
+
   it("keeps mobile account content in one scroll region", () => {
     mocks.seats = [{
       id: "seat-scroll",

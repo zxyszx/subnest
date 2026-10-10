@@ -468,6 +468,7 @@ const Subscriptions = () => {
                         allLabel={t("subscriptions.allPlatforms")}
                         moreLabel={t("subscriptions.morePlatforms")}
                         ariaLabel={t("subscriptions.platformFilter")}
+                        visibleLimits={{ compact: 3, regular: 4, wide: 7, spacious: 10 }}
                         className="rounded-lg border bg-secondary/50 px-1"
                       />
                     </Suspense>
@@ -496,7 +497,7 @@ const Subscriptions = () => {
                   moreLabel={t("subscriptions.morePlatforms")}
                   ariaLabel={t("subscriptions.platformFilter")}
                   className="min-w-0 flex-1 border-0 px-2"
-                  visibleLimits={{ regular: 3, wide: 5, spacious: 8 }}
+                  visibleLimits={{ regular: 4, wide: 7, spacious: 10 }}
                   moreIconOnly
                 />
               </Suspense>
