@@ -64,8 +64,7 @@ const contactTypeLabelKeys: Record<(typeof contactTypes)[number], MessageKey> = 
 };
 
 function inferLegacyContactType(contact: string | null | undefined) {
-  const value = contact?.trim().toLowerCase() ?? "";
-  return value.startsWith("wxid_") ? "wechat" : null;
+  return contact?.trim() ? "wechat" : null;
 }
 
 function ContactTypeIcon({ type, contact }: { type: string | null | undefined; contact?: string | null }) {

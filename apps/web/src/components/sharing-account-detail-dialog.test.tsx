@@ -196,12 +196,12 @@ describe("SharingAccountDetailDialog account credentials", () => {
     });
   });
 
-  it("shows the WeChat icon for legacy wxid contacts without a saved type", () => {
+  it("shows the legacy WeChat default when a saved contact has no type", async () => {
     mocks.seats = [{
       id: "legacy-wxid-seat",
       seatNumber: 1,
       memberName: "Legacy member",
-      contact: "wxid_legacy123",
+      contact: "legacy-member-id",
       contactType: null,
       monthlyPrice: "5",
       currency: "CNY",
@@ -213,6 +213,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
       currentReceivable: null,
     }];
 
+    const user = userEvent.setup();
     render(
       <TooltipProvider>
         <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
@@ -220,6 +221,8 @@ describe("SharingAccountDetailDialog account credentials", () => {
     );
 
     expect(screen.getAllByLabelText("sharing.wechat")).toHaveLength(2);
+    await user.click(screen.getAllByRole("button", { name: "sharing.editSeat" })[0]!);
+    expect(screen.getByRole("combobox", { name: "sharing.contactType" })).toHaveTextContent("sharing.wechat");
   });
 
   it("keeps mobile account content in one scroll region", () => {
