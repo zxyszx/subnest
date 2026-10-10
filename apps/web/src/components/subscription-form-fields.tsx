@@ -74,10 +74,14 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     setFormData((prev) => {
       if (key === "platformName") {
         const nextPlatformName = value as string;
+        const platformLogo = platformSuggestions.find(
+          (platform) => (platform.value ?? platform.name) === nextPlatformName,
+        )?.logo || undefined;
         return {
           ...prev,
           platformName: nextPlatformName,
           ...(prev.name.trim() === "" ? { name: nextPlatformName } : {}),
+          ...(subscriptionId === undefined && !prev.logo && platformLogo ? { logo: platformLogo } : {}),
           // 平台名称负责归类；服务名称单独维护，便于同一平台下区分多个服务器或套餐。
         };
       }
@@ -150,7 +154,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
     }
     // 外层用该事件消费“用户明确修改”语义，例如停止默认货币同步或确认 AI 缺省字段；程序化回写不能冒充用户确认。
     onFieldChange?.(key, value);
-  }, [onClearFieldError, onFieldChange, setFormData]);
+  }, [onClearFieldError, onFieldChange, platformSuggestions, setFormData, subscriptionId]);
 
   const id = (name: string) => `${idPrefix}${name}`;
   const categoryId = id("category");

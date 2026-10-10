@@ -206,6 +206,31 @@ describe("SubscriptionDialog", () => {
     expect(screen.getByLabelText("服务名称")).toHaveValue("Netflix");
   });
 
+  it("uses the selected platform Logo for a new subscription", async () => {
+    const user = setupUser();
+
+    render(
+      <TooltipProvider delayDuration={0}>
+        <SubscriptionDialog
+          loadingPreview={null}
+          mode="create"
+          open
+          onOpenChange={vi.fn()}
+          onSubmit={vi.fn()}
+          platformSuggestions={[{ name: "YouTube", logo: "https://example.com/youtube.svg" }]}
+        />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole("combobox", { name: "平台名称" }));
+    await user.click(await screen.findByRole("option", { name: "YouTube" }));
+
+    expect(mocks.logoPickerProps).toMatchObject({
+      value: "https://example.com/youtube.svg",
+      serviceName: "YouTube",
+    });
+  });
+
   it("keeps a service Logo and search name when the platform binding changes", async () => {
     const user = setupUser();
     render(
