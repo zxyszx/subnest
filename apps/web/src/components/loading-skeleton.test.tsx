@@ -52,7 +52,7 @@ describe("SettingsPageSkeleton", () => {
     const desktopNav = screen.getByTestId("settings-page-skeleton-desktop-nav");
     const firstSection = grid.querySelector("section");
 
-    expect(grid).toHaveClass("grid", "min-w-0", "gap-6", "lg:gap-8", "lg:grid-cols-[14rem_minmax(0,1fr)]");
+    expect(grid).toHaveClass("grid", "min-w-0", "gap-4", "lg:gap-6", "lg:grid-cols-[13rem_minmax(0,1fr)]");
     expect(grid.className).toContain("[--settings-mobile-header-offset:calc(8.25rem+env(safe-area-inset-top))]");
     expect(grid.className).toContain("[--settings-desktop-sticky-top:7rem]");
     expect(grid.className).toContain("[--settings-desktop-section-scroll-offset:var(--settings-desktop-sticky-top)]");
@@ -60,10 +60,10 @@ describe("SettingsPageSkeleton", () => {
     expect(mobileHeader).toHaveClass(
       "sticky",
       "top-[calc(var(--settings-mobile-header-offset)+var(--settings-mobile-sticky-gap))]",
-      "rounded-xl",
+      "rounded-lg",
       "border",
       "bg-background/95",
-      "p-4",
+      "p-3",
       "lg:hidden",
     );
     expect(mobileHeader).not.toHaveClass("-mx-4", "border-b", "top-[calc(8.25rem+env(safe-area-inset-top))]");
@@ -80,11 +80,11 @@ describe("SettingsPageSkeleton", () => {
     expect(firstSection).toHaveClass(
       "min-w-0",
       "w-full",
-      "rounded-xl",
+      "rounded-lg",
       "border",
       "bg-card",
       "p-4",
-      "sm:p-6",
+      "sm:p-5",
       "scroll-mt-(--settings-section-scroll-offset)",
     );
     expect(firstSection).not.toHaveClass("lg:scroll-mt-24");

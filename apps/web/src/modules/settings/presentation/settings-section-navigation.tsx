@@ -34,11 +34,11 @@ export const SETTINGS_SECTIONS = [
   { id: "settings-display", labelKey: "settings.sectionNav.display", group: "appearance" },
   { id: "settings-icon-sources", labelKey: "settings.sectionNav.iconSources", group: "appearance" },
   { id: "settings-uploaded-icons", labelKey: "settings.sectionNav.uploadedIcons", group: "appearance" },
-  { id: "settings-ai-recognition", labelKey: "settings.sectionNav.aiRecognition", group: "data" },
   { id: "settings-data-config", labelKey: "settings.sectionNav.dataConfig", group: "data" },
   { id: "settings-budget", labelKey: "settings.sectionNav.budget", group: "data" },
-  { id: "settings-cloud-backup", labelKey: "settings.sectionNav.cloudBackup", group: "data" },
   { id: "settings-exchange", labelKey: "settings.sectionNav.exchange", group: "data" },
+  { id: "settings-ai-recognition", labelKey: "settings.sectionNav.aiRecognition", group: "data" },
+  { id: "settings-cloud-backup", labelKey: "settings.sectionNav.cloudBackup", group: "data" },
   { id: "settings-calendar-feed", labelKey: "settings.sectionNav.calendarFeed", group: "sharing" },
   { id: "settings-public-status", labelKey: "settings.sectionNav.publicStatus", group: "sharing" },
   { id: "settings-public-api", labelKey: "settings.sectionNav.publicApi", group: "sharing" },
@@ -83,6 +83,7 @@ type ProgrammaticNavigation = {
 };
 type SettingsSectionNavigationOptions = {
   deferredSectionIds?: readonly SettingsSectionId[] | undefined;
+  mode?: "scroll" | "paged";
 };
 type SettingsSectionNavigationProps = {
   sections: SettingsSectionList;
@@ -212,11 +213,14 @@ export function useSettingsSectionNavigation(
   options: SettingsSectionNavigationOptions = {},
 ) {
   const firstSectionId = sections[0]?.id ?? SETTINGS_SECTIONS[0].id;
-  const [activeSectionId, setActiveSectionId] = useState<SettingsSectionId>(firstSectionId);
+  const [activeSectionId, setActiveSectionId] = useState<SettingsSectionId>(() => (
+    typeof window === "undefined" ? firstSectionId : getSectionFromHash(window.location.hash, sections) ?? firstSectionId
+  ));
   const programmaticNavigationRef = useRef<ProgrammaticNavigation | null>(null);
   const deferredSectionsReadyRef = useRef(options.deferredSectionIds?.length ? false : true);
   const deferredScrollFrameRef = useRef<number | null>(null);
   const scrollFrameRef = useRef<number | null>(null);
+  const paged = options.mode === "paged";
 
   const isDeferredSection = useCallback((id: SettingsSectionId) => (
     options.deferredSectionIds?.some((candidate) => candidate === id) ?? false
@@ -249,6 +253,10 @@ export function useSettingsSectionNavigation(
   }, [applyAnchorActiveSection]);
 
   const beginProgrammaticNavigation = useCallback((id: SettingsSectionId) => {
+    if (paged) {
+      setActiveSectionId(id);
+      return;
+    }
     endProgrammaticNavigation();
     const waitingForContent = isDeferredSection(id) && !deferredSectionsReadyRef.current;
     programmaticNavigationRef.current = {
@@ -258,7 +266,7 @@ export function useSettingsSectionNavigation(
     };
     setActiveSectionId(id);
     if (!waitingForContent) scrollToSettingsSection(id);
-  }, [endProgrammaticNavigation, isDeferredSection]);
+  }, [endProgrammaticNavigation, isDeferredSection, paged]);
 
   const markDeferredSectionsReady = useCallback(() => {
     // layout effect 的 ready 早于浏览器派发布局替换事件；下一渲染帧再切到 scrolling，避免旧 scrollend 提前结束新导航。
@@ -278,13 +286,17 @@ export function useSettingsSectionNavigation(
     const syncActiveSectionFromHash = () => {
       const sectionId = getSectionFromHash(window.location.hash, sections);
       if (!sectionId) return;
+      if (paged) {
+        setActiveSectionId(sectionId);
+        return;
+      }
       window.requestAnimationFrame(() => beginProgrammaticNavigation(sectionId));
     };
 
-    syncActiveSectionFromHash();
+    if (!paged) syncActiveSectionFromHash();
     window.addEventListener("hashchange", syncActiveSectionFromHash);
     return () => window.removeEventListener("hashchange", syncActiveSectionFromHash);
-  }, [beginProgrammaticNavigation, sections]);
+  }, [beginProgrammaticNavigation, paged, sections]);
 
   useEffect(() => {
     if (!sections.some((section) => section.id === activeSectionId)) {
@@ -293,6 +305,7 @@ export function useSettingsSectionNavigation(
   }, [activeSectionId, firstSectionId, sections]);
 
   useEffect(() => {
+    if (paged) return;
     const root = getAppScrollRoot();
     if (!root) return;
 
@@ -362,7 +375,7 @@ export function useSettingsSectionNavigation(
       }
       endProgrammaticNavigation();
     };
-  }, [endProgrammaticNavigation, scheduleAnchorActiveSection, sections]);
+  }, [endProgrammaticNavigation, paged, scheduleAnchorActiveSection, sections]);
 
   const handleSectionClick = useCallback((id: SettingsSectionId) => {
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${id}`);
@@ -483,7 +496,7 @@ export function MobileSettingsSectionDrawer({
 
   return (
     <SideDrawerRoot open={open} onOpenChange={onOpenChange}>
-      <MobileSettingsPageHeader />
+      <MobileSettingsPageHeader sections={sections} activeSectionId={activeSectionId} />
       <SideDrawerContent
         side="left"
         className="w-[min(18rem,calc(100vw-3.5rem))] rounded-r-xl bg-card"
@@ -533,8 +546,13 @@ export function MobileSettingsSectionDrawer({
   );
 }
 
-function MobileSettingsPageHeader() {
+function MobileSettingsPageHeader({
+  sections,
+  activeSectionId,
+}: Pick<SettingsSectionNavigationProps, "sections" | "activeSectionId">) {
   const { t } = useI18n();
+  const activeSection = sections.find((section) => section.id === activeSectionId) ?? sections[0];
+  const activeGroup = SETTINGS_SECTION_GROUPS.find((group) => group.id === activeSection?.group);
 
   return (
     <div
@@ -543,9 +561,11 @@ function MobileSettingsPageHeader() {
     >
       <div className={settingsLayout.mobileHeaderRow}>
         <div className={settingsLayout.mobileHeaderText}>
-          <h1 className={settingsLayout.mobileHeaderTitle}>{t("settings.title")}</h1>
+          <h1 className={settingsLayout.mobileHeaderTitle}>
+            {activeSection ? t(activeSection.labelKey) : t("settings.title")}
+          </h1>
           <p className={settingsLayout.mobileHeaderSubtitle} data-testid="settings-mobile-page-subtitle">
-            {t("settings.subtitle")}
+            {activeGroup ? t(activeGroup.labelKey) : t("settings.subtitle")}
           </p>
         </div>
         <SideDrawerTrigger asChild>

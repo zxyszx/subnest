@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import type { CustomConfig } from '@/types/config';
 import type { AppSettings } from '@/types/subscription';
 import { getSettingsSectionClassName } from './settings-layout';
+import { SettingsSectionHeader } from './settings-section-header';
 import {
   getDirectExchangeRateQuote,
   getExchangeRatePreviewCurrencies,
@@ -118,17 +119,15 @@ export function ExchangeRatesSection({
 
   return (
     <section id={id} className={getSettingsSectionClassName(className)}>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">{t("settings.exchange")}</h2>
-        </div>
-        <ExchangeRateRefreshButton
+      <SettingsSectionHeader
+        icon={<TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+        title={t("settings.exchange")}
+        action={<ExchangeRateRefreshButton
           label={t("settings.refreshRates")}
           pending={ratesRefreshPending}
           onRefresh={handleRefreshRates}
-        />
-      </div>
+        />}
+      />
 
       {ratesError ? (
         <ExchangeRateErrorFeedback error={ratesError} details={ratesErrorDetails} />

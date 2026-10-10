@@ -12,7 +12,7 @@ import { FormField, FormFieldRow } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import Link from '@/components/router-link';
 import { useI18n } from '@/i18n/I18nProvider';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, UserRound } from 'lucide-react';
 import { passkeyService } from "@/services/passkey-service";
 import { PasswordChangeDialog } from './password-change-dialog';
 import { AccountMfaSection } from './account-mfa-section';
@@ -21,6 +21,7 @@ import { DeferredAccountSecurityDialogs } from "./account-security-dialogs-loade
 import { PASSKEYS_QUERY_KEY } from "./account-security-query-keys";
 import type { AccountSecurityDialogState, MfaPasswordAction } from "./account-security-dialog-state";
 import { getSettingsSectionClassName } from './settings-layout';
+import { SettingsSectionHeader } from './settings-section-header';
 import type { Passkey } from "@/lib/api/schemas/auth";
 import { toSettingsReadState } from "../application/settings-read-state";
 
@@ -95,7 +96,10 @@ export function AccountSettingsSection({
   return (
     <>
       <section id={id} className={getSettingsSectionClassName(className)}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.account")}</h2>
+        <SettingsSectionHeader
+          icon={<UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+          title={t("settings.account")}
+        />
         <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2 sm:gap-x-6">
           <FormField
             id="username"

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react";
-import { Activity, Coins, CreditCard, FolderKanban, Settings2, Tags } from "lucide-react";
+import { Activity, Bell, Clock3, Coins, CreditCard, FolderKanban, Settings2, Tags, WalletCards } from "lucide-react";
 import { DeferredImportDataDialog } from "@/components/import-data-dialog-loader";
 import { RawErrorResponseDialog } from "@/components/raw-error-response-dialog";
 import { NewSzxcnAdminPanel } from "@/components/newszxcn-admin-panel";
@@ -39,13 +39,18 @@ import { NotificationHistoryPanel } from "./notification-history-panel";
 import { PublicApiSection } from "./public-api-section";
 import { PublicStatusPageSection } from "./public-status-page-section";
 import { SETTINGS_SECTION_FRAME_CLASS, SETTINGS_SECTION_SCROLL_CLASS } from "./settings-layout";
+import type { SettingsSectionId } from "./settings-section-navigation";
+import { cn } from "@/lib/utils";
 import { UploadedIconsSection } from "./uploaded-icons-section";
+import { SettingsSectionHeader } from "./settings-section-header";
 
 export function SettingsAdvancedSections({
   controller,
+  activeSectionId,
   onReady,
 }: {
   controller: SettingsFormController;
+  activeSectionId: SettingsSectionId;
   onReady?: (() => void) | undefined;
 }) {
   const { t, locale } = useI18n();
@@ -155,6 +160,10 @@ export function SettingsAdvancedSections({
     ? localSubscriptionPriceReferenceCurrencyPreference
     : null;
   const activeNotificationChannel = selectedNotificationChannel ?? settings.enabledChannels[0] ?? "telegram";
+  const sectionClassName = (id: SettingsSectionId, baseClassName: string) => cn(
+    baseClassName,
+    activeSectionId !== id && "hidden",
+  );
 
   useLayoutEffect(() => {
     // 云备份会从局部 loading boundary 切到完整表单；只有读取与草稿同步完成后的 commit 才能代表高级区块最终几何。
@@ -180,7 +189,7 @@ export function SettingsAdvancedSections({
     <>
       <BuiltInIconSourcesSection
         id="settings-icon-sources"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-icon-sources", SETTINGS_SECTION_SCROLL_CLASS)}
         sources={settings.builtInIconSources}
         onChange={(sources) => updateSetting("builtInIconSources", sources)}
         onlineSources={settings.onlineIconSources}
@@ -190,13 +199,13 @@ export function SettingsAdvancedSections({
 
       <UploadedIconsSection
         id="settings-uploaded-icons"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-uploaded-icons", SETTINGS_SECTION_SCROLL_CLASS)}
         controller={uploadedAssets}
       />
 
       <AIRecognitionSettingsSection
         id="settings-ai-recognition"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-ai-recognition", SETTINGS_SECTION_SCROLL_CLASS)}
         settings={settings.aiRecognition}
         onChange={(aiRecognition) => updateSetting("aiRecognition", aiRecognition)}
         apiKeyConfigured={secretStatus["aiRecognition.apiKey"].configured}
@@ -204,12 +213,12 @@ export function SettingsAdvancedSections({
         disabled={externalIntegrationsDisabled}
       />
 
-      <section id="settings-data-config" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <div className="mb-3 flex items-center gap-2">
-          <Settings2 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">{t("settings.dataConfig")}</h2>
-        </div>
-        <p className="mb-4 text-sm text-muted-foreground">{t("settings.dataConfigDescription")}</p>
+      <section id="settings-data-config" className={sectionClassName("settings-data-config", SETTINGS_SECTION_FRAME_CLASS)}>
+        <SettingsSectionHeader
+          icon={<Settings2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+          title={t("settings.dataConfig")}
+          help={t("settings.dataConfigDescription")}
+        />
         <div className="grid gap-3 sm:grid-cols-2">
           <ConfigManagerDialog
             title={t("settings.platformManager")}
@@ -270,8 +279,11 @@ export function SettingsAdvancedSections({
         </div>
       </section>
 
-      <section id="settings-budget" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.budget")}</h2>
+      <section id="settings-budget" className={sectionClassName("settings-budget", SETTINGS_SECTION_FRAME_CLASS)}>
+        <SettingsSectionHeader
+          icon={<WalletCards className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+          title={t("settings.budget")}
+        />
         <FormField
           id="monthlyBudget"
           label={t("settings.monthlyBudget")}
@@ -305,14 +317,14 @@ export function SettingsAdvancedSections({
 
       <CloudBackupSection
         id="settings-cloud-backup"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-cloud-backup", SETTINGS_SECTION_SCROLL_CLASS)}
         controller={cloudBackup}
         disabled={externalIntegrationsDisabled}
       />
 
       <ExchangeRatesSection
         id="settings-exchange"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-exchange", SETTINGS_SECTION_SCROLL_CLASS)}
         settings={settings}
         customConfig={customConfig}
         rates={rates}
@@ -336,13 +348,13 @@ export function SettingsAdvancedSections({
 
       <CalendarFeedSection
         id="settings-calendar-feed"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-calendar-feed", SETTINGS_SECTION_SCROLL_CLASS)}
         controller={calendarFeed}
       />
 
       <PublicStatusPageSection
         id="settings-public-status"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-public-status", SETTINGS_SECTION_SCROLL_CLASS)}
         status={publicStatusPage.status}
         visibility={publicStatusPage.visibility}
         publicStatusCurrency={settings.publicStatusCurrency}
@@ -362,16 +374,23 @@ export function SettingsAdvancedSections({
 
       <PublicApiSection
         id="settings-public-api"
-        className={SETTINGS_SECTION_SCROLL_CLASS}
+        className={sectionClassName("settings-public-api", SETTINGS_SECTION_SCROLL_CLASS)}
         controller={publicApi}
       />
 
       {canManageUsers ? (
-        <NewSzxcnAdminPanel id="settings-newszxcn" className={SETTINGS_SECTION_FRAME_CLASS} />
+        <NewSzxcnAdminPanel
+          id="settings-newszxcn"
+          className={sectionClassName("settings-newszxcn", SETTINGS_SECTION_FRAME_CLASS)}
+        />
       ) : null}
 
-      <section id="settings-timezone" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.timezone")}</h2>
+      <section id="settings-timezone" className={sectionClassName("settings-timezone", SETTINGS_SECTION_FRAME_CLASS)}>
+        <SettingsSectionHeader
+          icon={<Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+          title={t("settings.timezone")}
+          help={t("settings.timezoneHelp")}
+        />
         <div className="grid gap-2">
           <Label htmlFor="timezone">{t("settings.timezoneSelect")}</Label>
           <SearchableSelect
@@ -385,12 +404,14 @@ export function SettingsAdvancedSections({
             contentClassName="max-w-md"
             aria-label={t("settings.timezoneSelect")}
           />
-          <p className="text-xs text-muted-foreground">{t("settings.timezoneHelp")}</p>
         </div>
       </section>
 
-      <section id="settings-notifications" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.notifications")}</h2>
+      <section id="settings-notifications" className={sectionClassName("settings-notifications", SETTINGS_SECTION_FRAME_CLASS)}>
+        <SettingsSectionHeader
+          icon={<Bell className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+          title={t("settings.notifications")}
+        />
         <div className="grid gap-5">
           <div className="grid gap-4">
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2 sm:gap-x-6">

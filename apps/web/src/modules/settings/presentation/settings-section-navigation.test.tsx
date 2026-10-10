@@ -4,15 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createControllerState,
-  dispatchRootScroll,
   mocks,
   renderSettingsScreen,
   SETTINGS_SECTION_IDS,
-  setRootMetrics,
-  setSectionAnchorGeometry,
-  setSettingsSectionTops,
-  TEST_ACTIVE_SECTION_TOP_PX,
-  TEST_NEXT_SECTION_TOP_PX,
 } from "./settings-screen.test-utils";
 
 describe("SettingsScreen section navigation", () => {
@@ -37,6 +31,7 @@ describe("SettingsScreen section navigation", () => {
       removeListener: vi.fn(),
       dispatchEvent: vi.fn(),
     })));
+    window.history.replaceState(null, "", "/settings");
     mocks.useSettingsFormController.mockReturnValue(createControllerState());
   });
 
@@ -55,11 +50,11 @@ describe("SettingsScreen section navigation", () => {
       ["settings-display", "显示设置"],
       ["settings-icon-sources", "图标来源"],
       ["settings-uploaded-icons", "自定义图标"],
-      ["settings-ai-recognition", "AI 识别"],
       ["settings-data-config", "数据配置"],
       ["settings-budget", "预算设置"],
-      ["settings-cloud-backup", "云端备份"],
       ["settings-exchange", "汇率设置"],
+      ["settings-ai-recognition", "AI 识别"],
+      ["settings-cloud-backup", "云端备份"],
       ["settings-calendar-feed", "日历订阅"],
       ["settings-public-status", "公开展示"],
       ["settings-public-api", "开放接口"],
@@ -83,21 +78,17 @@ describe("SettingsScreen section navigation", () => {
     expect(screen.queryByTestId("settings-section-content-scroll")).not.toBeInTheDocument();
     const content = screen.getByTestId("settings-section-content");
     expect(content).not.toHaveClass("lg:overflow-y-auto");
-    const headings = within(content).getAllByRole("heading", { name: "系统配置" });
+    const headings = within(content).getAllByRole("heading", { name: "账户设置" });
     expect(headings).toHaveLength(2);
     const [mobileHeading, desktopHeading] = headings;
     expect(mobileHeading).toBeDefined();
     expect(desktopHeading).toBeDefined();
     expect(mobileHeading?.closest("[data-testid='settings-mobile-page-header']")).not.toBeNull();
     expect(desktopHeading?.closest(".hidden.lg\\:block")).not.toBeNull();
-    const subtitles = within(content).getAllByText("管理您的账户、显示和通知设置");
-    expect(subtitles).toHaveLength(2);
-    const [mobileSubtitle, desktopSubtitle] = subtitles;
-    expect(mobileSubtitle).toBeDefined();
-    expect(desktopSubtitle).toBeDefined();
-    expect(mobileSubtitle).toHaveAttribute("data-testid", "settings-mobile-page-subtitle");
-    expect(mobileSubtitle?.closest("[data-testid='settings-mobile-page-header']")).not.toBeNull();
-    expect(desktopSubtitle?.closest(".hidden.lg\\:block")).not.toBeNull();
+    const mobileSubtitle = within(screen.getByTestId("settings-mobile-page-header"))
+      .getByTestId("settings-mobile-page-subtitle");
+    expect(mobileSubtitle).toHaveTextContent("账号与安全");
+    expect(screen.getByTestId("settings-current-section-header")).toHaveTextContent("账号与安全");
     expect(within(content).getByRole("heading", { name: "管理员账户" })).toBeInTheDocument();
     expect(screen.queryByTestId("settings-section-nav-floating-trigger")).not.toBeInTheDocument();
     expect(screen.queryByTestId("settings-section-nav-toolbar")).not.toBeInTheDocument();
@@ -119,7 +110,7 @@ describe("SettingsScreen section navigation", () => {
     expect(mobileTrigger).toHaveClass("h-10", "w-10", "shrink-0", "rounded-lg", "border", "border-border", "bg-card/80");
     expect(mobileTrigger).not.toHaveTextContent("目录");
     expect(mobileTrigger).not.toHaveTextContent("时区设置");
-    expect(within(mobileHeader).getByTestId("settings-mobile-page-subtitle")).toHaveTextContent("管理您的账户、显示和通知设置");
+    expect(within(mobileHeader).getByTestId("settings-mobile-page-subtitle")).toHaveTextContent("账号与安全");
     const sectionNav = within(desktopNav);
 
     ["账号与安全", "外观与图标", "数据与智能", "分享与集成", "区域与通知"].forEach((label) => {
@@ -138,6 +129,11 @@ describe("SettingsScreen section navigation", () => {
         "scroll-mt-(--settings-section-scroll-offset)",
       );
       expect(container.querySelector(`section#${id}`)).not.toHaveClass("lg:scroll-mt-24");
+      if (id === "settings-account") {
+        expect(container.querySelector(`section#${id}`)).not.toHaveClass("hidden");
+      } else {
+        expect(container.querySelector(`section#${id}`)).toHaveClass("hidden");
+      }
       const links = sectionNav.getAllByRole("link", { name: label });
       expect(links).toHaveLength(1);
       links.forEach((link) => expect(link).toHaveAttribute("href", `#${id}`));
@@ -203,159 +199,28 @@ describe("SettingsScreen section navigation", () => {
     expect(within(screen.getByTestId("settings-section-nav-desktop")).queryByRole("link", { name: "访问安全" })).not.toBeInTheDocument();
   });
 
-  it("updates the active section from the app scroll container without changing the hash", async () => {
-    renderSettingsScreen();
-
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    expect(window.location.hash).toBe("");
-
-    let root = setSectionAnchorGeometry("settings-timezone");
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
-    });
-    expect(window.location.hash).toBe("");
-
-    root = setSectionAnchorGeometry("settings-notifications");
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
-    });
-    expect(window.location.hash).toBe("");
-  });
-
-  it("moves from exchange to calendar feed on root scroll without observer threshold changes", async () => {
-    renderSettingsScreen();
-
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    const root = setSectionAnchorGeometry("settings-exchange");
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "汇率设置" })).toHaveAttribute("aria-current", "location");
-    });
-
-    setSectionAnchorGeometry("settings-calendar-feed");
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "日历订阅" })).toHaveAttribute("aria-current", "location");
-    });
-    expect(within(desktopNav).getByRole("link", { name: "汇率设置" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("keeps clicked target active while smooth scrolling passes intermediate sections", async () => {
+  it("shows only the selected settings module and ignores page scrolling", async () => {
     const user = userEvent.setup();
-    renderSettingsScreen();
-
+    const { container } = renderSettingsScreen();
     const desktopNav = screen.getByTestId("settings-section-nav-desktop");
     await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
 
-    dispatchRootScroll(setSectionAnchorGeometry("settings-appearance"));
-    dispatchRootScroll(setSectionAnchorGeometry("settings-display"));
-    dispatchRootScroll(setSectionAnchorGeometry("settings-timezone"));
-
-    expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
-
-    dispatchRootScroll(setSectionAnchorGeometry("settings-notifications"));
-    dispatchRootScroll(setSectionAnchorGeometry("settings-timezone"));
-
+    expect(container.querySelector("#settings-account")).toHaveClass("hidden");
+    expect(container.querySelector("#settings-notifications")).not.toHaveClass("hidden");
+    expect(screen.getByTestId("settings-current-section-header")).toHaveTextContent("区域与通知通知设置");
+    expect(screen.getByTestId("settings-mobile-page-header")).toHaveTextContent("通知设置区域与通知");
+    document.getElementById("root")?.dispatchEvent(new Event("scroll"));
     expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
   });
 
-  it("keeps icon sources active when the adjacent budget section is also visible", async () => {
-    const user = userEvent.setup();
-    renderSettingsScreen();
+  it("opens the section from the URL hash without flashing the default module", () => {
+    window.history.replaceState(null, "", "/settings#settings-budget");
+    const { container } = renderSettingsScreen();
 
-    const root = setSectionAnchorGeometry("settings-icon-sources");
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "图标来源" }));
-
-    setSettingsSectionTops({
-      "settings-icon-sources": TEST_ACTIVE_SECTION_TOP_PX,
-      "settings-budget": TEST_NEXT_SECTION_TOP_PX,
-    });
-    dispatchRootScroll(root);
-    root.dispatchEvent(new Event("scrollend"));
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "图标来源" })).toHaveAttribute("aria-current", "location");
-    });
-    expect(within(desktopNav).getByRole("link", { name: "预算设置" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("hands active state back to root scroll when the user interrupts a menu scroll", async () => {
-    const user = userEvent.setup();
-    renderSettingsScreen();
-
-    const root = setSectionAnchorGeometry("settings-account");
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
-
-    setSectionAnchorGeometry("settings-timezone");
-    root.dispatchEvent(new WheelEvent("wheel", { bubbles: true }));
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
-    });
-  });
-
-  it("releases menu scroll intent on scrollend", async () => {
-    const user = userEvent.setup();
-    renderSettingsScreen();
-
-    const root = setSectionAnchorGeometry("settings-account");
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    await user.click(within(desktopNav).getByRole("link", { name: "通知设置" }));
-
-    setSectionAnchorGeometry("settings-timezone");
-    root.dispatchEvent(new Event("scrollend"));
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
-    });
-  });
-
-  it("keeps mobile section navigation active state in sync with root scroll", async () => {
-    const user = userEvent.setup();
-    renderSettingsScreen();
-
-    const root = setSectionAnchorGeometry("settings-notifications", {
-      rootMetrics: { scrollTop: 1600, clientHeight: 800, scrollHeight: 2400 },
-    });
-    dispatchRootScroll(root);
-
-    await user.click(within(screen.getByTestId("settings-mobile-page-header")).getByRole("button", { name: /打开设置目录/ }));
-
-    const drawer = await screen.findByTestId("settings-section-nav-drawer");
-    const activeNotificationLink = within(drawer).getByRole("link", { name: "通知设置" });
-    expect(activeNotificationLink).toHaveAttribute("aria-current", "location");
-    expect(activeNotificationLink).toHaveClass("bg-primary/10", "text-primary");
-  });
-
-  it("activates the last section only near the bottom edge", async () => {
-    renderSettingsScreen();
-
-    const desktopNav = screen.getByTestId("settings-section-nav-desktop");
-    let root = setSectionAnchorGeometry("settings-timezone", {
-      rootMetrics: { scrollTop: 1200, clientHeight: 800, scrollHeight: 2400 },
-    });
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "时区设置" })).toHaveAttribute("aria-current", "location");
-    });
-
-    root = setRootMetrics({ scrollTop: 1600, clientHeight: 800, scrollHeight: 2400 });
-    dispatchRootScroll(root);
-
-    await waitFor(() => {
-      expect(within(desktopNav).getByRole("link", { name: "通知设置" })).toHaveAttribute("aria-current", "location");
-    });
+    expect(within(screen.getByTestId("settings-section-nav-desktop")).getByRole("link", { name: "预算设置" }))
+      .toHaveAttribute("aria-current", "location");
+    expect(container.querySelector("#settings-budget")).not.toHaveClass("hidden");
+    expect(container.querySelector("#settings-account")).toHaveClass("hidden");
   });
 
   it("closes the mobile drawer after selecting a settings section", async () => {
@@ -367,9 +232,6 @@ describe("SettingsScreen section navigation", () => {
     await user.click(trigger);
     const drawer = await screen.findByTestId("settings-section-nav-drawer");
     await user.click(within(drawer).getByRole("link", { name: "通知设置" }));
-    const root = setSectionAnchorGeometry("settings-notifications");
-    dispatchRootScroll(root);
-    root.dispatchEvent(new Event("scrollend"));
 
     await waitFor(() => expect(screen.queryByTestId("settings-section-nav-drawer")).not.toBeInTheDocument());
     expect(window.location.hash).toBe("#settings-notifications");

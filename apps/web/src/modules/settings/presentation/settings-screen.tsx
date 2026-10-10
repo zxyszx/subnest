@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Palette } from "lucide-react";
+import { Languages, Palette } from "lucide-react";
 import { BackToTopFloatButton } from "@/components/back-to-top-float-button";
 import { Header } from "@/components/header";
 import { ThemeSelector } from "@/components/theme-selector";
@@ -30,6 +30,7 @@ import { ADVANCED_SETTINGS_SECTION_IDS, isAdvancedSettingsSection } from "./sett
 import {
   DesktopSettingsSectionNav,
   MobileSettingsSectionDrawer,
+  SETTINGS_SECTION_GROUPS,
   createSettingsSections,
   useSettingsSectionNavigation,
   useUnsavedChangesGuard,
@@ -40,6 +41,7 @@ import {
   settingsLayout,
 } from "./settings-layout";
 import { CheckboxSettingRow, LoadingButtonContent } from "./settings-shared-controls";
+import { SettingsSectionHeader } from "./settings-section-header";
 
 /** 设置页同步层只保留首屏区块、目录和统一保存状态；低频高级区块按滚动/导航 intent 装载。 */
 export function SettingsScreen() {
@@ -90,6 +92,7 @@ export function SettingsScreen() {
     markDeferredSectionsReady,
   } = useSettingsSectionNavigation(settingsSections, {
     deferredSectionIds: ADVANCED_SETTINGS_SECTION_IDS,
+    mode: "paged",
   });
   const unsavedChangesGuard = useUnsavedChangesGuard(hasUnsavedChanges, handleDiscardChanges);
   const handleLocaleChange = (value: string) => {
@@ -100,6 +103,12 @@ export function SettingsScreen() {
   const handleSectionIntent = (id: Parameters<typeof handleSectionClick>[0]) => {
     if (isAdvancedSettingsSection(id)) preloadSettingsAdvancedSections();
   };
+  const activeSection = settingsSections.find((section) => section.id === activeSectionId) ?? settingsSections[0];
+  const activeSectionGroup = SETTINGS_SECTION_GROUPS.find((group) => group.id === activeSection?.group);
+  const sectionClassName = (id: typeof activeSectionId, baseClassName: string) => cn(
+    baseClassName,
+    activeSectionId !== id && "hidden",
+  );
 
   return (
     <div className="app-page flex flex-col bg-background">
@@ -127,14 +136,18 @@ export function SettingsScreen() {
                 onOpenChange={setMobileSectionNavOpen}
               />
 
-              <div className={settingsLayout.desktopHeader}>
-                <h1 className="text-2xl font-bold text-foreground">{t("settings.title")}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">{t("settings.subtitle")}</p>
+              <div className={settingsLayout.desktopHeader} data-testid="settings-current-section-header">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {activeSectionGroup ? t(activeSectionGroup.labelKey) : t("settings.title")}
+                </p>
+                <h1 className="mt-1 text-2xl font-bold text-foreground">
+                  {activeSection ? t(activeSection.labelKey) : t("settings.title")}
+                </h1>
               </div>
 
               <AccountSettingsSection
                 id="settings-account"
-                className={SETTINGS_SECTION_SCROLL_CLASS}
+                className={sectionClassName("settings-account", SETTINGS_SECTION_SCROLL_CLASS)}
                 accountEmail={accountEmail}
                 canManageUsers={canManageUsers}
                 canAccessPocketBaseAdmin={canAccessPocketBaseAdmin}
@@ -156,15 +169,15 @@ export function SettingsScreen() {
 
               <AccessSecuritySection
                 id="settings-access-security"
-                className={SETTINGS_SECTION_SCROLL_CLASS}
+                className={sectionClassName("settings-access-security", SETTINGS_SECTION_SCROLL_CLASS)}
                 controller={authSecurity}
               />
 
-              <section id="settings-appearance" className={SETTINGS_SECTION_FRAME_CLASS}>
-                <div className="mb-4 flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold text-foreground">{t("settings.appearance")}</h2>
-                </div>
+              <section id="settings-appearance" className={sectionClassName("settings-appearance", SETTINGS_SECTION_FRAME_CLASS)}>
+                <SettingsSectionHeader
+                  icon={<Palette className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+                  title={t("settings.appearance")}
+                />
                 <ThemeSelector
                   mode={effectiveThemeMode}
                   variant={settings.themeVariant}
@@ -175,8 +188,11 @@ export function SettingsScreen() {
                 />
               </section>
 
-              <section id="settings-display" className={SETTINGS_SECTION_FRAME_CLASS}>
-                <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.display")}</h2>
+              <section id="settings-display" className={sectionClassName("settings-display", SETTINGS_SECTION_FRAME_CLASS)}>
+                <SettingsSectionHeader
+                  icon={<Languages className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />}
+                  title={t("settings.display")}
+                />
                 <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="locale">{t("settings.language")}</Label>

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 interface SettingsSectionHeaderProps {
   icon: ReactNode;
   title: ReactNode;
-  help: ReactNode;
+  help?: ReactNode;
   summary?: ReactNode;
   status?: ReactNode;
   action?: ReactNode;
@@ -20,12 +20,12 @@ export function SettingsSectionHeader({
   className,
 }: SettingsSectionHeaderProps) {
   return (
-    <div className={className ?? "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"}>
+    <div className={className ?? "mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"}>
       <div className="flex min-w-0 items-start gap-3">
         {icon}
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{help}</p>
+          {help ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{help}</p> : null}
           {summary ? <div className="mt-2 text-xs font-medium text-foreground">{summary}</div> : null}
         </div>
       </div>

@@ -18,21 +18,19 @@ export function preloadSettingsAdvancedSections(): void {
   void loadSettingsAdvancedSections().catch(() => undefined);
 }
 
-function SettingsAdvancedSectionsLoading() {
+function SettingsAdvancedSectionsLoading({ activeSectionId }: { activeSectionId: SettingsSectionId }) {
   const { t } = useI18n();
+  const section = advancedSettingsSections.find((candidate) => candidate.id === activeSectionId);
 
+  if (!section) return null;
   return (
-    <>
-      {advancedSettingsSections.map((section) => (
-        <section key={section.id} id={section.id} className={`${SETTINGS_SECTION_FRAME_CLASS} min-h-48`} aria-busy="true">
-          <h2 className="mb-4 text-lg font-semibold text-foreground">{t(section.labelKey)}</h2>
-          <div className="grid gap-3" aria-hidden="true">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </section>
-      ))}
-    </>
+    <section id={section.id} className={`${SETTINGS_SECTION_FRAME_CLASS} min-h-48`} aria-busy="true">
+      <h2 className="mb-4 text-lg font-semibold text-foreground">{t(section.labelKey)}</h2>
+      <div className="grid gap-3" aria-hidden="true">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </section>
   );
 }
 
@@ -60,11 +58,11 @@ export function DeferredSettingsAdvancedSections({
     }
   }, [activeSectionId]);
 
-  if (!activated) return <SettingsAdvancedSectionsLoading />;
+  if (!activated) return <SettingsAdvancedSectionsLoading activeSectionId={activeSectionId} />;
 
   return (
-    <Suspense fallback={<SettingsAdvancedSectionsLoading />}>
-      <LazySettingsAdvancedSections controller={controller} onReady={onReady} />
+    <Suspense fallback={<SettingsAdvancedSectionsLoading activeSectionId={activeSectionId} />}>
+      <LazySettingsAdvancedSections controller={controller} activeSectionId={activeSectionId} onReady={onReady} />
     </Suspense>
   );
 }

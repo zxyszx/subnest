@@ -761,6 +761,8 @@ describe("SettingsScreen SMTP email settings", () => {
       );
       expect(section).not.toHaveClass("lg:scroll-mt-24");
       expect(section).not.toHaveClass("p-6");
+      if (id === "settings-account") expect(section).not.toHaveClass("hidden");
+      else expect(section).toHaveClass("hidden");
     });
   });
 

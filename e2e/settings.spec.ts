@@ -8,7 +8,6 @@ import {
 } from "./support/layout";
 import {
   deferAdvancedSettingsModule,
-  expectSettingsSectionAtScrollAnchor,
   fillChangedTestPhone,
   getSettingsDiscardButton,
   getSettingsSaveButton,
@@ -28,7 +27,7 @@ test("desktop passkey fields and add action share stable form tracks", async ({ 
   await expectFormFieldRowAlignment(row, "desktop passkey registration", { action: true });
 });
 
-test("settings directory waits for deferred content before scrolling to calendar feed", async ({ page }) => {
+test("settings directory shows the selected deferred module in place", async ({ page }) => {
   const advancedModule = await deferAdvancedSettingsModule(page);
   await gotoSettingsAfterHydration(page);
   const desktopNav = page.getByTestId("settings-section-nav-desktop");
@@ -41,21 +40,19 @@ test("settings directory waits for deferred content before scrolling to calendar
   await expect(page).toHaveURL(/#settings-calendar-feed$/);
   await expect(calendarLink).toHaveAttribute("aria-current", "location");
   await expect(calendarSection).toHaveAttribute("aria-busy", "true");
-  await expect(calendarSection).not.toBeInViewport();
+  await expect(calendarSection).toBeInViewport();
 
   advancedModule.release();
 
   await expect(calendarSection).not.toHaveAttribute("aria-busy", "true");
   await expect(calendarSection).toBeInViewport();
-  await expectSettingsSectionAtScrollAnchor(calendarSection);
   await expect(page).toHaveURL(/#settings-calendar-feed$/);
   await expect(calendarLink).toHaveAttribute("aria-current", "location");
 });
 
 test("settings save, language switch, and floating layer layout stability", async ({ page }) => {
   await gotoSettingsSectionAfterHydration(page, "settings-notifications");
-  await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
-  await expectLabelControlGap(page.getByLabel("月度预算金额", { exact: true }), "settings monthly budget");
+  await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "通知设置" })).toBeVisible();
   await expectLabelControlGap(page.getByLabel("第三方 API 测试号码", { exact: true }), "settings test phone");
 
   const testPhoneInput = page.getByLabel("第三方 API 测试号码", { exact: true });
@@ -69,6 +66,9 @@ test("settings save, language switch, and floating layer layout stability", asyn
   }
 
   const settingsContent = page.getByTestId("settings-main");
+  await page.getByTestId("settings-section-nav-desktop").getByRole("link", { name: "预算设置" }).click();
+  await expectLabelControlGap(page.getByLabel("月度预算金额", { exact: true }), "settings monthly budget");
+  await page.getByTestId("settings-section-nav-desktop").getByRole("link", { name: "显示设置" }).click();
   const settingsBeforeSelect = await captureLayoutSnapshot(page, {
     content: settingsContent,
     saveButton: saveChangesButtonElement,
@@ -89,6 +89,7 @@ test("settings save, language switch, and floating layer layout stability", asyn
   await page.keyboard.press("Escape");
   await expect(page.getByRole("option", { name: "English" })).toBeHidden();
 
+  await page.getByTestId("settings-section-nav-desktop").getByRole("link", { name: "账户设置" }).click();
   await page.getByRole("button", { name: "修改密码" }).click();
   const passwordDialog = page.getByRole("dialog", { name: "修改密码" });
   await expect(passwordDialog).toBeVisible();
@@ -108,12 +109,13 @@ test("settings save, language switch, and floating layer layout stability", asyn
   await saveChangesButton.click();
   await expect(saveChangesButton).toBeHidden();
 
+  await page.getByTestId("settings-section-nav-desktop").getByRole("link", { name: "显示设置" }).click();
   await languageSelect.click();
   await page.getByRole("option", { name: "English" }).click();
-  await expect(page.getByRole("heading", { name: "System settings" })).toBeVisible();
+  await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "Display" })).toBeVisible();
   await page.getByRole("combobox", { name: "Language" }).click();
   await page.getByRole("option", { name: "中文" }).click();
-  await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+  await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "显示设置" })).toBeVisible();
 
   const discardChangesButton = getSettingsDiscardButton(page);
   if (await discardChangesButton.isVisible()) {
