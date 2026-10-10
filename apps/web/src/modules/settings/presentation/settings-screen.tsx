@@ -106,7 +106,7 @@ export function SettingsScreen() {
       <Header />
 
       <main className={cn("flex-1", hasUnsavedChanges && "h5-bottom-bar-space")} data-testid="settings-main">
-        <div className="app-main mx-auto max-w-[120rem]">
+        <div className="app-main mx-auto max-w-384">
           <div className={settingsLayout.pageGrid} data-testid="settings-page-layout">
             <aside className="hidden lg:block" data-testid="settings-section-nav-aside">
               <DesktopSettingsSectionNav
@@ -161,7 +161,7 @@ export function SettingsScreen() {
               />
 
               <section id="settings-appearance" className={SETTINGS_SECTION_FRAME_CLASS}>
-                <div className="mb-6 flex items-center gap-2">
+                <div className="mb-4 flex items-center gap-2">
                   <Palette className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-semibold text-foreground">{t("settings.appearance")}</h2>
                 </div>
@@ -176,8 +176,8 @@ export function SettingsScreen() {
               </section>
 
               <section id="settings-display" className={SETTINGS_SECTION_FRAME_CLASS}>
-                <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.display")}</h2>
-                <div className="grid gap-6">
+                <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.display")}</h2>
+                <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="locale">{t("settings.language")}</Label>
                     <Select value={settings.localePreference} onValueChange={handleLocaleChange}>

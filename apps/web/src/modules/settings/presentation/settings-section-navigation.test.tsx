@@ -56,8 +56,8 @@ describe("SettingsScreen section navigation", () => {
       ["settings-icon-sources", "图标来源"],
       ["settings-uploaded-icons", "自定义图标"],
       ["settings-ai-recognition", "AI 识别"],
-      ["settings-budget", "预算设置"],
       ["settings-data-config", "数据配置"],
+      ["settings-budget", "预算设置"],
       ["settings-cloud-backup", "云端备份"],
       ["settings-exchange", "汇率设置"],
       ["settings-calendar-feed", "日历订阅"],
@@ -105,10 +105,10 @@ describe("SettingsScreen section navigation", () => {
     expect(mobileHeader).toHaveClass(
       "sticky",
       "top-[calc(var(--settings-mobile-header-offset)+var(--settings-mobile-sticky-gap))]",
-      "rounded-xl",
+      "rounded-lg",
       "border",
       "bg-background/95",
-      "p-4",
+      "p-3",
       "lg:hidden",
     );
     expect(mobileHeader).not.toHaveClass("-mx-4", "border-b", "top-[calc(8.25rem+env(safe-area-inset-top))]");
@@ -122,15 +122,19 @@ describe("SettingsScreen section navigation", () => {
     expect(within(mobileHeader).getByTestId("settings-mobile-page-subtitle")).toHaveTextContent("管理您的账户、显示和通知设置");
     const sectionNav = within(desktopNav);
 
+    ["账号与安全", "外观与图标", "数据与智能", "分享与集成", "区域与通知"].forEach((label) => {
+      expect(sectionNav.getByText(label)).toBeInTheDocument();
+    });
+
     sections.forEach(([id, label]) => {
       expect(container.querySelector(`section#${id}`)).toHaveClass(
         "min-w-0",
         "w-full",
-        "rounded-xl",
+        "rounded-lg",
         "border",
         "bg-card",
         "p-4",
-        "sm:p-6",
+        "sm:p-5",
         "scroll-mt-(--settings-section-scroll-offset)",
       );
       expect(container.querySelector(`section#${id}`)).not.toHaveClass("lg:scroll-mt-24");
@@ -156,10 +160,10 @@ describe("SettingsScreen section navigation", () => {
       "max-h-(--app-viewport-height)",
       "z-80",
       "rounded-r-xl",
-      "bg-card/95",
+      "bg-card",
     );
     const notificationLink = within(drawer).getByRole("link", { name: "通知设置" });
-    expect(notificationLink).toHaveClass("rounded-lg", "px-3", "py-2", "text-sm");
+    expect(notificationLink).toHaveClass("rounded-md", "px-3", "py-2", "text-sm");
     expect(notificationLink).not.toHaveClass("h5-mobile-option-item");
     expect(notificationLink).not.toHaveClass("border", "bg-secondary/30");
     expect(drawer.querySelector(".overflow-x-auto")).toBeNull();

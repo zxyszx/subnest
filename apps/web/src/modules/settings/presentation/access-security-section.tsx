@@ -48,7 +48,7 @@ export function AccessSecuritySection({ id, className, controller }: AccessSecur
   return (
     <section id={id} className={getSettingsSectionClassName(className)}>
       <SettingsSectionHeader
-        className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         icon={<ShieldCheck className="mt-0.5 h-5 w-5 text-primary" aria-hidden="true" />}
         title={t("settings.accessSecurity")}
         help={t("settings.turnstileHelp")}

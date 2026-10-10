@@ -793,4 +793,9 @@ export const messages = [
   msg({ id: "settings.testChannel.pushplus", message: "测试 {channel} 通知" }),
   msg({ id: "settings.testing", message: "测试中..." }),
   msg({ id: "settings.accountSecurityDemoDisabled", message: "演示模式仅供浏览，不能修改身份验证器或通行密钥。" }),
+  msg({ id: "settings.sectionGroup.account", message: "账号与安全" }),
+  msg({ id: "settings.sectionGroup.appearance", message: "外观与图标" }),
+  msg({ id: "settings.sectionGroup.data", message: "数据与智能" }),
+  msg({ id: "settings.sectionGroup.automation", message: "区域与通知" }),
+  msg({ id: "settings.sectionGroup.sharing", message: "分享与集成" }),
 ] as const;

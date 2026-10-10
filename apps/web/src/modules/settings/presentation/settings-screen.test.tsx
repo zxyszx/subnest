@@ -736,13 +736,13 @@ describe("SettingsScreen SMTP email settings", () => {
     const pageLayout = screen.getByTestId("settings-page-layout");
     const content = screen.getByTestId("settings-section-content");
     expect(screen.getByTestId("settings-main")).toHaveClass("flex-1");
-    expect(pageLayout).toHaveClass("grid", "min-w-0", "gap-4", "sm:gap-6", "lg:gap-8", "lg:grid-cols-[14rem_minmax(0,1fr)]");
+    expect(pageLayout).toHaveClass("grid", "min-w-0", "gap-4", "lg:gap-6", "lg:grid-cols-[13rem_minmax(0,1fr)]");
     expect(pageLayout.className).toContain("[--settings-mobile-header-offset:calc(8.25rem+env(safe-area-inset-top))]");
     expect(pageLayout.className).toContain("[--settings-desktop-sticky-top:7rem]");
     expect(pageLayout.className).toContain("[--settings-desktop-section-scroll-offset:var(--settings-desktop-sticky-top)]");
-    expect(pageLayout.className).toContain("[--settings-section-scroll-offset:calc(var(--settings-mobile-header-offset)+var(--settings-mobile-sticky-gap)+var(--settings-mobile-header-height)+0.75rem)]");
+    expect(pageLayout.className).toContain("[--settings-section-scroll-offset:calc(var(--settings-mobile-header-offset)+var(--settings-mobile-sticky-gap)+var(--settings-mobile-header-height)+0.5rem)]");
     expect(pageLayout.className).toContain("lg:[--settings-section-scroll-offset:var(--settings-desktop-section-scroll-offset)]");
-    expect(content).toHaveClass("grid", "min-w-0", "gap-4", "sm:gap-6", "lg:gap-8");
+    expect(content).toHaveClass("grid", "min-w-0", "gap-4", "lg:gap-5");
     expect(content).not.toHaveClass("lg:overflow-y-auto");
     expect(content.querySelector(".-mx-4")).toBeNull();
     expect(content.querySelector(".overflow-x-auto")).toBeNull();
@@ -752,11 +752,11 @@ describe("SettingsScreen SMTP email settings", () => {
       expect(section).toHaveClass(
         "min-w-0",
         "w-full",
-        "rounded-xl",
+        "rounded-lg",
         "border",
         "bg-card",
         "p-4",
-        "sm:p-6",
+        "sm:p-5",
         "scroll-mt-(--settings-section-scroll-offset)",
       );
       expect(section).not.toHaveClass("lg:scroll-mt-24");

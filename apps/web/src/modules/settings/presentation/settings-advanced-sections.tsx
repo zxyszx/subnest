@@ -204,47 +204,12 @@ export function SettingsAdvancedSections({
         disabled={externalIntegrationsDisabled}
       />
 
-      <section id="settings-budget" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.budget")}</h2>
-        <div className="grid gap-4">
-          <FormField
-            id="monthlyBudget"
-            label={t("settings.monthlyBudget")}
-            description={t("settings.monthlyBudgetHelp")}
-            error={monthlyBudgetError}
-          >
-            {(field) => (
-              <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-center min-[380px]:gap-3">
-                <NumericInput
-                  id={field.id}
-                  name={field.id}
-                  allowNegative={false}
-                  allowedDecimalSeparators={[".", "。"]}
-                  inputMode="decimal"
-                  enterKeyHint="done"
-                  value={monthlyBudgetInput}
-                  onRawValueChange={handleMonthlyBudgetInputChange}
-                  className="w-full border-border bg-secondary min-[380px]:w-[min(12.5rem,100%)]"
-                  placeholder="1500"
-                  thousandSeparator
-                  aria-invalid={field.invalid}
-                  aria-describedby={field.describedBy}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {getCurrencySymbol(settings.defaultCurrency)} {settings.defaultCurrency} {t("settings.perMonth")}
-                </span>
-              </div>
-            )}
-          </FormField>
-        </div>
-      </section>
-
       <section id="settings-data-config" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">{t("settings.dataConfig")}</h2>
         </div>
-        <p className="mb-6 text-sm text-muted-foreground">{t("settings.dataConfigDescription")}</p>
+        <p className="mb-4 text-sm text-muted-foreground">{t("settings.dataConfigDescription")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <ConfigManagerDialog
             title={t("settings.platformManager")}
@@ -303,6 +268,39 @@ export function SettingsAdvancedSections({
             searchEmptyMessage={t("settings.currencyEmpty")}
           />
         </div>
+      </section>
+
+      <section id="settings-budget" className={SETTINGS_SECTION_FRAME_CLASS}>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.budget")}</h2>
+        <FormField
+          id="monthlyBudget"
+          label={t("settings.monthlyBudget")}
+          description={t("settings.monthlyBudgetHelp")}
+          error={monthlyBudgetError}
+        >
+          {(field) => (
+            <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-center min-[380px]:gap-3">
+              <NumericInput
+                id={field.id}
+                name={field.id}
+                allowNegative={false}
+                allowedDecimalSeparators={[".", "。"]}
+                inputMode="decimal"
+                enterKeyHint="done"
+                value={monthlyBudgetInput}
+                onRawValueChange={handleMonthlyBudgetInputChange}
+                className="w-full border-border bg-secondary min-[380px]:w-[min(12.5rem,100%)]"
+                placeholder="1500"
+                thousandSeparator
+                aria-invalid={field.invalid}
+                aria-describedby={field.describedBy}
+              />
+              <span className="text-sm text-muted-foreground">
+                {getCurrencySymbol(settings.defaultCurrency)} {settings.defaultCurrency} {t("settings.perMonth")}
+              </span>
+            </div>
+          )}
+        </FormField>
       </section>
 
       <CloudBackupSection
@@ -373,7 +371,7 @@ export function SettingsAdvancedSections({
       ) : null}
 
       <section id="settings-timezone" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.timezone")}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.timezone")}</h2>
         <div className="grid gap-2">
           <Label htmlFor="timezone">{t("settings.timezoneSelect")}</Label>
           <SearchableSelect
@@ -392,9 +390,9 @@ export function SettingsAdvancedSections({
       </section>
 
       <section id="settings-notifications" className={SETTINGS_SECTION_FRAME_CLASS}>
-        <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.notifications")}</h2>
-        <div className="grid gap-6">
-          <div className="grid gap-6">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.notifications")}</h2>
+        <div className="grid gap-5">
+          <div className="grid gap-4">
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2 sm:gap-x-6">
               <FormField
                 id="notificationTimeLocal"
@@ -439,7 +437,7 @@ export function SettingsAdvancedSections({
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,260px)_1fr]">
             <NotificationChannelList
               settings={settings}
               activeChannel={activeNotificationChannel}

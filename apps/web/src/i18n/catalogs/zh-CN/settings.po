@@ -1287,6 +1287,11 @@ msgid "settings.builtInIconIndexLastCheckError"
 msgstr "最近检查失败：{message}"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:800
+msgid "settings.sectionGroup.sharing"
+msgstr "分享与集成"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:562
 msgid "settings.categoryManager"
 msgstr "分类管理"
@@ -1475,6 +1480,11 @@ msgstr "加载更多"
 #: src/i18n/descriptors/settings.ts:287
 msgid "aiRecognition.thinking.gemini.dynamic"
 msgstr "动态预算"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:799
+msgid "settings.sectionGroup.automation"
+msgstr "区域与通知"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:352
@@ -1770,6 +1780,11 @@ msgstr "复制失败"
 #: src/i18n/descriptors/settings.ts:103
 msgid "settings.mfaCopyRecovery"
 msgstr "复制恢复码"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:797
+msgid "settings.sectionGroup.appearance"
+msgstr "外观与图标"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:107
@@ -2290,6 +2305,11 @@ msgstr "放弃并离开"
 #: src/i18n/descriptors/settings.ts:621
 msgid "settings.discardChanges"
 msgstr "放弃更改"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:798
+msgid "settings.sectionGroup.data"
+msgstr "数据与智能"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:592
@@ -3570,6 +3590,11 @@ msgstr "请至少保留 1 个启用货币，否则无法选择统计货币/新�
 #: src/i18n/descriptors/settings.ts:132
 msgid "settings.builtInIconIndexBadge.loading"
 msgstr "读取中"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:796
+msgid "settings.sectionGroup.account"
+msgstr "账号与安全"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:92

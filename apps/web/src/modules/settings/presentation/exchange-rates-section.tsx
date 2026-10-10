@@ -118,7 +118,7 @@ export function ExchangeRatesSection({
 
   return (
     <section id={id} className={getSettingsSectionClassName(className)}>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">{t("settings.exchange")}</h2>
@@ -143,7 +143,7 @@ export function ExchangeRatesSection({
         </div>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid gap-4">
         <div className="rounded-lg border border-border bg-secondary/50 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex-1">

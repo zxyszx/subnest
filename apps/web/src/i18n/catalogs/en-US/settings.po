@@ -1287,6 +1287,11 @@ msgid "settings.builtInIconIndexLastCheckError"
 msgstr "Recent check failed: {message}"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:800
+msgid "settings.sectionGroup.sharing"
+msgstr "Sharing & integrations"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:562
 msgid "settings.categoryManager"
 msgstr "Categories"
@@ -1475,6 +1480,11 @@ msgstr "Load more"
 #: src/i18n/descriptors/settings.ts:287
 msgid "aiRecognition.thinking.gemini.dynamic"
 msgstr "Dynamic budget"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:799
+msgid "settings.sectionGroup.automation"
+msgstr "Region & notifications"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:352
@@ -1770,6 +1780,11 @@ msgstr "Copy failed"
 #: src/i18n/descriptors/settings.ts:103
 msgid "settings.mfaCopyRecovery"
 msgstr "Copy recovery codes"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:797
+msgid "settings.sectionGroup.appearance"
+msgstr "Appearance & icons"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:107
@@ -2290,6 +2305,11 @@ msgstr "Discard and leave"
 #: src/i18n/descriptors/settings.ts:621
 msgid "settings.discardChanges"
 msgstr "Discard changes"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:798
+msgid "settings.sectionGroup.data"
+msgstr "Data & intelligence"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:592
@@ -3570,6 +3590,11 @@ msgstr "Keep at least 1 enabled currency, otherwise reporting and new subscripti
 #: src/i18n/descriptors/settings.ts:132
 msgid "settings.builtInIconIndexBadge.loading"
 msgstr "Loading"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/settings.ts:796
+msgid "settings.sectionGroup.account"
+msgstr "Account & security"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/settings.ts:92

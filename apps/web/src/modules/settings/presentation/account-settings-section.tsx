@@ -95,7 +95,7 @@ export function AccountSettingsSection({
   return (
     <>
       <section id={id} className={getSettingsSectionClassName(className)}>
-        <h2 className="mb-6 text-lg font-semibold text-foreground">{t("settings.account")}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.account")}</h2>
         <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2 sm:gap-x-6">
           <FormField
             id="username"
@@ -172,7 +172,7 @@ export function AccountSettingsSection({
             )}
           </FormField>
         </FormFieldRow>
-        <div className="mt-6 grid gap-4">
+        <div className="mt-4 grid gap-3">
           {accountSecurityDemoDisabled ? (
             <p className="text-xs leading-5 text-muted-foreground">
               {t("settings.accountSecurityDemoDisabled")}
