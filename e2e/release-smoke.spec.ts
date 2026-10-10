@@ -72,6 +72,7 @@ test("general inbox links require folders and provide seat-scoped member links",
   await view.screenshot({ path: testInfo.outputPath("seat-inbox-links-mobile.png") });
   await view.getByRole("button", { name: "Close", exact: true }).click();
   enabled = false;
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();
   await expect(page.getByRole("button", { name: "查看链接", exact: true })).toBeDisabled();
 });

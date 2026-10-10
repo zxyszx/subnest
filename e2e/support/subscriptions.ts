@@ -27,9 +27,14 @@ export async function openAddSubscriptionDialog(page: Page) {
 export async function openSubscriptionEditDialog(page: Page, subscriptionName: string) {
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
-  const mobileExpand = card.getByRole("button", { name: "展开全部信息" });
-  if (await mobileExpand.isVisible().catch(() => false)) await mobileExpand.click();
-  await card.getByRole("button", { name: "更多操作" }).click();
+  const mobileExpand = card.getByTestId("subscription-card-mobile-expand");
+  if (await mobileExpand.isVisible().catch(() => false)) {
+    await mobileExpand.click();
+    await expect(mobileExpand).toHaveAttribute("aria-expanded", "true");
+  }
+  const moreActions = card.getByRole("button", { name: "更多操作" });
+  await expect(moreActions).toBeVisible();
+  await moreActions.click();
   const editAction = page
     .getByRole("menuitem", { name: "编辑" })
     .or(page.getByText("编辑", { exact: true }))

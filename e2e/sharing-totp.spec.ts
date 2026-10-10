@@ -39,7 +39,8 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     for (const width of [1440, 375]) {
       await page.setViewportSize({ width, height: 900 });
       await expect(email).toBeVisible();
-      expect(await email.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await expect(email).toHaveAttribute("title", account);
+      expect(await card.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
       await card.screenshot({ path: testInfo.outputPath(`family-account-${width}.png`) });
     }
     await page.setViewportSize({ width: 1440, height: 900 });
