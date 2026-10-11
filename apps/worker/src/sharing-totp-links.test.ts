@@ -42,11 +42,10 @@ describe("family 2FA scopes",()=> {
   expect(links.every(link=>link.expiresAt===null)).toBe(true);
   expect(JSON.stringify(links)).not.toContain("private-key");for(const link of links) expect(await resolvePublicSharingTotp(env,token(link))).toMatchObject({id:"otp"});
  });
- it("returns credentials only for a seat-scoped link without rotating its token",async()=>{
+ it("returns account credentials for public and seat-scoped links without rotating their tokens",async()=>{
   const {env,database}=fixture();database.exec("UPDATE subscriptions SET sharing_encrypted_credentials='encrypted:seat-password' WHERE id='sub'");
   const {links}=await generate(env);const general=links.find(link=>!link.seatId)!;const seatLink=links.find(link=>link.seatId==="seat1")!;
-  expect(await resolvePublicSharingTotpDetails(env,token(general))).toEqual(expect.objectContaining({otp:expect.objectContaining({id:"otp"})}));
-  expect(await resolvePublicSharingTotpDetails(env,token(general))).not.toHaveProperty("password");
+  expect(await resolvePublicSharingTotpDetails(env,token(general))).toEqual(expect.objectContaining({otp:expect.objectContaining({id:"otp"}),platformName:"PrimeVideo",accountNumber:3,password:"seat-password"}));
   expect(await resolvePublicSharingTotpDetails(env,token(seatLink))).toEqual(expect.objectContaining({platformName:"PrimeVideo",accountNumber:3,password:"seat-password",seat:{number:1,memberName:"Alice",expiresAt:"2099-01-01"}}));
   expect((await sharingTotpLinks(request(),env,"account")).status).toBe(200);
   expect(await resolvePublicSharingTotp(env,token(seatLink))).toMatchObject({id:"otp"});

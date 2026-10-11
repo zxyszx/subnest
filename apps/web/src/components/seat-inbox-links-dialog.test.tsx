@@ -75,7 +75,7 @@ describe("SeatInboxLinksDialog", () => {
   it("does not offer an expired link for copying", async () => {
     const user = userEvent.setup();
     renderDialog([{ ...link, expiresAt: "2020-01-01T00:00:00Z" }]);
-    expect(await screen.findByText("链接不可用")).toBeInTheDocument();
+    expect((await screen.findAllByText("链接不可用")).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();
     await openFirstLinkMenu(user);
     expect(screen.getByRole("menuitem", { name: "重置" })).toBeEnabled();
@@ -90,7 +90,7 @@ describe("SeatInboxLinksDialog", () => {
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "确认" }));
     await waitFor(() => expect(mocks.changed).toHaveBeenCalled());
     expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "生成链接" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "生成链接" })).toHaveLength(4);
   });
   it("binds the membership entry to its account without loading other accounts", async () => {
     render(<SeatInboxLinksDialog boundAccount={account} mailbox={{ id: "mailbox", address: "shared@example.test" }} links={[]} onClose={vi.fn()} onChanged={mocks.changed} />);

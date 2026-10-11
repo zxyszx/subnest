@@ -120,7 +120,7 @@ export async function readPublicOnlineTotp(request: Request, env: Env, shareKey:
     serviceName: row.service_name,
     accountNumber: familyShare?.accountNumber || row.account_number,
     account: row.account,
-    logo: familyShare?.logo === undefined ? row.logo : familyShare.logo,
+    logo: familyShare?.logo || row.logo,
     code, validUntil,
     ...(familyShare?.password === undefined ? {} : { password: familyShare.password }),
     ...(familyShare?.additionalCredential === undefined ? {} : { additionalCredential: familyShare.additionalCredential }),

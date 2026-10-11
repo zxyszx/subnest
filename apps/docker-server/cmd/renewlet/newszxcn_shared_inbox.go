@@ -287,6 +287,7 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 		if suffix == "/messages" && record.GetString("seatId") != "" {
 			if object, ok := payload.(map[string]any); ok {
 				object["folderIds"] = record.GetStringSlice("folderIds")
+				object["folderNames"] = sharedInboxFolderNames(app, record)
 				seat, seatErr := findOwnedSharingSeat(app, record.GetString("user"), record.GetString("seatId"))
 				if seatErr != nil {
 					return e.NotFoundError("车位分享已关闭", seatErr)
@@ -321,6 +322,7 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 		if suffix == "/messages" && record.GetString("seatId") == "" {
 			if object, ok := payload.(map[string]any); ok {
 				object["folderIds"] = record.GetStringSlice("folderIds")
+				object["folderNames"] = sharedInboxFolderNames(app, record)
 			}
 		}
 		return apiSuccessJSON(e, http.StatusOK, payload)
@@ -329,6 +331,28 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 	e.Response.WriteHeader(http.StatusOK)
 	_, err = e.Response.Write(raw)
 	return err
+}
+
+func sharedInboxFolderNames(app core.App, record *core.Record) map[string]string {
+	names := map[string]string{}
+	selected := map[string]bool{}
+	for _, id := range record.GetStringSlice("folderIds") {
+		selected[id] = true
+	}
+	folders, err := fetchNewSzxcn[newszxcnFolder](app, record.GetString("user"), "/api/open/v1/subnest/mailboxes/"+url.PathEscape(record.GetString("mailboxId"))+"/folders")
+	if err != nil {
+		return names
+	}
+	for _, folder := range folders {
+		if selected[folder.ID] {
+			name := strings.TrimSpace(folder.Name)
+			if name == "" {
+				name = folder.ID
+			}
+			names[folder.ID] = name
+		}
+	}
+	return names
 }
 
 func sharedInboxLinkFromRecord(app core.App, request *http.Request, record *core.Record) (sharedInboxLinkResponse, error) {

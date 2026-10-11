@@ -64,11 +64,15 @@ test("general inbox links require folders and provide seat-scoped member links",
   await expect(view.locator("input").first()).toHaveValue(links[0]!.shortUrl);
   await expect(view.getByRole("button", { name: "生成链接", exact: true })).toHaveCount(2);
   await view.getByRole("button", { name: "生成链接", exact: true }).first().click();
-  await expect(view.getByRole("button", { name: "复制链接", exact: true })).toHaveCount(1);
+  await expect(view.locator("[data-seat-links-table]").getByRole("button", { name: "复制链接", exact: true })).toBeVisible();
   expect(links.find((link) => link.seatId === "seat-1")).toMatchObject({ folderIds: ["inbox"], windowMinutes: 30 });
   await view.screenshot({ path: testInfo.outputPath("seat-inbox-links-desktop.png") });
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await view.evaluate((element) => element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+  const seatScrollArea = view.locator("[data-seat-links-scroll]");
+  expect(await seatScrollArea.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await expect(seatScrollArea).toHaveCSS("overflow-y", "auto");
+  await seatScrollArea.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  expect(await seatScrollArea.evaluate((element) => element.scrollHeight <= element.clientHeight || element.scrollTop > 0)).toBe(true);
   await view.screenshot({ path: testInfo.outputPath("seat-inbox-links-mobile.png") });
   await view.getByRole("button", { name: "Close", exact: true }).click();
   enabled = false;

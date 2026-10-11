@@ -140,9 +140,6 @@ func resolvePublicSharingTotpDetails(app core.App, token string) (*publicSharing
 	}
 	details := &publicSharingTotpDetails{OTP: otp}
 	seatID := link.GetString("seatId")
-	if seatID == "" {
-		return details, nil
-	}
 	account, err := findOwnedSharingAccount(app, link.GetString("user"), link.GetString("accountId"))
 	if err != nil {
 		return nil, err
@@ -163,6 +160,9 @@ func resolvePublicSharingTotpDetails(app core.App, token string) (*publicSharing
 				details.AdditionalCredential = credentials.AdditionalCredential
 			}
 		}
+	}
+	if seatID == "" {
+		return details, nil
 	}
 	seat, err := findOwnedSharingSeat(app, link.GetString("user"), seatID)
 	if err != nil || seat.GetString("sharingAccount") != account.Id {

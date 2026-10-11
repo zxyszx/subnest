@@ -141,6 +141,16 @@ async function sharedInboxSeatDetails(env: Env, row: SharedLinkRow) {
   };
 }
 
+async function sharedInboxFolderNames(env: Env, row: SharedLinkRow): Promise<Record<string, string>> {
+  const selected = new Set<string>(JSON.parse(row.folder_ids_json));
+  try {
+    const folders = await upstreamJson<{items?:Array<{id:string;name?:string}>}>(env,row.user_id,`/api/open/v1/subnest/mailboxes/${encodeURIComponent(row.mailbox_id)}/folders`);
+    return Object.fromEntries((folders.items ?? []).filter((folder)=>selected.has(folder.id)).map((folder)=>[folder.id,folder.name?.trim() || folder.id]));
+  } catch {
+    return {};
+  }
+}
+
 export async function publicSharedInboxMessagesProxy(request: Request, env: Env, shortKey: string, suffix = ""): Promise<Response> {
   const row=await publicLink(env,shortKey);
   const path=`/api/open/v1/subnest/grants/${encodeURIComponent(row.grant_id)}${suffix}`;
@@ -149,8 +159,9 @@ export async function publicSharedInboxMessagesProxy(request: Request, env: Env,
   if (contentType.includes("json")) {
     const payload=await upstreamResponse.json();
     const seatDetails=suffix==="/messages" ? await sharedInboxSeatDetails(env,row) : null;
+    const folderNames=suffix==="/messages" ? await sharedInboxFolderNames(env,row) : {};
     const data=suffix==="/messages" && payload && typeof payload==="object" && !Array.isArray(payload)
-      ? {...payload,folderIds:JSON.parse(row.folder_ids_json),...(seatDetails ?? {})}
+      ? {...payload,folderIds:JSON.parse(row.folder_ids_json),folderNames,...(seatDetails ?? {})}
       : payload;
     return successJson(data,{headers:{"cache-control":"no-store"}});
   }

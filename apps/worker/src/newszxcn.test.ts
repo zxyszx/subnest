@@ -56,6 +56,7 @@ describe("seat inbox link authorization", () => {
     let grants = 0;
     mocks.upstream.mockImplementation(async (url: string, init?: RequestInit) => {
       if (url.endsWith("/mailboxes")) return Response.json({ items: [{ id: "mailbox", address: "shared@example.test" }] });
+      if (url.endsWith("/mailboxes/mailbox/folders")) return Response.json({ items: [{ id: "inbox", name: "Netflix" }] });
       if (init?.method === "POST") return Response.json({ id: `grant-${++grants}` });
       return Response.json({ messages: [] });
     });
@@ -128,7 +129,9 @@ describe("seat inbox link authorization", () => {
     const { database, env } = fixture();
     database.exec("UPDATE subscriptions SET sharing_encrypted_credentials='encrypted:seat-password',logo='prime.svg' WHERE id='subscription'; UPDATE sharing_seats SET expires_at='2027-10-03' WHERE id='seat1'");
     const { link } = await readSuccessData<LinkPayload>(await createSharedInboxLink(request("seat1"), env));
-    mocks.upstream.mockResolvedValue(Response.json({ items: [], mailboxAddress: "shared@example.test", windowMinutes: 30 }));
+    mocks.upstream.mockImplementation(async (url: string) => url.endsWith("/mailboxes/mailbox/folders")
+      ? Response.json({ items: [{ id: "inbox", name: "Netflix" }] })
+      : Response.json({ items: [], mailboxAddress: "shared@example.test", windowMinutes: 30 }));
     const key = link.shortUrl.split("/").at(-1)!;
     const result = await readSuccessData<Record<string, unknown>>(await publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key, "/messages"));
     expect(result).toEqual(expect.objectContaining({
@@ -138,6 +141,7 @@ describe("seat inbox link authorization", () => {
       loginAccount: "shared@example.test",
       password: "seat-password",
       folderIds: ["inbox"],
+      folderNames: { inbox: "Netflix" },
       seat: { number: 1, memberName: "Alice", expiresAt: "2027-10-03" },
     }));
     expect(link.shortUrl.endsWith(key)).toBe(true);

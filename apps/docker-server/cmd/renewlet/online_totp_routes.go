@@ -293,7 +293,9 @@ func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
 		if family.AccountNumber > 0 {
 			payload.AccountNumber = family.AccountNumber
 		}
-		payload.Logo = family.Logo
+		if family.Logo != nil && strings.TrimSpace(*family.Logo) != "" {
+			payload.Logo = family.Logo
+		}
 	}
 	return apiSuccessJSON(e, http.StatusOK, payload)
 }

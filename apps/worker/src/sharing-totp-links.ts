@@ -112,19 +112,19 @@ export async function resolvePublicSharingTotpDetails(env:Env,token:string):Prom
  if(!link || !await valid(env,link)) return null;
  const otp=await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE id=? AND user_id=? AND enabled=1").bind(link.totp_id,link.user_id).first<OnlineTotpRow>();
  if(!otp) return null;
- if(!link.seat_id) return {otp};
  const row=await env.DB.prepare(`SELECT subscription.sharing_encrypted_credentials AS credential,
      COALESCE(NULLIF(subscription.platform_name,''),subscription.name) AS platform_name,
-     subscription.account_number, subscription.logo,
-     seat.seat_number, seat.member_name, seat.expires_at
+     subscription.account_number, subscription.logo
    FROM sharing_accounts account
    JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
-   JOIN sharing_seats seat ON seat.sharing_account_id=account.id AND seat.user_id=account.user_id
-   WHERE account.id=? AND account.user_id=? AND seat.id=? LIMIT 1`).bind(link.account_id,link.user_id,link.seat_id).first<{credential:string;platform_name:string;account_number:number;logo:string|null;seat_number:number;member_name:string;expires_at:string|null}>();
+   WHERE account.id=? AND account.user_id=? LIMIT 1`).bind(link.account_id,link.user_id).first<{credential:string;platform_name:string;account_number:number;logo:string|null}>();
  if(!row) return {otp};
  const credentials=row.credential ? await decryptSharingCredential(env,row.credential).then(decodeSharingCredentialBundle).catch(()=>undefined) : undefined;
- return {otp,platformName:row.platform_name,accountNumber:row.account_number,logo:row.logo,
+ const result={otp,platformName:row.platform_name,accountNumber:row.account_number,logo:row.logo,
   ...(credentials?.password ? {password:credentials.password} : {}),
-  ...(credentials?.additionalCredential ? {additionalCredential:credentials.additionalCredential} : {}),
-  seat:{number:row.seat_number,memberName:row.member_name,expiresAt:row.expires_at}};
+  ...(credentials?.additionalCredential ? {additionalCredential:credentials.additionalCredential} : {})};
+ if(!link.seat_id) return result;
+ const seat=await env.DB.prepare(`SELECT seat_number, member_name, expires_at FROM sharing_seats
+   WHERE id=? AND user_id=? AND sharing_account_id=? LIMIT 1`).bind(link.seat_id,link.user_id,link.account_id).first<{seat_number:number;member_name:string;expires_at:string|null}>();
+ return seat ? {...result,seat:{number:seat.seat_number,memberName:seat.member_name,expiresAt:seat.expires_at}} : result;
 }
