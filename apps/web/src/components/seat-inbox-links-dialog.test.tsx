@@ -19,6 +19,9 @@ const link: SharedInboxLink = { id: "link1", seatId: "seat1", shortUrl: "https:/
 function renderDialog(links: SharedInboxLink[] = []) {
   return render(<SeatInboxLinksDialog mailbox={{ id: "mailbox", address: "shared@example.test" }} links={links} onClose={vi.fn()} onChanged={mocks.changed} />);
 }
+async function openFirstLinkMenu(user: ReturnType<typeof userEvent.setup>) {
+  await user.click((await screen.findAllByRole("button", { name: "更多链接操作" }))[0]!);
+}
 describe("SeatInboxLinksDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,7 +64,8 @@ describe("SeatInboxLinksDialog", () => {
   it("confirms a single-seat reset and preserves its scope", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }]);
-    await user.click((await screen.findAllByRole("button", { name: "重置" }))[0]!);
+    await openFirstLinkMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "重置" }));
     expect(mocks.revoke).not.toHaveBeenCalled();
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "确认" }));
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("link1"));
@@ -69,17 +73,20 @@ describe("SeatInboxLinksDialog", () => {
     expect(mocks.create).toHaveBeenCalledWith({ seatId: "seat1", mailboxId: "mailbox", folderIds: ["private-folder"], windowMinutes: 60 });
   });
   it("does not offer an expired link for copying", async () => {
+    const user = userEvent.setup();
     renderDialog([{ ...link, expiresAt: "2020-01-01T00:00:00Z" }]);
     expect(await screen.findByText("链接不可用")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "重置" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "撤销" })).toBeEnabled();
+    await openFirstLinkMenu(user);
+    expect(screen.getByRole("menuitem", { name: "重置" })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: "撤销" })).toBeEnabled();
   });
   it("refreshes and removes the revoked link if replacement creation fails", async () => {
     const user = userEvent.setup();
     mocks.create.mockRejectedValue(new Error("creation failed"));
     renderDialog([link]);
-    await user.click(await screen.findByRole("button", { name: "重置" }));
+    await openFirstLinkMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "重置" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "确认" }));
     await waitFor(() => expect(mocks.changed).toHaveBeenCalled());
     expect(screen.queryByRole("button", { name: "复制链接" })).not.toBeInTheDocument();

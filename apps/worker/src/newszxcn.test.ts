@@ -10,6 +10,7 @@ import { updateSharingSeat } from "./sharing";
 const mocks = vi.hoisted(() => ({ upstream: vi.fn(), auth: vi.fn() }));
 vi.mock("./auth", () => ({ requireAdmin: mocks.auth, requireAuth: mocks.auth }));
 vi.mock("./newszxcn-crypto", () => ({ encryptNewSzxcn: async (_env: unknown, value: string) => `encrypted:${value}`, decryptNewSzxcn: async (_env: unknown, value: string) => value.replace(/^encrypted:/, "") }));
+vi.mock("./sharing-credential", () => ({ decryptSharingCredential: async (_env: unknown, value: string) => value.replace(/^encrypted:/, "") }));
 vi.mock("./upstream-http", () => ({ sendUpstreamRequest: mocks.upstream }));
 const databases: DatabaseSync[] = [];
 afterEach(() => { for (const database of databases.splice(0)) database.close(); });
@@ -119,6 +120,23 @@ describe("seat inbox link authorization", () => {
     const key = link.shortUrl.split("/").at(-1)!;
     await expect(publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key)).rejects.toThrow("车位不存在");
     expect(mocks.upstream).not.toHaveBeenCalled();
+  });
+  it("adds credentials and folder scope to an existing seat link without replacing the key", async () => {
+    const { database, env } = fixture();
+    database.exec("UPDATE subscriptions SET sharing_encrypted_credentials='encrypted:seat-password',logo='prime.svg' WHERE id='subscription'; UPDATE sharing_seats SET expires_at='2027-10-03' WHERE id='seat1'");
+    const { link } = await readSuccessData<LinkPayload>(await createSharedInboxLink(request("seat1"), env));
+    mocks.upstream.mockResolvedValue(Response.json({ items: [], mailboxAddress: "shared@example.test", windowMinutes: 30 }));
+    const key = link.shortUrl.split("/").at(-1)!;
+    const result = await readSuccessData<Record<string, unknown>>(await publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key, "/messages"));
+    expect(result).toEqual(expect.objectContaining({
+      platformName: "Netflix",
+      logo: "prime.svg",
+      loginAccount: "shared@example.test",
+      password: "seat-password",
+      folderIds: ["inbox"],
+      seat: { number: 1, memberName: "Alice", expiresAt: "2027-10-03" },
+    }));
+    expect(link.shortUrl.endsWith(key)).toBe(true);
   });
   it("vacating one seat revokes its grant without touching another seat or generic sharing", async () => {
     const { database, env } = fixture();

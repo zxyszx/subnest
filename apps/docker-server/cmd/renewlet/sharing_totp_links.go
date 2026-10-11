@@ -119,6 +119,59 @@ func sharingTotpLinkValid(app core.App, link *core.Record) bool {
 	return err == nil && hash == link.GetString("bindingHash")
 }
 
+type publicSharingTotpDetails struct {
+	OTP      *core.Record
+	Password *string
+	Seat     *onlineTotpPublicSeat
+}
+
+func resolvePublicSharingTotpDetails(app core.App, token string) (*publicSharingTotpDetails, error) {
+	link, err := app.FindFirstRecordByFilter("sharing_totp_links", "tokenHash={:hash}", dbx.Params{"hash": onlineTotpShareHash(token)})
+	if err != nil || !sharingTotpLinkValid(app, link) {
+		return nil, fmt.Errorf("sharing link unavailable")
+	}
+	otp, err := app.FindFirstRecordByFilter("online_totp_accounts", "id={:id} && user={:user} && enabled=true", dbx.Params{"id": link.GetString("totpId"), "user": link.GetString("user")})
+	if err != nil {
+		return nil, err
+	}
+	details := &publicSharingTotpDetails{OTP: otp}
+	seatID := link.GetString("seatId")
+	if seatID == "" {
+		return details, nil
+	}
+	account, err := findOwnedSharingAccount(app, link.GetString("user"), link.GetString("accountId"))
+	if err != nil {
+		return nil, err
+	}
+	subscription, err := app.FindRecordById("subscriptions", account.GetString("subscription"))
+	if err != nil || subscription.GetString("user") != link.GetString("user") {
+		return nil, fmt.Errorf("subscription unavailable")
+	}
+	if encrypted := strings.TrimSpace(subscription.GetString("sharingEncryptedCredentials")); encrypted != "" {
+		if password, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
+			details.Password = &password
+		}
+	}
+	seat, err := findOwnedSharingSeat(app, link.GetString("user"), seatID)
+	if err != nil || seat.GetString("sharingAccount") != account.Id {
+		return nil, fmt.Errorf("seat unavailable")
+	}
+	details.Seat = &onlineTotpPublicSeat{
+		Number:     seat.GetInt("seatNumber"),
+		MemberName: seat.GetString("memberName"),
+		ExpiresAt:  optionalSharingString(seat.GetString("expiresAt")),
+	}
+	return details, nil
+}
+
+func resolvePublicSharingTotp(app core.App, token string) (*core.Record, error) {
+	details, err := resolvePublicSharingTotpDetails(app, token)
+	if err != nil {
+		return nil, err
+	}
+	return details.OTP, nil
+}
+
 // A scope has its own token; rotating one never touches the TOTP account's original share key.
 func ensureFamilyTotpLink(app core.App, userID, accountID, seatID string, reset bool) error {
 	otp, hash, err := familyTotpBinding(app, userID, accountID, seatID)
@@ -252,12 +305,4 @@ func handleRevokeSharingTotpLink(app core.App, e *core.RequestEvent) error {
 		return e.InternalServerError("INTERNAL_ERROR", err)
 	}
 	return apiEmptySuccessJSON(e, http.StatusOK)
-}
-
-func resolvePublicSharingTotp(app core.App, token string) (*core.Record, error) {
-	link, err := app.FindFirstRecordByFilter("sharing_totp_links", "tokenHash={:hash}", dbx.Params{"hash": onlineTotpShareHash(token)})
-	if err != nil || !sharingTotpLinkValid(app, link) {
-		return nil, fmt.Errorf("link unavailable")
-	}
-	return app.FindRecordById("online_totp_accounts", link.GetString("totpId"))
 }

@@ -111,12 +111,15 @@ export async function deleteOnlineTotpAccount(request: Request, env: Env, id: st
 export async function readPublicOnlineTotp(request: Request, env: Env, shareKey: string): Promise<Response> {
   let row = await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE share_key_hash=? AND sharing_enabled=1 AND enabled=1 LIMIT 1")
     .bind(await sha256(shareKey)).first<OnlineTotpRow>();
-  if (!row) row = await (await import("./sharing-totp-links")).resolvePublicSharingTotp(env, shareKey);
+  const familyShare = row ? null : await (await import("./sharing-totp-links")).resolvePublicSharingTotpDetails(env, shareKey);
+  if (!row) row = familyShare?.otp ?? null;
   if (!row) throw new HttpError(404, "TOTP_SHARE_NOT_FOUND", "NOT_FOUND");
   const { code, validUntil } = await currentTotp(env, row.secret_ciphertext);
   return successJson(onlineTotpPublicPayloadSchema.parse({
     platformName: row.platform_name, serviceName: row.service_name, account: row.account,
     logo: row.logo, code, validUntil,
+    ...(familyShare?.password === undefined ? {} : { password: familyShare.password }),
+    ...(familyShare?.seat === undefined ? {} : { seat: familyShare.seat }),
   }), { headers: { "cache-control": "no-store" } });
 }
 

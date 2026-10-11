@@ -40,6 +40,12 @@ export const onlineTotpPublicPayloadSchema = z.object({
   platformName: z.string().min(1),
   serviceName: z.string(),
   account: z.string().min(1),
+  password: z.string().optional(),
+  seat: z.object({
+    number: z.number().int().positive(),
+    memberName: z.string().min(1),
+    expiresAt: z.string().nullable(),
+  }).strict().nullable().optional(),
   logo: z.string().nullable(),
   code: z.string().regex(/^\d{6}$/),
   validUntil: z.string().datetime(),

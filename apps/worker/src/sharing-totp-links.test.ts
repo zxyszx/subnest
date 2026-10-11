@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { sharingTotpLinks, revokeSharingTotpLink, resolvePublicSharingTotp, familyTotpProjectionStatements } from "./sharing-totp-links";
+import { sharingTotpLinks, revokeSharingTotpLink, resolvePublicSharingTotp, resolvePublicSharingTotpDetails, familyTotpProjectionStatements } from "./sharing-totp-links";
 import { readSuccessData } from "./api-test-helpers";
 import type { Env, SubscriptionRow } from "./types";
 import type { SharingTotpLink } from "@renewlet/shared/schemas/sharing";
@@ -9,6 +9,7 @@ import type { SharingTotpLink } from "@renewlet/shared/schemas/sharing";
 const auth = vi.hoisted(() => ({ userId: "owner" }));
 vi.mock("./auth", () => ({ requireAuth: async () => ({ user: { id: auth.userId } }) }));
 vi.mock("./online-totp", () => ({ encryptOnlineTotp: async (_env:unknown,value:string) => `encrypted:${value}`, decryptOnlineTotp: async (_env:unknown,value:string) => value.replace(/^encrypted:/, "") }));
+vi.mock("./sharing-credential", () => ({ decryptSharingCredential: async (_env:unknown,value:string) => value.replace(/^encrypted:/, "") }));
 const databases: DatabaseSync[]=[];
 afterEach(() => { for(const database of databases.splice(0)) database.close(); });
 
@@ -36,6 +37,15 @@ describe("family 2FA scopes",()=> {
   const {env}=fixture(); const {links}=await generate(env);expect(links).toHaveLength(3);expect(links.find(link=>!link.seatId)!.expiresAt).toBeNull();
   expect(links.every(link=>link.expiresAt===null)).toBe(true);
   expect(JSON.stringify(links)).not.toContain("private-key");for(const link of links) expect(await resolvePublicSharingTotp(env,token(link))).toMatchObject({id:"otp"});
+ });
+ it("returns credentials only for a seat-scoped link without rotating its token",async()=>{
+  const {env,database}=fixture();database.exec("UPDATE subscriptions SET sharing_encrypted_credentials='encrypted:seat-password' WHERE id='sub'");
+  const {links}=await generate(env);const general=links.find(link=>!link.seatId)!;const seatLink=links.find(link=>link.seatId==="seat1")!;
+  expect(await resolvePublicSharingTotpDetails(env,token(general))).toEqual(expect.objectContaining({otp:expect.objectContaining({id:"otp"})}));
+  expect(await resolvePublicSharingTotpDetails(env,token(general))).not.toHaveProperty("password");
+  expect(await resolvePublicSharingTotpDetails(env,token(seatLink))).toEqual(expect.objectContaining({password:"seat-password",seat:{number:1,memberName:"Alice",expiresAt:"2099-01-01"}}));
+  expect((await sharingTotpLinks(request(),env,"account")).status).toBe(200);
+  expect(await resolvePublicSharingTotp(env,token(seatLink))).toMatchObject({id:"otp"});
  });
  it("upgrades only live default grants without reviving revoked or expired grants",async()=>{
   const {env,database}=fixture();await generate(env);

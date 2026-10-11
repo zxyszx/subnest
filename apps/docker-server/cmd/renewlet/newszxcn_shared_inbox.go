@@ -284,6 +284,37 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 		if err := json.Unmarshal(raw, &payload); err != nil {
 			return apiErrorJSON(e, http.StatusBadGateway, "NEWSZXCN_INVALID_RESPONSE", "共享收件箱响应无效", nil)
 		}
+		if suffix == "/messages" && record.GetString("seatId") != "" {
+			if object, ok := payload.(map[string]any); ok {
+				object["folderIds"] = record.GetStringSlice("folderIds")
+				seat, seatErr := findOwnedSharingSeat(app, record.GetString("user"), record.GetString("seatId"))
+				if seatErr != nil {
+					return e.NotFoundError("车位分享已关闭", seatErr)
+				}
+				account, accountErr := findOwnedSharingAccount(app, record.GetString("user"), seat.GetString("sharingAccount"))
+				if accountErr != nil {
+					return e.NotFoundError("车位分享已关闭", accountErr)
+				}
+				subscription, subscriptionErr := app.FindRecordById("subscriptions", account.GetString("subscription"))
+				if subscriptionErr != nil {
+					return e.NotFoundError("车位分享已关闭", subscriptionErr)
+				}
+				object["platformName"] = sharingPlatformName(subscription)
+				object["logo"] = optionalSharingString(subscription.GetString("logo"))
+				object["loginAccount"] = subscription.GetString("sharingLoginAccount")
+				if encrypted := strings.TrimSpace(subscription.GetString("sharingEncryptedCredentials")); encrypted != "" {
+					if password, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
+						object["password"] = password
+					}
+				}
+				object["seat"] = map[string]any{"number": seat.GetInt("seatNumber"), "memberName": seat.GetString("memberName"), "expiresAt": optionalSharingString(seat.GetString("expiresAt"))}
+			}
+		}
+		if suffix == "/messages" && record.GetString("seatId") == "" {
+			if object, ok := payload.(map[string]any); ok {
+				object["folderIds"] = record.GetStringSlice("folderIds")
+			}
+		}
 		return apiSuccessJSON(e, http.StatusOK, payload)
 	}
 	e.Response.Header().Set("Content-Type", contentType)

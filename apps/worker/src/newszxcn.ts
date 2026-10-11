@@ -6,6 +6,7 @@ import { newId, nowIso } from "./db";
 import { randomToken, sha256 } from "./crypto";
 import type { Env } from "./types";
 import { sendUpstreamRequest } from "./upstream-http";
+import { decryptSharingCredential } from "./sharing-credential";
 
 const DEFAULT_BASE_URL = "https://mail.newszxcn.com";
 type SharedLinkRow = { id: string; seat_id: string; short_key_ciphertext: string; grant_id: string; mailbox_id: string; mailbox_address: string; folder_ids_json: string; window_minutes: number; expires_at: string | null; status: string; created_at: string; updated_at: string; user_id: string };
@@ -117,4 +118,39 @@ async function validateInboxSeat(env: Env, userId: string, seatId: string, mailb
   if(!seat) throw new HttpError(403,"车位不存在、未启用合租或邮箱不匹配","SEAT_UNAVAILABLE");
   return seat;
 }
-export async function publicSharedInboxMessagesProxy(request: Request, env: Env, shortKey: string, suffix = ""): Promise<Response> { const row=await publicLink(env,shortKey); const path=`/api/open/v1/subnest/grants/${encodeURIComponent(row.grant_id)}${suffix}`; const upstreamResponse=await upstream(env,row.user_id,path + new URL(request.url).search); const contentType=upstreamResponse.headers.get("content-type")??"application/json"; if (contentType.includes("json")) { const payload=await upstreamResponse.json(); return successJson(payload,{headers:{"cache-control":"no-store"}}); } return new Response(upstreamResponse.body,{status:200,headers:{"content-type":contentType,"cache-control":"no-store","x-content-type-options":"nosniff"}}); }
+
+async function sharedInboxSeatDetails(env: Env, row: SharedLinkRow) {
+  if (!row.seat_id) return null;
+  const details = await env.DB.prepare(`SELECT subscription.name AS platform_name, subscription.platform_name AS canonical_platform_name,
+      subscription.logo, subscription.sharing_login_account AS login_account, subscription.sharing_encrypted_credentials AS credential,
+      seat.seat_number, seat.member_name, seat.expires_at
+    FROM sharing_seats seat
+    JOIN sharing_accounts account ON account.id=seat.sharing_account_id AND account.user_id=seat.user_id
+    JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
+    WHERE seat.id=? AND seat.user_id=? LIMIT 1`).bind(row.seat_id,row.user_id).first<{platform_name:string;canonical_platform_name:string|null;logo:string|null;login_account:string;credential:string;seat_number:number;member_name:string;expires_at:string|null}>();
+  if (!details) return null;
+  const password = details.credential ? await decryptSharingCredential(env,details.credential).catch(()=>undefined) : undefined;
+  return {
+    platformName: details.canonical_platform_name || details.platform_name,
+    logo: details.logo,
+    loginAccount: details.login_account,
+    ...(password === undefined ? {} : { password }),
+    seat: { number: details.seat_number, memberName: details.member_name, expiresAt: details.expires_at },
+  };
+}
+
+export async function publicSharedInboxMessagesProxy(request: Request, env: Env, shortKey: string, suffix = ""): Promise<Response> {
+  const row=await publicLink(env,shortKey);
+  const path=`/api/open/v1/subnest/grants/${encodeURIComponent(row.grant_id)}${suffix}`;
+  const upstreamResponse=await upstream(env,row.user_id,path + new URL(request.url).search);
+  const contentType=upstreamResponse.headers.get("content-type")??"application/json";
+  if (contentType.includes("json")) {
+    const payload=await upstreamResponse.json();
+    const seatDetails=suffix==="/messages" ? await sharedInboxSeatDetails(env,row) : null;
+    const data=suffix==="/messages" && payload && typeof payload==="object" && !Array.isArray(payload)
+      ? {...payload,folderIds:JSON.parse(row.folder_ids_json),...(seatDetails ?? {})}
+      : payload;
+    return successJson(data,{headers:{"cache-control":"no-store"}});
+  }
+  return new Response(upstreamResponse.body,{status:200,headers:{"content-type":contentType,"cache-control":"no-store","x-content-type-options":"nosniff"}});
+}

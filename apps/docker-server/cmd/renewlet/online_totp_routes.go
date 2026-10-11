@@ -50,12 +50,20 @@ type onlineTotpAccountPayload struct {
 	Account onlineTotpAccountResponse `json:"account"`
 }
 type onlineTotpPublicPayload struct {
-	PlatformName string  `json:"platformName"`
-	ServiceName  string  `json:"serviceName"`
-	Account      string  `json:"account"`
-	Logo         *string `json:"logo"`
-	Code         string  `json:"code"`
-	ValidUntil   string  `json:"validUntil"`
+	PlatformName string                `json:"platformName"`
+	ServiceName  string                `json:"serviceName"`
+	Account      string                `json:"account"`
+	Password     *string               `json:"password,omitempty"`
+	Seat         *onlineTotpPublicSeat `json:"seat,omitempty"`
+	Logo         *string               `json:"logo"`
+	Code         string                `json:"code"`
+	ValidUntil   string                `json:"validUntil"`
+}
+
+type onlineTotpPublicSeat struct {
+	Number     int     `json:"number"`
+	MemberName string  `json:"memberName"`
+	ExpiresAt  *string `json:"expiresAt"`
 }
 
 type onlineTotpCreateRequest struct {
@@ -258,8 +266,12 @@ func handleOnlineTotpAccountDelete(app core.App, e *core.RequestEvent) error {
 func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
 	e.Response.Header().Set("Cache-Control", "no-store")
 	record, err := app.FindFirstRecordByFilter("online_totp_accounts", "shareKeyHash = {:hash} && sharingEnabled = true && enabled = true", dbx.Params{"hash": onlineTotpShareHash(e.Request.PathValue("shareKey"))})
+	var family *publicSharingTotpDetails
 	if err != nil {
-		record, err = resolvePublicSharingTotp(app, e.Request.PathValue("shareKey"))
+		family, err = resolvePublicSharingTotpDetails(app, e.Request.PathValue("shareKey"))
+		if family != nil {
+			record = family.OTP
+		}
 	}
 	if err != nil {
 		return e.NotFoundError("TOTP_SHARE_NOT_FOUND", err)
@@ -268,7 +280,12 @@ func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
 	}
-	return apiSuccessJSON(e, http.StatusOK, onlineTotpPublicPayload{PlatformName: record.GetString("platformName"), ServiceName: record.GetString("serviceName"), Account: record.GetString("account"), Logo: optionalSharingString(record.GetString("logo")), Code: code, ValidUntil: validUntil})
+	payload := onlineTotpPublicPayload{PlatformName: record.GetString("platformName"), ServiceName: record.GetString("serviceName"), Account: record.GetString("account"), Logo: optionalSharingString(record.GetString("logo")), Code: code, ValidUntil: validUntil}
+	if family != nil {
+		payload.Password = family.Password
+		payload.Seat = family.Seat
+	}
+	return apiSuccessJSON(e, http.StatusOK, payload)
 }
 
 func onlineTotpAccountAPI(app core.App, record *core.Record) (onlineTotpAccountResponse, error) {

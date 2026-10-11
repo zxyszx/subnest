@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Copy, Link2, Loader2, RefreshCw, Trash2, UsersRound } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Link2, Loader2, MoreHorizontal, RefreshCw, Trash2, UsersRound } from "lucide-react";
 import type { SharingAccount, SharingSeat } from "@renewlet/shared/schemas/sharing";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -91,6 +92,26 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
   const eligibleSeats = seats.filter((seat) => seat.status === "active" && Boolean(seat.memberName));
   const enableCandidates = eligibleSeats.filter((seat) => !accountLinks.some((link) => link.seatId === seat.id && linkUsable(link)));
   const genericLink = links.find((link) => !link.seatId && link.mailboxId === mailbox.id && link.status === "active" && linkUsable(link));
+  const selectedAccount = boundAccount ?? accounts.find((account) => account.id === accountId);
+  const copySeatShare = async (seat: SharingSeat, shortUrl: string) => {
+    if (!selectedAccount) return;
+    try {
+      const password = selectedAccount.hasPassword ? await sharingService.password(selectedAccount.id) : t("sharing.passwordNotSet");
+      const value = t("sharing.seatShareTemplate", {
+        platform: selectedAccount.subscription.platformName,
+        seat: t("sharing.inboxSeat", { number: seat.seatNumber }),
+        member: seat.memberName || t("sharing.inboxVacant"),
+        account: selectedAccount.loginAccount,
+        password,
+        link: shortUrl,
+        expiresAt: seat.expiresAt || "-",
+      });
+      const result = await copyTextToClipboard(value);
+      toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySeatShareSuccess") : t("sharing.copyFailed"));
+    } catch {
+      toast.error(t("sharing.passwordUnavailable"));
+    }
+  };
   const toggleSharing = async (enabled: boolean) => {
     if (working) return;
     if (enabled && (folderIds.length === 0 || enableCandidates.length === 0)) {
@@ -146,7 +167,7 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
 
   return <>
     <Dialog open onOpenChange={(open) => { if (!open && !working) onClose(); }}>
-      <DialogContent className="max-h-[88dvh] w-[calc(100vw-2rem)] min-w-0 max-w-2xl gap-0 p-0">
+      <DialogContent className="max-h-[92dvh] w-[calc(100vw-2rem)] min-w-0 max-w-5xl gap-0 p-0">
         <DialogHeader className="shrink-0 border-b border-border p-4 pr-12 text-left"><DialogTitle className="flex items-center gap-2"><UsersRound className="h-5 w-5 text-primary" />{t("sharing.inboxLinks")}</DialogTitle><DialogDescription className="break-all">{mailbox.address}</DialogDescription></DialogHeader>
         <div data-seat-links-scroll className="grid min-h-0 min-w-0 gap-4 overflow-y-auto p-4">
         {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
@@ -158,12 +179,12 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
             <div className="grid divide-y divide-border"><div className="grid gap-2 px-3 py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center"><label htmlFor="seat-link-window" className="text-sm font-medium">{t("sharing.recentMailRange")}</label><Select value={String(windowMinutes)} onValueChange={(value) => setWindowMinutes(Number(value))} disabled={working}><SelectTrigger id="seat-link-window" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{[[30, "30 分钟"], [60, "1 小时"], [360, "6 小时"], [1440, "1 天"], [10080, "7 天"]].map(([value, label]) => <SelectItem key={value} value={String(value)}>{label}</SelectItem>)}</SelectContent></Select></div>
               <div className="grid gap-2 px-3 py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-start"><span className="pt-1 text-sm font-medium">{t("sharing.linkFolders")}</span><div id="seat-link-folders" className="flex min-h-9 flex-wrap gap-x-3 gap-y-2 rounded-md border bg-background px-2.5 py-2">{folders.map((folder) => <label key={folder.id} className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" disabled={working} checked={folderIds.includes(folder.id)} onChange={(event) => setFolderIds((current) => event.target.checked ? [...current, folder.id] : current.filter((id) => id !== folder.id))} />{folder.role === "inbox" ? t("sharing.inboxFolder") : folder.name}</label>)}</div></div></div>
           </section>
-          <section aria-labelledby="seat-links-list-title" className="overflow-hidden rounded-md border border-border"><div className="grid grid-cols-[minmax(0,1fr)_4.5rem_auto] items-center gap-3 border-b bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground"><span id="seat-links-list-title">{t("sharing.seatMemberColumn")}</span><span>{t("sharing.statusColumn")}</span><span className="text-right">{t("sharing.operationColumn")}</span></div><div className="divide-y divide-border">{seats.map((seat) => {
+          <section aria-labelledby="seat-links-list-title" className="overflow-hidden rounded-md border border-border"><div className="hidden grid-cols-[minmax(11rem,1fr)_minmax(15rem,2fr)_5rem_auto] items-center gap-3 border-b bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid"><span id="seat-links-list-title">{t("sharing.seatMemberColumn")}</span><span>{t("sharing.inboxLinks")}</span><span>{t("sharing.statusColumn")}</span><span className="text-right">{t("sharing.operationColumn")}</span></div><div className="divide-y divide-border">{seats.map((seat) => {
             const link = linkFor(seat.id);
             const eligible = seat.status === "active" && Boolean(seat.memberName);
             const usable = Boolean(link && linkUsable(link));
             const seatLabel = `${t("sharing.inboxSeat", { number: seat.seatNumber })} · ${seat.memberName || t("sharing.inboxVacant")}`;
-            return <div key={seat.id} className="grid min-h-16 grid-cols-[minmax(0,1fr)_4.5rem_auto] items-center gap-3 px-3 py-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={seatLabel}>{seatLabel}</p>{usable && link ? <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground" title={link.shortUrl}>{link.shortUrl}</p> : <p className="mt-0.5 text-xs text-muted-foreground">{link ? t("sharing.linkUnavailable") : t("sharing.linkNotCreated")}</p>}</div><span className={usable ? "inline-flex items-center gap-1 text-xs font-medium text-primary" : "text-xs text-muted-foreground"}>{usable ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}{usable ? t("sharing.totpValid") : t("sharing.totpUncreated")}</span><div className="flex justify-end gap-1">{link ? <>{usable ? <Button size="icon" variant="ghost" disabled={working || !eligible} aria-label={t("sharing.copyInboxLink")} title={t("sharing.copyInboxLink")} onClick={async () => { const result = await copyTextToClipboard(link.shortUrl); toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed")); }}><Copy className="h-4 w-4" /></Button> : null}<Button size="icon" variant="ghost" disabled={working || !eligible} aria-label={t("sharing.resetInboxLink")} title={t("sharing.resetInboxLink")} onClick={() => setConfirmation({ seat, link, action: "reset" })}><RefreshCw className="h-4 w-4" /></Button><Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={working} aria-label={t("sharing.revokeInboxLink")} title={t("sharing.revokeInboxLink")} onClick={() => setConfirmation({ seat, link, action: "revoke" })}><Trash2 className="h-4 w-4" /></Button></> : <Button size="sm" disabled={working || !eligible || folderIds.length === 0} onClick={() => void mutate(seat, "create")}><Link2 className="h-3.5 w-3.5" />{t("sharing.createInboxLink")}</Button>}</div></div>;
+            return <div key={seat.id} className="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(11rem,1fr)_minmax(15rem,2fr)_5rem_auto] sm:items-center sm:gap-3 sm:py-2.5"><div className="min-w-0"><p className="truncate text-sm font-medium" title={seatLabel}>{seatLabel}</p><p className="mt-0.5 text-xs text-muted-foreground">{seat.expiresAt || ""}</p></div><p className="min-w-0 truncate rounded-md bg-muted/40 px-2.5 py-2 font-mono text-xs text-muted-foreground" title={usable && link ? link.shortUrl : undefined}>{usable && link ? link.shortUrl : t(link ? "sharing.linkUnavailable" : "sharing.linkNotCreated")}</p><span className={usable ? "inline-flex items-center gap-1 text-xs font-medium text-primary" : "text-xs text-muted-foreground"}>{usable ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}{usable ? t("sharing.totpValid") : t("sharing.totpUncreated")}</span><div className="flex min-w-0 flex-wrap justify-end gap-1.5">{link ? <>{usable ? <><Button size="sm" variant="outline" disabled={working || !eligible} onClick={() => void copySeatShare(seat, link.shortUrl)}><Copy className="h-4 w-4" />{t("sharing.copySeatShare")}</Button><Button size="icon" variant="outline" disabled={working || !eligible} aria-label={t("sharing.copyInboxLink")} title={t("sharing.copyInboxLink")} onClick={async () => { const result = await copyTextToClipboard(link.shortUrl); toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed")); }}><Copy className="h-4 w-4" /></Button><Button size="icon" variant="outline" asChild aria-label={t("sharing.previewShare")} title={t("sharing.previewShare")}><a href={link.shortUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button></> : null}<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="outline" disabled={working} aria-label={t("sharing.moreLinkActions")} title={t("sharing.moreLinkActions")}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" mobileTitle={t("sharing.moreLinkActions")}><DropdownMenuItem disabled={!eligible} onSelect={() => setConfirmation({ seat, link, action: "reset" })}><RefreshCw className="h-4 w-4" />{t("sharing.resetInboxLink")}</DropdownMenuItem><DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setConfirmation({ seat, link, action: "revoke" })}><Trash2 className="h-4 w-4" />{t("sharing.revokeInboxLink")}</DropdownMenuItem></DropdownMenuContent></DropdownMenu></> : <Button size="sm" disabled={working || !eligible || folderIds.length === 0} onClick={() => void mutate(seat, "create")}><Link2 className="h-3.5 w-3.5" />{t("sharing.createInboxLink")}</Button>}</div></div>;
           })}</div></section>
         </> : null}
         </div>
