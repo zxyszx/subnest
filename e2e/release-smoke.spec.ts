@@ -59,7 +59,7 @@ test("general inbox links require folders and provide seat-scoped member links",
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/sharing");
-  await page.getByRole("button", { name: "查看链接", exact: true }).click();
+  await page.getByRole("button", { name: "分享管理", exact: true }).click();
   const view = page.getByRole("dialog", { name: /车位链接/ });
   await expect(view.locator("input").first()).toHaveValue(links[0]!.shortUrl);
   await expect(view.getByRole("button", { name: "生成链接", exact: true })).toHaveCount(2);
@@ -74,7 +74,7 @@ test("general inbox links require folders and provide seat-scoped member links",
   enabled = false;
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();
-  await expect(page.getByRole("button", { name: "查看链接", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "分享管理", exact: true })).toBeDisabled();
 });
 
 test.describe("release smoke", () => {
