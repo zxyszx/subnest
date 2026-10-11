@@ -107,18 +107,21 @@ export async function resolvePublicSharingTotp(env:Env,token:string):Promise<Onl
  return result?.otp ?? null;
 }
 
-export async function resolvePublicSharingTotpDetails(env:Env,token:string):Promise<{otp:OnlineTotpRow;password?:string;seat?:{number:number;memberName:string;expiresAt:string|null}}|null> {
+export async function resolvePublicSharingTotpDetails(env:Env,token:string):Promise<{otp:OnlineTotpRow;platformName?:string;accountNumber?:number;logo?:string|null;password?:string;seat?:{number:number;memberName:string;expiresAt:string|null}}|null> {
  const link=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE token_hash=?").bind(await sha256(token)).first<LinkRow>();
  if(!link || !await valid(env,link)) return null;
  const otp=await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE id=? AND user_id=? AND enabled=1").bind(link.totp_id,link.user_id).first<OnlineTotpRow>();
  if(!otp) return null;
  if(!link.seat_id) return {otp};
- const row=await env.DB.prepare(`SELECT subscription.sharing_encrypted_credentials AS credential, seat.seat_number, seat.member_name, seat.expires_at
+ const row=await env.DB.prepare(`SELECT subscription.sharing_encrypted_credentials AS credential,
+     COALESCE(NULLIF(subscription.platform_name,''),subscription.name) AS platform_name,
+     subscription.account_number, subscription.logo,
+     seat.seat_number, seat.member_name, seat.expires_at
    FROM sharing_accounts account
    JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
    JOIN sharing_seats seat ON seat.sharing_account_id=account.id AND seat.user_id=account.user_id
-   WHERE account.id=? AND account.user_id=? AND seat.id=? LIMIT 1`).bind(link.account_id,link.user_id,link.seat_id).first<{credential:string;seat_number:number;member_name:string;expires_at:string|null}>();
+   WHERE account.id=? AND account.user_id=? AND seat.id=? LIMIT 1`).bind(link.account_id,link.user_id,link.seat_id).first<{credential:string;platform_name:string;account_number:number;logo:string|null;seat_number:number;member_name:string;expires_at:string|null}>();
  if(!row) return {otp};
  const password=row.credential ? await decryptSharingCredential(env,row.credential).catch(()=>undefined) : undefined;
- return {otp,...(password === undefined ? {} : {password}),seat:{number:row.seat_number,memberName:row.member_name,expiresAt:row.expires_at}};
+ return {otp,platformName:row.platform_name,accountNumber:row.account_number,logo:row.logo,...(password === undefined ? {} : {password}),seat:{number:row.seat_number,memberName:row.member_name,expiresAt:row.expires_at}};
 }

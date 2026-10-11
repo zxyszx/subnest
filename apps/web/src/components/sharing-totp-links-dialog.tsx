@@ -76,7 +76,7 @@ export function SharingTotpLinksDialog({ account, onClose }: { account: SharingA
 
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="max-h-[92dvh] w-[calc(100vw-2rem)] max-w-5xl gap-0 p-0">
     <DialogHeader className="border-b border-border p-4 pr-12 sm:px-5"><DialogTitle className="flex items-center gap-3"><SubscriptionLogo name={account.subscription.platformName} logo={account.subscription.logo ?? undefined} size="sm" /><span>{t("sharing.totpTitle")} {account.subscription.platformName} #{account.accountNumber}</span></DialogTitle><DialogDescription className="break-all">{account.loginAccount}</DialogDescription></DialogHeader>
-    <div className="min-h-0 overflow-y-auto p-3 sm:p-4">
+    <div className="h5-mobile-sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 touch-pan-y sm:p-4">
       {loading ? <div role="status" className="flex items-center gap-2 py-8"><Loader2 className="h-4 w-4 animate-spin" />{t("sharing.totpLoading")}</div> : <section className="overflow-hidden rounded-md border border-border">
         <div className="hidden grid-cols-[minmax(11rem,1fr)_minmax(15rem,2fr)_5rem_auto] gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid"><span>{t("sharing.seatMemberColumn")}</span><span>{t("sharing.inboxLinks")}</span><span>{t("sharing.statusColumn")}</span><span className="text-right">{t("sharing.operationColumn")}</span></div>
         <div className="divide-y divide-border">{scopes.map((scope) => {

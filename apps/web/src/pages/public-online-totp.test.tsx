@@ -43,6 +43,7 @@ describe("PublicOnlineTotpPage", () => {
     mocks.publicAccount.mockReset().mockResolvedValue({
       platformName: "PrimeVideo",
       serviceName: "PrimeVideo",
+      accountNumber: 5,
       account: "member@example.com",
       logo: null,
       code: "123456",
@@ -61,9 +62,9 @@ describe("PublicOnlineTotpPage", () => {
     expect(mocks.copy).toHaveBeenCalledWith("123456");
     await waitFor(() => expect(screen.getByRole("button", { name: "复制验证码" })).toHaveTextContent("已复制"));
 
-    await user.click(screen.getByRole("button", { name: /member@example.com/ }));
+    await user.click(screen.getByRole("button", { name: "复制账号" }));
     expect(mocks.copy).toHaveBeenCalledWith("member@example.com");
-    await waitFor(() => expect(screen.getByRole("button", { name: /member@example.com/ })).toHaveTextContent("已复制"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "复制账号" })).toHaveTextContent("已复制"));
   });
 
   it("shows seat credentials and copies the password for a seat link", async () => {
@@ -71,6 +72,7 @@ describe("PublicOnlineTotpPage", () => {
     mocks.publicAccount.mockResolvedValue({
       platformName: "PrimeVideo",
       serviceName: "PrimeVideo",
+      accountNumber: 5,
       account: "member@example.com",
       password: "secret-password",
       seat: { number: 2, memberName: "Alice", expiresAt: "2027-10-03" },

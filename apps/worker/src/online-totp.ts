@@ -116,8 +116,12 @@ export async function readPublicOnlineTotp(request: Request, env: Env, shareKey:
   if (!row) throw new HttpError(404, "TOTP_SHARE_NOT_FOUND", "NOT_FOUND");
   const { code, validUntil } = await currentTotp(env, row.secret_ciphertext);
   return successJson(onlineTotpPublicPayloadSchema.parse({
-    platformName: row.platform_name, serviceName: row.service_name, account: row.account,
-    logo: row.logo, code, validUntil,
+    platformName: familyShare?.platformName || row.platform_name,
+    serviceName: row.service_name,
+    accountNumber: familyShare?.accountNumber || row.account_number,
+    account: row.account,
+    logo: familyShare?.logo === undefined ? row.logo : familyShare.logo,
+    code, validUntil,
     ...(familyShare?.password === undefined ? {} : { password: familyShare.password }),
     ...(familyShare?.seat === undefined ? {} : { seat: familyShare.seat }),
   }), { headers: { "cache-control": "no-store" } });

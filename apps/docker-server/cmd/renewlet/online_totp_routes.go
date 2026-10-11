@@ -50,14 +50,15 @@ type onlineTotpAccountPayload struct {
 	Account onlineTotpAccountResponse `json:"account"`
 }
 type onlineTotpPublicPayload struct {
-	PlatformName string                `json:"platformName"`
-	ServiceName  string                `json:"serviceName"`
-	Account      string                `json:"account"`
-	Password     *string               `json:"password,omitempty"`
-	Seat         *onlineTotpPublicSeat `json:"seat,omitempty"`
-	Logo         *string               `json:"logo"`
-	Code         string                `json:"code"`
-	ValidUntil   string                `json:"validUntil"`
+	PlatformName  string                `json:"platformName"`
+	ServiceName   string                `json:"serviceName"`
+	AccountNumber int                   `json:"accountNumber"`
+	Account       string                `json:"account"`
+	Password      *string               `json:"password,omitempty"`
+	Seat          *onlineTotpPublicSeat `json:"seat,omitempty"`
+	Logo          *string               `json:"logo"`
+	Code          string                `json:"code"`
+	ValidUntil    string                `json:"validUntil"`
 }
 
 type onlineTotpPublicSeat struct {
@@ -280,10 +281,17 @@ func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
 	if err != nil {
 		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
 	}
-	payload := onlineTotpPublicPayload{PlatformName: record.GetString("platformName"), ServiceName: record.GetString("serviceName"), Account: record.GetString("account"), Logo: optionalSharingString(record.GetString("logo")), Code: code, ValidUntil: validUntil}
+	payload := onlineTotpPublicPayload{PlatformName: record.GetString("platformName"), ServiceName: record.GetString("serviceName"), AccountNumber: record.GetInt("accountNumber"), Account: record.GetString("account"), Logo: optionalSharingString(record.GetString("logo")), Code: code, ValidUntil: validUntil}
 	if family != nil {
 		payload.Password = family.Password
 		payload.Seat = family.Seat
+		if family.PlatformName != "" {
+			payload.PlatformName = family.PlatformName
+		}
+		if family.AccountNumber > 0 {
+			payload.AccountNumber = family.AccountNumber
+		}
+		payload.Logo = family.Logo
 	}
 	return apiSuccessJSON(e, http.StatusOK, payload)
 }

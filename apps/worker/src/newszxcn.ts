@@ -122,16 +122,17 @@ async function validateInboxSeat(env: Env, userId: string, seatId: string, mailb
 async function sharedInboxSeatDetails(env: Env, row: SharedLinkRow) {
   if (!row.seat_id) return null;
   const details = await env.DB.prepare(`SELECT subscription.name AS platform_name, subscription.platform_name AS canonical_platform_name,
-      subscription.logo, subscription.sharing_login_account AS login_account, subscription.sharing_encrypted_credentials AS credential,
+      subscription.account_number, subscription.logo, subscription.sharing_login_account AS login_account, subscription.sharing_encrypted_credentials AS credential,
       seat.seat_number, seat.member_name, seat.expires_at
     FROM sharing_seats seat
     JOIN sharing_accounts account ON account.id=seat.sharing_account_id AND account.user_id=seat.user_id
     JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
-    WHERE seat.id=? AND seat.user_id=? LIMIT 1`).bind(row.seat_id,row.user_id).first<{platform_name:string;canonical_platform_name:string|null;logo:string|null;login_account:string;credential:string;seat_number:number;member_name:string;expires_at:string|null}>();
+    WHERE seat.id=? AND seat.user_id=? LIMIT 1`).bind(row.seat_id,row.user_id).first<{platform_name:string;canonical_platform_name:string|null;account_number:number;logo:string|null;login_account:string;credential:string;seat_number:number;member_name:string;expires_at:string|null}>();
   if (!details) return null;
   const password = details.credential ? await decryptSharingCredential(env,details.credential).catch(()=>undefined) : undefined;
   return {
     platformName: details.canonical_platform_name || details.platform_name,
+    accountNumber: details.account_number,
     logo: details.logo,
     loginAccount: details.login_account,
     ...(password === undefined ? {} : { password }),

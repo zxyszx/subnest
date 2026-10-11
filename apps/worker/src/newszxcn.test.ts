@@ -130,6 +130,7 @@ describe("seat inbox link authorization", () => {
     const result = await readSuccessData<Record<string, unknown>>(await publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key, "/messages"));
     expect(result).toEqual(expect.objectContaining({
       platformName: "Netflix",
+      accountNumber: 17,
       logo: "prime.svg",
       loginAccount: "shared@example.test",
       password: "seat-password",

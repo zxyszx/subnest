@@ -300,6 +300,7 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 					return e.NotFoundError("车位分享已关闭", subscriptionErr)
 				}
 				object["platformName"] = sharingPlatformName(subscription)
+				object["accountNumber"] = sharingSubscriptionAccountNumber(subscription, account)
 				object["logo"] = optionalSharingString(subscription.GetString("logo"))
 				object["loginAccount"] = subscription.GetString("sharingLoginAccount")
 				if encrypted := strings.TrimSpace(subscription.GetString("sharingEncryptedCredentials")); encrypted != "" {

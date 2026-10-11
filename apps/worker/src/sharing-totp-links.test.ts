@@ -19,6 +19,7 @@ function fixture() {
  database.exec(`INSERT INTO users(id,email,name,role,password_hash,created_at,updated_at) VALUES('owner','owner@example.test','Owner','user','','',''),('other','other@example.test','Other','user','','','');
  INSERT INTO subscriptions(id,user_id,name,price,currency,billing_cycle,category,status,next_billing_date,auto_calculate_next_billing_date,reminder_days,repeat_reminder_enabled,repeat_reminder_interval,repeat_reminder_window,created_at,updated_at,family_sharing_enabled,sharing_login_account,sharing_capacity,extra_json)
  VALUES('sub','owner','PrimeVideo','10','CNY','monthly','streaming','active','2099-01-01',1,3,0,'daily','all','','v1',1,'shared@example.test',5,'{"familyVerification":{"mode":"totp","totpAccountId":"otp"}}');
+ UPDATE subscriptions SET platform_name='PrimeVideo',account_number=3 WHERE id='sub';
  INSERT INTO sharing_accounts(id,user_id,subscription_id,status,created_at,updated_at) VALUES('account','owner','sub','active','','v1');
  INSERT INTO sharing_seats(id,user_id,sharing_account_id,seat_number,member_name,status,expires_at,created_at,updated_at) VALUES('seat1','owner','account',1,'Alice','active','2099-01-01','','v1'),('seat2','owner','account',2,'Bob','active','2099-01-01','','v1'),('vacant','owner','account',3,NULL,'vacant',NULL,'','v1');
  INSERT INTO online_totp_accounts(id,user_id,platform_name,service_name,account_number,account,secret_ciphertext,enabled,sharing_enabled,share_key_hash,share_key_ciphertext,created_at,updated_at)
@@ -43,7 +44,7 @@ describe("family 2FA scopes",()=> {
   const {links}=await generate(env);const general=links.find(link=>!link.seatId)!;const seatLink=links.find(link=>link.seatId==="seat1")!;
   expect(await resolvePublicSharingTotpDetails(env,token(general))).toEqual(expect.objectContaining({otp:expect.objectContaining({id:"otp"})}));
   expect(await resolvePublicSharingTotpDetails(env,token(general))).not.toHaveProperty("password");
-  expect(await resolvePublicSharingTotpDetails(env,token(seatLink))).toEqual(expect.objectContaining({password:"seat-password",seat:{number:1,memberName:"Alice",expiresAt:"2099-01-01"}}));
+  expect(await resolvePublicSharingTotpDetails(env,token(seatLink))).toEqual(expect.objectContaining({platformName:"PrimeVideo",accountNumber:3,password:"seat-password",seat:{number:1,memberName:"Alice",expiresAt:"2099-01-01"}}));
   expect((await sharingTotpLinks(request(),env,"account")).status).toBe(200);
   expect(await resolvePublicSharingTotp(env,token(seatLink))).toMatchObject({id:"otp"});
  });
