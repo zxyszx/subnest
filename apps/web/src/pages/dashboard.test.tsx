@@ -192,6 +192,7 @@ function sharingAccount(): SharingAccount {
     accountNumber: 2,
     loginAccount: "netflix@example.com",
     hasPassword: true,
+    additionalCredential: null,
     verificationLink: null,
     monthlyCost: "40",
     currency: "CNY",

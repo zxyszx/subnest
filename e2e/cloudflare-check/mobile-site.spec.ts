@@ -44,7 +44,7 @@ const mobilePages: Array<{ path: string; label: string; assertReady: (page: Page
     path: "/settings",
     label: "mobile settings",
     assertReady: async (page) => {
-      await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+      await expect(page.getByTestId("settings-mobile-page-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
     },
   },
 ];
@@ -89,6 +89,7 @@ test("mobile sheets, dialogs, and notification history stay usable", async ({ pa
       .click();
     await expect(currencyDialog).toBeHidden();
 
+    await gotoSettingsSectionAfterHydration(page, "settings-notifications");
     await page.getByRole("button", { name: "查看调度与历史" }).click();
     const historyDialog = page.getByRole("dialog", { name: "通知调度与发送历史" });
     await expect(historyDialog).toBeVisible();

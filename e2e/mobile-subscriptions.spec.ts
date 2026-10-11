@@ -7,6 +7,7 @@ import {
   expectTagSuggestionListScrollable,
   openSubscriptionDetailDialog,
   openSubscriptionEditDialog,
+  saveSubscriptionDialog,
   SUBSCRIPTION_SEARCH_PLACEHOLDER,
   subscriptionCard,
   uniqueE2EName,
@@ -174,6 +175,51 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await page.keyboard.press("Escape");
   await editDialog.getByRole("button", { name: "取消" }).click();
   await expect(editDialog).toBeHidden();
+});
+
+test("mobile family sharing additional info stays editable without overflow", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const subscriptionName = uniqueE2EName(testInfo, "Mobile Additional Info");
+  await page.goto("/subscriptions");
+  await createProductSubscriptionSeed(page, {
+    name: subscriptionName,
+    price: "29",
+    currency: "USD",
+    startDate: "2026-09-03",
+    nextBillingDate: "2026-11-03",
+    familySharing: {
+      enabled: true,
+      loginAccount: "prime-mobile@example.test",
+      password: "",
+      additionalCredential: { name: "R21 限制 PIN", value: "00000" },
+      verificationLink: "",
+      capacity: 5,
+    },
+    familyVerification: { mode: "none" },
+  });
+
+  try {
+    await page.reload();
+    const dialog = await openSubscriptionEditDialog(page, subscriptionName);
+    const additionalName = dialog.getByLabel("附加信息名称（选填）", { exact: true });
+    const additionalValue = dialog.getByLabel("附加信息内容", { exact: true });
+    await expect(additionalName).toHaveValue("R21 限制 PIN");
+    await expect(additionalValue).toHaveValue("00000", { timeout: 10_000 });
+    await additionalName.scrollIntoViewIfNeeded();
+    await expect(additionalName).toBeInViewport();
+    await expectNoHorizontalOverflow(page, "mobile family sharing additional info");
+
+    await additionalName.fill("最近通知");
+    await additionalValue.fill("今晚 8 点维护");
+    await saveSubscriptionDialog(page, dialog, "保存修改");
+
+    const reopened = await openSubscriptionEditDialog(page, subscriptionName);
+    await expect(reopened.getByLabel("附加信息名称（选填）", { exact: true })).toHaveValue("最近通知");
+    await expect(reopened.getByLabel("附加信息内容", { exact: true })).toHaveValue("今晚 8 点维护", { timeout: 10_000 });
+    await reopened.getByRole("button", { name: "取消" }).click();
+  } finally {
+    await deleteProductSubscriptionsByName(page, [subscriptionName]);
+  }
 });
 
 test("mobile subscription card keeps date metadata naturally on the first available row", async ({ page }, testInfo) => {

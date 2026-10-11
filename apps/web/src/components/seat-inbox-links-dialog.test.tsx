@@ -11,7 +11,7 @@ vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
 vi.mock("@/shared/browser/clipboard", () => ({ copyTextToClipboard: mocks.clipboard }));
 
 const account: SharingAccount = {
-  id: "account", subscription: { id: "subscription", name: "Netflix", platformName: "Netflix", logo: null, status: "active" }, name: "Netflix", accountNumber: 17, loginAccount: "shared@example.test", hasPassword: true, verificationLink: null,
+  id: "account", subscription: { id: "subscription", name: "Netflix", platformName: "Netflix", logo: null, status: "active" }, name: "Netflix", accountNumber: 17, loginAccount: "shared@example.test", hasPassword: true, additionalCredential: null, verificationLink: null,
   monthlyCost: "10", currency: "CNY", nextBillingDate: "2099-01-01", paymentMethod: null, cardLast4: null, capacity: 2, occupiedSeats: 2, monthlyRevenue: "10", monthlyRevenueByCurrency: { CNY: "10" }, outstandingAmount: "0", monthlyProfit: 0, status: "active", notes: null, createdAt: "2026-01-01",
 };
 const seat: SharingSeat = { id: "seat1", seatNumber: 1, memberName: "Alice", contact: null, contactType: null, monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "active", notes: null, currentReceivable: null };

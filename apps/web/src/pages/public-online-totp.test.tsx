@@ -88,4 +88,27 @@ describe("PublicOnlineTotpPage", () => {
     await user.click(screen.getByRole("button", { name: "复制密码" }));
     expect(mocks.copy).toHaveBeenCalledWith("secret-password");
   });
+
+  it("shows custom additional information as visible copyable content", async () => {
+    const user = userEvent.setup();
+    mocks.publicAccount.mockResolvedValue({
+      platformName: "PrimeVideo",
+      serviceName: "PrimeVideo",
+      accountNumber: 5,
+      account: "member@example.com",
+      additionalCredential: { name: "最近通知", value: "今晚 8 点维护" },
+      seat: { number: 2, memberName: "Alice", expiresAt: "2027-10-03" },
+      logo: null,
+      code: "123456",
+      validUntil: "2099-01-01T00:00:00.000Z",
+    });
+    render(<PublicOnlineTotpPage />);
+
+    expect(await screen.findByText("最近通知")).toBeInTheDocument();
+    expect(screen.getByText("今晚 8 点维护")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "显示附加信息" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByText("今晚 8 点维护").closest("button")!);
+    expect(mocks.copy).toHaveBeenCalledWith("今晚 8 点维护");
+  });
 });

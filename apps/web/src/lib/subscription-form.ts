@@ -366,6 +366,15 @@ export function getSubscriptionFormValidationIssues(formData: SubscriptionFormSt
   }
   if (formData.familySharing.enabled) {
     const family = formData.familySharing;
+    const additionalName = family.additionalCredentialName.trim();
+    const additionalValue = family.additionalCredentialValue;
+    if (
+      !family.removeAdditionalCredential
+      && (additionalName || additionalValue)
+      && (!additionalName || (!additionalValue && !family.hasAdditionalCredential))
+    ) {
+      issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
+    }
     if (family.verificationMode === "totp" && !family.totpAccountId) {
       issues.push({ code: "familySharingInvalid", field: "familySharing", messageKey: "subscription.validation.familySharingInvalid" });
     }
@@ -463,6 +472,14 @@ export function toSubscriptionFormSubmission(formData: SubscriptionFormState): S
       enabled: true,
       loginAccount: formData.familySharing.loginAccount.trim(),
       password: formData.familySharing.password,
+      additionalCredential: formData.familySharing.removeAdditionalCredential
+        ? null
+        : formData.familySharing.additionalCredentialName.trim()
+          ? {
+              name: formData.familySharing.additionalCredentialName.trim(),
+              value: formData.familySharing.additionalCredentialValue,
+            }
+          : undefined,
       verificationLink: formData.familySharing.verificationLink.trim(),
       capacity: parsePositiveIntegerInput(formData.familySharing.capacity, 100) ?? 1,
     } : null,

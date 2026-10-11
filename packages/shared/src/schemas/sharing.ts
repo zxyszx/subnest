@@ -26,6 +26,10 @@ export const sharingAccountSchema = z.object({
   accountNumber: z.number().int().positive(),
   loginAccount: z.string().min(1),
   hasPassword: z.boolean(),
+  additionalCredential: z.object({
+    name: z.string().min(1).max(80),
+    valueMask: z.string(),
+  }).strict().nullable().default(null),
   familySharingEnabled: z.boolean().optional(),
   verificationMode: z.enum(["email", "totp", "none"]).optional(),
   verificationLink: z.url().nullable(),
@@ -56,6 +60,10 @@ export const sharingAccountPayloadSchema = z.object({
 
 export const sharingCredentialsPayloadSchema = z.object({
   password: z.string(),
+  additionalCredential: z.object({
+    name: z.string().min(1).max(80),
+    value: z.string(),
+  }).strict().nullable().default(null),
 }).strict();
 
 export const sharingReceivableSchema = z.object({

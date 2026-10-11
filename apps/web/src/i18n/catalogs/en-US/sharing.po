@@ -21,7 +21,12 @@ msgstr "{action} {title}"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:233
 msgid "sharing.seatShareTemplate"
-msgstr "[{platform} · {seat}]\nMember: {member}\nLogin account: {account}\nLogin password: {password}\nSeat link: {link}\nExpires: {expiresAt}"
+msgstr "[{platform} · {seat}]\n"
+"Member: {member}\n"
+"Login account: {account}\n"
+"Login password: {password}{additionalCredential}\n"
+"Seat link: {link}\n"
+"Expires: {expiresAt}"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:46

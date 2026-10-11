@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CalendarClock, Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeInfo, CalendarClock, Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import { useParams } from "react-router";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { toast } from "@/components/ui/sonner";
@@ -22,7 +22,7 @@ export default function PublicOnlineTotpPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [now, setNow] = useState(0);
-  const [copied, setCopied] = useState<"code" | "account" | "password" | null>(null);
+  const [copied, setCopied] = useState<"code" | "account" | "password" | "additional" | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const load = useCallback(async (silent = false) => {
@@ -49,7 +49,7 @@ export default function PublicOnlineTotpPage() {
     return () => window.clearInterval(timer);
   }, [account, load]);
 
-  const copyValue = async (value: string, target: "code" | "account" | "password") => {
+  const copyValue = async (value: string, target: "code" | "account" | "password" | "additional") => {
     const result = await copyTextToClipboard(value);
     if (result.ok) {
       setCopied(target);
@@ -77,6 +77,7 @@ export default function PublicOnlineTotpPage() {
         </button>
         <div className="mt-3 flex min-h-12 w-full items-center gap-3 rounded-lg border bg-secondary/30 px-3"><UserRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block text-xs text-muted-foreground">{text.account}</span><span className="block truncate text-sm font-medium text-foreground">{account.account}</span></span><button type="button" className="inline-flex h-9 w-18 shrink-0 items-center justify-end gap-1.5 rounded-md px-2 text-xs font-medium text-primary hover:bg-primary/10" onClick={() => void copyValue(account.account, "account")} aria-label={t("sharing.copyAccount")}>{copied === "account" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === "account" ? t("sharing.copySuccess") : text.copy}</button></div>
         {account.password ? <div className="mt-2 flex min-h-12 items-center gap-3 rounded-lg border bg-secondary/30 px-3"><KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block text-xs text-muted-foreground">{t("sharing.password")}</span><span className="block truncate text-sm font-medium text-foreground">{passwordVisible ? account.password : "••••••••"}</span></span><button type="button" className="grid h-9 w-9 shrink-0 place-items-center rounded-md hover:bg-muted" onClick={() => setPasswordVisible((value) => !value)} aria-label={t(passwordVisible ? "sharing.hidePassword" : "sharing.showPassword")}>{passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button><button type="button" className="inline-flex h-9 w-18 shrink-0 items-center justify-end gap-1.5 rounded-md px-2 text-xs font-medium text-primary hover:bg-primary/10" onClick={() => void copyValue(account.password!, "password")} aria-label={t("sharing.copyPassword")}>{copied === "password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === "password" ? t("sharing.copySuccess") : text.copy}</button></div> : null}
+        {account.additionalCredential ? <button type="button" className="mt-2 flex min-h-12 w-full items-center gap-3 rounded-lg border bg-secondary/30 px-3 text-left hover:bg-muted/40" onClick={() => void copyValue(account.additionalCredential!.value, "additional")}><BadgeInfo className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block truncate text-xs text-muted-foreground">{account.additionalCredential.name}</span><span className="block truncate text-sm font-medium text-foreground">{account.additionalCredential.value}</span></span><span className="inline-flex h-9 w-18 shrink-0 items-center justify-end gap-1.5 rounded-md px-2 text-xs font-medium text-primary">{copied === "additional" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === "additional" ? t("sharing.copySuccess") : text.copy}</span></button> : null}
         {account.seat?.expiresAt ? <div className="mt-2 flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm"><CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="text-muted-foreground">{t("sharing.expiresAt")}</span><span className="ml-auto font-medium tabular-nums">{account.seat.expiresAt}</span></div> : null}
       </>}
     </section>

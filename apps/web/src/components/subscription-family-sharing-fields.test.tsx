@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,24 +6,26 @@ import { MemoryRouter } from "react-router";
 import { SubscriptionFamilySharingFields } from "@/components/subscription-family-sharing-fields";
 import type { FamilySharingFormState } from "@/types/subscription-form";
 
-const mocks = vi.hoisted(() => ({ mailboxes: vi.fn(), links: vi.fn(), create: vi.fn(), revoke: vi.fn(), totpList: vi.fn() }));
+const mocks = vi.hoisted(() => ({ familyCredentials: vi.fn(), mailboxes: vi.fn(), links: vi.fn(), create: vi.fn(), revoke: vi.fn(), totpList: vi.fn() }));
 vi.mock("@/services/online-totp-service", () => ({ onlineTotpService: { list: mocks.totpList } }));
 vi.mock("@/services/newszxcn-service", () => ({ newszxcnService: mocks }));
+vi.mock("@/services/subscription-service", () => ({ subscriptionService: { familyCredentials: mocks.familyCredentials, familyPassword: vi.fn() } }));
 vi.mock("@/i18n/I18nProvider", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
-function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "", occupiedSeats = 0, passwordless = false }: {
+function Harness({ onPendingChange = vi.fn(), showEnabledControl = true, verificationLink = "", occupiedSeats = 0, passwordless = false, savedAdditional = false }: {
   onPendingChange?: (pending: boolean) => void;
   showEnabledControl?: boolean;
   verificationLink?: string;
   occupiedSeats?: number;
   passwordless?: boolean;
+  savedAdditional?: boolean;
 }) {
-  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, occupiedSeats, loginAccount: "netflix16@example.com", password: passwordless ? "" : "saved-password", hasPassword: !passwordless, passwordMask: passwordless ? "" : "s***d", verificationLink, capacity: "5" });
-  return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
+  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, occupiedSeats, loginAccount: "netflix16@example.com", password: passwordless ? "" : "saved-password", hasPassword: !passwordless, passwordMask: passwordless ? "" : "s***d", additionalCredentialName: savedAdditional ? "最近通知" : "", additionalCredentialValue: "", hasAdditionalCredential: savedAdditional, additionalCredentialValueMask: savedAdditional ? "••••••" : "", removeAdditionalCredential: false, verificationLink, capacity: "5" });
+  return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `test-${name}`} subscriptionId={savedAdditional ? "subscription-1" : undefined} value={value} onChange={setValue} onShareSetupPendingChange={onPendingChange} showEnabledControl={showEnabledControl} /></MemoryRouter>;
 }
 
 function ModeSwitchHarness() {
-  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", verificationLink: "", mailboxId: "mailbox-16", capacity: "5", verificationMode: "totp", totpAccountId: "otp2" });
+  const [value, setValue] = useState<FamilySharingFormState>({ enabled: true, loginAccount: "netflix16@example.com", password: "saved-password", hasPassword: true, passwordMask: "s***d", additionalCredentialName: "", additionalCredentialValue: "", hasAdditionalCredential: false, additionalCredentialValueMask: "", removeAdditionalCredential: false, verificationLink: "", mailboxId: "mailbox-16", capacity: "5", verificationMode: "totp", totpAccountId: "otp2" });
   return <MemoryRouter><SubscriptionFamilySharingFields id={(name) => `switch-${name}`} value={value} onChange={setValue} /></MemoryRouter>;
 }
 
@@ -33,6 +35,7 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     mocks.mailboxes.mockResolvedValue({ items: [{ id: "mailbox-16", address: "netflix16@example.com" }] });
     mocks.links.mockResolvedValue({ links: [{ id: "generic", mailboxId: "mailbox-16", status: "active", folderIds: ["inbox"], windowMinutes: 30 }] });
     mocks.totpList.mockResolvedValue({ accounts: [{ id: "otp16", account: "NETFLIX16@example.com", platformName: "Netflix", accountNumber: 16, enabled: true }] });
+    mocks.familyCredentials.mockResolvedValue({ password: "", additionalCredential: { name: "最近通知", value: "今晚 8 点维护" } });
   });
   it("keeps the master switch out of the focused editor", () => {
     render(<Harness showEnabledControl={false} />);
@@ -123,6 +126,14 @@ describe("SubscriptionFamilySharingFields isolated seat sharing", () => {
     const input = screen.getByLabelText("subscription.familySharing.password");
     expect(input).not.toBeRequired();
     expect(screen.getByText("subscription.familySharing.passwordOptionalHint")).toBeInTheDocument();
+  });
+  it("loads saved additional information into a visible text field", async () => {
+    render(<StrictMode><Harness savedAdditional /></StrictMode>);
+    const input = screen.getByLabelText("subscription.familySharing.additionalCredentialValue");
+    await waitFor(() => expect(input).toHaveValue("今晚 8 点维护"));
+    expect(input).toBeEnabled();
+    expect(input).toHaveProperty("type", "text");
+    expect(mocks.familyCredentials).toHaveBeenCalledWith("subscription-1");
   });
   it("selects exactly one verification method and matches the existing 2FA account", async () => {
     const user = userEvent.setup(); render(<Harness />);

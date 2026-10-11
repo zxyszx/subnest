@@ -50,15 +50,16 @@ type onlineTotpAccountPayload struct {
 	Account onlineTotpAccountResponse `json:"account"`
 }
 type onlineTotpPublicPayload struct {
-	PlatformName  string                `json:"platformName"`
-	ServiceName   string                `json:"serviceName"`
-	AccountNumber int                   `json:"accountNumber"`
-	Account       string                `json:"account"`
-	Password      *string               `json:"password,omitempty"`
-	Seat          *onlineTotpPublicSeat `json:"seat,omitempty"`
-	Logo          *string               `json:"logo"`
-	Code          string                `json:"code"`
-	ValidUntil    string                `json:"validUntil"`
+	PlatformName         string                       `json:"platformName"`
+	ServiceName          string                       `json:"serviceName"`
+	AccountNumber        int                          `json:"accountNumber"`
+	Account              string                       `json:"account"`
+	Password             *string                      `json:"password,omitempty"`
+	AdditionalCredential *sharingAdditionalCredential `json:"additionalCredential,omitempty"`
+	Seat                 *onlineTotpPublicSeat        `json:"seat,omitempty"`
+	Logo                 *string                      `json:"logo"`
+	Code                 string                       `json:"code"`
+	ValidUntil           string                       `json:"validUntil"`
 }
 
 type onlineTotpPublicSeat struct {
@@ -284,6 +285,7 @@ func handlePublicOnlineTotp(app core.App, e *core.RequestEvent) error {
 	payload := onlineTotpPublicPayload{PlatformName: record.GetString("platformName"), ServiceName: record.GetString("serviceName"), AccountNumber: record.GetInt("accountNumber"), Account: record.GetString("account"), Logo: optionalSharingString(record.GetString("logo")), Code: code, ValidUntil: validUntil}
 	if family != nil {
 		payload.Password = family.Password
+		payload.AdditionalCredential = family.AdditionalCredential
 		payload.Seat = family.Seat
 		if family.PlatformName != "" {
 			payload.PlatformName = family.PlatformName

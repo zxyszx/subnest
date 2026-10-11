@@ -7,7 +7,7 @@ import { decryptOnlineTotp, encryptOnlineTotp, type OnlineTotpRow } from "./onli
 import type { Env, SubscriptionRow } from "./types";
 import { getSettings } from "./db";
 import { dateOnlyInZone } from "./time";
-import { decryptSharingCredential } from "./sharing-credential";
+import { decodeSharingCredentialBundle, decryptSharingCredential } from "./sharing-credential";
 
 interface LinkRow { id:string; user_id:string; account_id:string; seat_id:string; totp_id:string; token_hash:string; token_ciphertext:string; binding_hash:string; expires_at:string; revoked:number }
 interface SeatRow { id:string; seat_number:number; status:string; member_name:string|null; contact:string|null; contact_type:string|null; expires_at:string|null; updated_at:string }
@@ -107,7 +107,7 @@ export async function resolvePublicSharingTotp(env:Env,token:string):Promise<Onl
  return result?.otp ?? null;
 }
 
-export async function resolvePublicSharingTotpDetails(env:Env,token:string):Promise<{otp:OnlineTotpRow;platformName?:string;accountNumber?:number;logo?:string|null;password?:string;seat?:{number:number;memberName:string;expiresAt:string|null}}|null> {
+export async function resolvePublicSharingTotpDetails(env:Env,token:string):Promise<{otp:OnlineTotpRow;platformName?:string;accountNumber?:number;logo?:string|null;password?:string;additionalCredential?:{name:string;value:string};seat?:{number:number;memberName:string;expiresAt:string|null}}|null> {
  const link=await env.DB.prepare("SELECT * FROM sharing_totp_links WHERE token_hash=?").bind(await sha256(token)).first<LinkRow>();
  if(!link || !await valid(env,link)) return null;
  const otp=await env.DB.prepare("SELECT * FROM online_totp_accounts WHERE id=? AND user_id=? AND enabled=1").bind(link.totp_id,link.user_id).first<OnlineTotpRow>();
@@ -122,6 +122,9 @@ export async function resolvePublicSharingTotpDetails(env:Env,token:string):Prom
    JOIN sharing_seats seat ON seat.sharing_account_id=account.id AND seat.user_id=account.user_id
    WHERE account.id=? AND account.user_id=? AND seat.id=? LIMIT 1`).bind(link.account_id,link.user_id,link.seat_id).first<{credential:string;platform_name:string;account_number:number;logo:string|null;seat_number:number;member_name:string;expires_at:string|null}>();
  if(!row) return {otp};
- const password=row.credential ? await decryptSharingCredential(env,row.credential).catch(()=>undefined) : undefined;
- return {otp,platformName:row.platform_name,accountNumber:row.account_number,logo:row.logo,...(password === undefined ? {} : {password}),seat:{number:row.seat_number,memberName:row.member_name,expiresAt:row.expires_at}};
+ const credentials=row.credential ? await decryptSharingCredential(env,row.credential).then(decodeSharingCredentialBundle).catch(()=>undefined) : undefined;
+ return {otp,platformName:row.platform_name,accountNumber:row.account_number,logo:row.logo,
+  ...(credentials?.password ? {password:credentials.password} : {}),
+  ...(credentials?.additionalCredential ? {additionalCredential:credentials.additionalCredential} : {}),
+  seat:{number:row.seat_number,memberName:row.member_name,expiresAt:row.expires_at}};
 }

@@ -26,7 +26,15 @@ import type { Env, SubscriptionRow } from "./types";
 import { z } from "zod";
 import type { ApiAppSettings } from "@renewlet/shared/schemas/settings";
 import { nextCostSharingCollectionReminderDate } from "@renewlet/shared/cost-sharing";
-import { decryptSharingCredential, encryptSharingCredential, maskSharingPassword } from "./sharing-credential";
+import {
+  decodeSharingCredentialBundle,
+  decryptSharingCredential,
+  encodeSharingCredentialBundle,
+  encodeSharingCredentialMetadata,
+  encryptSharingCredential,
+  maskAdditionalCredential,
+  maskSharingPassword,
+} from "./sharing-credential";
 import { sharingCredentialsPayloadSchema } from "@renewlet/shared/schemas/sharing";
 
 const subscriptionStorageBodySchema = subscriptionCreateBodySchema.refine((body) => body.startDate === null || body.nextBillingDate >= body.startDate, {
@@ -188,8 +196,8 @@ export async function readSubscriptionFamilyCredentials(request: Request, env: E
     WHERE id = ? AND user_id = ? AND family_sharing_enabled = 1 LIMIT 1
   `).bind(id, auth.user.id).first<{ credential: string }>();
   if (!row?.credential) throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND", "NOT_FOUND");
-  const password = await decryptSharingCredential(env, row.credential);
-  return successJson(sharingCredentialsPayloadSchema.parse({ password }), { headers: { "Cache-Control": "no-store" } });
+  const credentials = decodeSharingCredentialBundle(await decryptSharingCredential(env, row.credential));
+  return successJson(sharingCredentialsPayloadSchema.parse(credentials), { headers: { "Cache-Control": "no-store" } });
 }
 
 /** 手动续订只允许当前 owner 的手动周期订阅；id 与 user_id 同查，避免通过续订错误枚举他人数据。 */
@@ -454,11 +462,19 @@ interface FamilySharingStorage {
 }
 
 function familySharingStorageFromBody(value: SubscriptionBody["familySharing"]): FamilySharingStorage {
+  const additionalCredential = value?.additionalCredential && value.additionalCredential.value
+    ? value.additionalCredential
+    : null;
   return {
     enabled: value?.enabled === true,
     loginAccount: value?.loginAccount.trim() ?? "",
     encryptedCredentials: "",
-    passwordMask: value?.password ? maskSharingPassword(value.password) : "",
+    passwordMask: encodeSharingCredentialMetadata({
+      passwordMask: value?.password ? maskSharingPassword(value.password) : "",
+      additionalCredential: additionalCredential
+        ? { name: additionalCredential.name, valueMask: maskAdditionalCredential(additionalCredential.value) }
+        : null,
+    }),
     verificationLink: value?.verificationLink.trim() || null,
     capacity: value?.capacity ?? 5,
   };
@@ -480,10 +496,30 @@ async function resolveFamilySharingStorage(
       capacity: existing?.sharing_capacity ?? 5,
     };
   }
-  const password = value.password;
-  const encryptedCredentials = password
-    ? await encryptSharingCredential(env, password)
-    : existing?.sharing_encrypted_credentials ?? "";
+  const existingCiphertext = existing?.sharing_encrypted_credentials ?? "";
+  const existingBundle = existingCiphertext
+    ? decodeSharingCredentialBundle(await decryptSharingCredential(env, existingCiphertext))
+    : { password: "", additionalCredential: null };
+  const password = value.password || existingBundle.password;
+  let additionalCredential = existingBundle.additionalCredential;
+  if (value.additionalCredential === null) {
+    additionalCredential = null;
+  } else if (value.additionalCredential !== undefined) {
+    const name = value.additionalCredential.name.trim();
+    const credentialValue = value.additionalCredential.value || existingBundle.additionalCredential?.value || "";
+    if (!name || !credentialValue) {
+      throw new HttpError(400, serverText(locale, "common.invalidPayload"), "FAMILY_SHARING_ADDITIONAL_CREDENTIAL_INVALID");
+    }
+    additionalCredential = { name, value: credentialValue };
+  }
+  const unchanged = password === existingBundle.password
+    && additionalCredential?.name === existingBundle.additionalCredential?.name
+    && additionalCredential?.value === existingBundle.additionalCredential?.value;
+  const encryptedCredentials = !password && !additionalCredential
+    ? ""
+    : unchanged && existingCiphertext
+      ? existingCiphertext
+      : await encryptSharingCredential(env, encodeSharingCredentialBundle({ password, additionalCredential }));
   if (!value.loginAccount.trim()) {
     throw new HttpError(400, serverText(locale, "common.invalidPayload"), "FAMILY_SHARING_CREDENTIALS_REQUIRED");
   }
@@ -491,7 +527,12 @@ async function resolveFamilySharingStorage(
     enabled: true,
     loginAccount: value.loginAccount.trim(),
     encryptedCredentials,
-    passwordMask: password ? maskSharingPassword(password) : existing?.sharing_password_mask ?? "",
+    passwordMask: encodeSharingCredentialMetadata({
+      passwordMask: password ? maskSharingPassword(password) : "",
+      additionalCredential: additionalCredential
+        ? { name: additionalCredential.name, valueMask: maskAdditionalCredential(additionalCredential.value) }
+        : null,
+    }),
     verificationLink: value.verificationLink.trim() || null,
     capacity: value.capacity,
   };

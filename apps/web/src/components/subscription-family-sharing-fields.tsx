@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Ban, Copy, Eye, EyeOff, Loader2, Mail, RefreshCw, ShieldCheck, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -35,8 +35,11 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   showEnabledControl?: boolean | undefined;
 }) {
   const { t } = useI18n();
+  const tRef = useRef(t);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [additionalCredentialLoading, setAdditionalCredentialLoading] = useState(false);
+  const [savedAdditionalCredentialValue, setSavedAdditionalCredentialValue] = useState("");
   const [mailboxes, setMailboxes] = useState<NewSzxcnMailbox[]>([]);
   const [inboxLinks, setInboxLinks] = useState<SharedInboxLink[]>([]);
   const [inboxLoading, setInboxLoading] = useState(false);
@@ -47,6 +50,7 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
   const [totpLoading, setTotpLoading] = useState(false);
   const [totpFailed, setTotpFailed] = useState(false);
   const [totpLoaded, setTotpLoaded] = useState(false);
+  useEffect(() => { tRef.current = t; }, [t]);
   const mode = value.verificationMode ?? "email";
   const linkedMailboxId = inboxLinks.find((link) => !link.seatId && link.shortUrl === value.verificationLink)?.mailboxId;
   const legacyMailbox = !mailboxExplicitlyCleared && !value.mailboxId && !value.verificationLink
@@ -124,6 +128,20 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
     const matchId = totpMatches.length === 1 ? totpMatches[0]!.id : totpMatches.some((account) => account.id === value.totpAccountId) ? value.totpAccountId : "";
     if (value.totpAccountId !== matchId) onChange({ ...value, totpAccountId: matchId ?? "" });
   }, [value, mode, totpMatches, onChange, totpLoaded]);
+  useEffect(() => {
+    if (!subscriptionId || !value.hasAdditionalCredential || value.additionalCredentialValue || savedAdditionalCredentialValue || value.removeAdditionalCredential) return;
+    let cancelled = false;
+    setAdditionalCredentialLoading(true);
+    void subscriptionService.familyCredentials(subscriptionId).then((credentials) => {
+      if (cancelled || !credentials.additionalCredential) return;
+      setSavedAdditionalCredentialValue(credentials.additionalCredential.value);
+    }).catch(() => {
+      if (!cancelled) toast.error(tRef.current("subscription.familySharing.additionalCredentialUnavailable"));
+    }).finally(() => {
+      if (!cancelled) setAdditionalCredentialLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [savedAdditionalCredentialValue, subscriptionId, value.additionalCredentialValue, value.hasAdditionalCredential, value.removeAdditionalCredential]);
 
   const readSavedPassword = async () => {
     if (!subscriptionId || !value.hasPassword || value.password) return value.password;
@@ -190,6 +208,47 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
         {value.hasPassword || value.password ? <Button type="button" variant="ghost" size="icon" className="absolute right-11 top-0 h-full w-11" disabled={passwordLoading} onClick={() => void copyPassword()} aria-label={t("subscription.familySharing.copyPassword")}><Copy className="h-4 w-4" /></Button> : null}
         <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" disabled={passwordLoading} onClick={() => void togglePassword()} aria-label={t(passwordVisible ? "subscription.familySharing.hidePassword" : "subscription.familySharing.showPassword")}>{passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
       </div>}</FormField>
+      <div className="grid gap-3 rounded-md border border-border bg-muted/20 p-3">
+        <FormField id={id("familySharingAdditionalCredentialName")} label={t("subscription.familySharing.additionalCredentialName")} description={t("subscription.familySharing.additionalCredentialHelp")}>{(field) => <Input
+          id={field.id}
+          value={value.additionalCredentialName}
+          onChange={(event) => onChange({ ...value, additionalCredentialName: event.target.value, removeAdditionalCredential: false })}
+          placeholder={t("subscription.familySharing.additionalCredentialNamePlaceholder")}
+          maxLength={80}
+          aria-describedby={field.describedBy}
+        />}</FormField>
+        <FormField id={id("familySharingAdditionalCredentialValue")} label={t("subscription.familySharing.additionalCredentialValue")} description={value.hasAdditionalCredential && !value.removeAdditionalCredential ? t("subscription.familySharing.additionalCredentialKeepHint") : undefined}>{(field) => <div className="relative">
+          <Input
+            id={field.id}
+            value={value.additionalCredentialValue || savedAdditionalCredentialValue}
+            onChange={(event) => {
+              setSavedAdditionalCredentialValue("");
+              onChange({ ...value, additionalCredentialValue: event.target.value, removeAdditionalCredential: false });
+            }}
+            placeholder={additionalCredentialLoading ? t("subscription.familySharing.additionalCredentialLoading") : t("subscription.familySharing.additionalCredentialValuePlaceholder")}
+            maxLength={1024}
+            aria-describedby={field.describedBy}
+            className={(value.additionalCredentialValue || savedAdditionalCredentialValue || value.hasAdditionalCredential) && !value.removeAdditionalCredential ? "pr-12" : undefined}
+            disabled={additionalCredentialLoading}
+          />
+          {(value.additionalCredentialValue || savedAdditionalCredentialValue || value.hasAdditionalCredential) && !value.removeAdditionalCredential ? <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-11" disabled={additionalCredentialLoading} aria-label={t("subscription.familySharing.copyAdditionalCredential")} onClick={async () => {
+            let credential = value.additionalCredentialValue || savedAdditionalCredentialValue;
+            if (!credential && subscriptionId) {
+              setAdditionalCredentialLoading(true);
+              try { credential = (await subscriptionService.familyCredentials(subscriptionId)).additionalCredential?.value ?? ""; }
+              catch { toast.error(t("subscription.familySharing.additionalCredentialUnavailable")); }
+              finally { setAdditionalCredentialLoading(false); }
+            }
+            if (!credential) return;
+            const result = await copyTextToClipboard(credential);
+            toast[result.ok ? "success" : "error"](t(result.ok ? "subscription.familySharing.additionalCredentialCopied" : "subscription.familySharing.additionalCredentialCopyFailed"));
+          }}>{additionalCredentialLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}</Button> : null}
+        </div>}</FormField>
+        {value.hasAdditionalCredential && !value.removeAdditionalCredential ? <Button type="button" variant="ghost" size="sm" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-destructive" onClick={() => {
+          setSavedAdditionalCredentialValue("");
+          onChange({ ...value, additionalCredentialName: "", additionalCredentialValue: "", removeAdditionalCredential: true });
+        }}>{t("subscription.familySharing.removeAdditionalCredential")}</Button> : null}
+      </div>
       {mode === "totp" ? <div className="grid gap-2 text-xs" role="status">
         {totpLoading ? <span className="text-muted-foreground">{t("sharing.totpMatching")}</span> : totpFailed ? <span className="text-destructive">{t("sharing.totpLoadError")}</span> : totpMatches.length === 0 ? <span className="text-destructive">{t("sharing.totpMissing")}</span> : totpMatches.length === 1 ? <span className="text-primary">{t("sharing.totpMatched")}{totpMatches[0]!.platformName} #{totpMatches[0]!.accountNumber}</span> : <label className="grid gap-1">{t("sharing.totpSelect")}<select aria-label={t("sharing.totpRecord")} className="h-9 rounded-md border border-border bg-background px-2" value={value.totpAccountId ?? ""} onChange={(event) => update("totpAccountId", event.target.value)}><option value="">{t("sharing.totpSelectPlaceholder")}</option>{totpMatches.map((account) => <option key={account.id} value={account.id}>{account.platformName} #{account.accountNumber} · {account.serviceName}</option>)}</select></label>}
       </div> : null}

@@ -34,13 +34,14 @@ type subscriptionDetailResponse struct {
 }
 
 type subscriptionFamilySharingResponse struct {
-	Enabled          bool    `json:"enabled"`
-	LoginAccount     string  `json:"loginAccount"`
-	HasPassword      bool    `json:"hasPassword"`
-	PasswordMask     string  `json:"passwordMask"`
-	VerificationLink *string `json:"verificationLink"`
-	Capacity         int     `json:"capacity"`
-	OccupiedSeats    int     `json:"occupiedSeats"`
+	Enabled              bool                           `json:"enabled"`
+	LoginAccount         string                         `json:"loginAccount"`
+	HasPassword          bool                           `json:"hasPassword"`
+	PasswordMask         string                         `json:"passwordMask"`
+	AdditionalCredential *sharingCredentialMetadataItem `json:"additionalCredential"`
+	VerificationLink     *string                        `json:"verificationLink"`
+	Capacity             int                            `json:"capacity"`
+	OccupiedSeats        int                            `json:"occupiedSeats"`
 }
 
 func subscriptionAPIWithSharingState(app core.App, record *core.Record) (subscriptionDetailResponse, error) {
@@ -148,13 +149,15 @@ func subscriptionAPIFromRecord(record *core.Record) subscriptionDetailResponse {
 		if capacity < 1 {
 			capacity = 1
 		}
+		credentialMetadata := decodeSharingCredentialMetadata(record.GetString("sharingPasswordMask"))
 		out.FamilySharing = &subscriptionFamilySharingResponse{
-			Enabled:          true,
-			LoginAccount:     record.GetString("sharingLoginAccount"),
-			HasPassword:      record.GetString("sharingEncryptedCredentials") != "",
-			PasswordMask:     record.GetString("sharingPasswordMask"),
-			VerificationLink: optionalSharingString(record.GetString("sharingVerificationLink")),
-			Capacity:         capacity,
+			Enabled:              true,
+			LoginAccount:         record.GetString("sharingLoginAccount"),
+			HasPassword:          credentialMetadata.PasswordMask != "",
+			PasswordMask:         credentialMetadata.PasswordMask,
+			AdditionalCredential: credentialMetadata.AdditionalCredential,
+			VerificationLink:     optionalSharingString(record.GetString("sharingVerificationLink")),
+			Capacity:             capacity,
 		}
 	}
 	if !record.GetDateTime("created").IsZero() {

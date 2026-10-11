@@ -9,7 +9,10 @@ import type { SharingTotpLink } from "@renewlet/shared/schemas/sharing";
 const auth = vi.hoisted(() => ({ userId: "owner" }));
 vi.mock("./auth", () => ({ requireAuth: async () => ({ user: { id: auth.userId } }) }));
 vi.mock("./online-totp", () => ({ encryptOnlineTotp: async (_env:unknown,value:string) => `encrypted:${value}`, decryptOnlineTotp: async (_env:unknown,value:string) => value.replace(/^encrypted:/, "") }));
-vi.mock("./sharing-credential", () => ({ decryptSharingCredential: async (_env:unknown,value:string) => value.replace(/^encrypted:/, "") }));
+vi.mock("./sharing-credential", async (importOriginal) => ({
+ ...await importOriginal<typeof import("./sharing-credential")>(),
+ decryptSharingCredential: async (_env:unknown,value:string) => value.replace(/^encrypted:/, ""),
+}));
 const databases: DatabaseSync[]=[];
 afterEach(() => { for(const database of databases.splice(0)) database.close(); });
 

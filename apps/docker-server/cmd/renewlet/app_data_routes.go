@@ -96,11 +96,12 @@ type subscriptionWriteRequest struct {
 }
 
 type subscriptionFamilySharingWriteRequest struct {
-	Enabled          bool   `json:"enabled"`
-	LoginAccount     string `json:"loginAccount"`
-	Password         string `json:"password"`
-	VerificationLink string `json:"verificationLink"`
-	Capacity         int    `json:"capacity"`
+	Enabled              bool                                           `json:"enabled"`
+	LoginAccount         string                                         `json:"loginAccount"`
+	Password             string                                         `json:"password"`
+	AdditionalCredential optionalJSONField[sharingAdditionalCredential] `json:"additionalCredential"`
+	VerificationLink     string                                         `json:"verificationLink"`
+	Capacity             int                                            `json:"capacity"`
 }
 
 type optionalJSONField[T any] struct {
@@ -381,12 +382,16 @@ func handleSubscriptionFamilyCredentials(app core.App, e *core.RequestEvent) err
 	if err != nil || !record.GetBool("familySharingEnabled") {
 		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
 	}
-	password, err := decryptSharingCredential(app, record.GetString("sharingEncryptedCredentials"))
-	if err != nil || password == "" {
+	plaintext, err := decryptSharingCredential(app, record.GetString("sharingEncryptedCredentials"))
+	if err != nil {
+		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
+	}
+	credentials, err := decodeSharingCredentialBundle(plaintext)
+	if err != nil {
 		return e.NotFoundError(serverText(requestLocale(e.Request), "subscription.notFound"), err)
 	}
 	e.Response.Header().Set("Cache-Control", "no-store")
-	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: password})
+	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: credentials.Password, AdditionalCredential: credentials.AdditionalCredential})
 }
 
 // Sharing records intentionally do not use native cascade deletes so that a
@@ -748,13 +753,57 @@ func applySubscriptionFamilySharing(app core.App, record *core.Record, field opt
 			return errors.New("FAMILY_SHARING_LINK_INVALID")
 		}
 	}
+	bundle := sharingCredentialBundle{}
+	if encrypted := strings.TrimSpace(record.GetString("sharingEncryptedCredentials")); encrypted != "" {
+		plaintext, err := decryptSharingCredential(app, encrypted)
+		if err != nil {
+			return err
+		}
+		bundle, err = decodeSharingCredentialBundle(plaintext)
+		if err != nil {
+			return err
+		}
+	}
 	if value.Password != "" {
-		ciphertext, err := encryptSharingCredential(app, value.Password)
+		bundle.Password = value.Password
+	}
+	if value.AdditionalCredential.Set {
+		if value.AdditionalCredential.Null {
+			bundle.AdditionalCredential = nil
+		} else {
+			name := strings.TrimSpace(value.AdditionalCredential.Value.Name)
+			credentialValue := value.AdditionalCredential.Value.Value
+			if credentialValue == "" && bundle.AdditionalCredential != nil {
+				credentialValue = bundle.AdditionalCredential.Value
+			}
+			if name == "" || len([]rune(name)) > 80 || credentialValue == "" || len(credentialValue) > 1024 {
+				return errors.New("FAMILY_SHARING_ADDITIONAL_CREDENTIAL_INVALID")
+			}
+			bundle.AdditionalCredential = &sharingAdditionalCredential{Name: name, Value: credentialValue}
+		}
+	}
+	if bundle.Password == "" && bundle.AdditionalCredential == nil {
+		record.Set("sharingEncryptedCredentials", "")
+		record.Set("sharingPasswordMask", "")
+	} else {
+		plaintext, err := encodeSharingCredentialBundle(bundle)
+		if err != nil {
+			return err
+		}
+		ciphertext, err := encryptSharingCredential(app, plaintext)
+		if err != nil {
+			return err
+		}
+		metadata := sharingCredentialMetadata{PasswordMask: maskSharingPassword(bundle.Password)}
+		if bundle.AdditionalCredential != nil {
+			metadata.AdditionalCredential = &sharingCredentialMetadataItem{Name: bundle.AdditionalCredential.Name, ValueMask: maskAdditionalCredential(bundle.AdditionalCredential.Value)}
+		}
+		encodedMetadata, err := encodeSharingCredentialMetadata(metadata)
 		if err != nil {
 			return err
 		}
 		record.Set("sharingEncryptedCredentials", ciphertext)
-		record.Set("sharingPasswordMask", maskSharingPassword(value.Password))
+		record.Set("sharingPasswordMask", encodedMetadata)
 	}
 	record.Set("familySharingEnabled", true)
 	record.Set("sharingLoginAccount", value.LoginAccount)

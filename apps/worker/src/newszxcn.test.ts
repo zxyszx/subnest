@@ -10,7 +10,10 @@ import { updateSharingSeat } from "./sharing";
 const mocks = vi.hoisted(() => ({ upstream: vi.fn(), auth: vi.fn() }));
 vi.mock("./auth", () => ({ requireAdmin: mocks.auth, requireAuth: mocks.auth }));
 vi.mock("./newszxcn-crypto", () => ({ encryptNewSzxcn: async (_env: unknown, value: string) => `encrypted:${value}`, decryptNewSzxcn: async (_env: unknown, value: string) => value.replace(/^encrypted:/, "") }));
-vi.mock("./sharing-credential", () => ({ decryptSharingCredential: async (_env: unknown, value: string) => value.replace(/^encrypted:/, "") }));
+vi.mock("./sharing-credential", async (importOriginal) => ({
+  ...await importOriginal<typeof import("./sharing-credential")>(),
+  decryptSharingCredential: async (_env: unknown, value: string) => value.replace(/^encrypted:/, ""),
+}));
 vi.mock("./upstream-http", () => ({ sendUpstreamRequest: mocks.upstream }));
 const databases: DatabaseSync[] = [];
 afterEach(() => { for (const database of databases.splice(0)) database.close(); });

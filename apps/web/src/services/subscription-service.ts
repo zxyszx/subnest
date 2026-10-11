@@ -31,7 +31,10 @@ import { z } from "zod";
 
 const SUBSCRIPTION_PAGE_SIZE = 50;
 const subscriptionFamilyCredentialsResponseSchema = apiSuccessResponseSchema(
-  z.object({ password: z.string() }).strict(),
+  z.object({
+    password: z.string(),
+    additionalCredential: z.object({ name: z.string(), value: z.string() }).strict().nullable(),
+  }).strict(),
 );
 export type SubscriptionListFilters = Omit<SubscriptionsListQuery, "limit" | "cursor">;
 
@@ -334,12 +337,16 @@ export const subscriptionService = {
   },
 
   async familyPassword(id: string): Promise<string> {
+    return (await subscriptionService.familyCredentials(id)).password;
+  },
+
+  async familyCredentials(id: string): Promise<{ password: string; additionalCredential: { name: string; value: string } | null }> {
     const data = await apiFetch(
       `/api/app/subscriptions/${encodeURIComponent(id)}/family-credentials`,
       subscriptionFamilyCredentialsResponseSchema,
       { cache: "no-store" },
     );
-    return data.password;
+    return data;
   },
 
   async exportAll(signal?: AbortSignal): Promise<Subscription[]> {

@@ -23,6 +23,7 @@ const account = {
   accountNumber: 17,
   loginAccount: "netflix17@newszxcn.com",
   hasPassword: true,
+  additionalCredential: null,
   verificationLink: "https://dingyue.xzys.me/s/example",
   monthlyCost: "42.93",
   currency: "CNY",

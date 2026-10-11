@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -33,29 +34,30 @@ type sharingSubscriptionSummary struct {
 }
 
 type sharingAccountResponse struct {
-	ID                       string                     `json:"id"`
-	Subscription             sharingSubscriptionSummary `json:"subscription"`
-	Name                     string                     `json:"name"`
-	AccountNumber            int                        `json:"accountNumber"`
-	LoginAccount             string                     `json:"loginAccount"`
-	HasPassword              bool                       `json:"hasPassword"`
-	VerificationMode         string                     `json:"verificationMode"`
-	FamilySharingEnabled     bool                       `json:"familySharingEnabled"`
-	VerificationLink         *string                    `json:"verificationLink"`
-	MonthlyCost              string                     `json:"monthlyCost"`
-	Currency                 string                     `json:"currency"`
-	NextBillingDate          string                     `json:"nextBillingDate"`
-	PaymentMethod            *string                    `json:"paymentMethod"`
-	CardLast4                *string                    `json:"cardLast4"`
-	Capacity                 int                        `json:"capacity"`
-	OccupiedSeats            int                        `json:"occupiedSeats"`
-	MonthlyRevenue           string                     `json:"monthlyRevenue"`
-	MonthlyRevenueByCurrency map[string]string          `json:"monthlyRevenueByCurrency"`
-	OutstandingAmount        string                     `json:"outstandingAmount"`
-	MonthlyProfit            float64                    `json:"monthlyProfit"`
-	Status                   string                     `json:"status"`
-	Notes                    *string                    `json:"notes"`
-	CreatedAt                string                     `json:"createdAt"`
+	ID                       string                         `json:"id"`
+	Subscription             sharingSubscriptionSummary     `json:"subscription"`
+	Name                     string                         `json:"name"`
+	AccountNumber            int                            `json:"accountNumber"`
+	LoginAccount             string                         `json:"loginAccount"`
+	HasPassword              bool                           `json:"hasPassword"`
+	AdditionalCredential     *sharingCredentialMetadataItem `json:"additionalCredential"`
+	VerificationMode         string                         `json:"verificationMode"`
+	FamilySharingEnabled     bool                           `json:"familySharingEnabled"`
+	VerificationLink         *string                        `json:"verificationLink"`
+	MonthlyCost              string                         `json:"monthlyCost"`
+	Currency                 string                         `json:"currency"`
+	NextBillingDate          string                         `json:"nextBillingDate"`
+	PaymentMethod            *string                        `json:"paymentMethod"`
+	CardLast4                *string                        `json:"cardLast4"`
+	Capacity                 int                            `json:"capacity"`
+	OccupiedSeats            int                            `json:"occupiedSeats"`
+	MonthlyRevenue           string                         `json:"monthlyRevenue"`
+	MonthlyRevenueByCurrency map[string]string              `json:"monthlyRevenueByCurrency"`
+	OutstandingAmount        string                         `json:"outstandingAmount"`
+	MonthlyProfit            float64                        `json:"monthlyProfit"`
+	Status                   string                         `json:"status"`
+	Notes                    *string                        `json:"notes"`
+	CreatedAt                string                         `json:"createdAt"`
 }
 
 type sharingAccountsResponse struct {
@@ -68,7 +70,82 @@ type sharingAccountPayload struct {
 }
 
 type sharingCredentialsResponse struct {
-	Password string `json:"password"`
+	Password             string                       `json:"password"`
+	AdditionalCredential *sharingAdditionalCredential `json:"additionalCredential"`
+}
+
+type sharingAdditionalCredential struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type sharingCredentialMetadataItem struct {
+	Name      string `json:"name"`
+	ValueMask string `json:"valueMask"`
+}
+
+type sharingCredentialMetadata struct {
+	PasswordMask         string                         `json:"passwordMask"`
+	AdditionalCredential *sharingCredentialMetadataItem `json:"additionalCredential"`
+}
+
+type sharingCredentialBundle struct {
+	Password             string                       `json:"password"`
+	AdditionalCredential *sharingAdditionalCredential `json:"additionalCredential"`
+}
+
+const sharingCredentialBundlePrefix = "subnest-family-v2:"
+
+func encodeSharingCredentialBundle(bundle sharingCredentialBundle) (string, error) {
+	data, err := json.Marshal(bundle)
+	if err != nil {
+		return "", err
+	}
+	return sharingCredentialBundlePrefix + string(data), nil
+}
+
+func decodeSharingCredentialBundle(value string) (sharingCredentialBundle, error) {
+	if !strings.HasPrefix(value, sharingCredentialBundlePrefix) {
+		return sharingCredentialBundle{Password: value}, nil
+	}
+	var bundle sharingCredentialBundle
+	if err := json.Unmarshal([]byte(strings.TrimPrefix(value, sharingCredentialBundlePrefix)), &bundle); err != nil {
+		return sharingCredentialBundle{}, err
+	}
+	return bundle, nil
+}
+
+func encodeSharingCredentialMetadata(metadata sharingCredentialMetadata) (string, error) {
+	if metadata.AdditionalCredential == nil {
+		return metadata.PasswordMask, nil
+	}
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		return "", err
+	}
+	return sharingCredentialBundlePrefix + string(data), nil
+}
+
+func decodeSharingCredentialMetadata(value string) sharingCredentialMetadata {
+	if !strings.HasPrefix(value, sharingCredentialBundlePrefix) {
+		return sharingCredentialMetadata{PasswordMask: value}
+	}
+	var metadata sharingCredentialMetadata
+	if err := json.Unmarshal([]byte(strings.TrimPrefix(value, sharingCredentialBundlePrefix)), &metadata); err != nil {
+		return sharingCredentialMetadata{}
+	}
+	return metadata
+}
+
+func maskAdditionalCredential(value string) string {
+	length := len([]rune(value))
+	if length < 1 {
+		length = 1
+	}
+	if length > 12 {
+		length = 12
+	}
+	return strings.Repeat("•", length)
 }
 
 type sharingAccountCreateRequest struct {
@@ -366,12 +443,16 @@ func handleSharingAccountCredentials(app core.App, e *core.RequestEvent) error {
 	if subscription, findErr := app.FindRecordById("subscriptions", record.GetString("subscription")); findErr == nil && subscription.GetBool("familySharingEnabled") {
 		encryptedCredentials = subscription.GetString("sharingEncryptedCredentials")
 	}
-	password, err := decryptSharingCredential(app, encryptedCredentials)
+	plaintext, err := decryptSharingCredential(app, encryptedCredentials)
+	if err != nil {
+		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
+	}
+	credentials, err := decodeSharingCredentialBundle(plaintext)
 	if err != nil {
 		return e.InternalServerError(serverText(requestLocale(e.Request), "common.internalError"), err)
 	}
 	e.Response.Header().Set("Cache-Control", "no-store")
-	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: password})
+	return apiSuccessJSON(e, http.StatusOK, sharingCredentialsResponse{Password: credentials.Password, AdditionalCredential: credentials.AdditionalCredential})
 }
 
 func handleSharingAccountUpdate(app core.App, e *core.RequestEvent) error {
@@ -537,6 +618,11 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 		verificationLink = record.GetString("verificationLink")
 		capacity = record.GetInt("capacity")
 	}
+	credentialMetadata := decodeSharingCredentialMetadata(subscription.GetString("sharingPasswordMask"))
+	hasPassword := credentialMetadata.PasswordMask != ""
+	if !subscription.GetBool("familySharingEnabled") {
+		hasPassword = encryptedCredentials != ""
+	}
 	return sharingAccountResponse{
 		ID: record.Id,
 		Subscription: sharingSubscriptionSummary{
@@ -551,7 +637,8 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 		Name:                     record.GetString("name"),
 		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),
 		LoginAccount:             loginAccount,
-		HasPassword:              encryptedCredentials != "",
+		HasPassword:              hasPassword,
+		AdditionalCredential:     credentialMetadata.AdditionalCredential,
 		VerificationMode:         familyVerificationMode(subscription),
 		FamilySharingEnabled:     subscription.GetBool("familySharingEnabled"),
 		VerificationLink:         safeSharingVerificationLink(verificationLink),

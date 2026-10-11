@@ -29,7 +29,9 @@ export async function openSubscriptionEditDialog(page: Page, subscriptionName: s
   await expect(card).toBeVisible();
   const mobileExpand = card.getByTestId("subscription-card-mobile-expand");
   if (await mobileExpand.isVisible().catch(() => false)) {
-    await mobileExpand.click();
+    if ((await mobileExpand.getAttribute("aria-expanded")) !== "true") {
+      await mobileExpand.click();
+    }
     await expect(mobileExpand).toHaveAttribute("aria-expanded", "true");
   }
   const moreActions = card.getByRole("button", { name: "更多操作" });

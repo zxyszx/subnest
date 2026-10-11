@@ -35,6 +35,11 @@ export type FamilySharingFormState = {
   password: string;
   hasPassword: boolean;
   passwordMask: string;
+  additionalCredentialName: string;
+  additionalCredentialValue: string;
+  hasAdditionalCredential: boolean;
+  additionalCredentialValueMask: string;
+  removeAdditionalCredential: boolean;
   verificationLink: string;
   mailboxId?: string;
   capacity: string;
@@ -90,6 +95,22 @@ export type SubscriptionFormState = {
 export function createSubscriptionFormState(
   overrides: Partial<SubscriptionFormState> = {},
 ): SubscriptionFormState {
+  const defaultFamilySharing: SubscriptionFormState["familySharing"] = {
+    enabled: false,
+    occupiedSeats: 0,
+    loginAccount: "",
+    password: "",
+    hasPassword: false,
+    passwordMask: "",
+    additionalCredentialName: "",
+    additionalCredentialValue: "",
+    hasAdditionalCredential: false,
+    additionalCredentialValueMask: "",
+    removeAdditionalCredential: false,
+    verificationLink: "",
+    mailboxId: "",
+    capacity: "5",
+  };
   return {
     name: overrides.name ?? "",
     platformName: overrides.platformName ?? "",
@@ -119,20 +140,12 @@ export function createSubscriptionFormState(
     repeatReminderInterval: "1h",
     repeatReminderWindow: "72h",
     costSharing: undefined,
-    familySharing: {
-      enabled: false,
-      occupiedSeats: 0,
-      loginAccount: "",
-      password: "",
-      hasPassword: false,
-      passwordMask: "",
-      verificationLink: "",
-      mailboxId: "",
-      capacity: "5",
-    },
     website: "",
     notes: "",
     tags: [],
     ...overrides,
+    familySharing: overrides.familySharing
+      ? { ...defaultFamilySharing, ...overrides.familySharing }
+      : defaultFamilySharing,
   };
 }

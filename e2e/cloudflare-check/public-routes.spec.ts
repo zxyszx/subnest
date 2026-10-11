@@ -96,7 +96,7 @@ test("auth guard returns to requested protected page and logout clears private A
     expect(new URL(page.url()).searchParams.get("next")).toBe("/settings");
 
     await loginThroughCloudflareUI(page, "/settings");
-    await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+    await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
 
     await page.goto("/");
     await expect(page.getByText("月均支出")).toBeVisible();

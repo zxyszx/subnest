@@ -44,12 +44,16 @@ export const sharingService = {
   },
 
   async password(id: string): Promise<string> {
+    return (await sharingService.credentials(id)).password;
+  },
+
+  async credentials(id: string): Promise<{ password: string; additionalCredential: { name: string; value: string } | null }> {
     const data = await apiFetch(
       `/api/app/sharing/accounts/${encodeURIComponent(id)}/credentials`,
       sharingCredentialsResponseSchema,
       { cache: "no-store" },
     );
-    return data.password;
+    return data;
   },
 
   async detail(id: string, signal?: AbortSignal): Promise<SharingAccountDetail> {

@@ -123,6 +123,7 @@ export async function readPublicOnlineTotp(request: Request, env: Env, shareKey:
     logo: familyShare?.logo === undefined ? row.logo : familyShare.logo,
     code, validUntil,
     ...(familyShare?.password === undefined ? {} : { password: familyShare.password }),
+    ...(familyShare?.additionalCredential === undefined ? {} : { additionalCredential: familyShare.additionalCredential }),
     ...(familyShare?.seat === undefined ? {} : { seat: familyShare.seat }),
   }), { headers: { "cache-control": "no-store" } });
 }

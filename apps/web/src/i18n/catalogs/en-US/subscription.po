@@ -729,6 +729,11 @@ msgid "subscription.placeholder.name"
 msgstr "e.g. Netflix, Spotify"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:785
+msgid "subscription.familySharing.additionalCredentialNamePlaceholder"
+msgstr "For example: R21 viewing PIN or latest notice"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:69
 msgid "subscription.dialogEditSubmit"
 msgstr "Save changes"
@@ -1164,6 +1169,11 @@ msgid "subscriptions.sort.nameDesc"
 msgstr "Name Z-A"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:789
+msgid "subscription.familySharing.additionalCredentialHelp"
+msgstr "The name and content appear on seat-specific shared inbox and online 2FA pages."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:241
 msgid "subscription.publicHiddenHelp"
 msgstr "When public display is enabled, this subscription will not appear on the public status panel."
@@ -1282,6 +1292,16 @@ msgstr "Failed to copy password"
 #: src/i18n/descriptors/subscription.ts:244
 msgid "subscription.cloneDialogTitle"
 msgstr "Duplicate subscription"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:791
+msgid "subscription.familySharing.copyAdditionalCredential"
+msgstr "Copy additional information"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:793
+msgid "subscription.familySharing.additionalCredentialCopyFailed"
+msgstr "Could not copy the additional information"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:458
@@ -1642,6 +1662,11 @@ msgstr "One-click copy is unavailable. Select and copy this URL manually."
 #: src/i18n/descriptors/subscription.ts:257
 msgid "subscription.renew.currentNextBillingDate"
 msgstr "Current next billing date"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:790
+msgid "subscription.familySharing.additionalCredentialKeepHint"
+msgstr "The current content is saved. Leave this blank to keep it unchanged."
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:139
@@ -2159,6 +2184,11 @@ msgid "subscription.familySharing.passwordUnavailable"
 msgstr "Unable to read the saved password"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:794
+msgid "subscription.familySharing.additionalCredentialUnavailable"
+msgstr "Could not read the saved additional information"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:687
 msgid "statistics.trendNoItems"
 msgstr "No subscription details"
@@ -2594,6 +2624,11 @@ msgid "import.loading"
 msgstr "Parsing and building preview..."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:788
+msgid "subscription.familySharing.additionalCredentialLoading"
+msgstr "Loading saved content..."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:780
 msgid "subscription.addToCalendarFeedStatusRetrying"
 msgstr "Reloading..."
@@ -2952,6 +2987,11 @@ msgstr "Remove tag {tag}"
 #: src/i18n/descriptors/subscription.ts:644
 msgid "aiRecognition.removeDraft"
 msgstr "Remove draft"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:795
+msgid "subscription.familySharing.removeAdditionalCredential"
+msgstr "Remove additional information"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:460
@@ -3579,6 +3619,11 @@ msgid "subscription.familySharing.passwordPlaceholder"
 msgstr "Enter login password"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:787
+msgid "subscription.familySharing.additionalCredentialValuePlaceholder"
+msgstr "Enter the content to show members"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:740
 msgid "dashboard.recentSubscriptions"
 msgstr "Recent subscriptions"
@@ -3822,6 +3867,21 @@ msgstr "Lifetime one-time purchases do not support collection reminders"
 #: src/i18n/descriptors/subscription.ts:236
 msgid "subscription.repeatReminderInterval"
 msgstr "Interval"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:786
+msgid "subscription.familySharing.additionalCredentialValue"
+msgstr "Additional information content"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:784
+msgid "subscription.familySharing.additionalCredentialName"
+msgstr "Additional information name (optional)"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:792
+msgid "subscription.familySharing.additionalCredentialCopied"
+msgstr "Additional information copied"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:141

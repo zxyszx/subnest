@@ -47,13 +47,17 @@ export function SharingTotpLinksDialog({ account, onClose }: { account: SharingA
   async function copySeatShare(scope: LinkScope, href: string) {
     if (!scope.seat) return;
     try {
-      const password = account.hasPassword ? await sharingService.password(account.id) : t("sharing.passwordNotSet");
+      const credentials = account.hasPassword || account.additionalCredential
+        ? await sharingService.credentials(account.id)
+        : { password: "", additionalCredential: null };
+      const password = credentials.password || t("sharing.passwordNotSet");
       const value = t("sharing.seatShareTemplate", {
         platform: account.subscription.platformName,
         seat: t("sharing.inboxSeat", { number: scope.seat.seatNumber }),
         member: scope.seat.memberName || t("sharing.totpVacant"),
         account: account.loginAccount,
         password,
+        additionalCredential: credentials.additionalCredential ? `\n${credentials.additionalCredential.name}：${credentials.additionalCredential.value}` : "",
         link: href,
         expiresAt: scope.seat.expiresAt || "-",
       });

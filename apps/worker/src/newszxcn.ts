@@ -6,7 +6,7 @@ import { newId, nowIso } from "./db";
 import { randomToken, sha256 } from "./crypto";
 import type { Env } from "./types";
 import { sendUpstreamRequest } from "./upstream-http";
-import { decryptSharingCredential } from "./sharing-credential";
+import { decodeSharingCredentialBundle, decryptSharingCredential } from "./sharing-credential";
 
 const DEFAULT_BASE_URL = "https://mail.newszxcn.com";
 type SharedLinkRow = { id: string; seat_id: string; short_key_ciphertext: string; grant_id: string; mailbox_id: string; mailbox_address: string; folder_ids_json: string; window_minutes: number; expires_at: string | null; status: string; created_at: string; updated_at: string; user_id: string };
@@ -129,13 +129,14 @@ async function sharedInboxSeatDetails(env: Env, row: SharedLinkRow) {
     JOIN subscriptions subscription ON subscription.id=account.subscription_id AND subscription.user_id=account.user_id
     WHERE seat.id=? AND seat.user_id=? LIMIT 1`).bind(row.seat_id,row.user_id).first<{platform_name:string;canonical_platform_name:string|null;account_number:number;logo:string|null;login_account:string;credential:string;seat_number:number;member_name:string;expires_at:string|null}>();
   if (!details) return null;
-  const password = details.credential ? await decryptSharingCredential(env,details.credential).catch(()=>undefined) : undefined;
+  const credentials = details.credential ? await decryptSharingCredential(env,details.credential).then(decodeSharingCredentialBundle).catch(()=>undefined) : undefined;
   return {
     platformName: details.canonical_platform_name || details.platform_name,
     accountNumber: details.account_number,
     logo: details.logo,
     loginAccount: details.login_account,
-    ...(password === undefined ? {} : { password }),
+    ...(credentials?.password ? { password: credentials.password } : {}),
+    ...(credentials?.additionalCredential ? { additionalCredential: credentials.additionalCredential } : {}),
     seat: { number: details.seat_number, memberName: details.member_name, expiresAt: details.expires_at },
   };
 }

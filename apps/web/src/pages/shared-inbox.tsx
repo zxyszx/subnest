@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, Copy, Download, Eye, EyeOff, FileText, FolderOpen, Inbox, KeyRound, Mail, Paperclip, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, BadgeInfo, Check, ChevronDown, Copy, Download, Eye, EyeOff, FileText, FolderOpen, Inbox, KeyRound, Mail, Paperclip, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import { useParams } from "react-router";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 type Message = { id: string; subject?: string; from?: string; fromName?: string; receivedAt?: string; snippet?: string; hasAttachments?: boolean };
 type Attachment = { id: string; filename?: string; sizeBytes?: number };
 type Detail = Message & { folder?: string; bodyText?: string; bodyHtml?: string; attachments?: Attachment[] };
-type ListResult = { items?: Message[]; mailboxAddress?: string; windowMinutes?: number; nextCursor?: string | null; folderIds?: string[]; platformName?: string; accountNumber?: number; logo?: string | null; loginAccount?: string; password?: string; seat?: { number: number; memberName: string; expiresAt: string | null } };
+type ListResult = { items?: Message[]; mailboxAddress?: string; windowMinutes?: number; nextCursor?: string | null; folderIds?: string[]; platformName?: string; accountNumber?: number; logo?: string | null; loginAccount?: string; password?: string; additionalCredential?: { name: string; value: string }; seat?: { number: number; memberName: string; expiresAt: string | null } };
 const copy = { denied: "无权访问共享收件箱", inbox: "共享收件箱", readonly: "只读", refresh: "刷新邮件", showAccount: "查看账号", hideAccount: "收起账号", latest: "最新邮件", mailUnit: "封", loading: "正在加载邮件...", empty: "当前范围内没有邮件", unknown: "未知发件人", noSubject: "（无主题）", select: "选择一封邮件查看详情", back: "返回列表", body: "邮件正文", attachments: "附件", readonlyHelp: "只读页面，无法回复、转发、删除或修改邮件。", loadingDetail: "正在加载邮件内容..." };
 
 function rangeLabel(minutes?: number) { if (!minutes) return "只读分享"; if (minutes < 60) return `最近 ${minutes} 分钟`; if (minutes < 1440) return `最近 ${minutes / 60} 小时`; return `最近 ${minutes / 1440} 天`; }
@@ -39,7 +39,7 @@ export default function SharedInbox() {
   const [list, setList] = useState<ListResult>({}); const [selectedId, setSelectedId] = useState(""); const [detail, setDetail] = useState<Detail | null>(null); const [mobileDetail, setMobileDetail] = useState(false); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [accountExpanded, setAccountExpanded] = useState(false);
-  const [copied, setCopied] = useState<"account" | "password" | null>(null);
+  const [copied, setCopied] = useState<"account" | "password" | "additional" | null>(null);
   const selectedIdRef = useRef("");
   const messages = list.items ?? [];
   const load = useCallback(async (silent = false) => { if (silent) setRefreshing(true); else setLoading(true); setError(""); try { const result = await newszxcnService.publicMessages(shortKey) as ListResult; setList(result); const currentId = selectedIdRef.current; const currentExists = result.items?.some((item) => item.id === currentId); const nextId = currentExists ? currentId : result.items?.[0]?.id ?? ""; selectedIdRef.current = nextId; setSelectedId(nextId); if (silent && nextId === currentId && nextId) void newszxcnService.publicMessage(shortKey, nextId).then((next) => setDetail(next as Detail)).catch(() => setDetail(null)); } catch { setError("分享链接无效、已关闭或已过期"); } finally { setLoading(false); setRefreshing(false); } }, [shortKey]);
@@ -51,7 +51,7 @@ export default function SharedInbox() {
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
   }, [load]);
   useEffect(() => { if (!selectedId) { setDetail(null); return; } void newszxcnService.publicMessage(shortKey, selectedId).then((result) => setDetail(result as Detail)).catch(() => setDetail(null)); }, [shortKey, selectedId]);
-  const copyCredential = async (value: string, target: "account" | "password") => {
+  const copyCredential = async (value: string, target: "account" | "password" | "additional") => {
     const result = await copyTextToClipboard(value);
     if (!result.ok) { toast.error(t("sharing.copyFailed")); return; }
     setCopied(target);
@@ -69,9 +69,10 @@ export default function SharedInbox() {
         </div>
         {list.seat ? <Button variant="outline" size="sm" className="shrink-0" onClick={() => setAccountExpanded((value) => !value)} aria-expanded={accountExpanded} aria-controls="shared-account-details">{accountExpanded ? copy.hideAccount : copy.showAccount}<ChevronDown className={cn("ml-1 h-4 w-4 transition-transform", accountExpanded && "rotate-180")} /></Button> : <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex"><ShieldCheck className="h-4 w-4" />{copy.readonly}</span>}
       </div>
-      {list.seat && accountExpanded ? <div id="shared-account-details" className="mt-3 overflow-hidden rounded-lg border bg-muted/20 sm:grid sm:grid-cols-3 sm:divide-x">
+      {list.seat && accountExpanded ? <div id="shared-account-details" className="mt-3 overflow-hidden rounded-lg border bg-muted/20 sm:grid sm:grid-cols-2 lg:grid-cols-4">
         <button type="button" className="flex min-h-11 w-full items-center gap-3 border-b px-3 text-left hover:bg-muted/50 sm:border-b-0" onClick={() => list.loginAccount && void copyCredential(list.loginAccount, "account")}><UserRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block text-[11px] text-muted-foreground">{t("sharing.loginAccount")}</span><span className="block truncate text-sm font-medium">{list.loginAccount || "-"}</span></span>{copied === "account" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4 text-muted-foreground" />}</button>
         <div className="flex min-h-11 items-center gap-3 border-b px-3 sm:border-b-0"><KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block text-[11px] text-muted-foreground">{t("sharing.password")}</span><span className="block truncate text-sm font-medium">{list.password ? passwordVisible ? list.password : "••••••••" : "-"}</span></span>{list.password ? <><button type="button" className="grid h-9 w-9 place-items-center rounded-md hover:bg-muted" onClick={() => setPasswordVisible((value) => !value)} aria-label={t(passwordVisible ? "sharing.hidePassword" : "sharing.showPassword")}>{passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button><button type="button" className="grid h-9 w-9 place-items-center rounded-md hover:bg-muted" onClick={() => void copyCredential(list.password!, "password")} aria-label={t("sharing.copyPassword")}>{copied === "password" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}</button></> : null}</div>
+        {list.additionalCredential ? <button type="button" className="flex min-h-11 w-full items-center gap-3 border-b px-3 text-left hover:bg-muted/50 sm:border-b-0" onClick={() => void copyCredential(list.additionalCredential!.value, "additional")}><BadgeInfo className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block truncate text-[11px] text-muted-foreground">{list.additionalCredential.name}</span><span className="block truncate text-sm font-medium">{list.additionalCredential.value}</span></span>{copied === "additional" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4 text-muted-foreground" />}</button> : null}
         <div className="flex min-h-11 items-center gap-3 px-3"><FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block text-[11px] text-muted-foreground">{t("sharing.authorizedFolders")} · {rangeLabel(list.windowMinutes)}</span><span className="block truncate text-sm font-medium">{list.folderIds?.join("、") || t("sharing.inboxFolder")}</span></span></div>
       </div> : null}
     </header>

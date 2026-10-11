@@ -9,7 +9,7 @@ import {
 import { addMoney, divideMoney, moneyFromNumber, moneyToNumber, multiplyMoney, subtractMoney } from "@renewlet/shared/money";
 import { toMonthlyAmount } from "@renewlet/shared/subscription-billing";
 import { requireAuth } from "./auth";
-import { decryptSharingCredential } from "./sharing-credential";
+import { decodeSharingCredentialBundle, decodeSharingCredentialMetadata, decryptSharingCredential } from "./sharing-credential";
 import { HttpError, readJson, requestLocale, successJson } from "./http";
 import { newId, nowIso } from "./db";
 import type { Env, SubscriptionRow } from "./types";
@@ -110,8 +110,8 @@ export async function readSharingAccountCredentials(request: Request, env: Env, 
     WHERE a.id = ? AND a.user_id = ? AND s.family_sharing_enabled = 1 LIMIT 1
   `).bind(id, auth.user.id).first<{ credential: string }>();
   if (!row?.credential) throw new HttpError(404, "SHARING_ACCOUNT_NOT_FOUND", "NOT_FOUND");
-  const password = await decryptSharingCredential(env, row.credential);
-  return successJson(sharingCredentialsPayloadSchema.parse({ password }), { headers: { "cache-control": "no-store" } });
+  const credentials = decodeSharingCredentialBundle(await decryptSharingCredential(env, row.credential));
+  return successJson(sharingCredentialsPayloadSchema.parse(credentials), { headers: { "cache-control": "no-store" } });
 }
 
 export async function updateSharingSeat(request: Request, env: Env, id: string): Promise<Response> {
@@ -252,6 +252,7 @@ async function subscriptionForAccount(env: Env, account: SharingAccountRow): Pro
 
 async function sharingAccountApi(env: Env, account: SharingAccountRow) {
   const subscription = await subscriptionForAccount(env, account);
+  const credentialMetadata = decodeSharingCredentialMetadata(subscription.sharing_password_mask ?? "");
   const seats = await env.DB.prepare("SELECT status, monthly_price, currency FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?")
     .bind(account.user_id, account.id, subscription.sharing_capacity ?? 5).all<Pick<SharingSeatRow, "status" | "monthly_price" | "currency">>();
   // A paused seat means "stop at expiry": it remains occupied and earns revenue
@@ -284,7 +285,8 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
     name: `编号 ${subscription.account_number ?? 1}`,
     accountNumber: subscription.account_number ?? 1,
     loginAccount: subscription.sharing_login_account ?? "",
-    hasPassword: Boolean(subscription.sharing_encrypted_credentials),
+    hasPassword: Boolean(credentialMetadata.passwordMask),
+    additionalCredential: credentialMetadata.additionalCredential,
     familySharingEnabled: Boolean(subscription.family_sharing_enabled),
     verificationMode: familyVerificationConfig(subscription).mode,
     verificationLink: familyVerificationConfig(subscription).mode === "email" ? subscription.sharing_verification_link ?? null : null,

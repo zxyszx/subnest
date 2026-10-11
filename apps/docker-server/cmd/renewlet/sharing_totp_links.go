@@ -120,12 +120,13 @@ func sharingTotpLinkValid(app core.App, link *core.Record) bool {
 }
 
 type publicSharingTotpDetails struct {
-	OTP           *core.Record
-	PlatformName  string
-	AccountNumber int
-	Logo          *string
-	Password      *string
-	Seat          *onlineTotpPublicSeat
+	OTP                  *core.Record
+	PlatformName         string
+	AccountNumber        int
+	Logo                 *string
+	Password             *string
+	AdditionalCredential *sharingAdditionalCredential
+	Seat                 *onlineTotpPublicSeat
 }
 
 func resolvePublicSharingTotpDetails(app core.App, token string) (*publicSharingTotpDetails, error) {
@@ -154,8 +155,13 @@ func resolvePublicSharingTotpDetails(app core.App, token string) (*publicSharing
 	details.AccountNumber = sharingSubscriptionAccountNumber(subscription, account)
 	details.Logo = optionalSharingString(subscription.GetString("logo"))
 	if encrypted := strings.TrimSpace(subscription.GetString("sharingEncryptedCredentials")); encrypted != "" {
-		if password, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
-			details.Password = &password
+		if plaintext, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
+			if credentials, decodeErr := decodeSharingCredentialBundle(plaintext); decodeErr == nil {
+				if credentials.Password != "" {
+					details.Password = &credentials.Password
+				}
+				details.AdditionalCredential = credentials.AdditionalCredential
+			}
 		}
 	}
 	seat, err := findOwnedSharingSeat(app, link.GetString("user"), seatID)

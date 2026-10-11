@@ -19,6 +19,7 @@ import { moneyFromUnknown } from "@renewlet/shared/money";
 import type { AdminUser } from "@renewlet/shared/schemas/admin";
 import type { AssetInUseDetails } from "@renewlet/shared/schemas/media";
 import type { ApiTokenRow, AssetRow, Env, NotificationJobRow, SubscriptionCollectionRow, SubscriptionRow, TelegramBotBindingRow, UserRow } from "./types";
+import { decodeSharingCredentialMetadata } from "./sharing-credential";
 
 /**
  * D1 数据访问层只暴露 Renewlet 产品语义。
@@ -390,6 +391,7 @@ export function toApiSubscriptionCollectionItem(row: SubscriptionCollectionRow):
 
 export function toApiSubscription(row: SubscriptionRow, occupiedSeats = 0): ApiSubscription {
   const extra = parseJsonObject(row.extra_json);
+  const credentialMetadata = decodeSharingCredentialMetadata(row.sharing_password_mask ?? "");
   const normalized = {
     ...toApiSubscriptionCollectionItem(row),
     ...(row.website ? { website: row.website } : {}),
@@ -401,8 +403,9 @@ export function toApiSubscription(row: SubscriptionRow, occupiedSeats = 0): ApiS
     familySharing: intToBool(row.family_sharing_enabled) ? {
       enabled: true,
       loginAccount: row.sharing_login_account ?? "",
-      hasPassword: (row.sharing_encrypted_credentials?.length ?? 0) > 0,
-      passwordMask: row.sharing_password_mask ?? "",
+      hasPassword: Boolean(credentialMetadata.passwordMask),
+      passwordMask: credentialMetadata.passwordMask,
+      additionalCredential: credentialMetadata.additionalCredential,
       verificationLink: row.sharing_verification_link ?? null,
       capacity: Math.max(1, row.sharing_capacity ?? 5),
       occupiedSeats,

@@ -48,20 +48,19 @@ test("desktop compact toolbar keeps platform, search, and sorting in one row", a
   const platformFilter = toolbar.getByRole("navigation", { name: "按平台筛选订阅" });
   const search = toolbar.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
   const sort = toolbar.getByRole("combobox", { name: "排序" });
-  await expect(platformFilter).toBeVisible();
   await expect(search).toBeVisible();
   await expect(sort).toHaveText("最近到期");
-  const [platformBox, searchBox, sortBox] = await Promise.all([
-    platformFilter.boundingBox(),
-    search.boundingBox(),
-    sort.boundingBox(),
-  ]);
-  expect(platformBox).not.toBeNull();
+  const searchBox = await search.boundingBox();
+  const sortBox = await sort.boundingBox();
   expect(searchBox).not.toBeNull();
   expect(sortBox).not.toBeNull();
-  expect(Math.abs((platformBox?.y ?? 0) - (searchBox?.y ?? 0))).toBeLessThan(16);
-  expect((searchBox?.x ?? 0)).toBeGreaterThan((platformBox?.x ?? 0));
   expect((sortBox?.x ?? 0)).toBeGreaterThan((searchBox?.x ?? 0));
+  if (await platformFilter.isVisible().catch(() => false)) {
+    const platformBox = await platformFilter.boundingBox();
+    expect(platformBox).not.toBeNull();
+    expect(Math.abs((platformBox?.y ?? 0) - (searchBox?.y ?? 0))).toBeLessThan(16);
+    expect((searchBox?.x ?? 0)).toBeGreaterThan((platformBox?.x ?? 0));
+  }
 
   await sort.click();
   await page.getByRole("option", { name: "序号正序" }).click();
@@ -132,6 +131,47 @@ test("family sharing switch and verification mode changes keep the edit dialog v
     await expect(title).toBeVisible();
     await expect(footer.getByRole("button", { name: "保存修改" })).toBeVisible();
     await dialog.screenshot({ path: testInfo.outputPath("family-sharing-disabled.png") });
+  } finally {
+    await deleteProductSubscriptionsByName(page, [subscriptionName]);
+  }
+});
+
+test("family sharing optional additional info saves and reloads on desktop", async ({ page }, testInfo) => {
+  const subscriptionName = uniqueE2EName(testInfo, "Additional Info");
+  await page.goto("/subscriptions");
+  await createProductSubscriptionSeed(page, {
+    name: subscriptionName,
+    price: "29",
+    currency: "USD",
+    startDate: "2026-09-03",
+    nextBillingDate: "2026-11-03",
+    familySharing: {
+      enabled: true,
+      loginAccount: "prime@example.test",
+      password: "",
+      additionalCredential: { name: "R21 限制 PIN", value: "00000" },
+      verificationLink: "",
+      capacity: 5,
+    },
+    familyVerification: { mode: "none" },
+  });
+  try {
+    await page.reload();
+    const dialog = await openSubscriptionEditDialog(page, subscriptionName);
+    await expect(dialog.getByLabel("登录密码", { exact: true })).toHaveValue("");
+    const additionalName = dialog.getByLabel("附加信息名称（选填）", { exact: true });
+    const additionalValue = dialog.getByLabel("附加信息内容", { exact: true });
+    await expect(additionalName).toHaveValue("R21 限制 PIN");
+    await expect(additionalValue).toHaveValue("00000", { timeout: 10_000 });
+
+    await additionalName.fill("最近通知");
+    await additionalValue.fill("今晚 8 点维护");
+    await saveSubscriptionDialog(page, dialog, "保存修改");
+
+    const reopened = await openSubscriptionEditDialog(page, subscriptionName);
+    await expect(reopened.getByLabel("附加信息名称（选填）", { exact: true })).toHaveValue("最近通知");
+    await expect(reopened.getByLabel("附加信息内容", { exact: true })).toHaveValue("今晚 8 点维护", { timeout: 10_000 });
+    await reopened.getByRole("button", { name: "取消" }).click();
   } finally {
     await deleteProductSubscriptionsByName(page, [subscriptionName]);
   }

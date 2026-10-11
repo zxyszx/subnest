@@ -73,6 +73,11 @@ export const subscriptionFamilySharingWriteSchema = z.object({
   loginAccount: z.string().trim().max(320),
   // 新建时空密码表示不设置密码；编辑已有密码时空值表示保留现有密钥。
   password: z.string().max(1024),
+  // undefined 保留现有附加凭据，null 显式清除；空 value 在编辑时保留已保存内容。
+  additionalCredential: z.object({
+    name: z.string().trim().min(1).max(80),
+    value: z.string().max(1024),
+  }).strict().nullable().optional(),
   verificationLink: z.string().trim().max(2048).refine((value) => !value || isHttpUrl(value), "Invalid URL"),
   capacity: z.number().int().min(1).max(100),
 }).strict();
@@ -82,6 +87,10 @@ export const subscriptionFamilySharingSchema = z.object({
   loginAccount: z.string().max(320),
   hasPassword: z.boolean(),
   passwordMask: z.string(),
+  additionalCredential: z.object({
+    name: z.string().min(1).max(80),
+    valueMask: z.string(),
+  }).strict().nullable().default(null),
   verificationLink: z.string().nullable(),
   capacity: z.number().int().min(1).max(100),
   // Older servers omit this field; zero keeps rolling upgrades readable while new detail routes expose the real count.

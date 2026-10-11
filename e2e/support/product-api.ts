@@ -17,6 +17,15 @@ export type ProductSubscriptionSeed = {
   autoCalculateNextBillingDate?: boolean;
   reminderDays?: number;
   tags?: string[];
+  familySharing?: {
+    enabled: boolean;
+    loginAccount: string;
+    password?: string;
+    additionalCredential?: { name: string; value: string } | null;
+    verificationLink?: string;
+    capacity: number;
+  } | null;
+  familyVerification?: { mode: "email" | "totp" | "none"; mailboxId?: string; totpAccountId?: string };
 };
 
 function isRecord(value: unknown): value is JsonObject {
@@ -171,7 +180,8 @@ export async function createProductSubscriptionSeed(page: Page, seed: ProductSub
       repeatReminderInterval: "1h",
       repeatReminderWindow: "72h",
       costSharing: null,
-      extra: {},
+      familySharing: seed.familySharing ?? null,
+      extra: seed.familyVerification ? { familyVerification: seed.familyVerification } : {},
     },
   });
 

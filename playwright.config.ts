@@ -131,6 +131,7 @@ export default defineConfig({
     {
       name: performanceMode ? "performance-desktop" : "desktop",
       dependencies: [performanceMode ? "performance-seed" : "setup"],
+      testIgnore: ["**/cloudflare-check/**"],
       repeatEach: performanceMode && !profilingMode ? performanceSampleCount : 1,
       testMatch: previousDist ? ["**/version-upgrade.spec.ts"] : performanceMode ? ["**/performance.spec.ts"] : [
         "**/calendar-feed-management.spec.ts",
@@ -150,6 +151,7 @@ export default defineConfig({
     {
       name: performanceMode ? "performance-mobile" : "mobile",
       dependencies: [performanceMode ? "performance-seed" : "setup"],
+      testIgnore: ["**/cloudflare-check/**"],
       repeatEach: performanceMode && !profilingMode ? performanceSampleCount : 1,
       testMatch: previousDist ? ["**/version-upgrade.spec.ts"] : performanceMode ? ["**/performance.spec.ts"] : ["**/mobile-*.spec.ts", "**/route-progress.spec.ts", "**/report-exchange-rates.spec.ts"],
       use: {

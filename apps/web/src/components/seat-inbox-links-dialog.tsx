@@ -96,13 +96,17 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
   const copySeatShare = async (seat: SharingSeat, shortUrl: string) => {
     if (!selectedAccount) return;
     try {
-      const password = selectedAccount.hasPassword ? await sharingService.password(selectedAccount.id) : t("sharing.passwordNotSet");
+      const credentials = selectedAccount.hasPassword || selectedAccount.additionalCredential
+        ? await sharingService.credentials(selectedAccount.id)
+        : { password: "", additionalCredential: null };
+      const password = credentials.password || t("sharing.passwordNotSet");
       const value = t("sharing.seatShareTemplate", {
         platform: selectedAccount.subscription.platformName,
         seat: t("sharing.inboxSeat", { number: seat.seatNumber }),
         member: seat.memberName || t("sharing.inboxVacant"),
         account: selectedAccount.loginAccount,
         password,
+        additionalCredential: credentials.additionalCredential ? `\n${credentials.additionalCredential.name}：${credentials.additionalCredential.value}` : "",
         link: shortUrl,
         expiresAt: seat.expiresAt || "-",
       });

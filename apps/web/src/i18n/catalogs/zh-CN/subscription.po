@@ -729,6 +729,11 @@ msgid "subscription.placeholder.name"
 msgstr "例如: Netflix, Spotify"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:785
+msgid "subscription.familySharing.additionalCredentialNamePlaceholder"
+msgstr "例如：R21 内容观看 PIN、最近通知"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:69
 msgid "subscription.dialogEditSubmit"
 msgstr "保存修改"
@@ -1164,6 +1169,11 @@ msgid "subscriptions.sort.nameDesc"
 msgstr "名称 Z-A"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:789
+msgid "subscription.familySharing.additionalCredentialHelp"
+msgstr "名称和内容会显示在车位专属的共享邮箱及在线 2FA 页面。"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:241
 msgid "subscription.publicHiddenHelp"
 msgstr "启用公开展示页后，此订阅不会出现在公开状态面板。"
@@ -1282,6 +1292,16 @@ msgstr "复制密码失败"
 #: src/i18n/descriptors/subscription.ts:244
 msgid "subscription.cloneDialogTitle"
 msgstr "复制订阅"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:791
+msgid "subscription.familySharing.copyAdditionalCredential"
+msgstr "复制附加信息"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:793
+msgid "subscription.familySharing.additionalCredentialCopyFailed"
+msgstr "复制附加信息失败"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:458
@@ -1642,6 +1662,11 @@ msgstr "当前一键复制不可用，请手动选择并复制本次 URL。"
 #: src/i18n/descriptors/subscription.ts:257
 msgid "subscription.renew.currentNextBillingDate"
 msgstr "当前下次扣费日"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:790
+msgid "subscription.familySharing.additionalCredentialKeepHint"
+msgstr "当前内容已保存；留空表示保持不变。"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:139
@@ -2159,6 +2184,11 @@ msgid "subscription.familySharing.passwordUnavailable"
 msgstr "无法读取已保存的密码"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:794
+msgid "subscription.familySharing.additionalCredentialUnavailable"
+msgstr "无法读取已保存的附加信息"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:687
 msgid "statistics.trendNoItems"
 msgstr "无订阅明细"
@@ -2594,6 +2624,11 @@ msgid "import.loading"
 msgstr "正在解析和生成预览..."
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:788
+msgid "subscription.familySharing.additionalCredentialLoading"
+msgstr "正在读取已保存内容..."
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:780
 msgid "subscription.addToCalendarFeedStatusRetrying"
 msgstr "正在重新加载..."
@@ -2952,6 +2987,11 @@ msgstr "移除标签 {tag}"
 #: src/i18n/descriptors/subscription.ts:644
 msgid "aiRecognition.removeDraft"
 msgstr "移除草稿"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:795
+msgid "subscription.familySharing.removeAdditionalCredential"
+msgstr "移除附加信息"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:460
@@ -3579,6 +3619,11 @@ msgid "subscription.familySharing.passwordPlaceholder"
 msgstr "输入登录密码"
 
 #. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:787
+msgid "subscription.familySharing.additionalCredentialValuePlaceholder"
+msgstr "输入需要向车友展示的内容"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:740
 msgid "dashboard.recentSubscriptions"
 msgstr "近期订阅"
@@ -3822,6 +3867,21 @@ msgstr "长期有效的一次性购买不支持收款提醒"
 #: src/i18n/descriptors/subscription.ts:236
 msgid "subscription.repeatReminderInterval"
 msgstr "间隔"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:786
+msgid "subscription.familySharing.additionalCredentialValue"
+msgstr "附加信息内容"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:784
+msgid "subscription.familySharing.additionalCredentialName"
+msgstr "附加信息名称（选填）"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/subscription.ts:792
+msgid "subscription.familySharing.additionalCredentialCopied"
+msgstr "附加信息已复制"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:141

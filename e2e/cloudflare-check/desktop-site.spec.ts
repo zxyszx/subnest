@@ -58,7 +58,7 @@ const protectedPages: Array<{ path: string; label: string; assertReady: (page: P
     path: "/settings",
     label: "settings",
     assertReady: async (page) => {
-      await expect(page.getByRole("heading", { name: "系统配置" })).toBeVisible();
+      await expect(page.getByTestId("settings-current-section-header").getByRole("heading", { name: "账户设置" })).toBeVisible();
     },
   },
   {

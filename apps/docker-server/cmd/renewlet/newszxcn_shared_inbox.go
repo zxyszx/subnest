@@ -304,8 +304,15 @@ func handleSharedInboxProxy(app core.App, e *core.RequestEvent, suffix string) e
 				object["logo"] = optionalSharingString(subscription.GetString("logo"))
 				object["loginAccount"] = subscription.GetString("sharingLoginAccount")
 				if encrypted := strings.TrimSpace(subscription.GetString("sharingEncryptedCredentials")); encrypted != "" {
-					if password, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
-						object["password"] = password
+					if plaintext, decryptErr := decryptSharingCredential(app, encrypted); decryptErr == nil {
+						if credentials, decodeErr := decodeSharingCredentialBundle(plaintext); decodeErr == nil {
+							if credentials.Password != "" {
+								object["password"] = credentials.Password
+							}
+							if credentials.AdditionalCredential != nil {
+								object["additionalCredential"] = credentials.AdditionalCredential
+							}
+						}
 					}
 				}
 				object["seat"] = map[string]any{"number": seat.GetInt("seatNumber"), "memberName": seat.GetString("memberName"), "expiresAt": optionalSharingString(seat.GetString("expiresAt"))}

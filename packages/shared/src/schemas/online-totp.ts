@@ -42,6 +42,10 @@ export const onlineTotpPublicPayloadSchema = z.object({
   accountNumber: z.number().int().positive(),
   account: z.string().min(1),
   password: z.string().optional(),
+  additionalCredential: z.object({
+    name: z.string().min(1).max(80),
+    value: z.string(),
+  }).strict().optional(),
   seat: z.object({
     number: z.number().int().positive(),
     memberName: z.string().min(1),

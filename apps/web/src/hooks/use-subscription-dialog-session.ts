@@ -216,7 +216,11 @@ function isCreateFormPristine(formData: SubscriptionFormState): boolean {
     formData.familySharing.enabled === baseline.familySharing.enabled &&
     formData.familySharing.loginAccount === baseline.familySharing.loginAccount &&
     formData.familySharing.password === baseline.familySharing.password &&
+    formData.familySharing.additionalCredentialName === baseline.familySharing.additionalCredentialName &&
+    formData.familySharing.additionalCredentialValue === baseline.familySharing.additionalCredentialValue &&
+    formData.familySharing.removeAdditionalCredential === baseline.familySharing.removeAdditionalCredential &&
     formData.familySharing.verificationLink === baseline.familySharing.verificationLink &&
+    formData.familySharing.mailboxId === baseline.familySharing.mailboxId &&
     formData.familySharing.capacity === baseline.familySharing.capacity &&
     formData.familySharing.verificationMode === baseline.familySharing.verificationMode &&
     formData.familySharing.totpAccountId === baseline.familySharing.totpAccountId &&
@@ -268,6 +272,11 @@ function subscriptionToFormState(subscription: Subscription): SubscriptionFormSt
       password: "",
       hasPassword: subscription.familySharing.hasPassword,
       passwordMask: subscription.familySharing.passwordMask,
+      additionalCredentialName: subscription.familySharing.additionalCredential?.name ?? "",
+      additionalCredentialValue: "",
+      hasAdditionalCredential: Boolean(subscription.familySharing.additionalCredential),
+      additionalCredentialValueMask: subscription.familySharing.additionalCredential?.valueMask ?? "",
+      removeAdditionalCredential: false,
       verificationLink: subscription.familySharing.verificationLink ?? "",
       capacity: String(subscription.familySharing.capacity),
       verificationMode: (() => {
