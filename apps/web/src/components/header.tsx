@@ -20,7 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useTheme } from '@/lib/theme-provider';
 import { toast } from '@/components/ui/sonner';
 import { RenewletBrandMark } from '@/components/brand/renewlet-brand-mark';
-import { getHeaderDesktopNavLinkClass, getHeaderMobileNavLinkClass, headerLayout } from '@/components/header-layout';
+import { getHeaderDesktopNavLinkClass, getHeaderDesktopUtilityLinkClass, getHeaderMobileNavLinkClass, headerLayout } from '@/components/header-layout';
 import { authClient } from '@/lib/auth-client';
 import { SystemUpdateDialog } from '@/components/system-update-dialog';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -60,6 +60,7 @@ const navItems: NavItem[] = [
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
 ];
 const mobilePrimaryPaths = new Set(["/", "/subscriptions", "/sharing", "/online-2fa"]);
+const desktopPrimaryPaths = mobilePrimaryPaths;
 
 function renderNavIcon(icon: NavIconKey, className: string) {
   switch (icon) {
@@ -92,6 +93,10 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
   const isAuthenticated = Boolean(sessionData?.user);
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
+  const desktopPrimaryItems = visibleNavItems.filter((item) => desktopPrimaryPaths.has(item.path));
+  const desktopMoreItems = visibleNavItems.filter((item) => !desktopPrimaryPaths.has(item.path) && item.path !== "/settings");
+  const settingsItem = visibleNavItems.find((item) => item.path === "/settings");
+  const desktopMoreActive = desktopMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
   const mobilePrimaryItems = visibleNavItems.filter((item) => mobilePrimaryPaths.has(item.path));
   const mobileMoreItems = visibleNavItems.filter((item) => !mobilePrimaryPaths.has(item.path));
   const mobileMoreActive = mobileMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
@@ -140,7 +145,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           </div>
 
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav">
-            {visibleNavItems.map((item) => (
+            {desktopPrimaryItems.map((item) => (
               <NavLink
                 key={item.path}
                 href={item.path}
@@ -152,6 +157,33 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 <span className={headerLayout.desktopNavLabel}>{t(item.labelKey)}</span>
               </NavLink>
             ))}
+            {desktopMoreItems.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={getHeaderDesktopNavLinkClass(desktopMoreActive)}
+                    aria-label={t("nav.more")}
+                    aria-current={desktopMoreActive ? "page" : undefined}
+                  >
+                    <MoreHorizontal className={headerLayout.desktopNavIcon} />
+                    <span className={headerLayout.desktopNavLabel}>{t("nav.more")}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" aria-label={t("nav.moreDescription")}>
+                  {desktopMoreItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.path}
+                      className={pathname === item.path || pathname.startsWith(`${item.path}/`) ? "text-primary" : undefined}
+                      onSelect={() => router.push(item.path)}
+                    >
+                      {renderNavIcon(item.icon, "mr-3 h-4 w-4 shrink-0")}
+                      <span>{t(item.labelKey)}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </nav>
         </div>
 
@@ -164,6 +196,18 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           {onAddSubscription ? subscriptionActions : null}
 
           {pageActions}
+
+          {settingsItem ? (
+            <NavLink
+              href={settingsItem.path}
+              title={t(settingsItem.labelKey)}
+              aria-label={t(settingsItem.labelKey)}
+              className={({ isActive }) => getHeaderDesktopUtilityLinkClass(isActive)}
+            >
+              {renderNavIcon(settingsItem.icon, "h-4 w-4")}
+              <span className="sr-only">{t(settingsItem.labelKey)}</span>
+            </NavLink>
+          ) : null}
 
           <Button
             variant="ghost"

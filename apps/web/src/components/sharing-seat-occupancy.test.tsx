@@ -36,6 +36,26 @@ describe("SharingSeatOccupancy", () => {
     expect(occupancy.querySelectorAll("[data-tone='vacant']")).toHaveLength(2);
   });
 
+  it("shows the four operational seat states next to the seat count", () => {
+    render(<SharingSeatOccupancy occupied={1} capacity={4} seatStates={["active", "expired", "paused", "vacant"]} />);
+
+    const occupancy = screen.getByLabelText("1 / 4");
+    expect(occupancy).toHaveTextContent("使用中 1");
+    expect(occupancy).toHaveTextContent("到期 1");
+    expect(occupancy).toHaveTextContent("停用 1");
+    expect(occupancy).toHaveTextContent("空闲 1");
+    expect(occupancy.querySelectorAll("[data-state='paused']")).toHaveLength(1);
+  });
+
+  it("keeps state colors while allowing a compact view without duplicate labels", () => {
+    render(<SharingSeatOccupancy occupied={1} capacity={2} seatStates={["active", "paused"]} showStateSummary={false} />);
+
+    const occupancy = screen.getByLabelText("1 / 2");
+    expect(occupancy).not.toHaveTextContent("使用中 1");
+    expect(occupancy.querySelectorAll("[data-state='active']")).toHaveLength(1);
+    expect(occupancy.querySelectorAll("[data-state='paused']")).toHaveLength(1);
+  });
+
   it("maps expiry dates to the agreed green, yellow, and red thresholds", () => {
     expect(sharingSeatExpiryTone(8)).toBe("normal");
     expect(sharingSeatExpiryTone(7)).toBe("warning");

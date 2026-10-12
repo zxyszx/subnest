@@ -33,6 +33,13 @@ export function getHeaderDesktopNavLinkClass(isActive: boolean) {
   );
 }
 
+export function getHeaderDesktopUtilityLinkClass(isActive: boolean) {
+  return cn(
+    "hidden h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:inline-flex",
+    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+  );
+}
+
 export function getHeaderDesktopNavSkeletonItemClass() {
   return headerDesktopNavSkeletonItem;
 }

@@ -1,8 +1,9 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@/lib/router';
-import { Menu, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   SideDrawerClose,
   SideDrawerContent,
@@ -417,9 +418,9 @@ function SettingsSectionNavLink({
           ? "block rounded-md px-3 py-1.5 text-sm font-medium"
           : "block rounded-md px-3 py-2 text-sm font-medium",
         active && variant === "desktop" && "bg-primary/10 text-primary",
-        !active && variant === "desktop" && "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
+        !active && variant === "desktop" && "text-foreground/80 hover:bg-secondary/70 hover:text-foreground",
         active && variant === "mobileDrawer" && "bg-primary/10 text-primary",
-        !active && variant === "mobileDrawer" && "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
+        !active && variant === "mobileDrawer" && "text-foreground/80 hover:bg-secondary/70 hover:text-foreground",
       )}
     >
       {variant === "desktop" && active ? (
@@ -440,7 +441,13 @@ export function DesktopSettingsSectionNav({
   onSectionIntent,
 }: SettingsSectionNavigationProps) {
   const { t } = useI18n();
-  const groupedSections = groupSettingsSections(sections);
+  const [query, setQuery] = useState("");
+  const filteredSections = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle) return sections;
+    return sections.filter((section) => t(section.labelKey).toLocaleLowerCase().includes(needle));
+  }, [query, sections, t]);
+  const groupedSections = groupSettingsSections(filteredSections);
 
   return (
     <nav
@@ -448,26 +455,39 @@ export function DesktopSettingsSectionNav({
       className={settingsLayout.desktopNav}
       data-testid="settings-section-nav-desktop"
     >
-      <div className="grid gap-2">
+      <div className="grid gap-3">
         <p className="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("settings.sectionNavTitle")}
         </p>
+        <div className="relative px-2">
+          <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("common.searchPlaceholder")}
+            aria-label={t("common.searchPlaceholder")}
+            className="h-9 bg-secondary pl-9 text-sm"
+          />
+        </div>
         <div className="grid gap-3">
           {groupedSections.map((group, index) => (
-            <div key={group.id} className={cn("grid gap-0.5", index > 0 && "border-t border-border/70 pt-3")}>
-              <p className="px-3 pb-1 text-[11px] font-semibold text-muted-foreground">
+            <div key={group.id} className={cn("grid gap-1", index > 0 && "border-t border-border/70 pt-3")}>
+              <p className="px-3 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground/75">
                 {t(group.labelKey)}
               </p>
-              {group.sections.map((section) => (
-                <SettingsSectionNavLink
-                  key={section.id}
-                  section={section}
-                  active={activeSectionId === section.id}
-                  onSectionClick={onSectionClick}
-                  onSectionIntent={onSectionIntent}
-                  variant="desktop"
-                />
-              ))}
+              <div className="ml-3 grid gap-0.5 border-l border-border/80 pl-2">
+                {group.sections.map((section) => (
+                  <SettingsSectionNavLink
+                    key={section.id}
+                    section={section}
+                    active={activeSectionId === section.id}
+                    onSectionClick={onSectionClick}
+                    onSectionIntent={onSectionIntent}
+                    variant="desktop"
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -488,7 +508,13 @@ export function MobileSettingsSectionDrawer({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useI18n();
-  const groupedSections = groupSettingsSections(sections);
+  const [query, setQuery] = useState("");
+  const filteredSections = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle) return sections;
+    return sections.filter((section) => t(section.labelKey).toLocaleLowerCase().includes(needle));
+  }, [query, sections, t]);
+  const groupedSections = groupSettingsSections(filteredSections);
   const handleSectionClick = (id: SettingsSectionId) => {
     onSectionClick(id);
     onOpenChange(false);
@@ -519,12 +545,24 @@ export function MobileSettingsSectionDrawer({
           </SideDrawerClose>
         </div>
 
+        <div className="relative border-b border-border px-4 py-3">
+          <Search className="pointer-events-none absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("common.searchPlaceholder")}
+            aria-label={t("common.searchPlaceholder")}
+            className="h-11 bg-secondary pl-9"
+          />
+        </div>
+
         <nav aria-label={t("settings.sectionNavLabel")} className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
           <div className="grid gap-4">
             {groupedSections.map((group, index) => (
               <div key={group.id} className={cn("grid gap-1", index > 0 && "border-t border-border/70 pt-4")}>
-                <p className="px-3 text-xs font-semibold text-muted-foreground">{t(group.labelKey)}</p>
-                <ul className="grid gap-0.5">
+                <p className="px-3 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground/75">{t(group.labelKey)}</p>
+                <ul className="ml-3 grid gap-0.5 border-l border-border/80 pl-2">
                   {group.sections.map((section) => (
                     <li key={section.id}>
                       <SettingsSectionNavLink

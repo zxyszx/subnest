@@ -78,6 +78,13 @@ describe("family 2FA scopes",()=> {
   database.exec(`UPDATE subscriptions SET family_sharing_enabled=1,extra_json='{"familyVerification":{"mode":"totp","totpAccountId":"foreign"}}' WHERE id='sub'`);
   await expect(generate(env)).rejects.toThrow("2FA_ACCOUNT_NOT_MATCHED");
  });
+ it("keeps scheduled-stop seat links valid until expiry",async()=>{
+  const {env,database}=fixture();database.exec("UPDATE sharing_seats SET status='paused',expires_at='2099-01-01' WHERE id='seat1'");
+  const {links}=await generate(env);const seatLink=links.find(link=>link.seatId==="seat1")!;
+  expect(seatLink.valid).toBe(true);expect(await resolvePublicSharingTotp(env,token(seatLink))).toMatchObject({id:"otp"});
+  database.exec("UPDATE sharing_seats SET expires_at='2000-01-01' WHERE id='seat1'");
+  expect(await resolvePublicSharingTotp(env,token(seatLink))).toBeNull();
+ });
  it("rejects expired tokens, changed credentials, disabled TOTP and mailbox mode",async()=>{
   const {env,database}=fixture();const {links}=await generate(env);const general=links.find(link=>!link.seatId)!;
   database.exec("UPDATE sharing_totp_links SET expires_at='2000-01-01T00:00:00Z'");expect(await resolvePublicSharingTotp(env,token(general))).toBeNull();

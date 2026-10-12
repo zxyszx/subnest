@@ -122,6 +122,17 @@ describe("SeatInboxLinksDialog", () => {
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1" }));
     expect(mocks.revoke).not.toHaveBeenCalled();
   });
+  it("allows a scheduled-stop seat to generate a link before it expires", async () => {
+    const user = userEvent.setup();
+    mocks.detail.mockResolvedValue({ account, seats: [{ ...seat, status: "paused", expiresAt: "2099-01-01" }] });
+    renderDialog();
+    await openSharingSettings(user);
+    await user.click(screen.getByRole("checkbox", { name: "收件箱" }));
+    const generate = (await screen.findAllByRole("button", { name: "生成链接" }))[0]!;
+    expect(generate).toBeEnabled();
+    await user.click(generate);
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1" })));
+  });
   it("confirms disabling and leaves generic and other account links intact", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }, { ...link, id: "generic", seatId: null }, { ...link, id: "other", seatId: "other-seat" }]);

@@ -1,7 +1,7 @@
 // 单次 open session 独占表单草稿；本层只编排字段、自动日期和提交转换，不拥有 Radix modal 生命周期。
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubscriptionFormFields } from "@/components/subscription-form-fields";
 import {
@@ -162,6 +162,31 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
 
   useSubscriptionFormAutoDates(formData, setFormData, billingReferenceDate);
 
+  useEffect(() => {
+    const firstErrorField = Object.keys(formErrors)[0];
+    if (!firstErrorField) return;
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const form = formRef.current;
+        if (!form) return;
+        const target = form.querySelector<HTMLElement>(
+          `[data-subscription-validation-field="${firstErrorField}"], [aria-invalid="true"]:not([disabled])`,
+        );
+        if (!target) return;
+        target.scrollIntoView?.({
+          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "center",
+        });
+        target.focus({ preventScroll: true });
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [formErrors]);
+
   const getSubmissionFormData = useCallback(() => {
     const pendingTags = Array.from(
       formRef.current?.querySelectorAll<HTMLInputElement>("[data-subscription-tag-pending-input]") ?? [],
@@ -256,6 +281,10 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
   };
 
   const submitDisabled = logoUploadStatus === "uploading" || submitting || managedShareSetupPending;
+  const firstFormError = Object.values(formErrors).find((message) => Boolean(message));
+  const actionError = submitError ?? (firstFormError
+    ? t("subscription.validation.summary", { message: firstFormError })
+    : null);
   const loadingPreview = props.mode === "create"
     ? props.initialSubscription ?? props.loadingPreview ?? formData
     : props.loadingPreview;
@@ -295,9 +324,10 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
       )}
       actions={loadingSlots?.actions ?? (
         <>
-          {submitError ? (
-            <p className="w-full min-w-0 wrap-break-word text-center text-sm text-destructive sm:mr-auto sm:w-auto sm:text-left">
-              {submitError}
+          {actionError ? (
+            <p aria-live="polite" className="flex w-full min-w-0 items-center justify-center gap-2 wrap-break-word text-center text-sm text-destructive sm:mr-auto sm:w-auto sm:justify-start sm:text-left">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {actionError}
             </p>
           ) : null}
           <Button

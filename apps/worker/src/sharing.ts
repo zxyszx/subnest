@@ -11,9 +11,10 @@ import { toMonthlyAmount } from "@renewlet/shared/subscription-billing";
 import { requireAuth } from "./auth";
 import { decodeSharingCredentialBundle, decodeSharingCredentialMetadata, decryptSharingCredential } from "./sharing-credential";
 import { HttpError, readJson, requestLocale, successJson } from "./http";
-import { newId, nowIso } from "./db";
+import { getSettings, newId, nowIso } from "./db";
 import type { Env, SubscriptionRow } from "./types";
 import { familyTotpSeatStatement, familyVerificationConfig } from "./sharing-totp-links";
+import { dateOnlyInZone } from "./time";
 
 interface SharingAccountRow {
   id: string;
@@ -63,6 +64,7 @@ interface SharingReceivableRow {
 
 export async function readSharingAccounts(request: Request, env: Env): Promise<Response> {
   const auth = await requireAuth(request, env);
+  const today = dateOnlyInZone(new Date(), (await getSettings(env, auth.user.id)).timezone);
   const result = await env.DB.prepare(`
     SELECT a.* FROM sharing_accounts a
     JOIN subscriptions s ON s.id = a.subscription_id AND s.user_id = a.user_id
@@ -71,15 +73,16 @@ export async function readSharingAccounts(request: Request, env: Env): Promise<R
       lower(s.platform_name), s.account_number, a.created_at
     LIMIT 500
   `).bind(auth.user.id).all<SharingAccountRow>();
-  const accounts = await Promise.all(result.results.map((row) => sharingAccountApi(env, row)));
+  const accounts = await Promise.all(result.results.map((row) => sharingAccountApi(env, row, today)));
   return successJson(sharingAccountsPayloadSchema.parse({ accounts, total: accounts.length }));
 }
 
 export async function readSharingAccountDetail(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await requireAuth(request, env);
+  const today = dateOnlyInZone(new Date(), (await getSettings(env, auth.user.id)).timezone);
   const account = await ownedAccount(env, auth.user.id, id);
   if (!account) throw new HttpError(404, "SHARING_ACCOUNT_NOT_FOUND", "NOT_FOUND");
-  const accountApi = await sharingAccountApi(env, account);
+  const accountApi = await sharingAccountApi(env, account, today);
   const seatsResult = await env.DB.prepare(`
     SELECT * FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?
     ORDER BY seat_number LIMIT 100
@@ -128,14 +131,16 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
     }
   }
   const timestamp = nowIso();
+  const today = dateOnlyInZone(new Date(), (await getSettings(env, auth.user.id)).timezone);
+  const linkEligible = (body.status === "active" || body.status === "paused") && body.expiresAt >= today;
   const statements: D1PreparedStatement[] = [];
   statements.push(env.DB.prepare(`UPDATE sharing_totp_links SET revoked=1 WHERE user_id=? AND seat_id=? AND (
-    ?!='active' OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
-    .bind(auth.user.id,id,body.status,id,auth.user.id,body.memberName,body.contact,body.contactType));
+    ?=0 OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
+    .bind(auth.user.id,id,linkEligible ? 1 : 0,id,auth.user.id,body.memberName,body.contact,body.contactType));
   statements.push(env.DB.prepare(`UPDATE shared_inbox_links SET status='revoked', revoked_at=?, updated_at=?
     WHERE user_id=? AND seat_id=? AND status='active' AND (
-      ?!='active' OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
-    .bind(timestamp, timestamp, auth.user.id, id, body.status, id, auth.user.id, body.memberName, body.contact, body.contactType));
+      ?=0 OR EXISTS (SELECT 1 FROM sharing_seats WHERE id=? AND user_id=? AND (COALESCE(member_name,'')!=? OR COALESCE(contact,'')!=? OR COALESCE(contact_type,'')!=?)))`)
+    .bind(timestamp, timestamp, auth.user.id, id, linkEligible ? 1 : 0, id, auth.user.id, body.memberName, body.contact, body.contactType));
   if (body.status === "vacant") {
     statements.push(env.DB.prepare(`
       UPDATE sharing_seats SET member_name = NULL, contact = NULL, contact_type = NULL, monthly_price = NULL,
@@ -166,7 +171,7 @@ export async function updateSharingSeat(request: Request, env: Env, id: string):
     `).bind(receivableId, auth.user.id, account.id, id, body.startDate, body.expiresAt, body.startDate, amount,
       paid ? amount : "0", body.currency, paid ? "paid" : "pending", paid ? timestamp : null, timestamp, timestamp));
   }
-  if (body.status === "active") {
+  if (linkEligible) {
     const subscription = await subscriptionForAccount(env, account);
     const linkStatement = await familyTotpSeatStatement(env, subscription, account.id, { ...seat, member_name: body.memberName, contact: body.contact || null, contact_type: body.contactType || null, expires_at: body.expiresAt || null, status: body.status }, seat.member_name !== body.memberName || (seat.contact ?? "") !== body.contact || (seat.contact_type ?? "") !== body.contactType);
     if (linkStatement) statements.push(linkStatement);
@@ -250,16 +255,18 @@ async function subscriptionForAccount(env: Env, account: SharingAccountRow): Pro
   return subscription;
 }
 
-async function sharingAccountApi(env: Env, account: SharingAccountRow) {
+async function sharingAccountApi(env: Env, account: SharingAccountRow, today: string) {
   const subscription = await subscriptionForAccount(env, account);
   const credentialMetadata = decodeSharingCredentialMetadata(subscription.sharing_password_mask ?? "");
-  const seats = await env.DB.prepare("SELECT status, monthly_price, currency FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?")
-    .bind(account.user_id, account.id, subscription.sharing_capacity ?? 5).all<Pick<SharingSeatRow, "status" | "monthly_price" | "currency">>();
-  // A paused seat means "stop at expiry": it remains occupied and earns revenue
-  // through the current paid period, but renewal notifications exclude it.
-  const activeSeats = seats.results.filter((seat) => seat.status === "active" || seat.status === "paused");
-  const monthlyRevenue = addMoney(...activeSeats.map((seat) => seat.monthly_price ?? "0"));
-  const monthlyRevenueByCurrency = Object.fromEntries(Object.entries(activeSeats.reduce<Record<string, number>>((totals, seat) => {
+  const seats = await env.DB.prepare("SELECT status, monthly_price, currency, expires_at FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?")
+    .bind(account.user_id, account.id, subscription.sharing_capacity ?? 5).all<Pick<SharingSeatRow, "status" | "monthly_price" | "currency" | "expires_at">>();
+  // A paused seat still earns revenue through its paid period, but is shown as a
+  // vacancy candidate because the member will leave when that period expires.
+  const withinPaidPeriod = (seat: Pick<SharingSeatRow, "expires_at">) => !seat.expires_at || seat.expires_at >= today;
+  const occupiedSeats = seats.results.filter((seat) => seat.status === "active" && withinPaidPeriod(seat));
+  const revenueSeats = seats.results.filter((seat) => (seat.status === "active" || seat.status === "paused") && withinPaidPeriod(seat));
+  const monthlyRevenue = addMoney(...revenueSeats.map((seat) => seat.monthly_price ?? "0"));
+  const monthlyRevenueByCurrency = Object.fromEntries(Object.entries(revenueSeats.reduce<Record<string, number>>((totals, seat) => {
     const currency = (seat.currency || subscription.currency).toUpperCase();
     totals[currency] = (totals[currency] ?? 0) + moneyToNumber(seat.monthly_price ?? "0");
     return totals;
@@ -296,7 +303,7 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow) {
     paymentMethod: subscription.payment_method,
     cardLast4: subscription.card_last4 ?? null,
     capacity: subscription.sharing_capacity ?? 5,
-    occupiedSeats: activeSeats.length,
+    occupiedSeats: occupiedSeats.length,
     monthlyRevenue,
     monthlyRevenueByCurrency,
     outstandingAmount: moneyFromNumber(outstanding),

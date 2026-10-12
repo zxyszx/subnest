@@ -97,7 +97,8 @@ func familyTotpBinding(app core.App, userID, accountID, seatID string) (*core.Re
 	parts := []string{accountID, totpID, strings.ToLower(strings.TrimSpace(sub.GetString("sharingLoginAccount"))), otp.GetString("secretCiphertext")}
 	if seatID != "" {
 		seat, err := findOwnedSharingSeat(app, userID, seatID)
-		if err != nil || seat.GetString("sharingAccount") != accountID || seat.GetString("status") != "active" || strings.TrimSpace(seat.GetString("memberName")) == "" || seat.GetInt("seatNumber") > sub.GetInt("sharingCapacity") {
+		status := seat.GetString("status")
+		if err != nil || seat.GetString("sharingAccount") != accountID || (status != "active" && status != "paused") || strings.TrimSpace(seat.GetString("memberName")) == "" || seat.GetInt("seatNumber") > sub.GetInt("sharingCapacity") {
 			return nil, "", fmt.Errorf("seat unavailable")
 		}
 		if date := seat.GetString("expiresAt"); date != "" && date < todayDateOnly(time.Now(), schedulerSettingsForUser(app, userID).Timezone) {
@@ -237,7 +238,7 @@ func syncFamilyTotpLinks(app core.App, sub *core.Record) error {
 	if err := ensureFamilyTotpLink(app, sub.GetString("user"), account.Id, "", false); err != nil {
 		return err
 	}
-	seats, err := app.FindRecordsByFilter("sharing_seats", "user={:user} && sharingAccount={:account} && status='active' && memberName!=''", "seatNumber", 100, 0, dbx.Params{"user": sub.GetString("user"), "account": account.Id})
+	seats, err := app.FindRecordsByFilter("sharing_seats", "user={:user} && sharingAccount={:account} && (status='active' || status='paused') && memberName!=''", "seatNumber", 100, 0, dbx.Params{"user": sub.GetString("user"), "account": account.Id})
 	if err != nil {
 		return err
 	}

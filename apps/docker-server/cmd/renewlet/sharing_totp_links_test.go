@@ -34,7 +34,11 @@ func TestFamilyTotpLinksIsolateSeatsAndProtectOwnership(t *testing.T) {
 	}
 	for i, seat := range seats[:2] {
 		seat.Set("memberName", fmt.Sprintf("Member %d", i))
-		seat.Set("status", "active")
+		if i == 1 {
+			seat.Set("status", "paused")
+		} else {
+			seat.Set("status", "active")
+		}
 		seat.Set("expiresAt", "2099-01-01")
 		if err := app.Save(seat); err != nil {
 			t.Fatal(err)

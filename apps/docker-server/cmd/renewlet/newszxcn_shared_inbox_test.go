@@ -49,13 +49,22 @@ func TestSeatInboxLinksAreIndependentAndOwnershipChecked(t *testing.T) {
 	assertInboxTestStatus(t, app, generic.Id, "active")
 
 	seat1.Set("status", "paused")
+	seat1.Set("expiresAt", "2099-01-01")
+	if err := app.SaveNoValidate(seat1); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateInboxSeat(app, user.Id, seat1.Id, "", "shared@example.com"); err != nil {
+		t.Fatalf("paid-period paused seat was rejected: %v", err)
+	}
+	seat1.Set("expiresAt", "2020-01-01")
 	if err := app.SaveNoValidate(seat1); err != nil {
 		t.Fatal(err)
 	}
 	if err := validateInboxSeat(app, user.Id, seat1.Id, "", "shared@example.com"); err == nil {
-		t.Fatal("paused seat was allowed")
+		t.Fatal("expired paused seat was allowed")
 	}
 	seat1.Set("status", "active")
+	seat1.Set("expiresAt", "2099-01-01")
 	seat1.Set("memberName", "")
 	if err := app.SaveNoValidate(seat1); err != nil {
 		t.Fatal(err)

@@ -105,6 +105,20 @@ describe("seat inbox link authorization", () => {
     await expect(createSharedInboxLink(request("seat1"), env)).rejects.toThrow("车位不存在");
     expect(database.prepare("SELECT count(*) AS total FROM shared_inbox_links").get()).toEqual({ total: 0 });
   });
+  it("keeps a scheduled-stop seat link usable until the seat expires", async () => {
+    const { database, env } = fixture();
+    const { link } = await readSuccessData<LinkPayload>(await createSharedInboxLink(request("seat1"), env));
+    await updateSharingSeat(new Request("https://example.test", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ memberName: "Alice", contact: "", contactType: "", monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "paused", paymentStatus: "paid", notes: "" }),
+    }), env, "seat1");
+    expect(database.prepare("SELECT status FROM shared_inbox_links WHERE id=?").get(link.id)).toEqual({ status: "active" });
+    const key = link.shortUrl.split("/").at(-1)!;
+    await expect(publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key)).resolves.toHaveProperty("status", 200);
+    database.exec("UPDATE sharing_seats SET expires_at='2000-01-01' WHERE id='seat1'");
+    await expect(publicSharedInboxMessagesProxy(new Request("https://example.test"), env, key)).rejects.toThrow("车位不存在");
+  });
   it("cleans up the upstream grant if the occupant changes during creation", async () => {
     const { database, env } = fixture();
     mocks.upstream.mockImplementation(async (url: string, init?: RequestInit) => {

@@ -43,7 +43,7 @@ function expectDetailFrameContract(container: HTMLElement): {
     "grid-rows-[minmax(0,1fr)_auto]",
     "overflow-hidden",
   );
-  expect(scrollBody).toHaveClass("h5-mobile-sheet-scroll");
+  expect(scrollBody).toHaveClass("h5-mobile-sheet-scroll", "content-start");
   expect(footer.tagName).toBe("FOOTER");
   expect(frame.children).toHaveLength(2);
   expect(scrollBody.parentElement).toBe(frame);

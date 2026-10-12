@@ -294,7 +294,9 @@ func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Re
 			return errors.New("sharing seat not found")
 		}
 		identityChanged := seat.GetString("memberName") != body.MemberName || seat.GetString("contact") != body.Contact || seat.GetString("contactType") != body.ContactType
-		if body.Status != "active" || identityChanged {
+		today := todayDateOnly(time.Now(), schedulerSettingsForUser(txApp, userID).Timezone)
+		linkEligible := (body.Status == "active" || body.Status == "paused") && body.ExpiresAt >= today
+		if !linkEligible || identityChanged {
 			if err := revokeInboxSeatLinks(txApp, userID, seat.Id); err != nil {
 				return err
 			}
@@ -330,7 +332,7 @@ func saveSharingSeatAndReceivable(app core.App, userID string, original *core.Re
 		if err != nil {
 			return err
 		}
-		if body.Status == "active" && sub.GetBool("familySharingEnabled") && familyVerificationMode(sub) == "totp" && body.ExpiresAt >= todayDateOnly(time.Now(), schedulerSettingsForUser(txApp, userID).Timezone) {
+		if linkEligible && sub.GetBool("familySharingEnabled") && familyVerificationMode(sub) == "totp" {
 			return ensureFamilyTotpLink(txApp, userID, account.Id, seat.Id, identityChanged)
 		}
 		return nil

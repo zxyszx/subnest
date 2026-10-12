@@ -312,18 +312,23 @@ describe("Header system version entry", () => {
     expect(subscriptionLabel).not.toHaveClass("sr-only", "xl:not-sr-only");
 
     expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
+    expect(within(desktopNav).getAllByRole("link")).toHaveLength(4);
+    expect(within(desktopNav).getByRole("button", { name: "更多" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "设置" })).toHaveAttribute("href", "/settings");
   });
 
-  it("places shared inbox management between online 2FA and calendar for admins", () => {
+  it("places lower-frequency admin destinations in the desktop more menu", async () => {
     mocks.useSession.mockReturnValue(adminSession("admin"));
+    const user = userEvent.setup();
 
     renderHeader();
 
-    const links = within(screen.getByTestId("app-header-desktop-nav")).getAllByRole("link");
-    const labels = links.map((link) => link.textContent?.trim());
-    expect(labels.indexOf("共享收件箱")).toBe(labels.indexOf("在线 2FA") + 1);
-    expect(labels.indexOf("日历")).toBe(labels.indexOf("共享收件箱") + 1);
-    expect(within(screen.getByTestId("app-header-desktop-nav")).getByRole("link", { name: "共享收件箱" })).toHaveAttribute("href", "/shared-inboxes");
+    const desktopNav = screen.getByTestId("app-header-desktop-nav");
+    expect(within(desktopNav).queryByRole("link", { name: "共享收件箱" })).not.toBeInTheDocument();
+    await user.click(within(desktopNav).getByRole("button", { name: "更多" }));
+    expect(await screen.findByRole("menuitem", { name: "共享收件箱" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "日历" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "统计" })).toBeInTheDocument();
   });
 
   it("uses the shared brand mark contract in the header", () => {

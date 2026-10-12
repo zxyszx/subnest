@@ -152,7 +152,6 @@ export async function fillSubscriptionDialog(
   await expectLabelControlGap(dialog.getByLabel("价格", { exact: true }), "subscription price");
   await expectLabelControlGap(dialog.getByLabel("开始日期（可选）", { exact: true }), "subscription start date");
   await expectLabelControlGap(dialog.getByLabel("到期日期", { exact: true }), "subscription next billing date");
-  await expectLabelControlGap(dialog.getByLabel("标签", { exact: true }), "subscription tags");
   await dialog.getByLabel("服务名称", { exact: true }).fill(values.name);
   await dialog.getByLabel("价格", { exact: true }).fill(values.price);
 
@@ -163,7 +162,10 @@ export async function fillSubscriptionDialog(
   await chooseSubscriptionDate(page, dialog, "到期日期", /到期日期.*\d{4}年\d{1,2}月\d{1,2}日/);
 
   if (values.tags) {
-    await dialog.getByLabel("标签", { exact: true }).fill(values.tags);
+    await dialog.getByRole("tab", { name: "网站与备注" }).click();
+    const tags = dialog.getByLabel("标签", { exact: true });
+    await expectLabelControlGap(tags, "subscription tags");
+    await tags.fill(values.tags);
   }
 }
 

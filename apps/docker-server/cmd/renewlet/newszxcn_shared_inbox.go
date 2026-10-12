@@ -384,7 +384,14 @@ func familyVerificationMailboxMatches(subscription *core.Record, mailboxID, addr
 
 func validateInboxSeat(app core.App, userID, seatID, mailboxID, address string) error {
 	seat, err := findOwnedSharingSeat(app, userID, seatID)
-	if err != nil || seat.GetString("status") != "active" || strings.TrimSpace(seat.GetString("memberName")) == "" {
+	if err != nil {
+		return fmt.Errorf("seat unavailable")
+	}
+	status := seat.GetString("status")
+	if (status != "active" && status != "paused") || strings.TrimSpace(seat.GetString("memberName")) == "" {
+		return fmt.Errorf("seat unavailable")
+	}
+	if date := seat.GetString("expiresAt"); date != "" && date < todayDateOnly(time.Now(), schedulerSettingsForUser(app, userID).Timezone) {
 		return fmt.Errorf("seat unavailable")
 	}
 	account, err := findOwnedSharingAccount(app, userID, seat.GetString("sharingAccount"))

@@ -9,6 +9,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { PublicShareCard, ResponsiveSeatList, ShareLinkManager, type SeatLinkItem } from "@/components/share-link-manager";
+import { sharingSeatLinkEligible } from "@/lib/sharing-seat-state";
+import { dateToDateOnly } from "@/lib/time/date-only";
 
 type LinkScope = { id: string; title: string; enabled: boolean; seat?: SharingSeat };
 
@@ -21,6 +23,7 @@ export function SharingTotpLinksDialog({ account, onClose }: { account: SharingA
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [confirmation, setConfirmation] = useState<{ seatId: string; link: SharingTotpLink; revoke: boolean; title: string } | null>(null);
+  const today = dateToDateOnly(new Date());
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +75,7 @@ export function SharingTotpLinksDialog({ account, onClose }: { account: SharingA
     ...(detail?.seats ?? []).map((seat) => ({
       id: seat.id,
       title: t("sharing.totpSeat", { number: seat.seatNumber, member: seat.memberName || t("sharing.totpVacant") }),
-      enabled: seat.status === "active" && Boolean(seat.memberName),
+      enabled: sharingSeatLinkEligible(seat, today),
       seat,
     })),
   ];

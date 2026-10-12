@@ -336,12 +336,12 @@ describe("Dashboard page loading state", () => {
     const sharingProfit = screen.getByTestId("dashboard-stat-sharing-profit");
 
     expect(grid).toHaveClass("grid", "grid-cols-2", "gap-2.5", "sm:gap-3", "lg:grid-cols-5");
-    expect(monthlySpend).toHaveClass("p-1.5", "sm:p-3", "col-span-1");
+    expect(monthlySpend).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5", "col-span-1");
     expect(monthlySpend).not.toHaveClass("p-6");
-    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("p-1.5", "sm:p-3");
-    expect(sharingProfit).toHaveClass("p-1.5", "sm:p-3");
-    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveClass("p-1.5", "sm:p-3");
-    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveClass("p-1.5", "sm:p-3");
+    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
+    expect(sharingProfit).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
+    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
+    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
     expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
   });
 

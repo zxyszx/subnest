@@ -171,7 +171,13 @@ export function SubscriptionFamilySharingFields({ id, subscriptionId, value, onC
       <div className="min-w-0"><Label htmlFor={id("familySharingEnabled")} className={`flex items-center gap-2 text-sm font-medium ${disableBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}><UsersRound className="h-4 w-4" />{t("subscription.familySharing.title")}</Label><p id={id("familySharingHelp")} className={`mt-1 text-xs leading-5 ${disableBlocked ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>{t(disableBlocked ? "subscription.familySharing.disableBlocked" : "subscription.familySharing.help", disableBlocked ? { count: occupiedSeats } : undefined)}</p></div>
       <Switch id={id("familySharingEnabled")} checked={value.enabled} disabled={disableBlocked} onCheckedChange={setSharingEnabled} aria-label={t("subscription.familySharing.title")} aria-describedby={id("familySharingHelp")} />
     </div> : null}
-    {value.enabled ? <div className={showEnabledControl ? "grid gap-4 border-t border-border pt-3" : "grid gap-4"}>
+    {value.enabled ? <div
+      className={showEnabledControl ? "grid gap-4 border-t border-border pt-3" : "grid gap-4"}
+      data-subscription-validation-field="familySharing"
+      tabIndex={-1}
+      aria-invalid={Boolean(error)}
+      aria-describedby={error ? id("familySharing-error") : undefined}
+    >
       <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-[minmax(0,1fr)_8rem]">
         <FormField id={id("familySharingLoginAccount")} label={t("subscription.familySharing.loginAccount")} description={t("subscription.familySharing.loginAccountHelp")}>{(field) => <Input id={field.id} value={value.loginAccount} onChange={(event) => update("loginAccount", event.target.value)} placeholder={t("subscription.familySharing.loginAccountPlaceholder")} autoComplete="username" required aria-describedby={field.describedBy} />}</FormField>
         <FormField id={id("familySharingCapacity")} label={t("subscription.familySharing.capacity")}>{(field) => <Input id={field.id} type="number" min={1} max={100} value={value.capacity} onChange={(event) => update("capacity", event.target.value)} required aria-describedby={field.describedBy} />}</FormField>

@@ -227,7 +227,7 @@ func handleSharingAccountsList(app core.App, e *core.RequestEvent) error {
 func sharingNearestSeatExpiries(app core.App, userID string) (map[string]string, error) {
 	rows, err := app.FindRecordsByFilter(
 		"sharing_seats",
-		"user = {:user} && status = 'active' && expiresAt != ''",
+		"user = {:user} && (status = 'active' || status = 'paused') && expiresAt != ''",
 		"expiresAt,seatNumber",
 		sharingAccountsLimit*100,
 		0,
@@ -587,13 +587,16 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 	if err != nil {
 		return sharingAccountResponse{}, err
 	}
-	occupied, err := app.CountRecords("sharing_seats", dbx.HashExp{
-		"user":           record.GetString("user"),
-		"sharingAccount": record.Id,
-		"status":         "active",
-	})
+	seats, err := app.FindRecordsByFilter("sharing_seats", "user = {:user} && sharingAccount = {:account}", "seatNumber", 100, 0, dbx.Params{"user": record.GetString("user"), "account": record.Id})
 	if err != nil {
 		return sharingAccountResponse{}, err
+	}
+	today := todayDateOnly(time.Now(), schedulerSettingsForUser(app, record.GetString("user")).Timezone)
+	occupied := 0
+	for _, seat := range seats {
+		if seat.GetString("status") == "active" && sharingSeatWithinPaidPeriod(seat, today) {
+			occupied++
+		}
 	}
 	monthlyRevenueUnits, monthlyRevenueByCurrency, outstandingUnits, err := sharingAccountFinancialUnits(app, record)
 	if err != nil {
@@ -750,7 +753,7 @@ func sharingSubscriptionMonthlyCostUnits(subscription *core.Record) (int64, erro
 func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map[string]string, int64, error) {
 	seats, err := app.FindRecordsByFilter(
 		"sharing_seats",
-		"user = {:user} && sharingAccount = {:account} && status = 'active'",
+		"user = {:user} && sharingAccount = {:account} && (status = 'active' || status = 'paused')",
 		"seatNumber",
 		100,
 		0,
@@ -761,7 +764,11 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map
 	}
 	var monthlyRevenue int64
 	monthlyRevenueByCurrencyUnits := map[string]int64{}
+	today := todayDateOnly(time.Now(), schedulerSettingsForUser(app, record.GetString("user")).Timezone)
 	for _, seat := range seats {
+		if !sharingSeatWithinPaidPeriod(seat, today) {
+			continue
+		}
 		units, parseErr := moneyUnits(moneyForRecord(seat.GetString("monthlyPrice")))
 		if parseErr != nil {
 			return 0, nil, 0, parseErr
@@ -803,6 +810,11 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map
 		monthlyRevenueByCurrency[currency] = moneyUnitsToString(units)
 	}
 	return monthlyRevenue, monthlyRevenueByCurrency, outstanding, nil
+}
+
+func sharingSeatWithinPaidPeriod(seat *core.Record, today string) bool {
+	expiresAt := strings.TrimSpace(seat.GetString("expiresAt"))
+	return expiresAt == "" || expiresAt >= today
 }
 
 func sharingCreatedAt(record *core.Record) string {

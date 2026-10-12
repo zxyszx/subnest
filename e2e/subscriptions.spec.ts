@@ -111,6 +111,9 @@ test("family sharing switch and verification mode changes keep the edit dialog v
     const dialog = await openSubscriptionEditDialog(page, subscriptionName);
     const title = dialog.getByRole("heading", { name: "编辑订阅" });
     const footer = dialog.locator("[data-subscription-dialog-footer]");
+    const familyTab = dialog.getByRole("tab", { name: "家庭共享" });
+    await familyTab.click();
+    await expect.poll(async () => (await familyTab.boundingBox())?.height ?? 999).toBeLessThanOrEqual(56);
     const masterSwitch = dialog.getByRole("switch", { name: "家庭共享" });
 
     await masterSwitch.scrollIntoViewIfNeeded();
@@ -158,6 +161,7 @@ test("family sharing optional additional info saves and reloads on desktop", asy
   try {
     await page.reload();
     const dialog = await openSubscriptionEditDialog(page, subscriptionName);
+    await dialog.getByRole("tab", { name: "家庭共享" }).click();
     await expect(dialog.getByLabel("登录密码", { exact: true })).toHaveValue("");
     const additionalName = dialog.getByLabel("附加信息名称（选填）", { exact: true });
     const additionalValue = dialog.getByLabel("附加信息内容", { exact: true });
@@ -169,6 +173,7 @@ test("family sharing optional additional info saves and reloads on desktop", asy
     await saveSubscriptionDialog(page, dialog, "保存修改");
 
     const reopened = await openSubscriptionEditDialog(page, subscriptionName);
+    await reopened.getByRole("tab", { name: "家庭共享" }).click();
     await expect(reopened.getByLabel("附加信息名称（选填）", { exact: true })).toHaveValue("最近通知");
     await expect(reopened.getByLabel("附加信息内容", { exact: true })).toHaveValue("今晚 8 点维护", { timeout: 10_000 });
     await reopened.getByRole("button", { name: "取消" }).click();
@@ -304,6 +309,9 @@ test("desktop subscription create, tag search, edit, and reload persistence", as
   const editDialog = await openSubscriptionEditDialog(page, taggedName);
   await expectVerticallyCenteredInViewport(page, editDialog, "desktop edit subscription dialog");
   await editDialog.getByLabel("服务名称", { exact: true }).fill(editedName);
+  const moreTab = editDialog.getByRole("tab", { name: "网站与备注" });
+  await moreTab.click();
+  await expect.poll(async () => (await moreTab.boundingBox())?.height ?? 999).toBeLessThanOrEqual(56);
   const desktopTagInput = editDialog.getByLabel("标签", { exact: true });
   await desktopTagInput.fill("Writing、test、Docs、Research");
   await desktopTagInput.click();
@@ -319,6 +327,7 @@ test("desktop subscription create, tag search, edit, and reload persistence", as
     emptyTagDialog.getByRole("button", { name: "添加订阅" }),
     "desktop subscription dialog submit",
   );
+  await emptyTagDialog.getByRole("tab", { name: "网站与备注" }).click();
   await emptyTagDialog.getByLabel("标签", { exact: true }).click();
   await expect(page.getByRole("listbox")).toBeVisible();
   await page.keyboard.press("Escape");

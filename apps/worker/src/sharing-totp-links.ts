@@ -38,8 +38,8 @@ async function binding(env:Env,userId:string,accountId:string,seatId:string, sup
  const parts=[accountId,otp.id,sub.sharing_login_account!.trim().toLowerCase(),otp.secret_ciphertext];
  let seat:SeatRow|null=null;
  if(seatId) {
-  seat=seatOverride ?? await env.DB.prepare("SELECT * FROM sharing_seats WHERE id=? AND user_id=? AND sharing_account_id=? AND status='active' AND length(trim(member_name))>0 AND seat_number<=?").bind(seatId,userId,accountId,sub.sharing_capacity).first<SeatRow>();
-  if(!seat || seat.id!==seatId || seat.status!=="active" || !seat.member_name?.trim() || seat.seat_number>(sub.sharing_capacity??0)) throw new HttpError(403,"SEAT_UNAVAILABLE","FORBIDDEN");
+  seat=seatOverride ?? await env.DB.prepare("SELECT * FROM sharing_seats WHERE id=? AND user_id=? AND sharing_account_id=? AND status IN ('active','paused') AND length(trim(member_name))>0 AND seat_number<=?").bind(seatId,userId,accountId,sub.sharing_capacity).first<SeatRow>();
+  if(!seat || seat.id!==seatId || !["active","paused"].includes(seat.status) || !seat.member_name?.trim() || seat.seat_number>(sub.sharing_capacity??0)) throw new HttpError(403,"SEAT_UNAVAILABLE","FORBIDDEN");
   if(seat.expires_at && seat.expires_at<dateOnlyInZone(new Date(),(await getSettings(env,userId)).timezone)) throw new HttpError(403,"SEAT_EXPIRED","FORBIDDEN");
   parts.push(seatId,seat.member_name || "",seat.contact || "",seat.contact_type || "");
  }
@@ -66,7 +66,7 @@ export async function familyTotpProjectionStatements(env:Env,sub:SubscriptionRow
  if(!sub.family_sharing_enabled || familyVerificationConfig(sub).mode!=="totp") return [];
  const result:D1PreparedStatement[]=[];
  const general=await linkStatement(env,sub.user_id,accountId,"",false,sub); if(general) result.push(general);
- const seats=await env.DB.prepare("SELECT * FROM sharing_seats WHERE user_id=? AND sharing_account_id=? AND status='active' AND length(trim(member_name))>0 AND seat_number<=?").bind(sub.user_id,accountId,sub.sharing_capacity).all<SeatRow>();
+ const seats=await env.DB.prepare("SELECT * FROM sharing_seats WHERE user_id=? AND sharing_account_id=? AND status IN ('active','paused') AND length(trim(member_name))>0 AND seat_number<=?").bind(sub.user_id,accountId,sub.sharing_capacity).all<SeatRow>();
  const today=dateOnlyInZone(new Date(),(await getSettings(env,sub.user_id)).timezone);
  for(const seat of seats.results) {
   if(seat.expires_at && seat.expires_at<today) continue;
@@ -76,7 +76,7 @@ export async function familyTotpProjectionStatements(env:Env,sub:SubscriptionRow
 }
 
 export async function familyTotpSeatStatement(env:Env,sub:SubscriptionRow,accountId:string,seat:SeatRow,reset:boolean) {
- if(!sub.family_sharing_enabled || familyVerificationConfig(sub).mode!=="totp" || seat.status!=="active") return null;
+ if(!sub.family_sharing_enabled || familyVerificationConfig(sub).mode!=="totp" || !["active","paused"].includes(seat.status)) return null;
  if(seat.expires_at && seat.expires_at<dateOnlyInZone(new Date(),(await getSettings(env,sub.user_id)).timezone)) return null;
  return linkStatement(env,sub.user_id,accountId,seat.id,reset,sub,seat);
 }

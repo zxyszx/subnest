@@ -114,7 +114,9 @@ describe("SettingsScreen section navigation", () => {
     const sectionNav = within(desktopNav);
 
     ["账号与安全", "外观与图标", "数据与智能", "分享与集成", "区域与通知"].forEach((label) => {
-      expect(sectionNav.getByText(label)).toBeInTheDocument();
+      const groupLabel = sectionNav.getByText(label);
+      expect(groupLabel).toHaveClass("text-[10px]", "tracking-[0.08em]", "text-muted-foreground/75");
+      expect(groupLabel.nextElementSibling).toHaveClass("border-l", "pl-2");
     });
 
     sections.forEach(([id, label]) => {
@@ -160,6 +162,8 @@ describe("SettingsScreen section navigation", () => {
     );
     const notificationLink = within(drawer).getByRole("link", { name: "通知设置" });
     expect(notificationLink).toHaveClass("rounded-md", "px-3", "py-2", "text-sm");
+    expect(notificationLink).toHaveClass("text-foreground/80");
+    expect(within(drawer).getByText("区域与通知")).toHaveClass("text-[10px]", "tracking-[0.08em]");
     expect(notificationLink).not.toHaveClass("h5-mobile-option-item");
     expect(notificationLink).not.toHaveClass("border", "bg-secondary/30");
     expect(drawer.querySelector(".overflow-x-auto")).toBeNull();
@@ -174,6 +178,18 @@ describe("SettingsScreen section navigation", () => {
     await user.click(notificationLink);
 
     expect(notificationLink).toHaveAttribute("aria-current", "location");
+  });
+
+  it("filters the settings directory without changing the active section", async () => {
+    const user = userEvent.setup();
+    renderSettingsScreen();
+
+    const nav = screen.getByTestId("settings-section-nav-desktop");
+    await user.type(within(nav).getByRole("searchbox"), "通知");
+
+    expect(within(nav).getByRole("link", { name: "通知设置" })).toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "账户设置" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("settings-current-section-header")).toHaveTextContent("账户设置");
   });
 
   it("scrolls to the access security section from the settings directory", async () => {

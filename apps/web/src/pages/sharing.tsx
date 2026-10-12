@@ -30,6 +30,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
 import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import { sharingAccountHasVacancy, sharingSeatDisplayState, type SharingSeatDisplayState } from "@/lib/sharing-seat-state";
 import { subscriptionPlatformName } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
@@ -126,8 +127,10 @@ export default function Sharing() {
   });
   const filteredAccounts = searchedAccounts.filter((account) => {
     if (accountFilter === "all") return true;
-    if (accountFilter === "available") return account.occupiedSeats < account.capacity;
-    if (accountFilter === "full") return account.occupiedSeats >= account.capacity;
+    const detail = accountDetails.get(account.id);
+    const hasVacancy = detail ? sharingAccountHasVacancy(detail.seats, today) : account.occupiedSeats < account.capacity;
+    if (accountFilter === "available") return hasVacancy;
+    if (accountFilter === "full") return !hasVacancy;
     if (accountFilter === "outstanding") return Number(account.outstandingAmount) > 0;
     const accountDays = sharingSubscriptionExpiryDays(account, today);
     if (accountDays !== null && (accountFilter === "overdue" ? accountDays < 0 : accountDays >= 0 && accountDays <= 7)) return true;
@@ -200,15 +203,17 @@ export default function Sharing() {
     const accountDays = sharingSubscriptionExpiryDays(account, today);
     const accountExpired = accountDays !== null && accountDays < 0;
     const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
+    const detail = accountDetails.get(account.id);
+    const hasVacancy = detail ? sharingAccountHasVacancy(detail.seats, today) : account.occupiedSeats < account.capacity;
     const health = nearest && nearest.daysUntilExpiry < 0
       ? { label: "存在逾期", variant: "destructive" as const }
       : Number(account.outstandingAmount) > 0
         ? { label: "存在待收款", variant: "destructive" as const }
         : nearest && nearest.daysUntilExpiry <= 7
           ? { label: "即将到期", variant: "secondary" as const }
-          : account.occupiedSeats >= account.capacity
-            ? { label: "已满", variant: "secondary" as const }
-            : { label: "有空位", variant: "outline" as const };
+          : hasVacancy
+            ? { label: "有空位", variant: "outline" as const }
+            : { label: "已满", variant: "secondary" as const };
     return (
       <div className="flex min-w-0 items-center gap-3">
         <button
@@ -268,6 +273,11 @@ export default function Sharing() {
     });
   };
 
+  const seatStates = (account: SharingAccount): SharingSeatDisplayState[] => {
+    const seatsByNumber = new Map(accountDetails.get(account.id)?.seats.map((seat) => [seat.seatNumber, seat]));
+    return Array.from({ length: account.capacity }, (_, index) => sharingSeatDisplayState(seatsByNumber.get(index + 1), today));
+  };
+
   const sharingFilterControls = (
     <div className="grid min-w-0 grid-cols-2 gap-2">
       <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
@@ -308,11 +318,13 @@ export default function Sharing() {
             title={t("sharing.upcomingRenewals")}
             value={upcomingRenewals}
             subtitle={t("sharing.nextSevenDays")}
-            icon={<button type="button" className="flex h-full w-full items-center justify-center rounded-lg transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("sharing.openUpcomingRenewals")} title={t("sharing.openUpcomingRenewals")} onClick={() => setRenewalsOpen(true)}><CalendarClock /></button>}
+            icon={<CalendarClock />}
             density="dashboard"
             variant={upcomingRenewals > 0 ? "warning" : "default"}
             valueClassName="text-base 2xl:text-lg"
             className="animate-fade-in [animation-delay:500ms]"
+            aria-label={t("sharing.openUpcomingRenewals")}
+            onClick={() => setRenewalsOpen(true)}
           />
         </section>
 
@@ -408,7 +420,7 @@ export default function Sharing() {
                   <tr key={account.id} className={cn("transition-colors duration-200 hover:bg-muted/20", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
                     <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
-                    <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></td>
+                    <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} seatStates={seatStates(account)} /></td>
                     <td className="px-3 py-3"><NearestExpiry accountId={account.id} /></td>
                     <td className="px-3 py-3">
                       <dl className="grid min-w-44 gap-1 rounded-md border border-border/70 bg-muted/45 px-2.5 py-2 text-xs leading-4 text-muted-foreground">
@@ -461,6 +473,9 @@ export default function Sharing() {
                         <p className="mt-1 truncate text-xs font-medium tabular-nums text-foreground/80">
                           {nearest ? <>{t("sharing.nearestExpiry")} · <DenseDate value={nearest.expiresAt} /></> : <>{t("sharing.noMember")}</>}
                         </p>
+                        <div className="mt-1.5">
+                          <SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatStates={seatStates(account)} />
+                        </div>
                       </div>
                       <Button
                         type="button"
@@ -481,7 +496,7 @@ export default function Sharing() {
                           <Badge variant="outline" className="h-5 px-1.5 text-[10px]">{account.occupiedSeats} / {account.capacity} {t("sharing.seats")}</Badge>
                         </div>
                         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                          <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} /></dd></div>
+                          <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatStates={seatStates(account)} showStateSummary={false} /></dd></div>
                           <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
                           <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
                           <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>

@@ -13,6 +13,8 @@ import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { PublicShareCard, ResponsiveSeatList, ShareLinkManager, ShareSettingsCollapse, type SeatLinkItem } from "@/components/share-link-manager";
+import { sharingSeatLinkEligible } from "@/lib/sharing-seat-state";
+import { dateToDateOnly } from "@/lib/time/date-only";
 
 function resolveSeatScope(links: SharedInboxLink[], seats: SharingSeat[], mailboxId: string, now: number) {
   const seatIds = new Set(seats.map((seat) => seat.id));
@@ -36,6 +38,7 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
 }) {
   const { t } = useI18n();
   const [loadedAt] = useState(Date.now);
+  const today = dateToDateOnly(new Date(loadedAt));
   const initialGenericLink = initialLinks.find((link) => !link.seatId && link.mailboxId === mailbox.id && link.status === "active" && (!link.expiresAt || Date.parse(link.expiresAt) > loadedAt));
   const [accounts, setAccounts] = useState<SharingAccount[]>([]);
   const [accountId, setAccountId] = useState("");
@@ -89,7 +92,7 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
   const linkUsable = (link: SharedInboxLink) => !link.expiresAt || Date.parse(link.expiresAt) > loadedAt;
   const accountLinks = links.filter((link) => link.status === "active" && seats.some((seat) => seat.id === link.seatId));
   const sharingEnabled = accountLinks.some(linkUsable);
-  const eligibleSeats = seats.filter((seat) => seat.status === "active" && Boolean(seat.memberName));
+  const eligibleSeats = seats.filter((seat) => sharingSeatLinkEligible(seat, today));
   const enableCandidates = eligibleSeats.filter((seat) => !accountLinks.some((link) => link.seatId === seat.id && linkUsable(link)));
   const genericLink = links.find((link) => !link.seatId && link.mailboxId === mailbox.id && link.status === "active" && linkUsable(link));
   const selectedAccount = boundAccount ?? accounts.find((account) => account.id === accountId);
@@ -183,7 +186,7 @@ export function SeatInboxLinksDialog({ mailbox, links: initialLinks, onClose, on
 
   const seatItems: SeatLinkItem[] = seats.map((seat) => {
     const link = linkFor(seat.id);
-    const eligible = seat.status === "active" && Boolean(seat.memberName);
+    const eligible = sharingSeatLinkEligible(seat, today);
     const usable = Boolean(link && linkUsable(link));
     const copyLink = async () => { if (!link) return; const result = await copyTextToClipboard(link.shortUrl); toast[result.ok ? "success" : "error"](t(result.ok ? "sharing.copySuccess" : "sharing.copyFailed")); };
     const actions = link ? <>{usable ? <><Button size="sm" variant="outline" className="min-h-11 max-md:flex-1" disabled={working || !eligible} onClick={() => void copySeatShare(seat, link.shortUrl)}><Copy className="h-4 w-4" />{t("sharing.copySeatShare")}</Button><Button size="icon" variant="outline" className="min-h-11 min-w-11 max-md:hidden" disabled={working || !eligible} aria-label={t("sharing.copyInboxLink")} title={t("sharing.copyInboxLink")} onClick={() => void copyLink()}><Copy className="h-4 w-4" /></Button><Button size="icon" variant="outline" className="min-h-11 min-w-11 max-md:hidden" asChild aria-label={t("sharing.previewShare")} title={t("sharing.previewShare")}><a href={link.shortUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button></> : null}<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="outline" className="min-h-11 min-w-11" disabled={working} aria-label={t("sharing.moreLinkActions")}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" mobileTitle={t("sharing.moreLinkActions")}>{usable ? <><DropdownMenuItem className="md:hidden" onSelect={() => void copyLink()}><Copy className="h-4 w-4" />{t("sharing.copyInboxLink")}</DropdownMenuItem><DropdownMenuItem className="md:hidden" asChild><a href={link.shortUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />{t("sharing.previewShare")}</a></DropdownMenuItem></> : null}<DropdownMenuItem disabled={!eligible} onSelect={() => setConfirmation({ seat, link, action: "reset" })}><RefreshCw className="h-4 w-4" />{t("sharing.resetInboxLink")}</DropdownMenuItem><DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setConfirmation({ seat, link, action: "revoke" })}><Trash2 className="h-4 w-4" />{t("sharing.revokeInboxLink")}</DropdownMenuItem></DropdownMenuContent></DropdownMenu></> : <Button size="sm" className="min-h-11" disabled={working || !eligible || folderIds.length === 0} onClick={() => void mutate(seat, "create")}><Link2 className="h-4 w-4" />{t("sharing.createInboxLink")}</Button>;

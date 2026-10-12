@@ -48,20 +48,20 @@ export function StatCard({
       onKeyDown={onClick ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onClick(); } } : undefined}
       className={cn(
         "relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:bg-card-hover",
-        dashboard ? "p-1.5 sm:p-3" : compact ? "p-4 lg:p-6" : "p-6",
+        dashboard ? "min-h-20 p-3 sm:min-h-24 sm:p-3.5" : compact ? "p-4 lg:p-6" : "p-6",
         className,
         onClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       )}
     >
       <div className={cn("flex items-start justify-between", dashboard ? "gap-0 sm:gap-3" : compact && "gap-3")}>
         <div className={cn("grid min-w-0", dashboard ? "flex-1 justify-items-center gap-1 sm:justify-items-start sm:gap-1.5" : compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
-          <p className={cn("font-medium text-muted-foreground", dashboard ? "whitespace-nowrap text-[9px] leading-4 sm:text-xs xl:text-sm" : compact ? "truncate text-xs" : "text-sm")}>
+          <p className={cn("font-medium text-muted-foreground", dashboard ? "truncate text-xs leading-4 xl:text-sm" : compact ? "truncate text-xs" : "text-sm")}>
             {title}
           </p>
           <p
             className={cn(
               "font-bold tracking-tight",
-              dashboard ? "max-w-full truncate text-[11px] tabular-nums sm:text-xl xl:text-2xl 2xl:text-3xl" : compact ? "truncate text-2xl lg:text-3xl" : "text-3xl",
+              dashboard ? "max-w-full truncate text-base tabular-nums sm:text-xl xl:text-2xl" : compact ? "truncate text-2xl lg:text-3xl" : "text-3xl",
               variant === 'primary' && "text-foreground",
               variant === 'warning' && "text-warning",
               valueClassName,

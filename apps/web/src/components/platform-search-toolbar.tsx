@@ -53,7 +53,7 @@ export function PlatformSearchToolbar({
         className="min-w-0 flex-1 border-0 px-2"
       />
       <div className="flex min-w-0 shrink-0 items-center gap-2 p-2 md:pl-0">
-        <div className="relative min-w-0 flex-1 md:w-56 md:flex-none">
+        <div className="relative min-w-0 flex-1 md:w-64 md:flex-none xl:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             name={searchName}

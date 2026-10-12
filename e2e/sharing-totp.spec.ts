@@ -54,11 +54,24 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
       const assigned = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, { method: "PUT", body: { memberName: `Member ${index + 1}`, contact: "", contactType: "", monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "active", notes: "", paymentStatus: "paid" } });
       expect(assigned.ok, assigned.body).toBe(true);
     }
+    const paused = await productApiFetch(page, `/api/app/sharing/seats/${seats[1]!.id}`, {
+      method: "PUT",
+      body: { memberName: "Member 2", contact: "", contactType: "", monthlyPrice: "5", currency: "CNY", billingMonths: 1, startDate: "2026-01-01", expiresAt: "2099-01-01", status: "paused", notes: "", paymentStatus: "paid" },
+    });
+    expect(paused.ok, paused.body).toBe(true);
     const generated = await productApiFetch(page, `/api/app/sharing/accounts/${family.id}/totp-links`);
     expect(generated.ok, generated.body).toBe(true);
     const generatedLinks = (generated.json as { data: { links: { seatId: string; path: string; expiresAt: string | null }[] } }).data.links;
     expect(generatedLinks).toHaveLength(3);
     expect(generatedLinks.every((link) => link.expiresAt === null)).toBe(true);
+    await page.goto("/sharing");
+    const sharingRow = page.getByRole("row").filter({ hasText: account });
+    await expect(sharingRow.getByText("1 / 2", { exact: true })).toBeVisible();
+    await expect(sharingRow.getByText("使用中 1", { exact: true })).toBeVisible();
+    await expect(sharingRow.getByText("停用 1", { exact: true })).toBeVisible();
+    await page.getByRole("combobox", { name: "账号状态" }).click();
+    await page.getByRole("option", { name: "有空位", exact: true }).click();
+    await expect(sharingRow).toBeVisible();
     const publicLink = generatedLinks.find((link) => !link.seatId)!;
     await page.goto(publicLink.path);
     await expect(page.getByText(account, { exact: true })).toBeVisible();

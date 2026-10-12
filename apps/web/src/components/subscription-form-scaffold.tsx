@@ -30,7 +30,7 @@ export function SubscriptionFormScaffold({
       <div
         data-subscription-dialog-scroll=""
         data-dialog-region="subscription-fields"
-        className="h5-mobile-sheet-scroll h5-subscription-dialog-scroll grid gap-5 px-6 py-4"
+        className="h5-mobile-sheet-scroll h5-subscription-dialog-scroll grid content-start gap-5 px-6 py-4"
       >
         {fields}
       </div>

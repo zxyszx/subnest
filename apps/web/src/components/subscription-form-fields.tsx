@@ -1,4 +1,5 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
+import { FileText, ReceiptText, UsersRound } from "lucide-react";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,17 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   familySharingOnly = false,
 }: SubscriptionFormFieldsProps) {
   const { t, locale, label } = useI18n();
+  const [activePanel, setActivePanel] = useState<"basic" | "family" | "more">("basic");
+
+  useEffect(() => {
+    if (errors.familySharing) {
+      setActivePanel("family");
+    } else if (errors.website || errors.tags) {
+      setActivePanel("more");
+    } else if (Object.keys(errors).length > 0) {
+      setActivePanel("basic");
+    }
+  }, [errors]);
 
   const update = useCallback(<K extends keyof SubscriptionFormState>(key: K, value: SubscriptionFormState[K]) => {
     setFormData((prev) => {
@@ -216,6 +228,48 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
 
   return (
     <>
+      <div
+        role="tablist"
+        aria-label={t("subscription.dialogEditTitle")}
+        className="sticky -top-4 z-10 grid grid-cols-3 gap-2 border-b border-border bg-card/95 py-3 backdrop-blur supports-backdrop-filter:bg-card/90"
+      >
+        {([
+          ["basic", "subscription.editor.basic", ReceiptText],
+          ["family", "subscription.editor.family", UsersRound],
+          ["more", "subscription.editor.more", FileText],
+        ] as const).map(([panel, labelKey, Icon]) => {
+          const selected = activePanel === panel;
+          const invalid = panel === "family"
+            ? Boolean(errors.familySharing)
+            : panel === "more"
+              ? Boolean(errors.website || errors.tags)
+              : Object.keys(errors).some((field) => !["familySharing", "website", "tags"].includes(field));
+          return (
+            <button
+              key={panel}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={id(`editor-panel-${panel}`)}
+              onClick={() => setActivePanel(panel)}
+              className={cn(
+                "relative flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md border px-2 text-sm font-medium transition-colors",
+                selected
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                invalid && "border-destructive text-destructive",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 truncate">{t(labelKey)}</span>
+              {invalid ? <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-destructive" aria-hidden="true" /> : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {activePanel === "basic" ? (
+        <div id={id("editor-panel-basic")} role="tabpanel" className="grid gap-5">
       <FormFieldRow
         alignAt="sm"
         rowClassName="sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]"
@@ -813,15 +867,24 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
         </div>
       )}
 
-      <SubscriptionFamilySharingFields
-        id={id}
-        subscriptionId={subscriptionId}
-        value={formData.familySharing}
-        onChange={(familySharing) => update("familySharing", familySharing)}
-        error={errors.familySharing}
-        onShareSetupPendingChange={onManagedShareSetupPendingChange}
-      />
+        </div>
+      ) : null}
 
+      {activePanel === "family" ? (
+        <div id={id("editor-panel-family")} role="tabpanel">
+          <SubscriptionFamilySharingFields
+            id={id}
+            subscriptionId={subscriptionId}
+            value={formData.familySharing}
+            onChange={(familySharing) => update("familySharing", familySharing)}
+            error={errors.familySharing}
+            onShareSetupPendingChange={onManagedShareSetupPendingChange}
+          />
+        </div>
+      ) : null}
+
+      {activePanel === "more" ? (
+        <div id={id("editor-panel-more")} role="tabpanel" className="grid gap-5">
       <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-secondary/30 p-3">
         <div className="min-w-0">
           <Label htmlFor={id("publicHidden")} className="cursor-pointer text-sm font-medium">
@@ -874,6 +937,8 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
           onClearError={() => onClearFieldError?.("tags")}
         />
       </div>
+        </div>
+      ) : null}
     </>
   );
 });

@@ -150,6 +150,7 @@ describe("SubscriptionDialog", () => {
   });
 
   it("locks the family-sharing switch while membership seats are occupied", async () => {
+    const user = setupUser();
     render(
       <TooltipProvider delayDuration={0}>
         <SubscriptionDialog
@@ -175,10 +176,45 @@ describe("SubscriptionDialog", () => {
     );
 
     const dialog = await screen.findByRole("dialog", { name: "编辑订阅" });
+    await user.click(within(dialog).getByRole("tab", { name: "家庭共享" }));
     const familySwitch = within(dialog).getByRole("switch", { name: "家庭共享" });
     expect(familySwitch).toBeChecked();
     expect(familySwitch).toBeDisabled();
     expect(within(dialog).getByText("会员共享中还有 2 个非空闲车位。请先将全部车位设为空闲，再关闭家庭共享。")).toBeInTheDocument();
+  });
+
+  it("opens the family-sharing panel when submit validation fails there", async () => {
+    const user = setupUser();
+    render(
+      <TooltipProvider delayDuration={0}>
+        <SubscriptionDialog
+          loadingPreview={null}
+          mode="edit"
+          open
+          onOpenChange={vi.fn()}
+          onSubmit={vi.fn()}
+          subscription={makeSubscription({
+            extra: { familyVerification: { mode: "none" } },
+            familySharing: {
+              enabled: true,
+              occupiedSeats: 0,
+              loginAccount: "",
+              hasPassword: false,
+              passwordMask: "",
+              additionalCredential: null,
+              verificationLink: "",
+              capacity: 5,
+            },
+          })}
+        />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "保存修改" }));
+    const familyTab = await screen.findByRole("tab", { name: "家庭共享" });
+    expect(familyTab).toHaveAttribute("aria-selected", "true");
+    expect(document.querySelector('[data-subscription-validation-field="familySharing"]')).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText(/请检查：请填写登录账号/)).toBeInTheDocument();
   });
 
   it("marks an existing platform account number as already added", async () => {
@@ -751,7 +787,8 @@ describe("SubscriptionDialog", () => {
     expect(within(calendar).getByRole("button", { name: /2026年5月14日/ })).not.toBeDisabled();
   });
 
-  it("shows website and notes fields for an edited subscription", () => {
+  it("shows website and notes fields for an edited subscription", async () => {
+    const user = setupUser();
     render(
       <TooltipProvider delayDuration={0}>
         <SubscriptionDialog
@@ -767,6 +804,7 @@ describe("SubscriptionDialog", () => {
         />
       </TooltipProvider>,
     );
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     expect(screen.getByLabelText("网站")).toHaveValue("https://billing.example.com");
     expect(screen.getByLabelText("备注")).toHaveValue("团队年度订阅");
   });
@@ -789,6 +827,7 @@ describe("SubscriptionDialog", () => {
       </TooltipProvider>,
     );
 
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     const tagInput = screen.getByLabelText("标签");
     expect(screen.getByText("Infra")).toBeInTheDocument();
 
@@ -824,6 +863,7 @@ describe("SubscriptionDialog", () => {
       </TooltipProvider>,
     );
 
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     await user.type(screen.getByLabelText("标签"), "AI");
     await user.click(screen.getByRole("button", { name: "保存修改" }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -849,6 +889,7 @@ describe("SubscriptionDialog", () => {
       </TooltipProvider>,
     );
 
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     await user.click(screen.getByRole("button", { name: "移除标签 Infra" }));
     await user.click(screen.getByRole("button", { name: "保存修改" }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -877,6 +918,7 @@ describe("SubscriptionDialog", () => {
       </TooltipProvider>,
     );
 
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     await user.clear(screen.getByLabelText("网站"));
     await user.type(screen.getByLabelText("网站"), "https://new.example.com");
     await user.clear(screen.getByLabelText("备注"));

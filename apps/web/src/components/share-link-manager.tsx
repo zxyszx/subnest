@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
+import { sharingSeatDisplayState } from "@/lib/sharing-seat-state";
+import { dateToDateOnly } from "@/lib/time/date-only";
 
 export function ShareLinkManager({ account, seats, busy, onClose, children }: {
   account: SharingAccount;
@@ -15,8 +17,8 @@ export function ShareLinkManager({ account, seats, busy, onClose, children }: {
   children: ReactNode;
 }) {
   const { t } = useI18n();
-  const occupied = seats.filter((seat) => seat.status === "active" && seat.memberName).length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateToDateOnly(new Date());
+  const occupied = seats.filter((seat) => sharingSeatDisplayState(seat, today) === "active").length;
   const nearestExpiry = seats.map((seat) => seat.expiresAt).filter((value): value is string => value !== null && value >= today).sort()[0];
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
     <DialogContent className="flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-6xl flex-col gap-0 overflow-hidden p-0 max-sm:left-0 max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-screen max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0">

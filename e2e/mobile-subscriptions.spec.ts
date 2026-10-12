@@ -160,6 +160,7 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await expect(subscriptionCard(page, plainName)).toBeVisible();
 
   const plainEditDialog = await openSubscriptionEditDialog(page, plainName);
+  await plainEditDialog.getByRole("tab", { name: "网站与备注" }).click();
   await plainEditDialog.getByLabel("标签", { exact: true }).click();
   await expectTagSuggestionListScrollable(page);
   await page.keyboard.press("Escape");
@@ -167,6 +168,7 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await expect(plainEditDialog).toBeHidden();
 
   const editDialog = await openSubscriptionEditDialog(page, taggedName);
+  await editDialog.getByRole("tab", { name: "网站与备注" }).click();
   const editTagInput = editDialog.getByLabel("标签", { exact: true });
   await editTagInput.fill("测试、研发、财务、运营、设计、增长");
   await editTagInput.click();
@@ -201,6 +203,9 @@ test("mobile family sharing additional info stays editable without overflow", as
   try {
     await page.reload();
     const dialog = await openSubscriptionEditDialog(page, subscriptionName);
+    const familyTab = dialog.getByRole("tab", { name: "家庭共享" });
+    await familyTab.click();
+    await expect.poll(async () => (await familyTab.boundingBox())?.height ?? 999).toBeLessThanOrEqual(56);
     const additionalName = dialog.getByLabel("附加信息名称（选填）", { exact: true });
     const additionalValue = dialog.getByLabel("附加信息内容", { exact: true });
     await expect(additionalName).toHaveValue("R21 限制 PIN");
@@ -214,6 +219,7 @@ test("mobile family sharing additional info stays editable without overflow", as
     await saveSubscriptionDialog(page, dialog, "保存修改");
 
     const reopened = await openSubscriptionEditDialog(page, subscriptionName);
+    await reopened.getByRole("tab", { name: "家庭共享" }).click();
     await expect(reopened.getByLabel("附加信息名称（选填）", { exact: true })).toHaveValue("最近通知");
     await expect(reopened.getByLabel("附加信息内容", { exact: true })).toHaveValue("今晚 8 点维护", { timeout: 10_000 });
     await reopened.getByRole("button", { name: "取消" }).click();
@@ -300,7 +306,8 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
 
     const detailResult = await productApiFetch(page, `/api/app/sharing/accounts/${family!.id}`);
     expect(detailResult.ok, detailResult.body).toBe(true);
-    const firstSeat = (detailResult.json as { data: { seats: { id: string }[] } }).data.seats[0];
+    const sharingSeats = (detailResult.json as { data: { seats: { id: string }[] } }).data.seats;
+    const firstSeat = sharingSeats[0];
     expect(firstSeat).toBeTruthy();
     const assigned = await productApiFetch(page, `/api/app/sharing/seats/${firstSeat!.id}`, {
       method: "PUT",
@@ -319,6 +326,23 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
       },
     });
     expect(assigned.ok, assigned.body).toBe(true);
+    const paused = await productApiFetch(page, `/api/app/sharing/seats/${sharingSeats[1]!.id}`, {
+      method: "PUT",
+      body: {
+        memberName: "Leaving Member",
+        contact: "",
+        contactType: "",
+        monthlyPrice: "8",
+        currency: "USD",
+        billingMonths: 1,
+        startDate: "2098-12-01",
+        expiresAt: "2099-01-01",
+        status: "paused",
+        notes: "",
+        paymentStatus: "paid",
+      },
+    });
+    expect(paused.ok, paused.body).toBe(true);
 
     await page.goto("/sharing");
     const account = page.getByTestId("sharing-mobile-account").filter({ hasText: loginAccount });
@@ -327,6 +351,9 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
     await expect(account.getByText("ChatGPT", { exact: true })).toBeVisible();
     await expect(account.getByText(loginAccount, { exact: true })).toBeVisible();
     await expect(account.getByText(/最近到期/)).toBeVisible();
+    await expect(account.getByText("使用中 1", { exact: true })).toBeVisible();
+    await expect(account.getByText("停用 1", { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "mobile sharing status summary");
     await expect(account.getByTestId("sharing-mobile-account-details")).toBeHidden();
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
 

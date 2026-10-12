@@ -32,7 +32,7 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
             </div>
           </div>
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav-skeleton">
-            {range(7).map((index) => (
+            {range(5).map((index) => (
               <div key={index} className={getHeaderDesktopNavSkeletonItemClass()}>
                 <SkeletonBox className="h-4 w-4 rounded" />
                 <SkeletonBox className={headerLayout.desktopNavSkeletonLabel} />
@@ -41,9 +41,10 @@ function HeaderSkeleton({ showAddAction = false }: { showAddAction?: boolean }) 
           </nav>
         </div>
         <div className={headerLayout.actions} data-testid="app-header-actions-skeleton">
-          <SkeletonBox className="h-9 w-9 rounded-md" />
           {showAddAction ? <SkeletonBox className="h-9 w-9 rounded-md sm:w-28" /> : null}
-          <SkeletonBox className="h-9 w-9 rounded-md" />
+          <SkeletonBox className="hidden h-9 w-9 rounded-md lg:block" />
+          <SkeletonBox className="hidden h-9 w-9 rounded-md lg:block" />
+          <SkeletonBox className="hidden h-9 w-9 rounded-md lg:block" />
         </div>
       </div>
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav-skeleton">
@@ -112,7 +113,7 @@ function StatCardSkeleton({
   return (
     <div
       data-testid={testId}
-      className={cn("rounded-xl border border-border bg-card", dashboard ? "p-1.5 sm:p-4" : compact ? "p-4 lg:p-6" : "p-6", className)}
+      className={cn("rounded-xl border border-border bg-card", dashboard ? "min-h-20 p-3 sm:min-h-24 sm:p-3.5" : compact ? "p-4 lg:p-6" : "p-6", className)}
     >
       <div className={cn("flex items-start justify-between", dashboard ? "gap-0 sm:gap-3" : compact && "gap-3")}>
         <div className={cn("grid min-w-0", dashboard ? "flex-1 justify-items-center gap-1 sm:justify-items-start sm:gap-1.5" : compact ? "gap-1.5 lg:gap-2" : "gap-2")}>
