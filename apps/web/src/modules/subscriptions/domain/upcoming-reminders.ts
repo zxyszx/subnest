@@ -31,37 +31,38 @@ export function buildUpcomingReminderItems({
   includeExpired = false,
   ignoreSubscriptionReminder = false,
 }: BuildUpcomingReminderItemsInput): UpcomingReminderItem[] {
-  const items: UpcomingReminderItem[] = [];
+  const items: Array<UpcomingReminderItem & { sourceIndex: number }> = [];
 
-  for (const subscription of subscriptions) {
+  subscriptions.forEach((subscription, sourceIndex) => {
     const effectiveStatus = getEffectiveSubscriptionStatus(subscription, today);
     if (includeExpired && effectiveStatus === "expired" && !isOneTimeBuyout(subscription)) {
       const daysUntil = daysBetweenDateOnly(today, subscription.nextBillingDate);
-      items.push({ subscription, kind: "expiry", daysUntil, reminderDays: 0 });
-      continue;
+      items.push({ subscription, kind: "expiry", daysUntil, reminderDays: 0, sourceIndex });
+      return;
     }
-    if (!isEffectivelyActiveSubscription(subscription, today)) continue;
-    if (isOneTimeBuyout(subscription)) continue;
+    if (!isEffectivelyActiveSubscription(subscription, today)) return;
+    if (isOneTimeBuyout(subscription)) return;
 
     // 首页可视窗口复用 reminderDays 的哨兵契约，但这里只决定是否展示，不代表 Cron 发送时刻。
     const reminderDays = ignoreSubscriptionReminder
       ? notificationReminderDays
       : effectiveReminderDays(subscription.reminderDays, notificationReminderDays);
-    if (reminderDays === undefined) continue;
+    if (reminderDays === undefined) return;
 
     const daysUntil = daysBetweenDateOnly(today, subscription.nextBillingDate);
-    if (daysUntil < 0 || daysUntil > reminderDays) continue;
+    if (daysUntil < 0 || daysUntil > reminderDays) return;
 
     items.push({
       subscription,
       kind: subscription.billingCycle === "one-time" ? "expiry" : "renewal",
       daysUntil,
       reminderDays,
+      sourceIndex,
     });
-  }
+  });
 
   return items.sort((a, b) => {
     if (a.daysUntil !== b.daysUntil) return a.daysUntil - b.daysUntil;
-    return a.subscription.name.localeCompare(b.subscription.name);
-  });
+    return a.sourceIndex - b.sourceIndex;
+  }).map(({ sourceIndex: _sourceIndex, ...item }) => item);
 }

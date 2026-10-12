@@ -228,6 +228,10 @@ export function SettingsAdvancedSections({
             icon={<Tags className="h-4 w-4" />}
             showIcon
             maxItems={200}
+            searchable
+            searchPlaceholder={t("subscription.platformSearchPlaceholder")}
+            searchEmptyMessage={t("common.noMatches")}
+            getSearchKeywords={(item) => [item.value, item.labels["zh-CN"], item.labels["en-US"]]}
           />
           <ConfigManagerDialog
             title={t("settings.categoryManager")}

@@ -113,6 +113,14 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
                 <RotateCw className="h-4 w-4" />
                 <span>{t("subscription.renew")}</span>
               </Button>
+            ) : item.subscription.autoRenew ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-muted-foreground"
+                title={t("subscription.autoRenewHelp")}
+              >
+                <CalendarClock className="h-4 w-4" aria-hidden="true" />
+                <span>{t("subscription.autoRenew")}</span>
+              </span>
             ) : <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
           </div>
         </div>

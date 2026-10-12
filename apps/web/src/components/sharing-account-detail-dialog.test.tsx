@@ -266,6 +266,35 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(screen.getByRole("table").parentElement).toHaveClass("max-h-[min(24rem,45vh)]");
   });
 
+  it("warns about expired disabled seats and keeps renewal directly available", () => {
+    mocks.seats = [{
+      id: "seat-paused",
+      seatNumber: 2,
+      memberName: "Expired member",
+      contact: "expired-member",
+      contactType: "wechat",
+      monthlyPrice: "15",
+      currency: "CNY",
+      billingMonths: 1,
+      startDate: "2026-09-21",
+      expiresAt: "2026-10-21",
+      status: "paused",
+      notes: null,
+      currentReceivable: null,
+    }];
+
+    render(
+      <TooltipProvider>
+        <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("sharing.pausedSeatsAlertTitle");
+    expect(screen.getByRole("status")).toHaveTextContent("sharing.pausedSeatsAlertHelp");
+    expect(screen.getAllByRole("button", { name: "sharing.renewSeat" })).toHaveLength(2);
+    expect(screen.getAllByText("sharing.paused")).toHaveLength(2);
+  });
+
   it("selects a searchable target account before exposing its seats", async () => {
     const user = userEvent.setup();
     const movingSeat: SharingSeat = {

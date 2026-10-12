@@ -14,6 +14,8 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "upcoming.daysShort": "{days}天",
         "upcoming.renewsOn": "{date} 续费",
         "upcoming.expiresOn": "{date} 到期",
+        "subscription.autoRenew": "自动续订",
+        "subscription.autoRenewHelp": "开启后，到期的周期订阅会由后台推进到下一期；关闭后需要手动点击续订。",
       };
       let value = messages[key] ?? key;
       for (const [name, replacement] of Object.entries(params ?? {})) {
@@ -97,6 +99,21 @@ describe("UpcomingRenewals", () => {
     expect(screen.getAllByText("Netflix")).toHaveLength(1);
     expect(screen.getByText("30天")).toBeInTheDocument();
     expect(screen.getByText("USD 10")).toBeInTheDocument();
+  });
+
+  it("labels automatic renewals directly in the compact action column", () => {
+    render(
+      <UpcomingRenewals
+        subscriptions={[subscription({ autoRenew: true })]}
+        today="2026-06-15"
+        notificationReminderDays={3}
+      />,
+    );
+
+    const label = screen.getByText("自动续订");
+    expect(label).toBeInTheDocument();
+    expect(label.parentElement).toHaveClass("whitespace-nowrap");
+    expect(label.parentElement).toHaveAttribute("title", expect.stringContaining("到期的周期订阅"));
   });
 
   it("shares compact columns while only the subscription name can shrink and wrap", () => {

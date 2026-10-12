@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
+import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
 import { sharingQueryKeys, useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
 import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscriptions";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -270,7 +271,7 @@ export default function Sharing() {
   const sharingFilterControls = (
     <div className="grid min-w-0 grid-cols-2 gap-2">
       <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
-        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("sharing.accountStatusFilter")}><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-11 border-border bg-secondary sm:h-10" aria-label={t("sharing.accountStatusFilter")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("sharing.accountStatusFilter")}>
           <SelectItem value="all">{t("sharing.allStatus")}</SelectItem>
           <SelectItem value="available">{t("sharing.hasVacancies")}</SelectItem>
@@ -281,7 +282,7 @@ export default function Sharing() {
         </SelectContent>
       </Select>
       <Select value={sortField} onValueChange={(value) => setSortField(value as SharingSortField)}>
-        <SelectTrigger className="h-11 border-border bg-secondary sm:h-9" aria-label={t("subscriptions.sort.label")}><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-11 border-border bg-secondary sm:h-10" aria-label={t("subscriptions.sort.label")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("subscriptions.sort.label")}>
           <SelectItem value="expiry">{t("sharing.nearestExpiry")}</SelectItem>
           <SelectItem value="account">{t("sharing.accountNumberSort")}</SelectItem>
@@ -316,9 +317,9 @@ export default function Sharing() {
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-4 rounded-t-lg border border-b-0 bg-card p-2 sm:mt-6 sm:flex sm:items-center sm:p-0">
+          <div className="mt-4 sm:mt-6">
             {isMobile ? (
-              <>
+              <div className="rounded-t-lg border border-b-0 bg-card p-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <div className="relative min-w-0 flex-1">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -360,34 +361,22 @@ export default function Sharing() {
                     {sharingFilterControls}
                   </div>
                 ) : null}
-              </>
+              </div>
             ) : (
-              <>
-                <PlatformFilterBar
-                  platforms={platformOptions}
-                  value={selectedPlatform}
-                  onValueChange={setSelectedPlatform}
-                  allLabel={t("sharing.allPlatforms")}
-                  moreLabel={t("sharing.morePlatforms")}
-                  ariaLabel={t("sharing.platformFilter")}
-                  visibleLimits={{ compact: 3, regular: 5, wide: 8, spacious: 10 }}
-                  className="min-w-0 flex-1 border-0 px-2"
-                />
-                <div className="mx-2 mb-2 flex shrink-0 items-center gap-1 sm:mb-0 sm:ml-0">
-                  <div className="relative min-w-0 flex-1 sm:w-56">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={t("sharing.searchPlaceholder")}
-                      aria-label={t("sharing.searchPlaceholder")}
-                      className="h-9 bg-secondary pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="mr-2 shrink-0">{sharingFilterControls}</div>
-              </>
+              <PlatformSearchToolbar
+                platforms={platformOptions}
+                selectedPlatform={selectedPlatform}
+                onPlatformChange={setSelectedPlatform}
+                allLabel={t("sharing.allPlatforms")}
+                moreLabel={t("sharing.morePlatforms")}
+                platformAriaLabel={t("sharing.platformFilter")}
+                searchValue={searchQuery}
+                onSearchChange={(event) => setSearchQuery(event.target.value)}
+                searchPlaceholder={t("sharing.searchPlaceholder")}
+                controls={<div className="w-72 shrink-0">{sharingFilterControls}</div>}
+                className="rounded-b-none border-b-0"
+                testId="desktop-sharing-toolbar"
+              />
             )}
           </div>
         ) : null}

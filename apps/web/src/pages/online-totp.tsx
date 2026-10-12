@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Check, ChevronDown, Copy, Link2, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Check, ChevronDown, Copy, Link2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { Header } from "@/components/header";
 import type { UploadStatus } from "@/components/logo-picker";
-import { PlatformFilterBar } from "@/components/platform-filter-bar";
+import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
 import { QueryErrorState } from "@/components/query-error-state";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { Button } from "@/components/ui/button";
@@ -74,13 +74,19 @@ export default function OnlineTotpPage() {
       <main className="app-main mx-auto max-w-[120rem]">
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (
           <div className="overflow-hidden rounded-lg border bg-card">
-            <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center">
-              <PlatformFilterBar platforms={platforms} value={selectedPlatform} onValueChange={setSelectedPlatform} allLabel={t("sharing.allPlatforms")} moreLabel={t("sharing.morePlatforms")} ariaLabel={t("sharing.platformFilter")} className="min-w-0 flex-1 border-0 px-0" />
-              <div className="relative h-10 w-full shrink-0 sm:w-72">
-                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input aria-label={t("sharing.searchPlaceholder")} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("sharing.searchPlaceholder")} className="h-10 w-full pl-9" />
-              </div>
-            </div>
+            <PlatformSearchToolbar
+              platforms={platforms}
+              selectedPlatform={selectedPlatform}
+              onPlatformChange={setSelectedPlatform}
+              allLabel={t("sharing.allPlatforms")}
+              moreLabel={t("sharing.morePlatforms")}
+              platformAriaLabel={t("sharing.platformFilter")}
+              searchValue={search}
+              onSearchChange={(event) => setSearch(event.target.value)}
+              searchPlaceholder={t("sharing.searchPlaceholder")}
+              className="rounded-none border-x-0 border-t-0"
+              testId="online-totp-toolbar"
+            />
             <div className="hidden grid-cols-[minmax(210px,1.1fr)_minmax(230px,1.4fr)_200px_180px] gap-4 border-b bg-muted/35 px-5 py-3 text-sm font-medium text-muted-foreground md:grid">
               <span>{t("subscription.field.platformName")}</span><span>{text.account}</span><span>{text.code}</span><span className="text-right">{t("sharing.actions")}</span>
             </div>

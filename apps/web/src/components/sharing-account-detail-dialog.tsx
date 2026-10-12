@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, MessageCircle, MessageSquare, Pencil, ReceiptText, RotateCw, Send, ShoppingBag, UserRound } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, MessageCircle, MessageSquare, Pencil, ReceiptText, RotateCw, Send, ShoppingBag, TriangleAlert, UserRound } from "lucide-react";
 
 import { useMoveSharingSeat, useSharingAccountDetail, useSharingAccountDetails, useSharingAccounts, useUpdateSharingSeat } from "@/hooks/use-sharing";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -141,6 +141,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const detail = detailQuery.data;
+  const pausedSeatCount = detail?.seats.filter((seat) => seat.status === "paused").length ?? 0;
   const accountsQuery = useSharingAccounts();
   const samePlatformAccounts = (accountsQuery.data?.accounts ?? []).filter((candidate) => (
     candidate.subscription.platformName.toLocaleLowerCase() === account?.subscription.platformName.toLocaleLowerCase()
@@ -323,6 +324,15 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                   <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
                   <span className="text-xs tabular-nums text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</span>
                 </div>
+                {pausedSeatCount > 0 ? (
+                  <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-300/70 bg-amber-50 px-3 py-2.5 text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100" role="status">
+                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">{t("sharing.pausedSeatsAlertTitle", { count: pausedSeatCount })}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-amber-800 dark:text-amber-200">{t("sharing.pausedSeatsAlertHelp")}</p>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="hidden max-h-[min(24rem,45vh)] overflow-auto rounded-md border sm:block">
                   <table className="w-full min-w-200 text-left text-sm">
                     <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
@@ -338,7 +348,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     </thead>
                     <tbody className="divide-y">
                       {detail.seats.map((seat) => (
-                          <tr key={seat.id} className="border-l-2 border-l-primary/35 bg-card hover:bg-muted/30">
+                          <tr key={seat.id} className={seat.status === "paused" ? "border-l-2 border-l-amber-400 bg-amber-50/40 hover:bg-amber-50/70 dark:bg-amber-950/10" : "border-l-2 border-l-primary/35 bg-card hover:bg-muted/30"}>
                           <td className="px-3 py-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span></td>
                           <td className="px-3 py-2">
                             <div className="font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
@@ -351,7 +361,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                             {seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}
                           </td>
                           <td className="px-3 py-2 text-right"><div className="flex justify-end gap-2">
-                            {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
+                            {(seat.status === "active" || seat.status === "paused") && seat.memberName ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
                             {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />{t("sharing.moveSeat")}</Button> : null}
                             <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                           </div></td>
@@ -362,7 +372,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 </div>
                 <div className="divide-y rounded-md border sm:hidden" data-testid="sharing-seat-mobile-list">
                   {detail.seats.map((seat) => (
-                    <article key={seat.id} className="space-y-3 border-l-2 border-l-primary/35 bg-card p-4">
+                    <article key={seat.id} className={seat.status === "paused" ? "space-y-3 border-l-2 border-l-amber-400 bg-amber-50/40 p-4 dark:bg-amber-950/10" : "space-y-3 border-l-2 border-l-primary/35 bg-card p-4"}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span><span className="text-xs text-muted-foreground">{t("sharing.seatNumber")}</span></div>
@@ -377,7 +387,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                         <div><dt className="text-muted-foreground">{t("sharing.paymentStatus")}</dt><dd className="mt-1">{seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}</dd></div>
                       </dl>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {seat.status === "active" ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : <span />}
+                        {(seat.status === "active" || seat.status === "paused") && seat.memberName ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : <span />}
                         {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />{t("sharing.moveSeat")}</Button> : <span />}
                         <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
                       </div>

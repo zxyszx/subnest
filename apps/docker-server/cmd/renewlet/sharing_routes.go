@@ -679,7 +679,9 @@ func safeSharingVerificationLink(raw string) *string {
 func sharingPlatformName(subscription *core.Record) string {
 	if platformName := strings.TrimSpace(subscription.GetString("platformName")); platformName != "" {
 		if platformName == "__unbound__" {
-			return ""
+			// Sharing responses require a visible platform label. Keep the unbound
+			// meaning explicit so it remains searchable and distinguishable in the UI.
+			return "未绑定"
 		}
 		return platformName
 	}

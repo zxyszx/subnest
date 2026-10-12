@@ -22,6 +22,13 @@ function renderDialog(links: SharedInboxLink[] = []) {
 async function openFirstLinkMenu(user: ReturnType<typeof userEvent.setup>) {
   await user.click((await screen.findAllByRole("button", { name: "更多链接操作" }))[0]!);
 }
+async function openSharingSettings(user: ReturnType<typeof userEvent.setup>) {
+  const label = await screen.findByText("共享设置");
+  const summary = label.closest("summary");
+  const details = label.closest("details");
+  if (!summary || !details) throw new Error("Sharing settings disclosure is missing");
+  if (!details.open) await user.click(summary);
+}
 describe("SeatInboxLinksDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,6 +45,7 @@ describe("SeatInboxLinksDialog", () => {
     renderDialog();
     const buttons = await screen.findAllByRole("button", { name: "生成链接" });
     expect(buttons[0]).toBeDisabled();
+    await openSharingSettings(user);
     await user.click(screen.getByRole("checkbox", { name: "收件箱" }));
     await user.click(buttons[0]!);
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ seatId: "seat1", mailboxId: "mailbox", folderIds: ["inbox"], windowMinutes: 30 })));
@@ -57,6 +65,7 @@ describe("SeatInboxLinksDialog", () => {
     const netflixSeatLink = { ...link, folderIds: ["netflix"], windowMinutes: 360 };
     mocks.folders.mockResolvedValue({ items: [{ id: "inbox", role: "inbox", name: "Inbox" }, { id: "netflix", name: "Netflix" }] });
     renderDialog([generic, netflixSeatLink]);
+    await openSharingSettings(userEvent.setup());
     expect(await screen.findByRole("checkbox", { name: "Netflix" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "收件箱" })).not.toBeChecked();
     expect(screen.getByRole("combobox", { name: "最近可查看邮件范围" })).toHaveTextContent("6 小时");
@@ -103,6 +112,7 @@ describe("SeatInboxLinksDialog", () => {
     const user = userEvent.setup();
     mocks.detail.mockResolvedValue({ account, seats: [seat, { ...seat, id: "vacant", seatNumber: 2, memberName: null, status: "vacant" }] });
     renderDialog();
+    await openSharingSettings(user);
     const toggle = await screen.findByRole("switch", { name: "车位邮箱链接共享" });
     expect(toggle).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: "收件箱" }));
@@ -115,6 +125,7 @@ describe("SeatInboxLinksDialog", () => {
   it("confirms disabling and leaves generic and other account links intact", async () => {
     const user = userEvent.setup();
     renderDialog([link, { ...link, id: "link2", seatId: "seat2" }, { ...link, id: "generic", seatId: null }, { ...link, id: "other", seatId: "other-seat" }]);
+    await openSharingSettings(user);
     const toggle = await screen.findByRole("switch", { name: "车位邮箱链接共享" });
     expect(toggle).toBeChecked();
     await user.click(toggle);

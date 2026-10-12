@@ -19,22 +19,27 @@ msgid "sharing.totpConfirmTitle"
 msgstr "{action}{title}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:250
+#: src/i18n/descriptors/sharing.ts:252
 msgid "sharing.seatCount"
 msgstr "{count} 个车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:251
+#: src/i18n/descriptors/sharing.ts:200
+msgid "sharing.pausedSeatsAlertTitle"
+msgstr "{count} 个车位已到期停用"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:253
 msgid "sharing.activeMemberCount"
 msgstr "{count} 人在用"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:268
+#: src/i18n/descriptors/sharing.ts:270
 msgid "sharing.joinedAt"
 msgstr "{date} 加入"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:233
+#: src/i18n/descriptors/sharing.ts:235
 msgid "sharing.seatShareTemplate"
 msgstr "【{platform} · {seat}】\n"
 "车友：{member}\n"
@@ -84,7 +89,7 @@ msgid "sharing.copyAll"
 msgstr "一键复制全部"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:230
+#: src/i18n/descriptors/sharing.ts:232
 msgid "sharing.copySeatShareSuccess"
 msgstr "上车信息已复制"
 
@@ -169,12 +174,12 @@ msgid "sharing.allStatus"
 msgstr "全部状态"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:252
+#: src/i18n/descriptors/sharing.ts:254
 msgid "sharing.publicValidationLink"
 msgstr "公共验证链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:258
+#: src/i18n/descriptors/sharing.ts:260
 msgid "sharing.shareSettings"
 msgstr "共享设置"
 
@@ -204,17 +209,17 @@ msgid "sharing.mailboxSelection"
 msgstr "共享邮箱"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:255
+#: src/i18n/descriptors/sharing.ts:257
 msgid "sharing.closePublicShare"
 msgstr "关闭公共分享"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:257
+#: src/i18n/descriptors/sharing.ts:259
 msgid "sharing.closePublicShareHelp"
 msgstr "关闭后已有公共链接将无法访问，车位独立链接不受影响。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:237
+#: src/i18n/descriptors/sharing.ts:239
 msgid "sharing.disableSeatLinksTitle"
 msgstr "关闭当前家庭组的链接共享？"
 
@@ -229,12 +234,12 @@ msgid "sharing.nearestExpiry"
 msgstr "最近到期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:207
+#: src/i18n/descriptors/sharing.ts:209
 msgid "sharing.recentMailRange"
 msgstr "最近可查看邮件范围"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:226
+#: src/i18n/descriptors/sharing.ts:228
 msgid "sharing.viewLinks"
 msgstr "分享管理"
 
@@ -269,12 +274,12 @@ msgid "sharing.dateRangeInvalid"
 msgstr "到期日期不能早于开始日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:266
+#: src/i18n/descriptors/sharing.ts:268
 msgid "sharing.expiryColumn"
 msgstr "到期时间"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:248
+#: src/i18n/descriptors/sharing.ts:250
 msgid "sharing.reloadLinksFailed"
 msgstr "刷新失败，请重新打开链接窗口。"
 
@@ -284,17 +289,17 @@ msgid "sharing.goToSubscriptions"
 msgstr "前往订阅列表"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:260
+#: src/i18n/descriptors/sharing.ts:262
 msgid "sharing.remainingDays"
 msgstr "剩余 {days} 天"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:267
+#: src/i18n/descriptors/sharing.ts:269
 msgid "sharing.remainingDaysColumn"
 msgstr "剩余天数"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:270
+#: src/i18n/descriptors/sharing.ts:272
 msgid "sharing.remainingTime"
 msgstr "剩余时间"
 
@@ -319,7 +324,7 @@ msgid "sharing.cancel"
 msgstr "取消"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:223
+#: src/i18n/descriptors/sharing.ts:225
 msgid "sharing.inboxCancel"
 msgstr "取消"
 
@@ -359,7 +364,7 @@ msgid "sharing.totpCopy"
 msgstr "复制{title}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:229
+#: src/i18n/descriptors/sharing.ts:231
 msgid "sharing.copySeatShare"
 msgstr "复制上车信息"
 
@@ -389,12 +394,12 @@ msgid "sharing.copyAccount"
 msgstr "复制账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:228
+#: src/i18n/descriptors/sharing.ts:230
 msgid "sharing.copyGenericLink"
 msgstr "复制通用链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:200
+#: src/i18n/descriptors/sharing.ts:202
 msgid "sharing.copyInboxLink"
 msgstr "复制链接"
 
@@ -434,7 +439,7 @@ msgid "sharing.addAccountDescription"
 msgstr "将一个平台订阅设为共享账号，并自动创建对应数量的空车位。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:269
+#: src/i18n/descriptors/sharing.ts:271
 msgid "sharing.joinDateMissing"
 msgstr "尚未记录加入日期"
 
@@ -464,12 +469,12 @@ msgid "sharing.totpInvalid"
 msgstr "已失效"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:253
+#: src/i18n/descriptors/sharing.ts:255
 msgid "sharing.enabled"
 msgstr "已开启"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:235
+#: src/i18n/descriptors/sharing.ts:237
 msgid "sharing.seatLinkSharingOn"
 msgstr "已开启 · 关闭将撤销本组车位链接"
 
@@ -494,12 +499,12 @@ msgid "sharing.accountFull"
 msgstr "已满"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:259
+#: src/i18n/descriptors/sharing.ts:261
 msgid "sharing.expiredDays"
 msgstr "已过期 {days} 天"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:249
+#: src/i18n/descriptors/sharing.ts:251
 msgid "sharing.platformInformation"
 msgstr "平台信息"
 
@@ -519,12 +524,12 @@ msgid "sharing.startDate"
 msgstr "开始日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:246
+#: src/i18n/descriptors/sharing.ts:248
 msgid "sharing.groupLinksDisabled"
 msgstr "当前家庭组车位链接已关闭，通用链接不受影响"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:245
+#: src/i18n/descriptors/sharing.ts:247
 msgid "sharing.groupLinksEnabled"
 msgstr "当前家庭组车位链接已开启"
 
@@ -569,7 +574,7 @@ msgid "sharing.monthlyEquivalent"
 msgstr "折合每月"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:264
+#: src/i18n/descriptors/sharing.ts:266
 msgid "sharing.sortByExpiry"
 msgstr "按到期时间"
 
@@ -584,7 +589,7 @@ msgid "sharing.upcomingDialogDescription"
 msgstr "按紧急程度排序，越接近到期越靠前。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:263
+#: src/i18n/descriptors/sharing.ts:265
 msgid "sharing.sortBySeat"
 msgstr "按车位号"
 
@@ -614,7 +619,7 @@ msgid "sharing.searchTargetAccount"
 msgstr "搜索账号序号、登录账号或邮箱"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:262
+#: src/i18n/descriptors/sharing.ts:264
 msgid "sharing.searchSeats"
 msgstr "搜索车位 / 成员"
 
@@ -629,17 +634,17 @@ msgid "sharing.totpRevoke"
 msgstr "撤销"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:218
+#: src/i18n/descriptors/sharing.ts:220
 msgid "sharing.revokeInboxLink"
 msgstr "撤销"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:221
+#: src/i18n/descriptors/sharing.ts:223
 msgid "sharing.revokeInboxLinkConfirm"
 msgstr "撤销此车位链接？"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:210
+#: src/i18n/descriptors/sharing.ts:212
 msgid "sharing.operationColumn"
 msgstr "操作"
 
@@ -654,7 +659,7 @@ msgid "sharing.paymentMethod"
 msgstr "支付方式"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:211
+#: src/i18n/descriptors/sharing.ts:213
 msgid "sharing.inboxFolder"
 msgstr "收件箱"
 
@@ -684,7 +689,7 @@ msgid "sharing.addAccount"
 msgstr "新增共享账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:206
+#: src/i18n/descriptors/sharing.ts:208
 msgid "sharing.linkFolders"
 msgstr "新链接可查看文件夹"
 
@@ -699,7 +704,7 @@ msgid "sharing.loadDetailFailed"
 msgstr "无法加载账号详情"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:243
+#: src/i18n/descriptors/sharing.ts:245
 msgid "sharing.loadLinksFailed"
 msgstr "无法读取共享邮箱，请检查邮箱连接后重试。"
 
@@ -714,7 +719,7 @@ msgid "sharing.totpConfirmDescription"
 msgstr "旧链接将立即失效，其他车位和默认链接不受影响。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:256
+#: src/i18n/descriptors/sharing.ts:258
 msgid "sharing.closePublicShareTitle"
 msgstr "是否确认关闭公共分享？"
 
@@ -739,7 +744,7 @@ msgid "sharing.morePlatforms"
 msgstr "更多"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:232
+#: src/i18n/descriptors/sharing.ts:234
 msgid "sharing.moreLinkActions"
 msgstr "更多链接操作"
 
@@ -774,7 +779,7 @@ msgid "sharing.hasVacancies"
 msgstr "有空位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:236
+#: src/i18n/descriptors/sharing.ts:238
 msgid "sharing.seatLinkSharingOff"
 msgstr "未开启 · 选择文件夹及有效期后开启"
 
@@ -794,7 +799,7 @@ msgid "sharing.totpUncreated"
 msgstr "未生成"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:216
+#: src/i18n/descriptors/sharing.ts:218
 msgid "sharing.linkNotCreated"
 msgstr "未生成链接"
 
@@ -819,7 +824,7 @@ msgid "sharing.periodCharge"
 msgstr "本期收费"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:238
+#: src/i18n/descriptors/sharing.ts:240
 msgid "sharing.disableSeatLinksHelp"
 msgstr "本组所有车位链接将立即失效。账号密码、其他家庭组和邮箱通用链接不会改变。再次开启需要生成新链接。"
 
@@ -839,22 +844,22 @@ msgid "sharing.totpMatching"
 msgstr "正在匹配在线 2FA 账号…"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:240
+#: src/i18n/descriptors/sharing.ts:242
 msgid "sharing.loadingLinks"
 msgstr "正在读取共享链接…"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:204
+#: src/i18n/descriptors/sharing.ts:206
 msgid "sharing.loadingSeats"
 msgstr "正在读取车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:222
+#: src/i18n/descriptors/sharing.ts:224
 msgid "sharing.inboxLinkConfirmHelp"
 msgstr "此车位的旧链接将失效，其他车位及通用邮箱分享不受影响。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:205
+#: src/i18n/descriptors/sharing.ts:207
 msgid "sharing.noInboxSubscription"
 msgstr "此邮箱尚未绑定已开启家庭共享的订阅。"
 
@@ -884,12 +889,12 @@ msgid "sharing.noSearchResults"
 msgstr "没有找到匹配的共享账号"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:225
+#: src/i18n/descriptors/sharing.ts:227
 msgid "sharing.clearInboxLink"
 msgstr "清空收件链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:209
+#: src/i18n/descriptors/sharing.ts:211
 msgid "sharing.statusColumn"
 msgstr "状态"
 
@@ -899,12 +904,12 @@ msgid "sharing.totpGenerate"
 msgstr "生成链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:219
+#: src/i18n/descriptors/sharing.ts:221
 msgid "sharing.createInboxLink"
 msgstr "生成链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:254
+#: src/i18n/descriptors/sharing.ts:256
 msgid "sharing.publicValidationHelp"
 msgstr "用于新成员加入验证，请勿公开传播。"
 
@@ -944,7 +949,7 @@ msgid "sharing.totpConfirm"
 msgstr "确认"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:224
+#: src/i18n/descriptors/sharing.ts:226
 msgid "sharing.inboxConfirm"
 msgstr "确认"
 
@@ -974,7 +979,7 @@ msgid "sharing.vacant"
 msgstr "空闲"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:213
+#: src/i18n/descriptors/sharing.ts:215
 msgid "sharing.inboxVacant"
 msgstr "空闲"
 
@@ -1007,6 +1012,11 @@ msgstr "管理车位"
 #: src/i18n/descriptors/sharing.ts:160
 msgid "sharing.renewSeat"
 msgstr "续费"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/sharing.ts:201
+msgid "sharing.pausedSeatsAlertHelp"
+msgstr "续费或调整车位状态后可恢复使用；对应车位的分享链接当前不可用。"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:159
@@ -1044,7 +1054,7 @@ msgid "sharing.manageGenericMailbox"
 msgstr "设置邮箱通用链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:242
+#: src/i18n/descriptors/sharing.ts:244
 msgid "sharing.mailboxNotMatched"
 msgstr "该账号尚未匹配到邮箱，请检查登录账号与邮箱地址是否一致，并确认邮箱连接正常。"
 
@@ -1079,7 +1089,7 @@ msgid "sharing.datesRequired"
 msgstr "请选择开始日期和到期日期"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:244
+#: src/i18n/descriptors/sharing.ts:246
 msgid "sharing.enableLinksValidation"
 msgstr "请选择邮件文件夹，并为使用中的车位设置未来的链接到期时间"
 
@@ -1091,7 +1101,7 @@ msgstr "账号：{account}\n"
 "验证码：{link}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:227
+#: src/i18n/descriptors/sharing.ts:229
 msgid "sharing.genericLink"
 msgstr "账号公共验证链接"
 
@@ -1141,7 +1151,7 @@ msgid "sharing.seatNumber"
 msgstr "车位"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:212
+#: src/i18n/descriptors/sharing.ts:214
 msgid "sharing.inboxSeat"
 msgstr "车位 {number}"
 
@@ -1151,7 +1161,7 @@ msgid "sharing.totpSeat"
 msgstr "车位 {number} · {member}"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:208
+#: src/i18n/descriptors/sharing.ts:210
 msgid "sharing.seatMemberColumn"
 msgstr "车位 / 成员"
 
@@ -1161,7 +1171,7 @@ msgid "sharing.seatSaved"
 msgstr "车位与应收已更新"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:261
+#: src/i18n/descriptors/sharing.ts:263
 msgid "sharing.seatListTitle"
 msgstr "车位列表（{count}）"
 
@@ -1181,7 +1191,7 @@ msgid "sharing.status"
 msgstr "车位状态"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:234
+#: src/i18n/descriptors/sharing.ts:236
 msgid "sharing.seatLinkSharing"
 msgstr "车位邮箱链接共享"
 
@@ -1191,7 +1201,7 @@ msgid "sharing.inboxLinks"
 msgstr "车位链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:202
+#: src/i18n/descriptors/sharing.ts:204
 msgid "sharing.inboxLinkCount"
 msgstr "车位链接 {count}"
 
@@ -1246,12 +1256,12 @@ msgid "sharing.selectAccountBeforeSeat"
 msgstr "选择目标账号后，再选择要换到或互换的车位。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:201
+#: src/i18n/descriptors/sharing.ts:203
 msgid "sharing.genericInboxShare"
 msgstr "通用分享"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:203
+#: src/i18n/descriptors/sharing.ts:205
 msgid "sharing.genericLinkWarning"
 msgstr "通用分享仍开启，旧通用链接仍有效，可在“通用分享”中单独撤销。"
 
@@ -1261,12 +1271,12 @@ msgid "sharing.email"
 msgstr "邮箱"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:239
+#: src/i18n/descriptors/sharing.ts:241
 msgid "sharing.linkAdminOnly"
 msgstr "邮箱链接管理仅限管理员，账号资料和车位管理不受影响。"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:247
+#: src/i18n/descriptors/sharing.ts:249
 msgid "sharing.partialLinkFailure"
 msgstr "部分车位可能已变更，请检查列表后重试。"
 
@@ -1276,12 +1286,12 @@ msgid "sharing.totpResetAction"
 msgstr "重置"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:217
+#: src/i18n/descriptors/sharing.ts:219
 msgid "sharing.resetInboxLink"
 msgstr "重置"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:220
+#: src/i18n/descriptors/sharing.ts:222
 msgid "sharing.resetInboxLinkConfirm"
 msgstr "重置此车位链接？"
 
@@ -1296,17 +1306,17 @@ msgid "sharing.totpRetry"
 msgstr "重试"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:241
+#: src/i18n/descriptors/sharing.ts:243
 msgid "sharing.retryLinks"
 msgstr "重试"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:265
+#: src/i18n/descriptors/sharing.ts:267
 msgid "sharing.linkColumn"
 msgstr "链接"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:215
+#: src/i18n/descriptors/sharing.ts:217
 msgid "sharing.linkUnavailable"
 msgstr "链接不可用"
 
@@ -1316,7 +1326,7 @@ msgid "sharing.totpCopied"
 msgstr "链接已复制"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:214
+#: src/i18n/descriptors/sharing.ts:216
 msgid "sharing.linkValidUntil"
 msgstr "链接有效 · {date} 到期"
 
@@ -1336,7 +1346,7 @@ msgid "sharing.hidePassword"
 msgstr "隐藏密码"
 
 #. js-lingui-explicit-id
-#: src/i18n/descriptors/sharing.ts:231
+#: src/i18n/descriptors/sharing.ts:233
 msgid "sharing.previewShare"
 msgstr "预览分享页"
 

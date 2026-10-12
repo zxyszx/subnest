@@ -39,6 +39,7 @@ import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } fro
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
 import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PlatformSearchToolbar } from '@/components/platform-search-toolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -483,42 +484,21 @@ const Subscriptions = () => {
             </>
           </div>
         ) : (
-          <div
-            className="mb-6 flex min-w-0 items-center rounded-lg border border-border bg-card"
-            data-testid="desktop-subscription-toolbar"
-          >
-            {activePlatformOptions.length > 0 ? (
-              <Suspense fallback={<div className="h-12 min-w-0 flex-1" />}>
-                <PlatformFilterBar
-                  platforms={activePlatformOptions}
-                  value={selectedPlatform}
-                  onValueChange={setSelectedPlatform}
-                  allLabel={t("subscriptions.allPlatforms")}
-                  moreLabel={t("subscriptions.morePlatforms")}
-                  ariaLabel={t("subscriptions.platformFilter")}
-                  className="min-w-0 flex-1 border-0 px-2"
-                  visibleLimits={{ regular: 4, wide: 7, spacious: 10 }}
-                  moreIconOnly
-                />
-              </Suspense>
-            ) : null}
-            <div className={cn("flex min-w-0 shrink-0 items-center gap-2 p-2", activePlatformOptions.length > 0 && "pl-0")}>
-                <div className="relative w-[clamp(11rem,18vw,18rem)] min-w-0">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    name="subscription-search"
-                    type="search"
-                    enterKeyHint="search"
-                    placeholder={t("subscriptions.searchPlaceholder")}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-10 border-border bg-secondary pl-10"
-                  />
-                </div>
-                <div className="w-32">{statusControls}</div>
-                <div className="w-36">{sortControls}</div>
-              </div>
-          </div>
+          <PlatformSearchToolbar
+            platforms={activePlatformOptions}
+            selectedPlatform={selectedPlatform}
+            onPlatformChange={setSelectedPlatform}
+            allLabel={t("subscriptions.allPlatforms")}
+            moreLabel={t("subscriptions.morePlatforms")}
+            platformAriaLabel={t("subscriptions.platformFilter")}
+            searchName="subscription-search"
+            searchValue={searchQuery}
+            onSearchChange={(event) => setSearchQuery(event.target.value)}
+            searchPlaceholder={t("subscriptions.searchPlaceholder")}
+            controls={<><div className="w-32">{statusControls}</div><div className="w-36">{sortControls}</div></>}
+            className="mb-6"
+            testId="desktop-subscription-toolbar"
+          />
         )}
 
         {displayError ? (

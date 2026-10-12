@@ -1934,6 +1934,8 @@ export const MESSAGE_KEYS = [
   "sharing.passwordNotSet",
   "sharing.passwordUnavailable",
   "sharing.paused",
+  "sharing.pausedSeatsAlertHelp",
+  "sharing.pausedSeatsAlertTitle",
   "sharing.paymentMethod",
   "sharing.paymentStatus",
   "sharing.pending",

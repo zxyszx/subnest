@@ -506,8 +506,8 @@ describe("subscription statistics models", () => {
 
     expect(items.map((item) => [item.subscription.id, item.daysUntil, item.kind, item.reminderDays])).toEqual([
       ["today", 0, "renewal", 0],
-      ["fixedTerm", 15, "expiry", 30],
       ["old14Miss", 15, "renewal", 30],
+      ["fixedTerm", 15, "expiry", 30],
       ["explicit30", 30, "renewal", 30],
       ["inherit30", 30, "renewal", 30],
     ]);

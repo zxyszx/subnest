@@ -197,6 +197,8 @@ export const messages = [
   msg({ id: "sharing.accountNumberSort", message: "账号序号" }),
   msg({ id: "sharing.vacantSeatsSort", message: "空余车位" }),
   msg({ id: "sharing.inboxLinks", message: "车位链接" }),
+  msg({ id: "sharing.pausedSeatsAlertTitle", message: "{count} 个车位已到期停用" }),
+  msg({ id: "sharing.pausedSeatsAlertHelp", message: "续费或调整车位状态后可恢复使用；对应车位的分享链接当前不可用。" }),
   msg({ id: "sharing.copyInboxLink", message: "复制链接" }),
   msg({ id: "sharing.genericInboxShare", message: "通用分享" }),
   msg({ id: "sharing.inboxLinkCount", message: "车位链接 {count}" }),

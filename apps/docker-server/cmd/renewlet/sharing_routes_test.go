@@ -4,7 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"github.com/pocketbase/pocketbase/core"
 )
+
+func TestSharingPlatformNameKeepsUnboundLabelSearchable(t *testing.T) {
+	record := core.NewRecord(core.NewBaseCollection("subscriptions"))
+	record.Set("name", "Surge Mac")
+	record.Set("platformName", "__unbound__")
+
+	if got := sharingPlatformName(record); got != "未绑定" {
+		t.Fatalf("sharing platform label = %q, want 未绑定", got)
+	}
+}
 
 func TestSafeSharingVerificationLinkDoesNotExposeNewSzxcnToken(t *testing.T) {
 	if got := safeSharingVerificationLink("https://mail.newszxcn.com/shared-inbox#nis_secret"); got != nil {
