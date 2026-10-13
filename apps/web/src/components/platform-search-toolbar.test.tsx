@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -64,7 +64,7 @@ describe("PlatformSearchToolbar", () => {
     expect(within(menu).getByRole("menuitem", { name: /Disney\+/ })).toBeInTheDocument();
   });
 
-  it("promotes an active overflow platform into the visible bar", async () => {
+  it("keeps an active overflow platform available in the menu", async () => {
     const user = userEvent.setup();
     render(
       <PlatformSearchToolbar
@@ -80,9 +80,38 @@ describe("PlatformSearchToolbar", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Spotify" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "Spotify" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "更多" }));
-    expect(within(screen.getByRole("menu")).queryByRole("menuitem", { name: /Spotify/ })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: /Spotify/ })).toBeInTheDocument();
+  });
+
+  it("moves platforms into overflow when space shrinks and restores them when space returns", async () => {
+    let width = 900;
+    let resize = () => {};
+    const clientWidth = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(() => width);
+    const bounds = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({ width: 100, height: 36, x: 0, y: 0, top: 0, left: 0, right: 100, bottom: 36, toJSON: () => ({}) }));
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(private callback: () => void) {}
+      observe(target: Element) {
+        if (target.tagName === "NAV") resize = this.callback;
+      }
+      disconnect() {}
+    });
+    try {
+      render(<PlatformSearchToolbar platforms={platforms} selectedPlatform={null} onPlatformChange={vi.fn()} allLabel="全部平台" moreLabel="更多" platformAriaLabel="平台筛选" searchValue="" onSearchChange={vi.fn()} searchPlaceholder="搜索" />);
+      expect(screen.getByRole("button", { name: "Spotify" })).toBeInTheDocument();
+      act(() => { width = 600; resize(); });
+      expect(screen.queryByRole("button", { name: "Spotify" })).not.toBeInTheDocument();
+      await userEvent.setup().click(screen.getByRole("button", { name: "更多" }));
+      expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: /Spotify/ })).toBeInTheDocument();
+      await userEvent.setup().keyboard("{Escape}");
+      act(() => { width = 900; resize(); });
+      expect(screen.getByRole("button", { name: "Spotify" })).toBeInTheDocument();
+    } finally {
+      clientWidth.mockRestore();
+      bounds.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("expands the compact search control and keeps it open while it has a value", async () => {

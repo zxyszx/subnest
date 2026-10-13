@@ -50,7 +50,6 @@ export function PlatformSearchToolbar({
       className={cn("flex min-w-0 flex-col rounded-lg border border-border bg-card md:flex-row md:items-center", className)}
       data-testid={testId}
     >
-      {/* Search and filter controls leave room for five platform tabs at 1280-1599px. */}
       <PlatformFilterBar
         platforms={platforms}
         value={selectedPlatform}
@@ -61,6 +60,7 @@ export function PlatformSearchToolbar({
         visibleLimits={{ compact: 3, regular: 5, wide: 5, spacious: 8 }}
         moreIconOnly
         dense
+        fitContainer
         className="min-w-0 flex-1 border-0 px-2"
       />
       <div className="flex min-w-0 shrink-0 items-center gap-1.5 p-1.5 md:pl-0">
@@ -91,7 +91,7 @@ export function PlatformSearchToolbar({
             aria-label={searchPlaceholder}
             tabIndex={searchExpanded ? 0 : -1}
             className={cn(
-              "h-9 border-border bg-secondary pl-8 transition-opacity duration-150 motion-reduce:transition-none",
+              "h-9 border-border bg-secondary pl-8 focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 transition-opacity duration-150 motion-reduce:transition-none",
               searchExpanded ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           />
