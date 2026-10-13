@@ -122,7 +122,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
       <RouteProgress />
       <div className={headerLayout.inner} data-testid="app-header-inner">
         <div className={headerLayout.primaryCluster}>
-          <div className={headerLayout.brandCluster}>
+          <div className={headerLayout.brandCluster} data-header-brand>
             <RenewletBrandMark size="sm" href="/" data-testid="app-header-brand-mark" />
             <div className={headerLayout.brandTextGroup}>
               <Link
@@ -144,6 +144,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             </div>
           </div>
 
+          <span data-header-page-title className="hidden text-sm font-medium text-muted-foreground">{t(visibleNavItems.find((item) => item.path === pathname)?.labelKey ?? "nav.dashboard")}</span>
           <nav className={headerLayout.desktopNav} data-testid="app-header-desktop-nav">
             {desktopPrimaryItems.map((item) => (
               <NavLink

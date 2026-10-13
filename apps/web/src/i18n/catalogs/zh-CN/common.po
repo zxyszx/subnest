@@ -732,3 +732,147 @@ msgstr "饱和度 (S)"
 #: src/i18n/descriptors/common.ts:133
 msgid "theme.color.yellow"
 msgstr "黄"
+
+#. js-lingui-explicit-id
+msgid "workspace.collapse"
+msgstr "收起导航"
+
+#. js-lingui-explicit-id
+msgid "workspace.expand"
+msgstr "展开导航"
+
+#. js-lingui-explicit-id
+msgid "workspace.tools"
+msgstr "工具"
+
+#. js-lingui-explicit-id
+msgid "workspace.private"
+msgstr "私有工作空间"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overview"
+msgstr "经营总览"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overviewHint"
+msgstr "续费、车位与平台经营，一处掌握。"
+
+#. js-lingui-explicit-id
+msgid "dashboard.active"
+msgstr "活跃订阅"
+
+#. js-lingui-explicit-id
+msgid "dashboard.vacancies"
+msgstr "可招募车位"
+
+#. js-lingui-explicit-id
+msgid "dashboard.capacity"
+msgstr "使用中 {used} / {total}"
+
+#. js-lingui-explicit-id
+msgid "dashboard.operations"
+msgstr "今日运营状态"
+
+#. js-lingui-explicit-id
+msgid "dashboard.dueToday"
+msgstr "今日续费"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overdue"
+msgstr "逾期订阅"
+
+#. js-lingui-explicit-id
+msgid "dashboard.trend"
+msgstr "收入 / 成本 / 利润测算"
+
+#. js-lingui-explicit-id
+msgid "dashboard.forecastHint"
+msgstr "按现有订阅与车友有效期测算，不代表实际到账流水。"
+
+#. js-lingui-explicit-id
+msgid "dashboard.forecastRange"
+msgstr "未来 {count} 个月"
+
+#. js-lingui-explicit-id
+msgid "dashboard.revenue"
+msgstr "月均收入"
+
+#. js-lingui-explicit-id
+msgid "dashboard.cost"
+msgstr "月均成本"
+
+#. js-lingui-explicit-id
+msgid "dashboard.profit"
+msgstr "月均利润"
+
+#. js-lingui-explicit-id
+msgid "dashboard.platforms"
+msgstr "平台经营概览"
+
+#. js-lingui-explicit-id
+msgid "dashboard.accounts"
+msgstr "{count} 个账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.utilization"
+msgstr "车位使用率"
+
+#. js-lingui-explicit-id
+msgid "dashboard.ranking"
+msgstr "利润贡献排行"
+
+#. js-lingui-explicit-id
+msgid "dashboard.risks"
+msgstr "运营提醒"
+
+#. js-lingui-explicit-id
+msgid "dashboard.negativeProfit"
+msgstr "负利润账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.availableAccounts"
+msgstr "有空位账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.pausedAccounts"
+msgstr "已停用账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.recent"
+msgstr "最近新增账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noActivity"
+msgstr "暂无新增账号记录"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noPlatforms"
+msgstr "暂无共享账号"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noRisks"
+msgstr "暂无需要关注的事项"
+
+#. js-lingui-explicit-id
+msgid "dashboard.detailsIncomplete"
+msgstr "部分车位详情未加载，提醒可能不完整。"
+
+#. js-lingui-explicit-id
+msgid "dashboard.stopSeats"
+msgstr "到期或停用车位"
+
+#. js-lingui-explicit-id
+msgid "dashboard.allPlatforms"
+msgstr "查看平台"
+
+#. js-lingui-explicit-id
+msgid "dashboard.accountAssets"
+msgstr "账号资产"
+
+#. js-lingui-explicit-id
+msgid "dashboard.assetHint"
+msgstr "共享账号与车位资产"
+
+#. js-lingui-explicit-id
+msgid "dashboard.month"
+msgstr "月份"

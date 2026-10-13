@@ -139,6 +139,7 @@ export default defineConfig({
         "**/settings.spec.ts",
         "**/statistics.spec.ts",
         "**/release-smoke.spec.ts",
+        "**/mobile-dashboard-workspace.spec.ts",
         "**/sharing-totp.spec.ts",
         "**/route-progress.spec.ts",
         "**/report-exchange-rates.spec.ts",

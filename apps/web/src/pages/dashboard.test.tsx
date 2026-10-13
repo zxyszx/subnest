@@ -1,5 +1,5 @@
 // Dashboard 页面测试保护首页 hook 装配和统计入口，避免页面层绕过 domain 模型直接计算金额。
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import { DEFAULT_CUSTOM_CONFIG } from "@/types/config";
 import type { RecurringCycleSubscriptionCollectionItem, SubscriptionCollectionItem } from "@/types/subscription";
 import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
 import Dashboard from "./dashboard";
+import { buildOperationsForecast, buildOperationsOverview } from "@/modules/subscriptions/domain/operations-overview";
 
 interface MockSubscriptionAnalyticsResult {
   data: SubscriptionCollectionItem[] | undefined;
@@ -268,335 +269,131 @@ function mockResolvedDashboardData() {
   });
 }
 
-describe("Dashboard page loading state", () => {
+describe("Dashboard operations overview", () => {
   beforeEach(() => {
     mocks.ratesLoading = false;
-    mocks.compactRenewalLayout = false;
     mocks.sharingAccounts = [];
     mocks.sharingDetailQueries = [];
     mocks.upcomingRenewalsCalls = [];
     mockResolvedDashboardData();
   });
 
-  it("keeps dashboard content visible while exchange rates are loading", () => {
+  it("keeps current content visible during exchange-rate refresh", () => {
     mocks.ratesLoading = true;
-
     renderDashboard();
-
     expect(screen.queryByTestId("dashboard-skeleton")).not.toBeInTheDocument();
-    expect(screen.getAllByText("订阅续费").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("车友续费").length).toBeGreaterThan(0);
-    expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({
-      count: 1,
-      today: "2026-06-15",
-      notificationReminderDays: 5,
-    });
-    expect(screen.queryByText("支出分布")).not.toBeInTheDocument();
     expect(screen.getByText("日均 ¥46.67 · 汇率加载中...")).toBeInTheDocument();
+    expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({ count: 1, today: "2026-06-15", notificationReminderDays: 5 });
   });
 
-  it("shows a recoverable error instead of zeroed analytics", async () => {
-    const user = userEvent.setup();
+  it("shows recoverable errors instead of zeroed analytics", async () => {
     const refetch = vi.fn();
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: undefined,
-      isPending: false,
-      error: new Error(),
-      refetch,
-    });
-
+    mocks.useSubscriptionAnalytics.mockReturnValue({ data: undefined, isPending: false, error: new Error(), refetch });
     renderDashboard();
-
     expect(screen.getByRole("alert")).toHaveTextContent("操作失败，请稍后重试");
     expect(screen.queryByTestId("dashboard-stat-grid")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "重试" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "重试" }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it("uses one primary empty-state action while keeping secondary panels compact", () => {
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: [],
-      isPending: false,
-    });
-
-    renderDashboard();
-
-    expect(screen.getAllByRole("heading", { name: "从第一个订阅开始" })).toHaveLength(1);
-    expect(screen.getByText("添加订阅后，这里会汇总支出、续费和提醒。")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "添加第一个订阅" })).toBeInTheDocument();
-    expect(screen.queryByTestId("upcoming-renewals")).not.toBeInTheDocument();
-    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
-  });
-
-  it("keeps the three financial cards and adds two seven-day renewal cards", () => {
-    renderDashboard();
-
-    const grid = screen.getByTestId("dashboard-stat-grid");
-    const monthlySpend = screen.getByTestId("dashboard-stat-monthly-spend");
-    const sharingProfit = screen.getByTestId("dashboard-stat-sharing-profit");
-
-    expect(grid).toHaveClass("grid", "grid-cols-2", "gap-2.5", "sm:gap-3", "lg:grid-cols-5");
-    expect(monthlySpend).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5", "col-span-1");
-    expect(monthlySpend).not.toHaveClass("p-6");
-    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
-    expect(sharingProfit).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
-    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
-    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveClass("min-h-20", "p-3", "sm:min-h-24", "sm:p-3.5");
-    expect(screen.getByText("日均 ¥46.67 · 实时汇率换算 (CNY)")).toBeInTheDocument();
-  });
-
-  it("shows subscription and sharing renewal worklists without a spending chart", () => {
-    renderDashboard();
-
-    expect(screen.getByTestId("upcoming-renewals")).toHaveTextContent("1");
-    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
-    expect(screen.queryByText("支出分布")).not.toBeInTheDocument();
-  });
-
-  it("jumps directly to a selected year and month from the dashboard calendar", async () => {
-    const user = userEvent.setup();
-    renderDashboard();
-
-    await user.click(screen.getByRole("button", { name: "2026年6月" }));
-    await user.click(screen.getByRole("button", { name: "2026年", expanded: false }));
-    await user.click(screen.getByRole("button", { name: "2025" }));
-    await user.click(screen.getByRole("button", { name: "11月" }));
-
-    expect(screen.getByRole("button", { name: "2025年11月" })).toBeInTheDocument();
-  });
-
-  it("recalculates calendar spend, sharing income, and profit for the selected month", async () => {
-    const user = userEvent.setup();
-    const juneAccount = sharingAccount();
-    const juneDetail = sharingDetail(juneAccount);
-    juneDetail.seats[0] = {
-      ...juneDetail.seats[0]!,
-      monthlyPrice: "150",
-      expiresAt: assertDateOnly("2026-06-20"),
-    };
-    const julyAccount = { ...sharingAccount(), id: "sharing-2" };
-    const julyDetail = sharingDetail(julyAccount);
-    julyDetail.seats[0] = {
-      ...julyDetail.seats[0]!,
-      id: "seat-2",
-      monthlyPrice: "25",
-      expiresAt: assertDateOnly("2026-07-04"),
-    };
-    mocks.sharingAccounts = [juneAccount, julyAccount];
-    mocks.sharingDetailQueries = [
-      { data: juneDetail, isPending: false },
-      { data: julyDetail, isPending: false },
-    ];
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: [
-        subscription({ id: "june-subscription", price: "100", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-18") }),
-        subscription({ id: "july-subscription", price: "40", currency: "CNY", nextBillingDate: assertDateOnly("2026-07-03") }),
-      ],
-      isPending: false,
-    });
-
-    renderDashboard();
-
-    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥95");
-
-    await user.click(screen.getByRole("button", { name: "下个月" }));
-
-    expect(screen.getByTestId("dashboard-calendar-monthly-spend")).toHaveTextContent("¥140");
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥175");
-    expect(screen.getByTestId("dashboard-calendar-monthly-profit")).toHaveTextContent("¥95");
-  });
-
-  it("allocates a multi-month sharing charge evenly across its covered months", async () => {
-    const user = userEvent.setup();
-    const account = sharingAccount();
-    const detail = sharingDetail(account);
-    detail.seats[0] = {
-      ...detail.seats[0]!,
-      monthlyPrice: "100",
-      billingMonths: 3,
-      startDate: assertDateOnly("2026-09-01"),
-      expiresAt: assertDateOnly("2026-12-01"),
-      currentReceivable: {
-        id: "receivable-quarterly",
-        periodStart: assertDateOnly("2026-09-01"),
-        periodEnd: assertDateOnly("2026-12-01"),
-        dueDate: assertDateOnly("2026-09-01"),
-        amount: "300",
-        paidAmount: "300",
-        currency: "CNY",
-        status: "paid",
-        paidAt: "2026-09-01T00:00:00Z",
-      },
-    };
-    mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
-
-    renderDashboard();
-    await user.click(screen.getByRole("button", { name: "2026年6月" }));
-    await user.click(screen.getByRole("button", { name: "9月" }));
-
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
-    expect(screen.getByRole("button", { name: "1 +¥100" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "下个月" }));
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
-    await user.click(screen.getByRole("button", { name: "下个月" }));
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥100");
-  });
-
-  it("keeps each calendar date's detail items isolated", async () => {
-    const user = userEvent.setup();
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: [
-        subscription({ id: "june-18", name: "June 18 service", price: "100", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-18") }),
-        subscription({ id: "june-19", name: "June 19 service", price: "40", currency: "CNY", nextBillingDate: assertDateOnly("2026-06-19") }),
-      ],
-      isPending: false,
-    });
-
-    renderDashboard();
-    await user.click(screen.getByRole("button", { name: "18 -¥100" }));
-
-    const dialog = screen.getByRole("dialog", { name: "2026年6月18日" });
-    expect(within(dialog).getAllByText("June 18 service")).toHaveLength(1);
-    expect(within(dialog).getByTitle("账号编号 1")).toBeInTheDocument();
-    expect(within(dialog).getByText("订阅续费")).toBeInTheDocument();
-    expect(within(dialog).queryByText("June 19 service")).not.toBeInTheDocument();
-  });
-
-  it("projects active sharing income into earlier selected months without crossing the seat start date", async () => {
-    const user = userEvent.setup();
-    const account = sharingAccount();
-    const detail = sharingDetail(account);
-    detail.seats[0] = {
-      ...detail.seats[0]!,
-      monthlyPrice: "25",
-      startDate: assertDateOnly("2026-05-04"),
-      expiresAt: assertDateOnly("2026-07-04"),
-    };
-    mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
-
-    renderDashboard();
-
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
-    await user.click(screen.getByRole("button", { name: "上个月" }));
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥25");
-    await user.click(screen.getByRole("button", { name: "上个月" }));
-    expect(screen.getByTestId("dashboard-calendar-monthly-income")).toHaveTextContent("¥0");
-  });
-
-  it("counts only subscriptions and members due within the next seven days", async () => {
-    const user = userEvent.setup();
-    const account = sharingAccount();
-    const detail = sharingDetail(account);
-    detail.seats[0] = { ...detail.seats[0]!, expiresAt: assertDateOnly("2026-06-20") };
-    mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: detail, isPending: false }];
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })],
-      isPending: false,
-    });
-
-    renderDashboard();
-
-    expect(screen.getByTestId("dashboard-stat-subscription-renewals")).toHaveTextContent("1");
-    expect(screen.getByTestId("dashboard-stat-member-renewals")).toHaveTextContent("1");
-    await user.click(screen.getByRole("button", { name: "查看 7 天内需要续费的订阅" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("7 天内订阅续费");
-  });
-
-  it("keeps overdue sharing members visible with their account and charge", () => {
+  it("shows five real metrics and no calendar or payment-failure feature", () => {
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
-
     renderDashboard();
-
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.getByTitle("账号编号 2")).toBeInTheDocument();
-    expect(screen.getByText("车位 #3 · 6月14日 到期")).toBeInTheDocument();
-    expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
-    expect(screen.getAllByText("¥15 CNY").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("dashboard-stat-grid").children).toHaveLength(5);
     expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60");
     expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20");
+    expect(screen.getByTestId("dashboard-stat-active")).toHaveTextContent("1");
+    expect(screen.getByTestId("dashboard-stat-vacancies")).toHaveTextContent("4");
+    expect(screen.getByRole("link", { name: /可招募车位/ })).toHaveAttribute("href", "/sharing?status=available");
+    expect(screen.queryByTestId("dashboard-calendar-monthly-income")).not.toBeInTheDocument();
+    expect(screen.queryByText("扣款失败")).not.toBeInTheDocument();
   });
 
-  it("opens the seven-day worklists in dialogs instead of navigating away", async () => {
+  it("provides honest empty states without fabricated platform data", () => {
+    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [], isPending: false });
+    renderDashboard();
+    expect(screen.getByTestId("dashboard-stat-active")).toHaveTextContent("0");
+    expect(screen.getAllByText("暂无共享账号")).toHaveLength(2);
+    expect(screen.getByText("暂无新增账号记录")).toBeInTheDocument();
+    expect(screen.getByText("暂无需要关注的事项")).toBeInTheDocument();
+  });
+
+  it("displays unbound platforms and provides a usable filter destination", () => {
+    const account = sharingAccount();
+    account.subscription.platformName = "__unbound__";
+    mocks.sharingAccounts = [account];
+    renderDashboard();
+    expect(screen.getByRole("heading", { name: "未绑定" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /未绑定/ })).toHaveAttribute("href", "/sharing?platform=__unbound__");
+  });
+
+  it("opens subscription and member worklists without leaving the dashboard", async () => {
     const user = userEvent.setup();
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
     mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })],
-      isPending: false,
-    });
-
+    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })], isPending: false });
     renderDashboard();
-
-    const subscriptionPanel = screen.getByRole("heading", { name: "订阅续费" }).closest("article");
-    expect(subscriptionPanel).not.toBeNull();
-    await user.click(within(subscriptionPanel!).getByRole("button", { name: "查看全部 (1)" }));
+    await user.click(screen.getByRole("button", { name: /订阅续费\s*1/ }));
     expect(screen.getByRole("dialog", { name: "7 天内订阅续费" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "关闭" }));
-
-    const memberPanel = screen.getByRole("heading", { name: "车友续费" }).closest("article");
-    expect(memberPanel).not.toBeNull();
-    await user.click(within(memberPanel!).getByRole("button", { name: "查看全部 (1)" }));
-    const memberDialog = screen.getByRole("dialog", { name: "7 天内车友续费" });
-    expect(memberDialog).toHaveTextContent("已过期 1 天");
+    await user.click(screen.getByRole("button", { name: /车友续费\s*1/ }));
+    expect(screen.getByRole("dialog", { name: "7 天内车友续费" })).toHaveTextContent("已过期 1 天");
   });
 
-  it("opens the selected sharing account in a dialog from the dashboard", async () => {
-    const user = userEvent.setup();
+  it("preserves overdue members and manual account management", async () => {
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
     mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
-
     renderDashboard();
-    await user.click(screen.getByRole("button", { name: "管理账号" }));
-
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "管理账号" }));
     expect(await screen.findByRole("dialog", { name: "家庭共享 2" })).toHaveTextContent("netflix@example.com");
   });
 
-  it("combines renewal worklists into switchable tabs on compact screens", async () => {
-    const user = userEvent.setup();
-    mocks.compactRenewalLayout = true;
-    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [], isPending: false });
-
+  it.each(["subscriptions", "settings"])("shows skeleton while %s is pending", (source) => {
+    if (source === "subscriptions") mocks.useSubscriptionAnalytics.mockReturnValue({ data: undefined, isPending: true });
+    else mocks.useSettings.mockReturnValue({ data: undefined, isPending: true });
     renderDashboard();
+    expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
+  });
+});
 
-    expect(screen.getByRole("tab", { name: /订阅续费/ })).toHaveAttribute("data-state", "active");
-    await user.click(screen.getByRole("tab", { name: /车友续费/ }));
-    expect(screen.getByText("未来 7 天内没有车友到期")).toBeInTheDocument();
+describe("Operations projection boundaries", () => {
+  const convert = (amount: number | string) => Number(amount);
+
+  it("normalizes annual subscription costs and member terms without inventing receipts", () => {
+    const account = sharingAccount();
+    const detail = sharingDetail(account);
+    detail.seats = Array.from({ length: 5 }, (_, index) => ({
+      ...detail.seats[0]!, id: `annual-seat-${index}`, monthlyPrice: String(50 / 12), billingMonths: 12,
+      startDate: assertDateOnly("2026-01-01"), expiresAt: assertDateOnly("2027-01-01"),
+    }));
+    const projection = buildOperationsForecast([subscription({ billingCycle: "annual", price: "100", currency: "CNY", startDate: null })], [detail], assertDateOnly("2026-01-01"), "CNY", convert);
+    expect(projection.reduce((sum, month) => sum + month.cost, 0)).toBeCloseTo(100);
+    expect(projection.reduce((sum, month) => sum + month.revenue, 0)).toBeCloseTo(250);
+    expect(projection.reduce((sum, month) => sum + month.profit, 0)).toBeCloseTo(150);
   });
 
-  it.each([
-    ["subscriptions", { subscriptionsPending: true, settingsPending: false }],
-    ["settings", { subscriptionsPending: false, settingsPending: true }],
-  ])("shows the skeleton while %s data is still pending", (_label, state) => {
-    mocks.useSubscriptionAnalytics.mockReturnValue({
-      data: state.subscriptionsPending ? undefined : [subscription()],
-      isPending: state.subscriptionsPending,
-    });
-    mocks.useSettings.mockReturnValue({
-      data: state.settingsPending
-        ? undefined
-        : {
-            defaultCurrency: "CNY",
-            exchangeRateProvider: "exchange-api",
-            notificationReminderDays: 5,
-            subscriptionPriceReferenceEnabled: true,
-            subscriptionPriceReferenceCurrency: "USD",
-            timezone: "Asia/Shanghai",
-          },
-      isPending: state.settingsPending,
-    });
+  it("keeps scheduled-stop seats valid until expiry and excludes future or expired contracts", () => {
+    const detail = sharingDetail(sharingAccount());
+    detail.seats[0] = { ...detail.seats[0]!, status: "paused", startDate: assertDateOnly("2026-10-01"), expiresAt: assertDateOnly("2026-11-01") };
+    const projection = buildOperationsForecast([], [detail], assertDateOnly("2026-10-13"), "CNY", convert);
+    expect(projection[0]!.revenue).toBeCloseTo(15);
+    expect(projection[1]!.revenue).toBe(0);
+    detail.seats[0] = { ...detail.seats[0]!, startDate: assertDateOnly("2026-11-01"), expiresAt: assertDateOnly("2026-12-01") };
+    expect(buildOperationsForecast([], [detail], assertDateOnly("2026-10-13"), "CNY", convert)[0]!.revenue).toBe(0);
+  });
 
-    renderDashboard();
-
-    expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
+  it("groups unbound platforms and excludes archived accounts from recruitable seats", () => {
+    const account = sharingAccount();
+    account.subscription.platformName = "__unbound__";
+    const overview = buildOperationsOverview([account, { ...account, id: "archive", status: "archived" }], [], "CNY", convert, assertDateOnly("2026-10-13"));
+    expect(overview.capacity).toBe(5);
+    expect(overview.vacancies).toBe(4);
+    expect(overview.platforms).toHaveLength(1);
+    expect(overview.platforms[0]!.name).toBe("");
   });
 });

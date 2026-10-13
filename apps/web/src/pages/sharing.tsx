@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from "react";
+import { useSearchParams } from "@/lib/router";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
@@ -31,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
 import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import { sharingAccountHasVacancy, sharingSeatDisplayState, type SharingSeatDisplayState } from "@/lib/sharing-seat-state";
-import { subscriptionPlatformName } from "@/lib/subscription-platform";
+import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
 import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
@@ -66,6 +67,7 @@ type SharingFilter = "all" | "available" | "full" | "expiring" | "overdue" | "ou
 type SharingSortField = "expiry" | "account" | "vacancies" | "revenue" | "profit";
 
 export default function Sharing() {
+  const searchParams = useSearchParams();
   const { t, formatCurrency, formatDateOnly } = useI18n();
   const { pending: customConfigPending } = useCustomConfigState();
   const accountsQuery = useSharingAccounts();
@@ -77,9 +79,15 @@ export default function Sharing() {
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [viewingAccount, setViewingAccount] = useState<SharingAccount | null>(null);
   const [linksAccount, setLinksAccount] = useState<SharingAccount | null>(null);
-  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(() => {
+    const platform = searchParams.get("platform");
+    return platform === UNBOUND_PLATFORM_VALUE ? "" : platform;
+  });
   const [searchQuery, setSearchQuery] = useState("");
-  const [accountFilter, setAccountFilter] = useState<SharingFilter>("all");
+  const [accountFilter, setAccountFilter] = useState<SharingFilter>(() => {
+    const status = searchParams.get("status");
+    return status && ["available", "full", "expiring", "overdue", "outstanding"].includes(status) ? status as SharingFilter : "all";
+  });
   const [sortField, setSortField] = useState<SharingSortField>("expiry");
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
@@ -108,7 +116,7 @@ export default function Sharing() {
   }>()).values());
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
   const platformAccounts = accounts
-    .filter((account) => !selectedPlatform || subscriptionPlatformName(account.subscription) === selectedPlatform)
+    .filter((account) => selectedPlatform === null || subscriptionPlatformName(account.subscription) === selectedPlatform)
     .sort((left, right) => left.accountNumber - right.accountNumber || left.name.localeCompare(right.name));
   const accountDetailQueries = useSharingAccountDetails(platformAccounts.map((account) => account.id));
   const accountDetails = new Map(platformAccounts.flatMap((account, index) => {

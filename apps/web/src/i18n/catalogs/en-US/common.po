@@ -732,3 +732,147 @@ msgstr "Saturation (S)"
 #: src/i18n/descriptors/common.ts:133
 msgid "theme.color.yellow"
 msgstr "Yellow"
+
+#. js-lingui-explicit-id
+msgid "workspace.collapse"
+msgstr "Collapse navigation"
+
+#. js-lingui-explicit-id
+msgid "workspace.expand"
+msgstr "Expand navigation"
+
+#. js-lingui-explicit-id
+msgid "workspace.tools"
+msgstr "Tools"
+
+#. js-lingui-explicit-id
+msgid "workspace.private"
+msgstr "Private workspace"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overview"
+msgstr "Operations overview"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overviewHint"
+msgstr "Renewals, seats and platform performance at a glance."
+
+#. js-lingui-explicit-id
+msgid "dashboard.active"
+msgstr "Active subscriptions"
+
+#. js-lingui-explicit-id
+msgid "dashboard.vacancies"
+msgstr "Recruitable seats"
+
+#. js-lingui-explicit-id
+msgid "dashboard.capacity"
+msgstr "In use {used} / {total}"
+
+#. js-lingui-explicit-id
+msgid "dashboard.operations"
+msgstr "Operations today"
+
+#. js-lingui-explicit-id
+msgid "dashboard.dueToday"
+msgstr "Due today"
+
+#. js-lingui-explicit-id
+msgid "dashboard.overdue"
+msgstr "Overdue subscriptions"
+
+#. js-lingui-explicit-id
+msgid "dashboard.trend"
+msgstr "Revenue / cost / profit forecast"
+
+#. js-lingui-explicit-id
+msgid "dashboard.forecastHint"
+msgstr "Projected from current subscriptions and member terms, not actual receipts."
+
+#. js-lingui-explicit-id
+msgid "dashboard.forecastRange"
+msgstr "Next {count} months"
+
+#. js-lingui-explicit-id
+msgid "dashboard.revenue"
+msgstr "Monthly revenue"
+
+#. js-lingui-explicit-id
+msgid "dashboard.cost"
+msgstr "Monthly cost"
+
+#. js-lingui-explicit-id
+msgid "dashboard.profit"
+msgstr "Monthly profit"
+
+#. js-lingui-explicit-id
+msgid "dashboard.platforms"
+msgstr "Platform performance"
+
+#. js-lingui-explicit-id
+msgid "dashboard.accounts"
+msgstr "{count} accounts"
+
+#. js-lingui-explicit-id
+msgid "dashboard.utilization"
+msgstr "Seat utilization"
+
+#. js-lingui-explicit-id
+msgid "dashboard.ranking"
+msgstr "Profit contribution"
+
+#. js-lingui-explicit-id
+msgid "dashboard.risks"
+msgstr "Operational reminders"
+
+#. js-lingui-explicit-id
+msgid "dashboard.negativeProfit"
+msgstr "Negative-profit accounts"
+
+#. js-lingui-explicit-id
+msgid "dashboard.availableAccounts"
+msgstr "Accounts with vacancies"
+
+#. js-lingui-explicit-id
+msgid "dashboard.pausedAccounts"
+msgstr "Paused accounts"
+
+#. js-lingui-explicit-id
+msgid "dashboard.recent"
+msgstr "Recently added accounts"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noActivity"
+msgstr "No added accounts yet"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noPlatforms"
+msgstr "No shared accounts yet"
+
+#. js-lingui-explicit-id
+msgid "dashboard.noRisks"
+msgstr "Nothing needs attention"
+
+#. js-lingui-explicit-id
+msgid "dashboard.detailsIncomplete"
+msgstr "Some seat details could not load; reminders may be incomplete."
+
+#. js-lingui-explicit-id
+msgid "dashboard.stopSeats"
+msgstr "Expired or paused seats"
+
+#. js-lingui-explicit-id
+msgid "dashboard.allPlatforms"
+msgstr "View platforms"
+
+#. js-lingui-explicit-id
+msgid "dashboard.accountAssets"
+msgstr "Account assets"
+
+#. js-lingui-explicit-id
+msgid "dashboard.assetHint"
+msgstr "Shared accounts and seats"
+
+#. js-lingui-explicit-id
+msgid "dashboard.month"
+msgstr "Month"

@@ -61,7 +61,8 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
         <div
           key={item.subscription.id}
           className={cn(
-            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] items-center first:pt-0 last:pb-0 sm:grid-cols-[minmax(9rem,1fr)_minmax(14rem,16rem)_5.5rem]",
+            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] items-center first:pt-0 last:pb-0",
+            !compact && "sm:grid-cols-[minmax(9rem,1fr)_minmax(14rem,16rem)_5.5rem]",
             "gap-x-3 gap-y-2 py-2.5",
             item.daysUntil < 0
               ? "text-destructive"
@@ -91,9 +92,10 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
                   ) : null}
                 </div>
               ) : null}
+            {compact && <p className="mt-1 truncate text-xs tabular-nums text-muted-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)} · {formatCurrency(item.subscription.price, item.subscription.currency)}</p>}
           </div>
-          <div className="order-3 col-span-2 grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-end gap-3 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:grid-cols-[5.5rem_minmax(7.75rem,1fr)] sm:bg-transparent sm:p-0">
-            <div className="text-left sm:text-right">
+          {!compact && <div className="order-3 col-span-2 grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-end gap-3 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:grid-cols-[5.5rem_minmax(7.75rem,1fr)] sm:bg-transparent sm:p-0">
+            <div className={cn("text-left", !compact && "sm:text-right")}>
               <p className="text-[11px] text-muted-foreground">{t("calendar.nextBilling")}</p>
               <p className="mt-0.5 whitespace-nowrap text-sm font-medium tabular-nums text-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)}</p>
             </div>
@@ -103,7 +105,7 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
                 {formatCurrency(item.subscription.price, item.subscription.currency)}
               </p>
             </div>
-          </div>
+          </div>}
           <div className="flex w-22 flex-col items-end gap-1">
             <span className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", item.daysUntil < 0 ? "text-destructive" : item.daysUntil <= 3 ? "text-warning" : "text-muted-foreground")}>
               {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
