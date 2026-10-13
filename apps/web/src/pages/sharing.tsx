@@ -385,7 +385,7 @@ export default function Sharing() {
                 searchValue={searchQuery}
                 onSearchChange={(event) => setSearchQuery(event.target.value)}
                 searchPlaceholder={t("sharing.searchPlaceholder")}
-                controls={<div className="w-72 shrink-0">{sharingFilterControls}</div>}
+                controls={<div className="w-56 shrink-0">{sharingFilterControls}</div>}
                 className="rounded-b-none border-b-0"
                 testId="desktop-sharing-toolbar"
               />

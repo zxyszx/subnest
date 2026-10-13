@@ -495,7 +495,7 @@ const Subscriptions = () => {
             searchValue={searchQuery}
             onSearchChange={(event) => setSearchQuery(event.target.value)}
             searchPlaceholder={t("subscriptions.searchPlaceholder")}
-            controls={<><div className="w-32">{statusControls}</div><div className="w-36">{sortControls}</div></>}
+            controls={<><div className="w-28">{statusControls}</div><div className="w-32">{sortControls}</div></>}
             className="mb-6"
             testId="desktop-subscription-toolbar"
           />

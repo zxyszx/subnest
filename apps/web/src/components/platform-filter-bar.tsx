@@ -32,6 +32,7 @@ interface PlatformFilterBarProps {
     spacious?: number;
   };
   moreIconOnly?: boolean;
+  dense?: boolean;
 }
 
 export function PlatformFilterBar({
@@ -44,6 +45,7 @@ export function PlatformFilterBar({
   className,
   visibleLimits,
   moreIconOnly = false,
+  dense = false,
 }: PlatformFilterBarProps) {
   const compact = useMediaQuery("(max-width: 767px)");
   const wide = useMediaQuery("(min-width: 1280px)");
@@ -81,7 +83,8 @@ export function PlatformFilterBar({
       aria-pressed={value === platform.name}
       onClick={() => onValueChange(platform.name)}
       className={cn(
-        "h-10 shrink-0 gap-2 rounded-md px-3 text-muted-foreground",
+        "shrink-0 gap-2 rounded-md text-muted-foreground",
+        dense ? "h-9 px-2.5" : "h-10 px-3",
         value === platform.name && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
       )}
     >
@@ -102,7 +105,8 @@ export function PlatformFilterBar({
           aria-pressed={value === null}
           onClick={() => onValueChange(null)}
           className={cn(
-            "h-10 shrink-0 rounded-md px-3 text-muted-foreground",
+            "shrink-0 rounded-md text-muted-foreground",
+            dense ? "h-9 px-2.5" : "h-10 px-3",
             value === null && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
           )}
         >
@@ -117,7 +121,11 @@ export function PlatformFilterBar({
               type="button"
               variant="ghost"
               size={moreIconOnly ? "icon" : "default"}
-              className={cn("h-10 shrink-0", moreIconOnly ? "w-10 p-0" : "gap-1 px-3")}
+              className={cn(
+                "shrink-0",
+                dense ? "h-9" : "h-10",
+                moreIconOnly ? (dense ? "w-9 p-0" : "w-10 p-0") : "gap-1 px-3",
+              )}
               aria-label={moreLabel}
               title={moreLabel}
             >
