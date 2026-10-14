@@ -755,7 +755,7 @@ describe("Subscriptions desktop workspace", () => {
     await user.type(screen.getByPlaceholderText("搜索序号、订阅、标签或备注..."), "30");
     expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(1);
     expect(screen.getByTestId("subscription-workspace-row")).toHaveTextContent("Service 029");
-    await user.click(screen.getByRole("button", { name: "编辑", exact: true }));
+    await user.click(screen.getByRole("button", { name: "编辑" }));
     expect(mocks.handleEditSubscription).toHaveBeenCalledWith("service-029");
   });
 });
