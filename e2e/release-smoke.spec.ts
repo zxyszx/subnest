@@ -144,6 +144,8 @@ test.describe("release smoke", () => {
       const applyResponse = await applyResponsePromise;
       expect(applyResponse.ok(), await applyResponse.text()).toBe(true);
       await expect(dialog).toBeHidden();
+      await page.keyboard.press("/");
+      await page.getByRole("searchbox").fill(subscriptionName);
       await expect(subscriptionCard(page, subscriptionName)).toBeVisible();
     } finally {
       await deleteProductSubscriptionsByName(page, [subscriptionName]);
@@ -201,6 +203,8 @@ test.describe("release smoke", () => {
       const applyResponse = await applyResponsePromise;
       expect(applyResponse.ok(), await applyResponse.text()).toBe(true);
       await expect(dialog).toBeHidden();
+      await page.keyboard.press("/");
+      await page.getByRole("searchbox").fill(subscriptionName);
       await expect(subscriptionCard(page, subscriptionName)).toBeVisible();
     } finally {
       await deleteProductSubscriptionsByName(page, [subscriptionName]);

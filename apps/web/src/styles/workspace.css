@@ -2,6 +2,57 @@
   display: none;
 }
 @media (min-width: 1024px) {
+  .desktop-workbench {
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .desktop-workbench > header {
+    flex-shrink: 0;
+  }
+  .desktop-workbench > .app-main {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 24px;
+    overflow: hidden;
+  }
+  .workspace-list-pane {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+  .workspace-sharing-table {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .workspace-sharing-table > .workspace-table-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+  .workspace-sharing-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: hsl(var(--card));
+  }
+  .desktop-workbench .workspace-summary {
+    flex-shrink: 0;
+  }
+  .desktop-workbench .workspace-summary > * {
+    min-height: 96px;
+  }
+  .desktop-workbench .workspace-summary > a > * {
+    height: 100%;
+  }
   .workspace-sidebar {
     display: flex;
     flex-direction: column;

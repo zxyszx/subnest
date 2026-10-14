@@ -10,12 +10,13 @@ vi.mock("@/i18n/I18nProvider", () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
         "upcoming.noneNextTwoWeeks": "暂无进入提醒窗口的续费或到期",
-        "upcoming.todayShort": "今",
+        "upcoming.todayShort": "今天",
         "upcoming.daysShort": "{days}天",
         "upcoming.renewsOn": "{date} 续费",
         "upcoming.expiresOn": "{date} 到期",
         "subscription.autoRenew": "自动续订",
-        "subscription.autoRenewHelp": "开启后，到期的周期订阅会由后台推进到下一期；关闭后需要手动点击续订。",
+        "subscription.autoRenewHelp":
+          "开启后，到期的周期订阅会由后台推进到下一期；关闭后需要手动点击续订。",
       };
       let value = messages[key] ?? key;
       for (const [name, replacement] of Object.entries(params ?? {})) {
@@ -23,8 +24,10 @@ vi.mock("@/i18n/I18nProvider", () => ({
       }
       return value;
     },
-    formatCurrency: (amount: number, currency: string) => `${currency} ${amount}`,
-    label: (labels: Record<string, string>) => labels["zh-CN"] ?? labels["en"] ?? "",
+    formatCurrency: (amount: number, currency: string) =>
+      `${currency} ${amount}`,
+    label: (labels: Record<string, string>) =>
+      labels["zh-CN"] ?? labels["en"] ?? "",
   }),
 }));
 
@@ -73,7 +76,9 @@ const baseSubscription: RecurringCycleSubscription = {
   publicHidden: false,
 };
 
-function subscription(overrides: Partial<RecurringCycleSubscription> = {}): RecurringCycleSubscription {
+function subscription(
+  overrides: Partial<RecurringCycleSubscription> = {},
+): RecurringCycleSubscription {
   return { ...baseSubscription, ...overrides };
 }
 
@@ -113,34 +118,57 @@ describe("UpcomingRenewals", () => {
     const label = screen.getByText("自动续订");
     expect(label).toBeInTheDocument();
     expect(label.parentElement).toHaveClass("whitespace-nowrap");
-    expect(label.parentElement).toHaveAttribute("title", expect.stringContaining("到期的周期订阅"));
+    expect(label.parentElement).toHaveAttribute(
+      "title",
+      expect.stringContaining("到期的周期订阅"),
+    );
   });
 
   it("shares compact columns while only the subscription name can shrink and wrap", () => {
     render(
       <UpcomingRenewals
-        subscriptions={[subscription({ name: "AnExtremelyLongSubscriptionNameWithoutNaturalBreaks" })]}
+        subscriptions={[
+          subscription({
+            name: "AnExtremelyLongSubscriptionNameWithoutNaturalBreaks",
+          }),
+        ]}
         today="2026-06-15"
         notificationReminderDays={3}
       />,
     );
 
-    const name = screen.getByText("AnExtremelyLongSubscriptionNameWithoutNaturalBreaks");
+    const name = screen.getByText(
+      "AnExtremelyLongSubscriptionNameWithoutNaturalBreaks",
+    );
     const details = name.parentElement?.parentElement;
     const row = details?.parentElement;
     const list = row?.parentElement;
     if (!details || !row || !list) {
-      throw new Error("Expected the upcoming renewal content to render inside its shared grid row.");
+      throw new Error(
+        "Expected the upcoming renewal content to render inside its shared grid row.",
+      );
     }
 
     const price = screen.getByText("USD 10");
     expect(list).toHaveClass("min-w-0", "divide-y", "divide-border");
-    expect(row).toHaveClass("grid", "min-w-0", "grid-cols-[minmax(0,1fr)_5.5rem]");
+    expect(row).toHaveClass(
+      "grid",
+      "min-w-0",
+      "grid-cols-[minmax(0,1fr)_6rem]",
+    );
     expect(row.children[0]).toBe(details);
     expect(details).toHaveClass("min-w-0");
     expect(name).toHaveClass("min-w-0", "truncate");
-    expect(row.children[1]).toHaveClass("grid", "grid-cols-[5.5rem_minmax(0,1fr)]");
-    expect(row.children[2]).toHaveClass("flex", "w-22", "flex-col", "items-end");
+    expect(row.children[1]).toHaveClass(
+      "grid",
+      "grid-cols-[5.5rem_minmax(0,1fr)]",
+    );
+    expect(row.children[2]).toHaveClass(
+      "flex",
+      "w-24",
+      "flex-col",
+      "items-end",
+    );
     expect(price).toHaveClass("whitespace-nowrap", "tabular-nums");
     expect(price).not.toHaveClass("truncate");
   });
@@ -148,14 +176,19 @@ describe("UpcomingRenewals", () => {
   it("shows the configured payment method icon and card tail below the subscription", () => {
     render(
       <UpcomingRenewals
-        subscriptions={[subscription({ paymentMethod: "visa", cardLast4: "4242" })]}
+        subscriptions={[
+          subscription({ paymentMethod: "visa", cardLast4: "4242" }),
+        ]}
         today="2026-06-15"
         notificationReminderDays={3}
       />,
     );
 
     expect(screen.getByText("Visa · •••• 4242")).toBeInTheDocument();
-    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/api/assets/visa.png");
+    expect(screen.getByRole("presentation")).toHaveAttribute(
+      "src",
+      "/api/assets/visa.png",
+    );
   });
 
   it("uses the reminder-window empty state instead of the old two-week copy", () => {
@@ -167,7 +200,53 @@ describe("UpcomingRenewals", () => {
       />,
     );
 
-    expect(screen.getByText("暂无进入提醒窗口的续费或到期")).toBeInTheDocument();
-    expect(screen.queryByText("未来两周内无续费或到期")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("暂无进入提醒窗口的续费或到期"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("未来两周内无续费或到期"),
+    ).not.toBeInTheDocument();
   });
+
+  it.each(["today", "overdue"] as const)(
+    "filters the %s worklist before applying its limit",
+    (scope) => {
+      const { container } = render(
+        <UpcomingRenewals
+          subscriptions={[
+            subscription({
+              id: "past",
+              name: "Past",
+              nextBillingDate: assertDateOnly("2026-06-14"),
+            }),
+            subscription({
+              id: "today",
+              name: "Today",
+              nextBillingDate: assertDateOnly("2026-06-15"),
+            }),
+            subscription({
+              id: "future",
+              name: "Future",
+              nextBillingDate: assertDateOnly("2026-06-16"),
+            }),
+          ]}
+          today="2026-06-15"
+          notificationReminderDays={7}
+          includeExpired
+          scope={scope}
+          limit={1}
+        />,
+      );
+      expect(
+        screen.getByText(scope === "today" ? "Today" : "Past"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText(scope === "today" ? "Past" : "Today"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Future")).not.toBeInTheDocument();
+      expect(container.querySelector(".subscription-logo-contrast")).toBeNull();
+      if (scope === "today")
+        expect(screen.getByText("今天")).toBeInTheDocument();
+    },
+  );
 });

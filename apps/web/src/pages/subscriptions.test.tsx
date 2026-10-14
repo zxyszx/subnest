@@ -742,11 +742,29 @@ describe("Subscriptions page mobile tag filters", () => {
   });
 });
 
-describe("Subscriptions page virtualization", () => {
+describe("Subscriptions desktop workspace", () => {
+  beforeAll(installPointerCaptureMocks);
+  it("searches the full index beyond the current page and retains clone actions", async () => {
+    mockMobileTagFilterMatch(false, 1280);
+    mockSubscriptionsPageSettings();
+    mocks.useInfiniteSubscriptions.mockReturnValue({ subscriptions: manySubscriptions(30), isPending: false });
+    renderSubscriptionsPage();
+    expect(screen.getByTestId("subscription-workspace-list")).toBeInTheDocument();
+    expect(screen.getAllByTestId("subscription-workspace-row").length).toBeLessThan(30);
+    const user = userEvent.setup();
+    await user.type(screen.getByPlaceholderText("搜索序号、订阅、标签或备注..."), "30");
+    expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(1);
+    expect(screen.getByTestId("subscription-workspace-row")).toHaveTextContent("Service 029");
+    await user.click(screen.getByRole("button", { name: "编辑", exact: true }));
+    expect(mocks.handleEditSubscription).toHaveBeenCalledWith("service-029");
+  });
+});
+
+describe("Subscriptions tablet page virtualization", () => {
   beforeAll(installPointerCaptureMocks);
 
   beforeEach(() => {
-    mockMobileTagFilterMatch(false, 1280);
+    mockMobileTagFilterMatch(false, 1000);
     mockSubscriptionsPageSettings();
     mocks.useInfiniteSubscriptions.mockReturnValue({
       subscriptions: manySubscriptions(90),

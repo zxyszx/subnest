@@ -845,6 +845,34 @@ msgstr "Sharing monthly net profit"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:721
+msgid "workspace.pagination"
+msgstr "Pagination"
+
+#. js-lingui-explicit-id
+msgid "workspace.pageSummary"
+msgstr "{total} items · {page} / {pages}"
+
+#. js-lingui-explicit-id
+msgid "workspace.previousPage"
+msgstr "Previous page"
+
+#. js-lingui-explicit-id
+msgid "workspace.nextPage"
+msgstr "Next page"
+
+#. js-lingui-explicit-id
+msgid "workspace.filterShortcut"
+msgstr "{label} (Alt+{number})"
+
+#. js-lingui-explicit-id
+msgid "dashboard.averageIncome"
+msgstr "Average monthly income"
+
+#. js-lingui-explicit-id
+msgid "dashboard.averageNetIncome"
+msgstr "Average monthly net income"
+
+#. js-lingui-explicit-id
 msgid "dashboard.sharingIncome"
 msgstr "Sharing monthly income"
 

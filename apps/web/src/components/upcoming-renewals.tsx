@@ -7,16 +7,16 @@
  * - 最多展示 5 条
  */
 
-import type { SubscriptionCollectionItem } from '@/types/subscription';
-import { cn } from '@/lib/utils';
-import { formatDateOnlyMonthDay, type DateOnly } from '@/lib/time/date-only';
-import { useI18n } from '@/i18n/I18nProvider';
-import { buildUpcomingReminderItems } from '@/modules/subscriptions/domain/upcoming-reminders';
-import { Button } from '@/components/ui/button';
-import { CalendarClock, RotateCw } from 'lucide-react';
-import { CalendarAccountIdentity } from '@/components/calendar-account-identity';
-import { SharingPaymentSummary } from '@/components/sharing-payment-summary';
-import { isManualRenewEligible } from '@renewlet/shared/subscription-renewal';
+import type { SubscriptionCollectionItem } from "@/types/subscription";
+import { cn } from "@/lib/utils";
+import { formatDateOnlyMonthDay, type DateOnly } from "@/lib/time/date-only";
+import { useI18n } from "@/i18n/I18nProvider";
+import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, RotateCw } from "lucide-react";
+import { CalendarAccountIdentity } from "@/components/calendar-account-identity";
+import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
+import { isManualRenewEligible } from "@renewlet/shared/subscription-renewal";
 
 interface UpcomingRenewalsProps {
   /** 订阅列表（前端 domain 类型）。 */
@@ -35,10 +35,21 @@ interface UpcomingRenewalsProps {
   onRenew?: (id: string) => void;
   /** 仪表盘卡片使用紧凑密度；弹窗保留默认密度。 */
   density?: "default" | "compact";
+  scope?: "all" | "today" | "overdue";
 }
 
 /** 即将续费列表组件。 */
-export function UpcomingRenewals({ subscriptions, today, notificationReminderDays, limit = 5, includeExpired = false, windowDays, onRenew, density = "default" }: UpcomingRenewalsProps) {
+export function UpcomingRenewals({
+  subscriptions,
+  today,
+  notificationReminderDays,
+  limit = 5,
+  includeExpired = false,
+  windowDays,
+  onRenew,
+  density = "default",
+  scope = "all",
+}: UpcomingRenewalsProps) {
   const { t, formatCurrency, locale } = useI18n();
   const compact = density === "compact";
   const upcoming = buildUpcomingReminderItems({
@@ -47,11 +58,21 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
     notificationReminderDays: windowDays ?? notificationReminderDays,
     includeExpired,
     ignoreSubscriptionReminder: windowDays !== undefined,
-  }).slice(0, limit);
+  })
+    .filter((item) =>
+      scope === "today"
+        ? item.daysUntil === 0
+        : scope === "overdue"
+          ? item.daysUntil < 0
+          : true,
+    )
+    .slice(0, limit);
 
   if (upcoming.length === 0) {
     return (
-      <p className="py-4 text-center text-sm leading-6 text-muted-foreground">{t("upcoming.noneNextTwoWeeks")}</p>
+      <p className="py-4 text-center text-sm leading-6 text-muted-foreground">
+        {t("upcoming.noneNextTwoWeeks")}
+      </p>
     );
   }
 
@@ -61,57 +82,112 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
         <div
           key={item.subscription.id}
           className={cn(
-            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] items-center first:pt-0 last:pb-0",
-            !compact && "sm:grid-cols-[minmax(9rem,1fr)_minmax(14rem,16rem)_5.5rem]",
+            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center last:pb-0",
+            !compact && "sm:grid-cols-[minmax(0,1fr)_minmax(12rem,14rem)_6rem]",
             "gap-x-3 gap-y-2 py-2.5",
             item.daysUntil < 0
               ? "text-destructive"
-              : item.daysUntil <= 3 && "text-warning"
+              : item.daysUntil <= 3 && "text-warning",
           )}
         >
           <div className="min-w-0">
             <CalendarAccountIdentity
-              platformName={item.subscription.platformName || item.subscription.name}
+              platformName={
+                item.subscription.platformName || item.subscription.name
+              }
               logo={item.subscription.logo}
               accountNumber={item.subscription.accountNumber ?? 1}
               size="sm"
+              logoContrast={false}
             />
-            {(item.subscription.platformName && item.subscription.platformName !== item.subscription.name)
-              || item.subscription.paymentMethod
-              || item.subscription.cardLast4 ? (
-                <div className={cn("mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground", compact ? "pl-6.5" : "pl-11")}>
-                  {item.subscription.platformName && item.subscription.platformName !== item.subscription.name ? (
-                    <span className="min-w-0 truncate">{item.subscription.name}</span>
-                  ) : null}
-                  {item.subscription.paymentMethod || item.subscription.cardLast4 ? (
-                    <SharingPaymentSummary
-                      paymentMethod={item.subscription.paymentMethod ?? null}
-                      cardLast4={item.subscription.cardLast4 ?? null}
-                      className="min-w-0 max-w-full shrink text-xs text-muted-foreground"
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-            {compact && <p className="mt-1 truncate text-xs tabular-nums text-muted-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)} · {formatCurrency(item.subscription.price, item.subscription.currency)}</p>}
-          </div>
-          {!compact && <div className="order-3 col-span-2 grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-end gap-3 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:grid-cols-[5.5rem_minmax(7.75rem,1fr)] sm:bg-transparent sm:p-0">
-            <div className={cn("text-left", !compact && "sm:text-right")}>
-              <p className="text-[11px] text-muted-foreground">{t("calendar.nextBilling")}</p>
-              <p className="mt-0.5 whitespace-nowrap text-sm font-medium tabular-nums text-foreground">{formatDateOnlyMonthDay(item.subscription.nextBillingDate, locale)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-muted-foreground">{t("subscription.field.price")}</p>
-              <p className="mt-0.5 whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
-                {formatCurrency(item.subscription.price, item.subscription.currency)}
+            {(item.subscription.platformName &&
+              item.subscription.platformName !== item.subscription.name) ||
+            item.subscription.paymentMethod ||
+            item.subscription.cardLast4 ? (
+              <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 pl-13 text-xs text-muted-foreground">
+                {item.subscription.platformName &&
+                item.subscription.platformName !== item.subscription.name ? (
+                  <span className="min-w-0 truncate">
+                    {item.subscription.name}
+                  </span>
+                ) : null}
+                {item.subscription.paymentMethod ||
+                item.subscription.cardLast4 ? (
+                  <SharingPaymentSummary
+                    paymentMethod={item.subscription.paymentMethod ?? null}
+                    cardLast4={item.subscription.cardLast4 ?? null}
+                    className="min-w-0 max-w-full shrink text-xs text-muted-foreground"
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {compact && (
+              <p className="mt-1 truncate text-xs tabular-nums text-muted-foreground">
+                {formatDateOnlyMonthDay(
+                  item.subscription.nextBillingDate,
+                  locale,
+                )}{" "}
+                ·{" "}
+                {formatCurrency(
+                  item.subscription.price,
+                  item.subscription.currency,
+                )}
               </p>
+            )}
+          </div>
+          {!compact && (
+            <div className="order-3 col-span-2 grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-end gap-3 rounded-md bg-muted/30 px-2 py-1.5 sm:order-0 sm:col-span-1 sm:grid-cols-[5.5rem_minmax(7.75rem,1fr)] sm:bg-transparent sm:p-0">
+              <div className={cn("text-left", !compact && "sm:text-right")}>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("calendar.nextBilling")}
+                </p>
+                <p className="mt-0.5 whitespace-nowrap text-sm font-medium tabular-nums text-foreground">
+                  {formatDateOnlyMonthDay(
+                    item.subscription.nextBillingDate,
+                    locale,
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[11px] text-muted-foreground">
+                  {t("subscription.field.price")}
+                </p>
+                <p className="mt-0.5 whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
+                  {formatCurrency(
+                    item.subscription.price,
+                    item.subscription.currency,
+                  )}
+                </p>
+              </div>
             </div>
-          </div>}
-          <div className="flex w-22 flex-col items-end gap-1">
-            <span className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", item.daysUntil < 0 ? "text-destructive" : item.daysUntil <= 3 ? "text-warning" : "text-muted-foreground")}>
-              {item.daysUntil < 0 ? t("subscription.card.expiredDays", { days: Math.abs(item.daysUntil) }) : item.daysUntil === 0 ? t("upcoming.todayShort") : t("upcoming.daysShort", { days: item.daysUntil })}
+          )}
+          <div className="flex w-24 shrink-0 flex-col items-end gap-1.5">
+            <span
+              className={cn(
+                "whitespace-nowrap text-xs font-semibold tabular-nums",
+                item.daysUntil < 0
+                  ? "text-destructive"
+                  : item.daysUntil <= 3
+                    ? "text-warning"
+                    : "text-muted-foreground",
+              )}
+            >
+              {item.daysUntil < 0
+                ? t("subscription.card.expiredDays", {
+                    days: Math.abs(item.daysUntil),
+                  })
+                : item.daysUntil === 0
+                  ? t("upcoming.todayShort")
+                  : t("upcoming.daysShort", { days: item.daysUntil })}
             </span>
             {onRenew && isManualRenewEligible(item.subscription) ? (
-              <Button type="button" variant="outline" size="sm" className="w-full shrink-0 gap-1.5 px-2" onClick={() => onRenew(item.subscription.id)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-11 w-full shrink-0 gap-1.5 px-2"
+                onClick={() => onRenew(item.subscription.id)}
+              >
                 <RotateCw className="h-4 w-4" />
                 <span>{t("subscription.renew")}</span>
               </Button>
@@ -123,7 +199,12 @@ export function UpcomingRenewals({ subscriptions, today, notificationReminderDay
                 <CalendarClock className="h-4 w-4" aria-hidden="true" />
                 <span>{t("subscription.autoRenew")}</span>
               </span>
-            ) : <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
+            ) : (
+              <CalendarClock
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
+            )}
           </div>
         </div>
       ))}

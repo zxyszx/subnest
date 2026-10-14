@@ -60,9 +60,10 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               logo={account.subscription.logo ?? undefined}
               accountNumber={account.accountNumber}
               size="sm"
+              logoContrast={false}
             />
             {compact ? (
-              <p className="mt-0.5 truncate pl-6.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 truncate pl-13 text-xs text-muted-foreground">
                 <span>{seat.memberName}</span><span aria-hidden="true"> · </span><span>{t("sharing.seatNumber")} #{seat.seatNumber} · {t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(seat.expiresAt!, locale) })}</span>
               </p>
             ) : (

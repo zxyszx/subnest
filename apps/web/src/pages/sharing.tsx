@@ -20,6 +20,9 @@ import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
 import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
+import { WorkspacePagination, useWorkspacePagination } from "@/components/workspace-pagination";
+import { useWorkspaceCapacity } from "@/hooks/use-workspace-capacity";
+import { WorkspaceQuickFilters } from "@/components/workspace-quick-filters";
 import { sharingQueryKeys, useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
 import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscriptions";
 import { useExchangeRates } from "@/hooks/use-exchange-rates";
@@ -92,6 +95,8 @@ export default function Sharing() {
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [setListContainer, pageSize] = useWorkspaceCapacity(112);
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
   const updateSubscription = useUpdateSubscription();
@@ -178,6 +183,8 @@ export default function Sharing() {
     0,
   );
   const upcomingRenewals = upcomingSeatRenewals.length;
+  const pagination = useWorkspacePagination(visibleAccounts, JSON.stringify([searchQuery, selectedPlatform, accountFilter, sortField, pageSize]), pageSize);
+  const pageAccounts = isDesktop ? pagination.items : visibleAccounts;
 
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -313,10 +320,10 @@ export default function Sharing() {
   );
 
   return (
-    <div className="app-page bg-background">
+    <div className="app-page desktop-workbench bg-background">
       <Header />
       <main className="app-main mx-auto max-w-[120rem]">
-        <section className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6" aria-label={t("sharing.title")}>
+        <section className="workspace-summary grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-6" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
           <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
           <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
@@ -337,7 +344,7 @@ export default function Sharing() {
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-4 sm:mt-6">
+          <div className="mt-3 shrink-0">
             {isMobile ? (
               <div className="rounded-t-lg border border-b-0 bg-card p-2">
                 <div className="flex min-w-0 items-center gap-2">
@@ -401,6 +408,13 @@ export default function Sharing() {
           </div>
         ) : null}
 
+        {isDesktop && <WorkspaceQuickFilters value={accountFilter} onChange={setAccountFilter} options={[
+          { value: "all", label: t("sharing.allStatus") },
+          { value: "available", label: t("sharing.hasVacancies") },
+          { value: "full", label: t("sharing.accountFull") },
+          { value: "expiring", label: t("sharing.expiringWithinSevenDays") },
+          { value: "overdue", label: t("sharing.hasOverdue") },
+        ]} />}
         {accountsQuery.isError ? (
           <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive sm:mt-6">{t("sharing.loadFailed")}</div>
         ) : accounts.length === 0 && !accountsQuery.isPending ? (
@@ -412,19 +426,19 @@ export default function Sharing() {
           </section>
         ) : (
           <section className={cn(
-            "overflow-hidden border border-border bg-card",
+            "workspace-sharing-table overflow-hidden border border-border bg-card",
             platformOptions.length > 0
               ? "rounded-b-lg rounded-t-none border-t-0"
               : "mt-4 rounded-lg sm:mt-6",
           )}>
-            <div className="hidden overflow-x-auto sm:block">
+            <div ref={setListContainer} className="workspace-table-scroll hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
                   <th className="px-4 py-2 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
                 </tr></thead>
                 <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
-                ) : visibleAccounts.map((account) => (
+                ) : pageAccounts.map((account) => (
                   <tr key={account.id} className={cn("transition-colors duration-200 hover:bg-muted/20", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
                     <td className="px-4 py-3"><AccountIdentity account={account} /></td>
                     <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
@@ -521,6 +535,7 @@ export default function Sharing() {
                 );
               })}
             </div>
+            {isDesktop && <WorkspacePagination {...pagination} />}
           </section>
         )}
         {linksAccount ? <SharingInboxLinksDialog key={linksAccount.id} account={linksAccount} onClose={() => setLinksAccount(null)} /> : null}

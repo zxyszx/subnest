@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEventHandler, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEventHandler, type ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import { PlatformFilterBar, type PlatformFilterOption } from "@/components/platform-filter-bar";
@@ -40,6 +40,19 @@ export function PlatformSearchToolbar({
   const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchExpanded = searchFocused || searchValue.length > 0;
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (document.querySelector('[role="dialog"]') || target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const expandSearch = () => {
     searchInputRef.current?.focus();

@@ -17,6 +17,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/header';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionGrid } from '@/components/subscription-grid';
+import { SubscriptionWorkspaceList } from '@/components/subscription-workspace-list';
+import { WorkspacePagination, useWorkspacePagination } from '@/components/workspace-pagination';
+import { useWorkspaceCapacity } from '@/hooks/use-workspace-capacity';
+import { WorkspaceQuickFilters } from '@/components/workspace-quick-filters';
+import { daysBetweenDateOnly } from '@/lib/time/date-only';
+import { isOneTimeBuyout } from '@/lib/subscription-billing';
 import { AddToCalendarDialog } from '@/components/add-to-calendar-dialog';
 import { DeferredRenewSubscriptionDialog } from '@/components/renew-subscription-dialog-loader';
 import {
@@ -133,7 +139,10 @@ const Subscriptions = () => {
   const { t, locale } = useI18n();
   const { convert, loading: ratesLoading, sourceDate: ratesSourceDate } = useExchangeRates(exchangeRateProvider);
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [renewalFilter, setRenewalFilter] = useState<'all' | 'today' | 'upcoming' | 'overdue'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => isDesktop ? 'list' : 'grid');
+  const [setListContainer, pageSize] = useWorkspaceCapacity(viewMode === 'list' ? 72 : 340, viewMode === 'list' ? 1 : 3);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
@@ -216,7 +225,7 @@ const Subscriptions = () => {
     [platformOptions],
   );
   const indexedSubscriptions = indexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS;
-  const displaySourceSubscriptions = numericAccountSearch
+  const displaySourceSubscriptions = numericAccountSearch || (isDesktop && !useFilteredIndex)
     ? (platformIndexQuery.data?.subscriptions ?? EMPTY_SUBSCRIPTIONS)
     : useFilteredIndex ? indexedSubscriptions : subscriptions;
   // 先选择分页或全库索引，再只排序实际展示的数据；索引模式不能附带重排未展示的分页列表。
@@ -231,9 +240,15 @@ const Subscriptions = () => {
             : subscriptionPlatformName(subscription) === selectedPlatform,
         )
       : accountSubscriptions;
-    const statusSubscriptions = statusFilter === "all"
+    const statusSubscriptions = (statusFilter === "all"
       ? platformSubscriptions
-      : platformSubscriptions.filter((subscription) => getEffectiveSubscriptionStatus(subscription, today) === statusFilter);
+      : platformSubscriptions.filter((subscription) => getEffectiveSubscriptionStatus(subscription, today) === statusFilter)).filter((subscription) => {
+        if (renewalFilter === 'all') return true;
+        const status = getEffectiveSubscriptionStatus(subscription, today);
+        if (status === 'paused' || status === 'cancelled' || isOneTimeBuyout(subscription)) return false;
+        const days = daysBetweenDateOnly(today, subscription.nextBillingDate);
+        return renewalFilter === 'today' ? days === 0 : renewalFilter === 'overdue' ? days < 0 : days >= 0 && days <= 7;
+      });
     if (selectedPlatform && sortOption === "default") {
       return [...statusSubscriptions].sort((left, right) => (
         (left.accountNumber ?? Number.MAX_SAFE_INTEGER) - (right.accountNumber ?? Number.MAX_SAFE_INTEGER)
@@ -241,17 +256,18 @@ const Subscriptions = () => {
       ));
     }
     return sortSubscriptionsForDisplay(statusSubscriptions);
-  }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay, statusFilter, today]);
-  const isDisplayPending = useFilteredIndex && indexQuery.isPending;
+  }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay, statusFilter, today, renewalFilter]);
+  const pagination = useWorkspacePagination(filteredSubscriptions, JSON.stringify([searchQuery, selectedPlatform, statusFilter, renewalFilter, sortOption, viewMode, pageSize]), pageSize);
+  const isDisplayPending = useFilteredIndex ? indexQuery.isPending : isDesktop && platformIndexQuery.isPending;
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
-  const displayError = useFilteredIndex ? indexQuery.error : subscriptionsQuery.error;
-  const retryDisplayQuery = useFilteredIndex ? indexQuery.refetch : subscriptionsQuery.refetch;
-  const displayedTotal = selectedPlatform || numericAccountSearch
+  const displayError = useFilteredIndex ? indexQuery.error : isDesktop ? platformIndexQuery.error : subscriptionsQuery.error;
+  const retryDisplayQuery = useFilteredIndex ? indexQuery.refetch : isDesktop ? platformIndexQuery.refetch : subscriptionsQuery.refetch;
+  const displayedTotal = isDesktop || selectedPlatform || numericAccountSearch
     ? filteredSubscriptions.length
     : useFilteredIndex
       ? (indexQuery.data?.total ?? 0)
-      : subscriptionsQuery.total;
-  const hasDisplayFilters = hasActiveFilters || selectedPlatform !== null;
+      : isDesktop ? filteredSubscriptions.length : subscriptionsQuery.total;
+  const hasDisplayFilters = hasActiveFilters || selectedPlatform !== null || renewalFilter !== 'all';
   const unfilteredTotal = hasDisplayFilters ? facetsQuery.data?.total : undefined;
   const {
     editingSubscription,
@@ -369,7 +385,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <div className="app-page bg-background">
+    <div className="app-page desktop-workbench bg-background">
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-[120rem]">
@@ -496,11 +512,18 @@ const Subscriptions = () => {
             onSearchChange={(event) => setSearchQuery(event.target.value)}
             searchPlaceholder={t("subscriptions.searchPlaceholder")}
             controls={<><div className="w-28">{statusControls}</div><div className="w-32">{sortControls}</div></>}
-            className="mb-6"
+            className="mb-3 shrink-0"
             testId="desktop-subscription-toolbar"
           />
         )}
 
+        {isDesktop && <WorkspaceQuickFilters value={renewalFilter} onChange={(value) => { setRenewalFilter(value); setStatusFilter('all'); }} options={[
+          { value: 'all', label: t("sharing.allStatus") },
+          { value: 'today', label: t("dashboard.dueToday") },
+          { value: 'upcoming', label: t("sharing.expiringWithinSevenDays") },
+          { value: 'overdue', label: t("dashboard.overdue") },
+        ]} />}
+        <div ref={setListContainer} className="workspace-list-pane">
         {displayError ? (
           <QueryErrorState error={displayError} onRetry={retryDisplayQuery} />
         ) : isDisplayPending ? (
@@ -526,6 +549,7 @@ const Subscriptions = () => {
                 onClick={() => {
                   clearFilters();
                   setSelectedPlatform(null);
+                  setRenewalFilter('all');
                 }}
               >
                 {t("subscriptions.clearFilters")}
@@ -553,8 +577,9 @@ const Subscriptions = () => {
           </div>
         ) : (
           <>
-            <SubscriptionGrid
-              subscriptions={filteredSubscriptions}
+            {isDesktop && viewMode === 'list' ? <SubscriptionWorkspaceList subscriptions={pagination.items} today={today} onEdit={handleEditSubscription} onRenew={handleRenewSubscription} onViewDetails={handleViewDetails} onDelete={handleDeleteSubscription} onClone={handleCloneSubscription} onTogglePinned={handleTogglePinnedSubscription} onTogglePublicHidden={handleTogglePublicHiddenSubscription} onAddToCalendar={calendarDialog.show} inheritedReminderDays={inheritedReminderDays} currencyConvert={convert} currencyRatesReady={currencyRatesReady} priceReferenceCurrency={priceReferenceCurrency} categoryByValue={categoryByValue} paymentMethodByValue={paymentMethodByValue} onPrefetchDetails={handlePrefetchSubscription} /> : <SubscriptionGrid
+              subscriptions={isDesktop ? pagination.items : filteredSubscriptions}
+              paginated={isDesktop}
               viewMode={viewMode}
               today={today}
               inheritedReminderDays={inheritedReminderDays}
@@ -572,8 +597,8 @@ const Subscriptions = () => {
               onViewDetails={handleViewDetails}
               onAddToCalendar={calendarDialog.show}
               onPrefetchDetails={handlePrefetchSubscription}
-            />
-            {!useFilteredIndex && subscriptionsQuery.hasNextPage && (
+            />}
+            {!isDesktop && !useFilteredIndex && subscriptionsQuery.hasNextPage && (
               <div className="mt-6 flex justify-center [overflow-anchor:none]" data-testid="subscriptions-load-more-row">
                 <Button
                   type="button"
@@ -588,9 +613,11 @@ const Subscriptions = () => {
             )}
           </>
         )}
+        </div>
+        {isDesktop && <WorkspacePagination {...pagination} />}
       </main>
 
-      <BackToTopFloatButton />
+      {!isDesktop && <BackToTopFloatButton />}
 
       <Suspense fallback={null}>
         <EditSubscriptionDialog

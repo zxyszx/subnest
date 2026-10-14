@@ -42,22 +42,19 @@ import {
   useSharingAccounts,
 } from "@/hooks/use-sharing";
 import {
-  sharingMonthlyProfit,
   sharingMonthlyRevenue,
   sharingUpcomingSeatRenewals,
 } from "@/lib/sharing-financials";
 import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
 import { lazy, Suspense, useMemo, useState } from "react";
+import { OperationsPanel } from "@/components/dashboard/operations-panels";
 import {
-  InsightPanels,
-  OperationsPanel,
-  PlatformPanel,
-} from "@/components/dashboard/operations-panels";
-import {
-  buildOperationsOverview,
-  buildOperationsForecast,
-} from "@/modules/subscriptions/domain/operations-overview";
-import { daysBetweenDateOnly } from "@/lib/time/date-only";
+  WorkspacePagination,
+  useWorkspacePagination,
+} from "@/components/workspace-pagination";
+import { useWorkspaceCapacity } from "@/hooks/use-workspace-capacity";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { buildOperationsOverview } from "@/modules/subscriptions/domain/operations-overview";
 import Link from "@/components/router-link";
 import { DeferredRenewSubscriptionDialog } from "@/components/renew-subscription-dialog-loader";
 import {
@@ -67,12 +64,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-const RevenueChart = lazy(() =>
-  import("@/components/dashboard/revenue-chart").then((module) => ({
-    default: module.RevenueChart,
-  })),
-);
-
 const SharingAccountDetailDialog = lazy(() =>
   import("@/components/sharing-account-detail-dialog").then((module) => ({
     default: module.SharingAccountDetailDialog,
@@ -84,8 +75,19 @@ const EMPTY_ACCOUNTS: SharingAccount[] = [];
 
 /** 仪表盘页面组件。 */
 export default function Index() {
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [setListContainer, pageSize] = useWorkspaceCapacity(88);
   const [subscriptionRenewalsOpen, setSubscriptionRenewalsOpen] =
     useState(false);
+  const [renewalScope, setRenewalScope] = useState<"all" | "today" | "overdue">(
+    "all",
+  );
+  const openSubscriptionRenewals = (
+    scope: "all" | "today" | "overdue" = "all",
+  ) => {
+    setRenewalScope(scope);
+    setSubscriptionRenewalsOpen(true);
+  };
   const [memberRenewalsOpen, setMemberRenewalsOpen] = useState(false);
   const [selectedSharingAccount, setSelectedSharingAccount] =
     useState<SharingAccount | null>(null);
@@ -112,11 +114,6 @@ export default function Index() {
   const sharingIncome = sharingAccounts.reduce(
     (total, account) =>
       total + sharingMonthlyRevenue(account, defaultCurrency, convert),
-    0,
-  );
-  const sharingProfit = sharingAccounts.reduce(
-    (total, account) =>
-      total + sharingMonthlyProfit(account, defaultCurrency, convert),
     0,
   );
   const timeZone = settings?.timezone ?? "UTC";
@@ -150,9 +147,6 @@ export default function Index() {
     includeExpired: true,
     ignoreSubscriptionReminder: true,
   });
-  const sharingDetails = sharingDetailQueries.flatMap((query) =>
-    query.data ? [query.data] : [],
-  );
   const detailsIncomplete = sharingDetailQueries.some((query) => query.isError);
   const overview = useMemo(
     () =>
@@ -165,29 +159,16 @@ export default function Index() {
       ),
     [sharingAccounts, subscriptions, defaultCurrency, convert, today],
   );
-  const forecast = useMemo(
-    () =>
-      buildOperationsForecast(
-        subscriptions,
-        sharingDetails,
-        today,
-        defaultCurrency,
-        convert,
-      ),
-    [subscriptions, sharingDetails, today, defaultCurrency, convert],
+  const netIncome = sharingIncome - totalMonthly;
+  const renewalPages = useWorkspacePagination(
+    subscriptionRenewals,
+    `${today}:${pageSize}`,
+    pageSize,
   );
-  const stoppedSeats = sharingDetails.reduce(
-    (sum, detail) =>
-      sum +
-      detail.seats.filter(
-        (seat) =>
-          seat.memberName &&
-          (seat.status === "paused" ||
-            (seat.status === "active" &&
-              seat.expiresAt &&
-              daysBetweenDateOnly(today, seat.expiresAt) < 0)),
-      ).length,
-    0,
+  const memberPages = useWorkspacePagination(
+    sharingRenewals,
+    `${today}:${pageSize}`,
+    pageSize,
   );
   const formatAmount = (value: number) =>
     formatCompactCurrencyAmount(value, defaultCurrency, locale);
@@ -233,17 +214,17 @@ export default function Index() {
   }
 
   return (
-    <div className="app-page bg-background">
+    <div className="app-page desktop-workbench bg-background">
       <Header
         onAddSubscription={handleAddSubscription}
         availableTags={availableTags}
       />
 
       <main
-        className="app-main mx-auto max-w-[120rem] lg:px-6 lg:py-6"
+        className="app-main mx-auto max-w-[120rem]"
         data-testid="operations-dashboard"
       >
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">
               {t("dashboard.overview")}
@@ -261,12 +242,12 @@ export default function Index() {
           </span>
         </div>
         <div
-          className="grid grid-cols-2 gap-3 lg:grid-cols-5"
+          className="workspace-summary grid grid-cols-2 gap-3 lg:grid-cols-4"
           data-testid="dashboard-stat-grid"
         >
           <StatCard
             data-testid="dashboard-stat-sharing-income"
-            title={t("dashboard.sharingIncome")}
+            title={t("dashboard.averageIncome")}
             value={formatAmount(sharingIncome)}
             icon={<CircleDollarSign />}
             variant="primary"
@@ -287,22 +268,15 @@ export default function Index() {
           />
           <StatCard
             data-testid="dashboard-stat-sharing-profit"
-            title={t("statistics.sharingProfit")}
-            value={formatAmount(sharingProfit)}
+            title={t("dashboard.averageNetIncome")}
+            value={formatAmount(netIncome)}
             icon={<ReceiptText />}
-            variant={sharingProfit >= 0 ? "primary" : "warning"}
-            density="dashboard"
-          />
-          <StatCard
-            data-testid="dashboard-stat-active"
-            title={t("dashboard.active")}
-            value={overview.active}
-            icon={<CalendarClock />}
+            variant={netIncome >= 0 ? "primary" : "warning"}
             density="dashboard"
           />
           <Link
             href="/sharing?status=available"
-            className="col-span-2 min-w-0 focus-visible:ring-2 focus-visible:ring-ring lg:col-span-1"
+            className="min-w-0 focus-visible:ring-2 focus-visible:ring-ring"
           >
             <StatCard
               data-testid="dashboard-stat-vacancies"
@@ -322,18 +296,7 @@ export default function Index() {
             {t("dashboard.detailsIncomplete")}
           </p>
         )}
-        <div className="mt-6 grid min-w-0 gap-6 border-y border-border py-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(210px,0.7fr)_minmax(280px,1fr)]">
-          <Suspense
-            fallback={
-              <div className="h-80 animate-pulse rounded-md bg-secondary" />
-            }
-          >
-            <RevenueChart
-              data={forecast}
-              currency={defaultCurrency}
-              pending={sharingRenewalsPending || detailsIncomplete}
-            />
-          </Suspense>
+        <div className="mt-4 shrink-0 border-t border-border py-3">
           <OperationsPanel
             todayCount={
               subscriptionRenewals.filter((item) => item.daysUntil === 0).length
@@ -343,10 +306,15 @@ export default function Index() {
               subscriptionRenewals.filter((item) => item.daysUntil < 0).length
             }
             memberCount={sharingRenewals.length}
-            onSubscriptions={() => setSubscriptionRenewalsOpen(true)}
+            onSubscriptions={openSubscriptionRenewals}
             onMembers={() => setMemberRenewalsOpen(true)}
           />
-          <section className="min-w-0" id="dashboard-subscription-renewals">
+        </div>
+        <div className="grid min-h-0 min-w-0 gap-6 lg:flex-1 lg:grid-cols-2">
+          <section
+            className="flex min-h-0 min-w-0 flex-col"
+            id="dashboard-subscription-renewals"
+          >
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">
                 {t("dashboard.subscriptionRenewals")}
@@ -355,56 +323,59 @@ export default function Index() {
                 variant="ghost"
                 size="sm"
                 className="h-11 px-2 text-xs text-muted-foreground"
-                onClick={() => setSubscriptionRenewalsOpen(true)}
+                onClick={() => openSubscriptionRenewals()}
               >
                 {t("dashboard.viewAll", { count: subscriptionRenewals.length })}
               </Button>
             </div>
-            <UpcomingRenewals
-              subscriptions={subscriptions}
-              today={today}
-              notificationReminderDays={inheritedReminderDays}
-              includeExpired
-              windowDays={7}
-              limit={5}
-              onRenew={handleRenewSubscription}
-              density="compact"
-            />
+            <div ref={setListContainer} className="workspace-list-pane">
+              <UpcomingRenewals
+                subscriptions={
+                  isDesktop
+                    ? renewalPages.items.map((item) => item.subscription)
+                    : subscriptions
+                }
+                today={today}
+                notificationReminderDays={inheritedReminderDays}
+                includeExpired
+                windowDays={7}
+                limit={isDesktop ? pageSize : 5}
+                onRenew={handleRenewSubscription}
+                density="compact"
+              />
+            </div>
+            {isDesktop && <WorkspacePagination {...renewalPages} />}
+          </section>
+          <section
+            id="dashboard-member-renewals"
+            className="flex min-h-0 min-w-0 flex-col"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">
+                {t("dashboard.memberRenewals")}
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11"
+                onClick={() => setMemberRenewalsOpen(true)}
+              >
+                {t("dashboard.viewAll", { count: sharingRenewals.length })}
+              </Button>
+            </div>
+            <div className="workspace-list-pane">
+              <SharingUpcomingRenewals
+                items={isDesktop ? memberPages.items : sharingRenewals}
+                pending={sharingRenewalsPending}
+                limit={isDesktop ? pageSize : 5}
+                showFooter={false}
+                density="compact"
+                onManageAccount={setSelectedSharingAccount}
+              />
+            </div>
+            {isDesktop && <WorkspacePagination {...memberPages} />}
           </section>
         </div>
-        <PlatformPanel overview={overview} currency={defaultCurrency} />
-        <InsightPanels
-          overview={overview}
-          currency={defaultCurrency}
-          stoppedSeats={stoppedSeats}
-          onManage={setSelectedSharingAccount}
-        />
-        <section
-          id="dashboard-member-renewals"
-          className="border-t border-border py-6"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">
-              {t("dashboard.memberRenewals")}
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-11"
-              onClick={() => setMemberRenewalsOpen(true)}
-            >
-              {t("dashboard.viewAll", { count: sharingRenewals.length })}
-            </Button>
-          </div>
-          <SharingUpcomingRenewals
-            items={sharingRenewals}
-            pending={sharingRenewalsPending}
-            limit={5}
-            showFooter={false}
-            density="compact"
-            onManageAccount={setSelectedSharingAccount}
-          />
-        </section>
       </main>
 
       <Dialog
@@ -417,18 +388,25 @@ export default function Index() {
         >
           <DialogHeader>
             <DialogTitle>
-              {t("dashboard.subscriptionRenewalDialogTitle")}
+              {t(
+                renewalScope === "today"
+                  ? "dashboard.dueToday"
+                  : renewalScope === "overdue"
+                    ? "dashboard.overdue"
+                    : "dashboard.subscriptionRenewals",
+              )}
             </DialogTitle>
             <DialogDescription>
               {t("dashboard.subscriptionRenewalDialogDescription")}
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60dvh] overflow-y-auto pr-1">
+          <div className="max-h-[60dvh] overflow-y-auto px-1 pb-2 pt-2 scrollbar-gutter-stable sm:pr-4">
             <UpcomingRenewals
               subscriptions={subscriptions}
               today={today}
               notificationReminderDays={inheritedReminderDays}
               includeExpired
+              scope={renewalScope}
               windowDays={7}
               limit={100}
               onRenew={(id) => {

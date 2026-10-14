@@ -11,10 +11,12 @@ export function uniqueE2EName(testInfo: TestInfo, prefix: string): string {
 
 export function subscriptionCard(page: Page, subscriptionName: string): Locator {
   // 编辑后名称可能包含旧名称；用卡片 testid + 精确 heading，避免文本子串误选到旧卡片。
-  return page
+  const card = page
     .getByTestId("subscription-card")
     .filter({ has: page.getByRole("heading", { name: subscriptionName, exact: true }) })
     .first();
+  const row = page.getByTestId("subscription-workspace-row").filter({ has: page.getByText(subscriptionName, { exact: true }) }).first();
+  return card.or(row).first();
 }
 
 export async function openAddSubscriptionDialog(page: Page) {

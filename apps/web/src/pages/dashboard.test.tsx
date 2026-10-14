@@ -5,10 +5,19 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { assertDateOnly } from "@/lib/time/date-only";
 import { DEFAULT_CUSTOM_CONFIG } from "@/types/config";
-import type { RecurringCycleSubscriptionCollectionItem, SubscriptionCollectionItem } from "@/types/subscription";
-import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
+import type {
+  RecurringCycleSubscriptionCollectionItem,
+  SubscriptionCollectionItem,
+} from "@/types/subscription";
+import type {
+  SharingAccount,
+  SharingAccountDetail,
+} from "@renewlet/shared/schemas/sharing";
 import Dashboard from "./dashboard";
-import { buildOperationsForecast, buildOperationsOverview } from "@/modules/subscriptions/domain/operations-overview";
+import {
+  buildOperationsForecast,
+  buildOperationsOverview,
+} from "@/modules/subscriptions/domain/operations-overview";
 
 interface MockSubscriptionAnalyticsResult {
   data: SubscriptionCollectionItem[] | undefined;
@@ -28,20 +37,34 @@ const mocks = vi.hoisted(() => ({
   compactRenewalLayout: false,
   ratesLoading: false,
   sharingAccounts: [] as SharingAccount[],
-  sharingDetailQueries: [] as Array<{ data?: SharingAccountDetail; isPending: boolean }>,
-  upcomingRenewalsCalls: [] as Array<{ count: number; today: string; notificationReminderDays: number }>,
+  sharingDetailQueries: [] as Array<{
+    data?: SharingAccountDetail;
+    isPending: boolean;
+  }>,
+  upcomingRenewalsCalls: [] as Array<{
+    count: number;
+    today: string;
+    notificationReminderDays: number;
+    scope?: string;
+  }>,
   useSettings: vi.fn(),
   useSubscriptionAnalytics: vi.fn<() => MockSubscriptionAnalyticsResult>(),
 }));
 
 vi.mock("@/components/header", () => ({
-  Header: ({ pageActions }: { pageActions?: React.ReactNode }) => <header data-testid="header">{pageActions}</header>,
+  Header: ({ pageActions }: { pageActions?: React.ReactNode }) => (
+    <header data-testid="header">{pageActions}</header>
+  ),
 }));
 
 vi.mock("@/components/router-link", () => ({
-  default: ({ children, href }: { children?: React.ReactNode; href?: string }) => (
-    <a href={href}>{children}</a>
-  ),
+  default: ({
+    children,
+    href,
+  }: {
+    children?: React.ReactNode;
+    href?: string;
+  }) => <a href={href}>{children}</a>,
 }));
 
 vi.mock("@/components/loading-skeleton", () => ({
@@ -53,12 +76,19 @@ vi.mock("@/components/upcoming-renewals", () => ({
     subscriptions,
     today,
     notificationReminderDays,
+    scope,
   }: {
     subscriptions: SubscriptionCollectionItem[];
     today: string;
     notificationReminderDays: number;
+    scope?: string;
   }) => {
-    mocks.upcomingRenewalsCalls.push({ count: subscriptions.length, today, notificationReminderDays });
+    mocks.upcomingRenewalsCalls.push({
+      count: subscriptions.length,
+      today,
+      notificationReminderDays,
+      ...(scope ? { scope } : {}),
+    });
     return <div data-testid="upcoming-renewals">{subscriptions.length}</div>;
   },
 }));
@@ -72,9 +102,18 @@ vi.mock("@/components/add-subscription-dialog", () => ({
 }));
 
 vi.mock("@/components/sharing-account-detail-dialog", () => ({
-  SharingAccountDetailDialog: ({ account, open }: { account: SharingAccount | null; open: boolean }) => (
-    open ? <div role="dialog" aria-label={`家庭共享 ${account?.accountNumber}`}>{account?.loginAccount}</div> : null
-  ),
+  SharingAccountDetailDialog: ({
+    account,
+    open,
+  }: {
+    account: SharingAccount | null;
+    open: boolean;
+  }) =>
+    open ? (
+      <div role="dialog" aria-label={`家庭共享 ${account?.accountNumber}`}>
+        {account?.loginAccount}
+      </div>
+    ) : null,
 }));
 
 vi.mock("@/hooks/use-report-exchange-rates", () => ({
@@ -87,7 +126,12 @@ vi.mock("@/hooks/use-report-exchange-rates", () => ({
     },
     loading: mocks.ratesLoading,
     sourceDate: "2026-08-01",
-    reportBasisStatus: { month: "2026-08", locked: true, sourceDate: "2026-08-01", capturedAt: "2026-08-06T00:00:00Z" },
+    reportBasisStatus: {
+      month: "2026-08",
+      locked: true,
+      sourceDate: "2026-08-01",
+      capturedAt: "2026-08-06T00:00:00Z",
+    },
   }),
 }));
 
@@ -97,7 +141,10 @@ vi.mock("@/hooks/use-settings", () => ({
 
 vi.mock("@/hooks/use-sharing", () => ({
   useSharingAccounts: () => ({
-    data: { accounts: mocks.sharingAccounts, total: mocks.sharingAccounts.length },
+    data: {
+      accounts: mocks.sharingAccounts,
+      total: mocks.sharingAccounts.length,
+    },
     isPending: false,
     error: null,
     refetch: vi.fn(),
@@ -117,7 +164,13 @@ vi.mock("@/hooks/use-subscriptions", () => ({
   prefetchSubscriptionDetail: vi.fn(),
   useSubscriptionAnalytics: mocks.useSubscriptionAnalytics,
   useSubscriptionFacets: () => ({
-    data: { total: 1, categoryCounts: { productivity: 1 }, tags: [], visibleCount: 1, hiddenCount: 0 },
+    data: {
+      total: 1,
+      categoryCounts: { productivity: 1 },
+      tags: [],
+      visibleCount: 1,
+      hiddenCount: 0,
+    },
   }),
 }));
 
@@ -135,7 +188,8 @@ vi.mock("@/modules/subscriptions/application/use-subscription-crud", () => ({
     handleDeleteSubscription: mocks.handleDeleteSubscription,
     handleEditDialogOpenChange: mocks.handleEditDialogOpenChange,
     handleEditSubscription: mocks.handleEditSubscription,
-    handleTogglePublicHiddenSubscription: mocks.handleTogglePublicHiddenSubscription,
+    handleTogglePublicHiddenSubscription:
+      mocks.handleTogglePublicHiddenSubscription,
     handleSaveSubscription: mocks.handleSaveSubscription,
     handleRenewSubscription: mocks.handleRenewSubscription,
     handleSubmitRenewSubscription: vi.fn(),
@@ -215,21 +269,23 @@ function sharingAccount(): SharingAccount {
 function sharingDetail(account: SharingAccount): SharingAccountDetail {
   return {
     account,
-    seats: [{
-      id: "seat-1",
-      seatNumber: 3,
-      memberName: "Alice",
-      contact: "alice",
-      contactType: "wechat",
-      monthlyPrice: "15",
-      currency: "CNY",
-      billingMonths: 1,
-      startDate: assertDateOnly("2026-05-14"),
-      expiresAt: assertDateOnly("2026-06-14"),
-      status: "active",
-      notes: null,
-      currentReceivable: null,
-    }],
+    seats: [
+      {
+        id: "seat-1",
+        seatNumber: 3,
+        memberName: "Alice",
+        contact: "alice",
+        contactType: "wechat",
+        monthlyPrice: "15",
+        currency: "CNY",
+        billingMonths: 1,
+        startDate: assertDateOnly("2026-05-14"),
+        expiresAt: assertDateOnly("2026-06-14"),
+        status: "active",
+        notes: null,
+        currentReceivable: null,
+      },
+    ],
     totals: {
       monthlyRevenue: "60",
       contractedRevenue: "60",
@@ -283,12 +339,21 @@ describe("Dashboard operations overview", () => {
     renderDashboard();
     expect(screen.queryByTestId("dashboard-skeleton")).not.toBeInTheDocument();
     expect(screen.getByText("日均 ¥46.67 · 汇率加载中...")).toBeInTheDocument();
-    expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({ count: 1, today: "2026-06-15", notificationReminderDays: 5 });
+    expect(mocks.upcomingRenewalsCalls.at(-1)).toEqual({
+      count: 1,
+      today: "2026-06-15",
+      notificationReminderDays: 5,
+    });
   });
 
   it("shows recoverable errors instead of zeroed analytics", async () => {
     const refetch = vi.fn();
-    mocks.useSubscriptionAnalytics.mockReturnValue({ data: undefined, isPending: false, error: new Error(), refetch });
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      error: new Error(),
+      refetch,
+    });
     renderDashboard();
     expect(screen.getByRole("alert")).toHaveTextContent("操作失败，请稍后重试");
     expect(screen.queryByTestId("dashboard-stat-grid")).not.toBeInTheDocument();
@@ -296,69 +361,140 @@ describe("Dashboard operations overview", () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it("shows five real metrics and no calendar or payment-failure feature", () => {
+  it("shows four coherent metrics and no calendar or payment-failure feature", () => {
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
     renderDashboard();
-    expect(screen.getByTestId("dashboard-stat-grid").children).toHaveLength(5);
-    expect(screen.getByTestId("dashboard-stat-sharing-income")).toHaveTextContent("¥60");
-    expect(screen.getByTestId("dashboard-stat-sharing-profit")).toHaveTextContent("¥20");
-    expect(screen.getByTestId("dashboard-stat-active")).toHaveTextContent("1");
-    expect(screen.getByTestId("dashboard-stat-vacancies")).toHaveTextContent("4");
-    expect(screen.getByRole("link", { name: /可招募车位/ })).toHaveAttribute("href", "/sharing?status=available");
-    expect(screen.queryByTestId("dashboard-calendar-monthly-income")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-stat-grid").children).toHaveLength(4);
+    expect(
+      screen.getByTestId("dashboard-stat-sharing-income"),
+    ).toHaveTextContent("¥60");
+    expect(
+      screen.getByTestId("dashboard-stat-sharing-profit"),
+    ).toHaveTextContent("¥-1,340");
+    expect(screen.queryByTestId("dashboard-stat-active")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-stat-vacancies")).toHaveTextContent(
+      "4",
+    );
+    expect(screen.getByRole("link", { name: /可招募车位/ })).toHaveAttribute(
+      "href",
+      "/sharing?status=available",
+    );
+    expect(
+      screen.queryByTestId("dashboard-calendar-monthly-income"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("扣款失败")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("dashboard-revenue-chart"),
+    ).not.toBeInTheDocument();
   });
 
   it("provides honest empty states without fabricated platform data", () => {
-    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [], isPending: false });
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [],
+      isPending: false,
+    });
     renderDashboard();
-    expect(screen.getByTestId("dashboard-stat-active")).toHaveTextContent("0");
-    expect(screen.getAllByText("暂无共享账号")).toHaveLength(2);
-    expect(screen.getByText("暂无新增账号记录")).toBeInTheDocument();
-    expect(screen.getByText("暂无需要关注的事项")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-stat-monthly-spend")).toHaveTextContent("¥0");
+    expect(screen.getByTestId("dashboard-stat-vacancies")).toHaveTextContent("0");
+    expect(screen.queryByText("平台经营概览")).not.toBeInTheDocument();
   });
 
-  it("displays unbound platforms and provides a usable filter destination", () => {
+  it("keeps unbound accounts in the vacancy total", () => {
     const account = sharingAccount();
     account.subscription.platformName = "__unbound__";
     mocks.sharingAccounts = [account];
     renderDashboard();
-    expect(screen.getByRole("heading", { name: "未绑定" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /未绑定/ })).toHaveAttribute("href", "/sharing?platform=__unbound__");
+    expect(screen.getByTestId("dashboard-stat-vacancies")).toHaveTextContent("4");
   });
 
   it("opens subscription and member worklists without leaving the dashboard", async () => {
     const user = userEvent.setup();
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
-    mocks.useSubscriptionAnalytics.mockReturnValue({ data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })], isPending: false });
+    mocks.sharingDetailQueries = [
+      { data: sharingDetail(account), isPending: false },
+    ];
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [subscription({ nextBillingDate: assertDateOnly("2026-06-20") })],
+      isPending: false,
+    });
     renderDashboard();
     await user.click(screen.getByRole("button", { name: /订阅续费\s*1/ }));
-    expect(screen.getByRole("dialog", { name: "7 天内订阅续费" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "订阅续费" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "关闭" }));
     await user.click(screen.getByRole("button", { name: /车友续费\s*1/ }));
-    expect(screen.getByRole("dialog", { name: "7 天内车友续费" })).toHaveTextContent("已过期 1 天");
+    expect(
+      screen.getByRole("dialog", { name: "7 天内车友续费" }),
+    ).toHaveTextContent("已过期 1 天");
   });
 
   it("preserves overdue members and manual account management", async () => {
     const account = sharingAccount();
     mocks.sharingAccounts = [account];
-    mocks.sharingDetailQueries = [{ data: sharingDetail(account), isPending: false }];
+    mocks.sharingDetailQueries = [
+      { data: sharingDetail(account), isPending: false },
+    ];
     renderDashboard();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("button", { name: "管理账号" }));
-    expect(await screen.findByRole("dialog", { name: "家庭共享 2" })).toHaveTextContent("netflix@example.com");
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "管理账号" }));
+    expect(
+      await screen.findByRole("dialog", { name: "家庭共享 2" }),
+    ).toHaveTextContent("netflix@example.com");
   });
 
-  it.each(["subscriptions", "settings"])("shows skeleton while %s is pending", (source) => {
-    if (source === "subscriptions") mocks.useSubscriptionAnalytics.mockReturnValue({ data: undefined, isPending: true });
-    else mocks.useSettings.mockReturnValue({ data: undefined, isPending: true });
+  it("opens today's and overdue subscriptions with distinct scopes and matching counts", async () => {
+    const user = userEvent.setup();
+    mocks.useSubscriptionAnalytics.mockReturnValue({
+      data: [
+        subscription({
+          id: "today",
+          nextBillingDate: assertDateOnly("2026-06-15"),
+        }),
+        subscription({
+          id: "past",
+          nextBillingDate: assertDateOnly("2026-06-14"),
+        }),
+        subscription({
+          id: "future",
+          nextBillingDate: assertDateOnly("2026-06-20"),
+        }),
+      ],
+      isPending: false,
+    });
     renderDashboard();
-    expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /今日续费\s*1/ }));
+    expect(
+      screen.getByRole("dialog", { name: "今日续费" }),
+    ).toBeInTheDocument();
+    expect(mocks.upcomingRenewalsCalls.at(-1)?.scope).toBe("today");
+    await user.click(screen.getByRole("button", { name: "关闭" }));
+    await user.click(screen.getByRole("button", { name: /逾期订阅\s*1/ }));
+    expect(
+      screen.getByRole("dialog", { name: "逾期订阅" }),
+    ).toBeInTheDocument();
+    expect(mocks.upcomingRenewalsCalls.at(-1)?.scope).toBe("overdue");
   });
+
+  it.each(["subscriptions", "settings"])(
+    "shows skeleton while %s is pending",
+    (source) => {
+      if (source === "subscriptions")
+        mocks.useSubscriptionAnalytics.mockReturnValue({
+          data: undefined,
+          isPending: true,
+        });
+      else
+        mocks.useSettings.mockReturnValue({ data: undefined, isPending: true });
+      renderDashboard();
+      expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
+    },
+  );
 });
 
 describe("Operations projection boundaries", () => {
@@ -368,29 +504,81 @@ describe("Operations projection boundaries", () => {
     const account = sharingAccount();
     const detail = sharingDetail(account);
     detail.seats = Array.from({ length: 5 }, (_, index) => ({
-      ...detail.seats[0]!, id: `annual-seat-${index}`, monthlyPrice: String(50 / 12), billingMonths: 12,
-      startDate: assertDateOnly("2026-01-01"), expiresAt: assertDateOnly("2027-01-01"),
+      ...detail.seats[0]!,
+      id: `annual-seat-${index}`,
+      monthlyPrice: String(50 / 12),
+      billingMonths: 12,
+      startDate: assertDateOnly("2026-01-01"),
+      expiresAt: assertDateOnly("2027-01-01"),
     }));
-    const projection = buildOperationsForecast([subscription({ billingCycle: "annual", price: "100", currency: "CNY", startDate: null })], [detail], assertDateOnly("2026-01-01"), "CNY", convert);
-    expect(projection.reduce((sum, month) => sum + month.cost, 0)).toBeCloseTo(100);
-    expect(projection.reduce((sum, month) => sum + month.revenue, 0)).toBeCloseTo(250);
-    expect(projection.reduce((sum, month) => sum + month.profit, 0)).toBeCloseTo(150);
+    const projection = buildOperationsForecast(
+      [
+        subscription({
+          billingCycle: "annual",
+          price: "100",
+          currency: "CNY",
+          startDate: null,
+        }),
+      ],
+      [detail],
+      assertDateOnly("2026-01-01"),
+      "CNY",
+      convert,
+    );
+    expect(projection.reduce((sum, month) => sum + month.cost, 0)).toBeCloseTo(
+      100,
+    );
+    expect(
+      projection.reduce((sum, month) => sum + month.revenue, 0),
+    ).toBeCloseTo(250);
+    expect(
+      projection.reduce((sum, month) => sum + month.profit, 0),
+    ).toBeCloseTo(150);
   });
 
   it("keeps scheduled-stop seats valid until expiry and excludes future or expired contracts", () => {
     const detail = sharingDetail(sharingAccount());
-    detail.seats[0] = { ...detail.seats[0]!, status: "paused", startDate: assertDateOnly("2026-10-01"), expiresAt: assertDateOnly("2026-11-01") };
-    const projection = buildOperationsForecast([], [detail], assertDateOnly("2026-10-13"), "CNY", convert);
+    detail.seats[0] = {
+      ...detail.seats[0]!,
+      status: "paused",
+      startDate: assertDateOnly("2026-10-01"),
+      expiresAt: assertDateOnly("2026-11-01"),
+    };
+    const projection = buildOperationsForecast(
+      [],
+      [detail],
+      assertDateOnly("2026-10-13"),
+      "CNY",
+      convert,
+    );
     expect(projection[0]!.revenue).toBeCloseTo(15);
     expect(projection[1]!.revenue).toBe(0);
-    detail.seats[0] = { ...detail.seats[0]!, startDate: assertDateOnly("2026-11-01"), expiresAt: assertDateOnly("2026-12-01") };
-    expect(buildOperationsForecast([], [detail], assertDateOnly("2026-10-13"), "CNY", convert)[0]!.revenue).toBe(0);
+    detail.seats[0] = {
+      ...detail.seats[0]!,
+      startDate: assertDateOnly("2026-11-01"),
+      expiresAt: assertDateOnly("2026-12-01"),
+    };
+    expect(
+      buildOperationsForecast(
+        [],
+        [detail],
+        assertDateOnly("2026-10-13"),
+        "CNY",
+        convert,
+      )[0]!.revenue,
+    ).toBe(0);
   });
 
   it("groups unbound platforms and excludes archived accounts from recruitable seats", () => {
     const account = sharingAccount();
     account.subscription.platformName = "__unbound__";
-    const overview = buildOperationsOverview([account, { ...account, id: "archive", status: "archived" }], [], "CNY", convert, assertDateOnly("2026-10-13"));
+    const overview = buildOperationsOverview(
+      [account, { ...account, id: "archive", status: "archived" }],
+      [],
+      "CNY",
+      convert,
+      assertDateOnly("2026-10-13"),
+    );
     expect(overview.capacity).toBe(5);
     expect(overview.vacancies).toBe(4);
     expect(overview.platforms).toHaveLength(1);

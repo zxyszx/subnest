@@ -1,5 +1,8 @@
 import { useCallback, useMemo } from "react";
-import { SubscriptionCard, type SubscriptionCardLookup } from "@/components/subscription-card";
+import {
+  SubscriptionCard,
+  type SubscriptionCardLookup,
+} from "@/components/subscription-card";
 import { VirtualizedList } from "@/components/ui/virtualized-list";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -10,12 +13,17 @@ const SUBSCRIPTION_GRID_ROW_GAP = 16;
 const SUBSCRIPTION_GRID_ROW_ESTIMATE = 296;
 const SUBSCRIPTION_LIST_ROW_ESTIMATE = 174;
 
-type SubscriptionGridProps = {
+export type SubscriptionGridProps = {
   subscriptions: SubscriptionCollectionItem[];
   viewMode: "grid" | "list";
+  paginated?: boolean;
   today: DateOnly | string;
   inheritedReminderDays: number;
-  currencyConvert: (amount: number | string, fromCurrency: string, toCurrency: string) => number;
+  currencyConvert: (
+    amount: number | string,
+    fromCurrency: string,
+    toCurrency: string,
+  ) => number;
   currencyRatesReady: boolean;
   priceReferenceCurrency: string | null;
   categoryByValue: SubscriptionCardLookup;
@@ -32,10 +40,17 @@ type SubscriptionGridProps = {
 };
 
 function getRootScrollElement() {
-  return typeof document === "undefined" ? null : document.getElementById("root");
+  return typeof document === "undefined"
+    ? null
+    : document.getElementById("root");
 }
 
-function getSubscriptionColumnCount(viewMode: "grid" | "list", isTwoColumnGrid: boolean, isThreeColumnGrid: boolean, isFourColumnGrid: boolean) {
+function getSubscriptionColumnCount(
+  viewMode: "grid" | "list",
+  isTwoColumnGrid: boolean,
+  isThreeColumnGrid: boolean,
+  isFourColumnGrid: boolean,
+) {
   if (viewMode === "list") return 1;
   if (isFourColumnGrid) return 4;
   if (isThreeColumnGrid) return 3;
@@ -43,7 +58,10 @@ function getSubscriptionColumnCount(viewMode: "grid" | "list", isTwoColumnGrid: 
   return 1;
 }
 
-function chunkSubscriptions(subscriptions: SubscriptionCollectionItem[], columnCount: number) {
+function chunkSubscriptions(
+  subscriptions: SubscriptionCollectionItem[],
+  columnCount: number,
+) {
   const rows: SubscriptionCollectionItem[][] = [];
   for (let index = 0; index < subscriptions.length; index += columnCount) {
     rows.push(subscriptions.slice(index, index + columnCount));
@@ -54,6 +72,7 @@ function chunkSubscriptions(subscriptions: SubscriptionCollectionItem[], columnC
 export function SubscriptionGrid({
   subscriptions,
   viewMode,
+  paginated = false,
   today,
   inheritedReminderDays,
   currencyConvert,
@@ -74,8 +93,16 @@ export function SubscriptionGrid({
   const isTwoColumnGrid = useMediaQuery("(min-width: 640px)");
   const isThreeColumnGrid = useMediaQuery("(min-width: 1024px)");
   const isFourColumnGrid = useMediaQuery("(min-width: 1280px)");
-  const columnCount = getSubscriptionColumnCount(viewMode, isTwoColumnGrid, isThreeColumnGrid, isFourColumnGrid);
-  const rows = useMemo(() => chunkSubscriptions(subscriptions, columnCount), [columnCount, subscriptions]);
+  const columnCount = getSubscriptionColumnCount(
+    viewMode,
+    isTwoColumnGrid,
+    isThreeColumnGrid,
+    isFourColumnGrid,
+  );
+  const rows = useMemo(
+    () => chunkSubscriptions(subscriptions, columnCount),
+    [columnCount, subscriptions],
+  );
   const estimatedRowSize = !isTwoColumnGrid
     ? 88
     : viewMode === "grid"
@@ -83,59 +110,95 @@ export function SubscriptionGrid({
       : SUBSCRIPTION_LIST_ROW_ESTIMATE;
   const rowGap = isTwoColumnGrid ? SUBSCRIPTION_GRID_ROW_GAP : 8;
   const getRowKey = useCallback(
-    (rowIndex: number) => rows[rowIndex]?.map((subscription) => subscription.id).join("|") ?? rowIndex,
+    (rowIndex: number) =>
+      rows[rowIndex]?.map((subscription) => subscription.id).join("|") ??
+      rowIndex,
     [rows],
   );
-  const renderRow = useCallback((rowIndex: number) => {
-    const row = rows[rowIndex];
-    if (!row) return null;
+  const renderRow = useCallback(
+    (rowIndex: number) => {
+      const row = rows[rowIndex];
+      if (!row) return null;
 
-    return row.map((subscription) => (
-      <div key={subscription.id}>
-        <SubscriptionCard
-          subscription={subscription}
-          viewMode={viewMode}
-          today={today}
-          inheritedReminderDays={inheritedReminderDays}
-          currencyConvert={currencyConvert}
-          currencyRatesReady={currencyRatesReady}
-          priceReferenceCurrency={priceReferenceCurrency}
-          categoryByValue={categoryByValue}
-          paymentMethodByValue={paymentMethodByValue}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onClone={onClone}
-          onTogglePinned={onTogglePinned}
-          onTogglePublicHidden={onTogglePublicHidden}
-          onRenew={onRenew}
-          onViewDetails={onViewDetails}
-          onAddToCalendar={onAddToCalendar}
-          onPrefetchDetails={onPrefetchDetails}
-        />
-      </div>
-    ));
-  }, [
-    categoryByValue,
-    currencyConvert,
-    currencyRatesReady,
-    inheritedReminderDays,
-    onAddToCalendar,
-    onClone,
-    onDelete,
-    onEdit,
-    onPrefetchDetails,
-    onRenew,
-    onTogglePinned,
-    onTogglePublicHidden,
-    onViewDetails,
-    paymentMethodByValue,
-    priceReferenceCurrency,
-    rows,
-    today,
-    viewMode,
-  ]);
+      return row.map((subscription) => (
+        <div key={subscription.id}>
+          <SubscriptionCard
+            subscription={subscription}
+            viewMode={viewMode}
+            today={today}
+            inheritedReminderDays={inheritedReminderDays}
+            currencyConvert={currencyConvert}
+            currencyRatesReady={currencyRatesReady}
+            priceReferenceCurrency={priceReferenceCurrency}
+            categoryByValue={categoryByValue}
+            paymentMethodByValue={paymentMethodByValue}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onClone={onClone}
+            onTogglePinned={onTogglePinned}
+            onTogglePublicHidden={onTogglePublicHidden}
+            onRenew={onRenew}
+            onViewDetails={onViewDetails}
+            onAddToCalendar={onAddToCalendar}
+            onPrefetchDetails={onPrefetchDetails}
+          />
+        </div>
+      ));
+    },
+    [
+      categoryByValue,
+      currencyConvert,
+      currencyRatesReady,
+      inheritedReminderDays,
+      onAddToCalendar,
+      onClone,
+      onDelete,
+      onEdit,
+      onPrefetchDetails,
+      onRenew,
+      onTogglePinned,
+      onTogglePublicHidden,
+      onViewDetails,
+      paymentMethodByValue,
+      priceReferenceCurrency,
+      rows,
+      today,
+      viewMode,
+    ],
+  );
 
   // 分页列表始终使用同一虚拟化模型，避免加载更多时切换 DOM 导致浏览器滚动锚点漂移。
+  if (paginated)
+    return (
+      <div
+        className="grid grid-cols-3 gap-3"
+        data-testid="paginated-subscription-grid"
+      >
+        {rows.flat().map((subscription) => (
+          <SubscriptionCard
+            key={subscription.id}
+            subscription={subscription}
+            viewMode={viewMode}
+            today={today}
+            inheritedReminderDays={inheritedReminderDays}
+            currencyConvert={currencyConvert}
+            currencyRatesReady={currencyRatesReady}
+            priceReferenceCurrency={priceReferenceCurrency}
+            categoryByValue={categoryByValue}
+            paymentMethodByValue={paymentMethodByValue}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onClone={onClone}
+            onTogglePinned={onTogglePinned}
+            onTogglePublicHidden={onTogglePublicHidden}
+            onRenew={onRenew}
+            onViewDetails={onViewDetails}
+            onAddToCalendar={onAddToCalendar}
+            onPrefetchDetails={onPrefetchDetails}
+          />
+        ))}
+      </div>
+    );
   return (
     <VirtualizedList
       count={rows.length}
@@ -145,7 +208,9 @@ export function SubscriptionGrid({
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
         "grid gap-2 sm:gap-4",
-        viewMode === "grid" ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 items-start",
+        viewMode === "grid"
+          ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          : "grid-cols-1 items-start",
       )}
       testId="virtualized-subscription-list"
       renderItem={renderRow}

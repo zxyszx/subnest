@@ -30,7 +30,7 @@ export function OperationsPanel({
   upcomingCount: number;
   overdueCount: number;
   memberCount: number;
-  onSubscriptions: () => void;
+  onSubscriptions: (scope: "all" | "today" | "overdue") => void;
   onMembers: () => void;
 }) {
   const { t } = useI18n();
@@ -40,14 +40,14 @@ export function OperationsPanel({
       count: todayCount,
       icon: Clock,
       style: "bg-rose-500/8 text-rose-600 dark:text-rose-400",
-      action: onSubscriptions,
+      action: () => onSubscriptions("today"),
     },
     {
       label: t("dashboard.subscriptionRenewals"),
       count: upcomingCount,
       icon: CalendarClock,
       style: "bg-amber-500/8 text-amber-700 dark:text-amber-400",
-      action: onSubscriptions,
+      action: () => onSubscriptions("all"),
     },
     {
       label: t("dashboard.memberRenewals"),
@@ -61,7 +61,7 @@ export function OperationsPanel({
       count: overdueCount,
       icon: TriangleAlert,
       style: "bg-blue-500/8 text-blue-700 dark:text-blue-400",
-      action: onSubscriptions,
+      action: () => onSubscriptions("overdue"),
     },
   ];
   return (
@@ -69,7 +69,7 @@ export function OperationsPanel({
       <h2 className="mb-4 text-sm font-semibold">
         {t("dashboard.operations")}
       </h2>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {tasks.map((task) => (
           <button
             key={task.label}
@@ -233,9 +233,7 @@ export function InsightPanels({
   return (
     <div className="grid gap-6 border-t border-border py-6 lg:grid-cols-3">
       <section className="min-w-0">
-        <h2 className="mb-4 text-sm font-semibold">
-          {t("dashboard.ranking")}
-        </h2>
+        <h2 className="mb-4 text-sm font-semibold">{t("dashboard.ranking")}</h2>
         {overview.ranking.map(({ account, profit }, index) => (
           <Button
             key={account.id}

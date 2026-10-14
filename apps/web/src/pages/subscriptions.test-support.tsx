@@ -83,7 +83,7 @@ export function visibleSubscriptionNames() {
   return screen.getAllByTestId("subscription-card").map((card) => card.firstChild?.textContent ?? "");
 }
 
-export function mockMobileTagFilterMatch(isMobile: boolean, width = isMobile ? 390 : 1280) {
+export function mockMobileTagFilterMatch(isMobile: boolean, width = isMobile ? 390 : 1000) {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({

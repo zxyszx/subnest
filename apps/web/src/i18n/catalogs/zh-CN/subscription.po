@@ -601,7 +601,7 @@ msgstr "仅置顶"
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:751
 msgid "upcoming.todayShort"
-msgstr "今"
+msgstr "今天"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:295
@@ -845,6 +845,34 @@ msgstr "共享月净利润"
 
 #. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:721
+msgid "workspace.pagination"
+msgstr "分页"
+
+#. js-lingui-explicit-id
+msgid "workspace.pageSummary"
+msgstr "共 {total} 条 · 第 {page} / {pages} 页"
+
+#. js-lingui-explicit-id
+msgid "workspace.previousPage"
+msgstr "上一页"
+
+#. js-lingui-explicit-id
+msgid "workspace.nextPage"
+msgstr "下一页"
+
+#. js-lingui-explicit-id
+msgid "workspace.filterShortcut"
+msgstr "{label} (Alt+{number})"
+
+#. js-lingui-explicit-id
+msgid "dashboard.averageIncome"
+msgstr "月均收入"
+
+#. js-lingui-explicit-id
+msgid "dashboard.averageNetIncome"
+msgstr "月均净收益"
+
+#. js-lingui-explicit-id
 msgid "dashboard.sharingIncome"
 msgstr "共享月收入"
 

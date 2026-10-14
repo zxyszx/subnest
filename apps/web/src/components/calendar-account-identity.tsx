@@ -10,6 +10,7 @@ interface CalendarAccountIdentityProps {
   size?: "xs" | "sm" | undefined;
   className?: string | undefined;
   nameClassName?: string | undefined;
+  logoContrast?: boolean;
 }
 
 export function CalendarAccountIdentity({
@@ -20,19 +21,29 @@ export function CalendarAccountIdentity({
   size = "sm",
   className,
   nameClassName,
+  logoContrast = true,
 }: CalendarAccountIdentityProps) {
   const { t } = useI18n();
   const compact = size === "xs";
 
   return (
-    <div className={cn("flex min-w-0 items-center", compact ? "gap-1.5" : "gap-3", className)}>
+    <div
+      className={cn(
+        "flex min-w-0 items-center",
+        compact ? "gap-1.5" : "gap-3",
+        className,
+      )}
+    >
       <span className="relative shrink-0" aria-hidden="true">
         <SubscriptionLogo
           name={platformName}
           logo={logo}
           fallbackColor={fallbackColor}
           size={size}
-          className={cn("subscription-logo-contrast", compact && "h-5 w-5 rounded")}
+          className={cn(
+            logoContrast && "subscription-logo-contrast",
+            compact && "h-5 w-5 rounded",
+          )}
         />
         {accountNumber ? (
           <span
@@ -42,13 +53,21 @@ export function CalendarAccountIdentity({
                 ? "-right-1 -top-1 h-3.5 min-w-3.5 px-0.5 text-[8px]"
                 : "-right-1.5 -top-1.5 h-5 min-w-5 px-1 text-[10px]",
             )}
-            title={t("subscription.accountNumberBadge", { number: accountNumber })}
+            title={t("subscription.accountNumberBadge", {
+              number: accountNumber,
+            })}
           >
             {accountNumber}
           </span>
         ) : null}
       </span>
-      <span className={cn("min-w-0 truncate font-medium text-foreground", compact ? "text-xs" : "text-sm", nameClassName)}>
+      <span
+        className={cn(
+          "min-w-0 truncate font-medium text-foreground",
+          compact ? "text-xs" : "text-sm",
+          nameClassName,
+        )}
+      >
         {platformName}
       </span>
     </div>

@@ -77,7 +77,7 @@ vi.mock("@/hooks/use-exchange-rates", () => ({
 }));
 
 vi.mock("@/hooks/use-media-query", () => ({
-  useMediaQuery: (query: string) => query.includes("min-width"),
+  useMediaQuery: (query: string) => query === "(min-width: 640px)",
 }));
 
 vi.mock("@/contexts/CustomConfigContext", () => ({
