@@ -148,6 +148,7 @@ export const messages = [
   msg({ id: "theme.rose.description", message: "精致柔和的玫瑰色" }),
   msg({ id: "workspace.collapse", message: "收起导航" }),
   msg({ id: "workspace.expand", message: "展开导航" }),
+  msg({ id: "workspace.sidebarShortcut", message: "Ctrl / ⌘ ⇧ S" }),
   msg({ id: "workspace.tools", message: "工具" }),
   msg({ id: "workspace.private", message: "私有工作空间" }),
   msg({ id: "dashboard.overview", message: "经营总览" }),

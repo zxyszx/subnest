@@ -116,6 +116,11 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   if (testInfo.project.name === "desktop") {
     await page.setViewportSize({ width: 1366, height: 768 });
     await expect(sidebar).toHaveCSS("width", "240px");
+    const sidebarHeader = page.getByTestId("workspace-sidebar-header");
+    const collapseToggle = sidebarHeader.getByRole("button", { name: "收起导航", exact: true });
+    await expect(collapseToggle).toBeVisible();
+    expect((await collapseToggle.boundingBox())!.y).toBeLessThan(72);
+    expect((await sidebar.getByRole("link", { name: "仪表盘", exact: true }).boundingBox())!.y).toBeLessThan(90);
     const updateEntry = page.getByRole("button", { name: "打开系统更新", exact: true });
     await expect(updateEntry).toBeVisible();
     await updateEntry.click();
@@ -153,15 +158,33 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await expect(page.getByRole("tooltip")).toBeVisible();
     await page.mouse.move(800, 30);
     await expect(page.getByRole("tooltip")).not.toBeVisible();
+    await page.getByRole("button", { name: "展开导航", exact: true }).blur();
+    await expect(page.getByTestId("workspace-sidebar-toggle-logo")).toHaveCSS("opacity", "1");
+    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "0");
     await page.screenshot({
       path: `${output}/screenshot-collapsed.png`,
       fullPage: true,
       animations: "disabled",
     });
+    await page.getByRole("button", { name: "展开导航", exact: true }).hover();
+    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "1");
+    await expect(page.getByTestId("workspace-sidebar-toggle-logo")).toHaveCSS("opacity", "0");
+    await expect(page.getByRole("tooltip")).toContainText("展开导航");
+    await page.screenshot({ path: `${output}/screenshot-sidebar-hover.png`, animations: "disabled" });
     await page.reload();
     await expect(sidebar).toHaveCSS("width", "72px");
     await page.getByRole("button", { name: "展开导航", exact: true }).click();
     await expect(sidebar).toHaveCSS("width", "240px");
+    await page.keyboard.press("Control+Shift+S");
+    await expect(sidebar).toHaveCSS("width", "72px");
+    const expandToggle = page.getByRole("button", { name: "展开导航", exact: true });
+    await expandToggle.focus();
+    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "1");
+    await page.keyboard.press("Enter");
+    await expect(sidebar).toHaveCSS("width", "240px");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await sidebar.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThanOrEqual(0.001);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page
       .getByTestId("app-header")
       .getByRole("button", { name: /切换主题|主题/ })
@@ -248,6 +271,8 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await next.click();
     await page.keyboard.press("/");
     await page.getByRole("searchbox").fill("1");
+    await page.keyboard.press("Control+Shift+S");
+    await expect(sidebar).toHaveCSS("width", "240px");
     await expect(page.locator("tbody tr")).toHaveCount(1);
     await expect(page.locator("tbody tr")).toContainText("member0@example.test");
     await page.getByRole("searchbox").fill("");

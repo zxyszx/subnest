@@ -876,3 +876,8 @@ msgstr "共享账号与车位资产"
 #. js-lingui-explicit-id
 msgid "dashboard.month"
 msgstr "月份"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:151
+msgid "workspace.sidebarShortcut"
+msgstr "Ctrl / ⌘ ⇧ S"

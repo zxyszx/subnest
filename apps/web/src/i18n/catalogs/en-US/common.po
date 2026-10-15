@@ -876,3 +876,8 @@ msgstr "Shared accounts and seats"
 #. js-lingui-explicit-id
 msgid "dashboard.month"
 msgstr "Month"
+
+#. js-lingui-explicit-id
+#: src/i18n/descriptors/common.ts:151
+msgid "workspace.sidebarShortcut"
+msgstr "Ctrl / ⌘ ⇧ S"

@@ -2679,6 +2679,7 @@ export const MESSAGE_KEYS = [
   "workspace.pagination",
   "workspace.previousPage",
   "workspace.private",
+  "workspace.sidebarShortcut",
   "workspace.tools",
 ] as const;
 

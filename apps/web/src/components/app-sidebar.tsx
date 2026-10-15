@@ -5,8 +5,7 @@ import {
   Inbox,
   LayoutDashboard,
   List,
-  PanelLeftClose,
-  PanelLeftOpen,
+  PanelLeft,
   Settings,
   ShieldCheck,
   UsersRound,
@@ -73,6 +72,24 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
       /* Storage can be disabled in private browsers. */
     }
   }, [collapsed]);
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented || event.repeat || event.altKey ||
+        !event.shiftKey || !(event.metaKey || event.ctrlKey) ||
+        event.key.toLowerCase() !== "s" ||
+        !window.matchMedia("(min-width: 1024px)").matches ||
+        document.querySelector('[role="dialog"], [role="alertdialog"]') ||
+        (event.target instanceof HTMLElement && event.target.closest(
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
+        ))
+      ) return;
+      event.preventDefault();
+      setCollapsed((value) => !value);
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
   const toggleLabel = t(collapsed ? "workspace.expand" : "workspace.collapse");
   return (
     <div
@@ -89,26 +106,51 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
           data-testid="workspace-sidebar"
           data-collapsed={collapsed}
         >
-          <div className={cn("flex h-20 items-center gap-3", collapsed ? "px-4" : "px-5")}>
-            <RenewletBrandMark size="sm" href="/" />
-            {!collapsed && <span className="text-lg font-bold">{PRODUCT_NAME}</span>}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mx-auto mb-4 h-9 w-9"
-            aria-label={toggleLabel}
-            title={toggleLabel}
-            aria-expanded={!collapsed}
-            onClick={() => setCollapsed((value) => !value)}
+          <div
+            data-testid="workspace-sidebar-header"
+            className={cn("flex h-18 shrink-0 items-center gap-2 px-3", collapsed && "justify-center")}
           >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
+            {!collapsed && (
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <RenewletBrandMark size="sm" href="/" />
+                <span className="text-lg font-bold">{PRODUCT_NAME}</span>
+              </div>
             )}
-          </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="group relative h-11 w-11 shrink-0 rounded-md"
+                  aria-label={toggleLabel}
+                  aria-expanded={!collapsed}
+                  aria-controls="workspace-navigation"
+                  aria-keyshortcuts="Meta+Shift+S Control+Shift+S"
+                  onClick={() => setCollapsed((value) => !value)}
+                >
+                  {collapsed && (
+                    <RenewletBrandMark
+                      size="sm"
+                      className="absolute rounded-md transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0 motion-reduce:transition-none"
+                      data-testid="workspace-sidebar-toggle-logo"
+                    />
+                  )}
+                  <PanelLeft
+                    data-testid="workspace-sidebar-toggle-icon"
+                    className={cn("h-5 w-5 transition-opacity duration-150 motion-reduce:transition-none", collapsed && "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100")}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent side={collapsed ? "right" : "bottom"} className="flex items-center gap-3">
+                  {toggleLabel}
+                  <kbd className="text-xs text-muted-foreground">{t("workspace.sidebarShortcut")}</kbd>
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
+          </div>
           <nav
+            id="workspace-navigation"
             aria-label={t("nav.dashboard")}
             className="min-h-0 flex-1 overflow-y-auto px-3"
           >
