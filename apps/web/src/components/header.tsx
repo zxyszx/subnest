@@ -131,16 +131,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
               >
                 <h1 className={headerLayout.brandTitle}>{PRODUCT_NAME}</h1>
               </Link>
-              {isAuthenticated ? (
-                <SystemUpdateDialog
-                  open={systemDialogOpen}
-                  onOpenChange={setSystemDialogOpen}
-                  canManageUpdates={sessionData?.user.role === "admin"}
-                  contentAlign="start"
-                  triggerClassName="absolute left-0 top-7 w-fit"
-                  badgeClassName="h-4 max-w-24 rounded px-1.5 text-[10px] min-[380px]:max-w-32 sm:max-w-none"
-                />
-              ) : null}
             </div>
           </div>
 
@@ -197,6 +187,16 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           {onAddSubscription ? subscriptionActions : null}
 
           {pageActions}
+
+          {isAuthenticated ? (
+            <SystemUpdateDialog
+              open={systemDialogOpen}
+              onOpenChange={setSystemDialogOpen}
+              canManageUpdates={sessionData?.user.role === "admin"}
+              triggerClassName="shrink-0"
+              badgeClassName="h-9 max-w-24 rounded-md px-2 text-xs sm:max-w-none"
+            />
+          ) : null}
 
           {settingsItem ? (
             <NavLink

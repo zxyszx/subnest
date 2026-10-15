@@ -116,6 +116,11 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   if (testInfo.project.name === "desktop") {
     await page.setViewportSize({ width: 1366, height: 768 });
     await expect(sidebar).toHaveCSS("width", "240px");
+    const updateEntry = page.getByRole("button", { name: "打开系统更新", exact: true });
+    await expect(updateEntry).toBeVisible();
+    await updateEntry.click();
+    await expect(page.getByText("当前版本", { exact: true }).first()).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(sidebar.locator('a[aria-current="page"]')).toHaveCount(1);
     await expect(sidebar.locator('a[aria-current="page"]')).toHaveClass(
       /bg-primary/,
@@ -140,6 +145,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       .boundingBox())!.width;
     await page.getByRole("button", { name: "收起导航", exact: true }).click();
     await expect(sidebar).toHaveCSS("width", "72px");
+    await expect(updateEntry).toBeVisible();
     expect(
       (await page.getByTestId("workspace-content").boundingBox())!.width,
     ).toBeGreaterThan(expandedWidth);

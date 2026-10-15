@@ -210,6 +210,8 @@ describe("Header system version entry", () => {
     const updateButton = screen.getByRole("button", { name: "打开系统更新" });
     expect(screen.getAllByRole("button", { name: "打开系统更新" })).toHaveLength(1);
     expect(updateButton.closest("a")).toBeNull();
+    expect(within(screen.getByTestId("app-header-actions")).getByRole("button", { name: "打开系统更新" })).toBe(updateButton);
+    expect(updateButton.closest("[data-header-brand]")).toBeNull();
     expect(screen.queryByText("订阅与会员共享管理")).not.toBeInTheDocument();
 
     await user.click(updateButton);

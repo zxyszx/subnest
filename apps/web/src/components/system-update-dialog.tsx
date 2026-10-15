@@ -180,6 +180,7 @@ export function SystemUpdateDialog({
           type="button"
           className={cn("inline-flex max-w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", triggerClassName)}
           aria-label={t("system.openUpdateDialog")}
+          title={t("system.openUpdateDialog")}
         >
           <SystemVersionBadge className={badgeClassName} />
         </button>
