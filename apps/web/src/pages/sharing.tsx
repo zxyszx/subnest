@@ -20,8 +20,6 @@ import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { PlatformFilterBar } from "@/components/platform-filter-bar";
 import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
-import { WorkspacePagination, useWorkspacePagination } from "@/components/workspace-pagination";
-import { useWorkspaceCapacity } from "@/hooks/use-workspace-capacity";
 import { WorkspaceQuickFilters } from "@/components/workspace-quick-filters";
 import { sharingQueryKeys, useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
 import { useSubscriptionDetail, useUpdateSubscription } from "@/hooks/use-subscriptions";
@@ -96,7 +94,6 @@ export default function Sharing() {
   const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const [setListContainer, pageSize] = useWorkspaceCapacity(112);
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
   const updateSubscription = useUpdateSubscription();
@@ -183,8 +180,7 @@ export default function Sharing() {
     0,
   );
   const upcomingRenewals = upcomingSeatRenewals.length;
-  const pagination = useWorkspacePagination(visibleAccounts, JSON.stringify([searchQuery, selectedPlatform, accountFilter, sortField, pageSize]), pageSize);
-  const pageAccounts = isDesktop ? pagination.items : visibleAccounts;
+  const pageAccounts = visibleAccounts;
 
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
@@ -320,7 +316,7 @@ export default function Sharing() {
   );
 
   return (
-    <div className="app-page desktop-workbench bg-background">
+    <div className="app-page bg-background">
       <Header />
       <main className="app-main mx-auto max-w-[120rem]">
         <section className="workspace-summary grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-6" aria-label={t("sharing.title")}>
@@ -383,6 +379,7 @@ export default function Sharing() {
                       moreLabel={t("sharing.morePlatforms")}
                       ariaLabel={t("sharing.platformFilter")}
                       visibleLimits={{ compact: 3, regular: 5, wide: 8, spacious: 10 }}
+                      fitContainer
                       className="rounded-lg border bg-secondary/50 px-1"
                     />
                     {sharingFilterControls}
@@ -426,12 +423,12 @@ export default function Sharing() {
           </section>
         ) : (
           <section className={cn(
-            "workspace-sharing-table overflow-hidden border border-border bg-card",
+            "overflow-hidden border border-border bg-card",
             platformOptions.length > 0
               ? "rounded-b-lg rounded-t-none border-t-0"
               : "mt-4 rounded-lg sm:mt-6",
           )}>
-            <div ref={setListContainer} className="workspace-table-scroll hidden overflow-x-auto sm:block">
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
                   <th className="px-4 py-2 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
@@ -535,7 +532,6 @@ export default function Sharing() {
                 );
               })}
             </div>
-            {isDesktop && <WorkspacePagination {...pagination} />}
           </section>
         )}
         {linksAccount ? <SharingInboxLinksDialog key={linksAccount.id} account={linksAccount} onClose={() => setLinksAccount(null)} /> : null}

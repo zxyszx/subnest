@@ -744,13 +744,14 @@ describe("Subscriptions page mobile tag filters", () => {
 
 describe("Subscriptions desktop workspace", () => {
   beforeAll(installPointerCaptureMocks);
-  it("searches the full index beyond the current page and retains clone actions", async () => {
+  it("shows the full scrollable index and retains search and edit actions", async () => {
     mockMobileTagFilterMatch(false, 1280);
     mockSubscriptionsPageSettings();
     mocks.useInfiniteSubscriptions.mockReturnValue({ subscriptions: manySubscriptions(30), isPending: false });
     renderSubscriptionsPage();
     expect(screen.getByTestId("subscription-workspace-list")).toBeInTheDocument();
-    expect(screen.getAllByTestId("subscription-workspace-row").length).toBeLessThan(30);
+    expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(30);
+    expect(screen.queryByRole("navigation", { name: "分页" })).not.toBeInTheDocument();
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText("搜索序号、订阅、标签或备注..."), "30");
     expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(1);

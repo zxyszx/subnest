@@ -48,12 +48,6 @@ import {
 import { buildUpcomingReminderItems } from "@/modules/subscriptions/domain/upcoming-reminders";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { OperationsPanel } from "@/components/dashboard/operations-panels";
-import {
-  WorkspacePagination,
-  useWorkspacePagination,
-} from "@/components/workspace-pagination";
-import { useWorkspaceCapacity } from "@/hooks/use-workspace-capacity";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { buildOperationsOverview } from "@/modules/subscriptions/domain/operations-overview";
 import Link from "@/components/router-link";
 import { DeferredRenewSubscriptionDialog } from "@/components/renew-subscription-dialog-loader";
@@ -75,8 +69,6 @@ const EMPTY_ACCOUNTS: SharingAccount[] = [];
 
 /** 仪表盘页面组件。 */
 export default function Index() {
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const [setListContainer, pageSize] = useWorkspaceCapacity(88);
   const [subscriptionRenewalsOpen, setSubscriptionRenewalsOpen] =
     useState(false);
   const [renewalScope, setRenewalScope] = useState<"all" | "today" | "overdue">(
@@ -160,16 +152,6 @@ export default function Index() {
     [sharingAccounts, subscriptions, defaultCurrency, convert, today],
   );
   const netIncome = sharingIncome - totalMonthly;
-  const renewalPages = useWorkspacePagination(
-    subscriptionRenewals,
-    `${today}:${pageSize}`,
-    pageSize,
-  );
-  const memberPages = useWorkspacePagination(
-    sharingRenewals,
-    `${today}:${pageSize}`,
-    pageSize,
-  );
   const formatAmount = (value: number) =>
     formatCompactCurrencyAmount(value, defaultCurrency, locale);
 
@@ -214,7 +196,7 @@ export default function Index() {
   }
 
   return (
-    <div className="app-page desktop-workbench bg-background">
+    <div className="app-page bg-background">
       <Header
         onAddSubscription={handleAddSubscription}
         availableTags={availableTags}
@@ -310,13 +292,17 @@ export default function Index() {
             onMembers={() => setMemberRenewalsOpen(true)}
           />
         </div>
-        <div className="grid min-h-0 min-w-0 gap-6 lg:flex-1 lg:grid-cols-2">
+        <div
+          data-testid="dashboard-renewal-workspace"
+          className="grid min-h-0 min-w-0 divide-y divide-border border border-border bg-card text-card-foreground lg:flex-1 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+        >
           <section
             className="flex min-h-0 min-w-0 flex-col"
             id="dashboard-subscription-renewals"
           >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold">
+            <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <CalendarClock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {t("dashboard.subscriptionRenewals")}
               </h2>
               <Button
@@ -328,52 +314,49 @@ export default function Index() {
                 {t("dashboard.viewAll", { count: subscriptionRenewals.length })}
               </Button>
             </div>
-            <div ref={setListContainer} className="workspace-list-pane">
+            <div className="flex flex-1 flex-col bg-muted/20 px-4 py-3">
               <UpcomingRenewals
                 subscriptions={
-                  isDesktop
-                    ? renewalPages.items.map((item) => item.subscription)
-                    : subscriptions
+                  subscriptions
                 }
                 today={today}
                 notificationReminderDays={inheritedReminderDays}
                 includeExpired
                 windowDays={7}
-                limit={isDesktop ? pageSize : 5}
+                limit={subscriptionRenewals.length}
                 onRenew={handleRenewSubscription}
                 density="compact"
               />
             </div>
-            {isDesktop && <WorkspacePagination {...renewalPages} />}
           </section>
           <section
             id="dashboard-member-renewals"
             className="flex min-h-0 min-w-0 flex-col"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">
+            <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <UsersRound className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {t("dashboard.memberRenewals")}
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-11"
+                className="h-11 px-2 text-xs text-muted-foreground"
                 onClick={() => setMemberRenewalsOpen(true)}
               >
                 {t("dashboard.viewAll", { count: sharingRenewals.length })}
               </Button>
             </div>
-            <div className="workspace-list-pane">
+            <div className="flex flex-1 flex-col bg-muted/20 px-4 py-3">
               <SharingUpcomingRenewals
-                items={isDesktop ? memberPages.items : sharingRenewals}
+                items={sharingRenewals}
                 pending={sharingRenewalsPending}
-                limit={isDesktop ? pageSize : 5}
+                limit={sharingRenewals.length}
                 showFooter={false}
                 density="compact"
                 onManageAccount={setSelectedSharingAccount}
               />
             </div>
-            {isDesktop && <WorkspacePagination {...memberPages} />}
           </section>
         </div>
       </main>

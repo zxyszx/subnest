@@ -18,8 +18,6 @@ import { Header } from '@/components/header';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionGrid } from '@/components/subscription-grid';
 import { SubscriptionWorkspaceList } from '@/components/subscription-workspace-list';
-import { WorkspacePagination, useWorkspacePagination } from '@/components/workspace-pagination';
-import { useWorkspaceCapacity } from '@/hooks/use-workspace-capacity';
 import { WorkspaceQuickFilters } from '@/components/workspace-quick-filters';
 import { daysBetweenDateOnly } from '@/lib/time/date-only';
 import { isOneTimeBuyout } from '@/lib/subscription-billing';
@@ -142,7 +140,6 @@ const Subscriptions = () => {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [renewalFilter, setRenewalFilter] = useState<'all' | 'today' | 'upcoming' | 'overdue'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => isDesktop ? 'list' : 'grid');
-  const [setListContainer, pageSize] = useWorkspaceCapacity(viewMode === 'list' ? 72 : 340, viewMode === 'list' ? 1 : 3);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
@@ -257,7 +254,6 @@ const Subscriptions = () => {
     }
     return sortSubscriptionsForDisplay(statusSubscriptions);
   }, [displaySourceSubscriptions, locale, numericAccountSearch, searchQuery, selectedPlatform, sortOption, sortSubscriptionsForDisplay, statusFilter, today, renewalFilter]);
-  const pagination = useWorkspacePagination(filteredSubscriptions, JSON.stringify([searchQuery, selectedPlatform, statusFilter, renewalFilter, sortOption, viewMode, pageSize]), pageSize);
   const isDisplayPending = useFilteredIndex ? indexQuery.isPending : isDesktop && platformIndexQuery.isPending;
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
   const displayError = useFilteredIndex ? indexQuery.error : isDesktop ? platformIndexQuery.error : subscriptionsQuery.error;
@@ -385,7 +381,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <div className="app-page desktop-workbench bg-background">
+    <div className="app-page bg-background">
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-[120rem]">
@@ -486,6 +482,7 @@ const Subscriptions = () => {
                         moreLabel={t("subscriptions.morePlatforms")}
                         ariaLabel={t("subscriptions.platformFilter")}
                         visibleLimits={{ compact: 3, regular: 4, wide: 7, spacious: 10 }}
+                        fitContainer
                         className="rounded-lg border bg-secondary/50 px-1"
                       />
                     </Suspense>
@@ -523,7 +520,7 @@ const Subscriptions = () => {
           { value: 'upcoming', label: t("sharing.expiringWithinSevenDays") },
           { value: 'overdue', label: t("dashboard.overdue") },
         ]} />}
-        <div ref={setListContainer} className="workspace-list-pane">
+        <div>
         {displayError ? (
           <QueryErrorState error={displayError} onRetry={retryDisplayQuery} />
         ) : isDisplayPending ? (
@@ -577,9 +574,8 @@ const Subscriptions = () => {
           </div>
         ) : (
           <>
-            {isDesktop && viewMode === 'list' ? <SubscriptionWorkspaceList subscriptions={pagination.items} today={today} onEdit={handleEditSubscription} onRenew={handleRenewSubscription} onViewDetails={handleViewDetails} onDelete={handleDeleteSubscription} onClone={handleCloneSubscription} onTogglePinned={handleTogglePinnedSubscription} onTogglePublicHidden={handleTogglePublicHiddenSubscription} onAddToCalendar={calendarDialog.show} inheritedReminderDays={inheritedReminderDays} currencyConvert={convert} currencyRatesReady={currencyRatesReady} priceReferenceCurrency={priceReferenceCurrency} categoryByValue={categoryByValue} paymentMethodByValue={paymentMethodByValue} onPrefetchDetails={handlePrefetchSubscription} /> : <SubscriptionGrid
-              subscriptions={isDesktop ? pagination.items : filteredSubscriptions}
-              paginated={isDesktop}
+            {isDesktop && viewMode === 'list' ? <SubscriptionWorkspaceList subscriptions={filteredSubscriptions} today={today} onEdit={handleEditSubscription} onRenew={handleRenewSubscription} onViewDetails={handleViewDetails} onDelete={handleDeleteSubscription} onClone={handleCloneSubscription} onTogglePinned={handleTogglePinnedSubscription} onTogglePublicHidden={handleTogglePublicHiddenSubscription} onAddToCalendar={calendarDialog.show} inheritedReminderDays={inheritedReminderDays} currencyConvert={convert} currencyRatesReady={currencyRatesReady} priceReferenceCurrency={priceReferenceCurrency} categoryByValue={categoryByValue} paymentMethodByValue={paymentMethodByValue} onPrefetchDetails={handlePrefetchSubscription} /> : <SubscriptionGrid
+              subscriptions={filteredSubscriptions}
               viewMode={viewMode}
               today={today}
               inheritedReminderDays={inheritedReminderDays}
@@ -614,10 +610,9 @@ const Subscriptions = () => {
           </>
         )}
         </div>
-        {isDesktop && <WorkspacePagination {...pagination} />}
       </main>
 
-      {!isDesktop && <BackToTopFloatButton />}
+      <BackToTopFloatButton />
 
       <Suspense fallback={null}>
         <EditSubscriptionDialog

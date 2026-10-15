@@ -42,12 +42,15 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
   }
 
   return (
-    <div className="min-w-0 divide-y divide-border">
+    <div className={cn("min-w-0", compact ? "grid gap-2" : "divide-y divide-border")}>
       {visibleItems.map(({ account, seat, daysUntilExpiry }) => (
         <div
           key={seat.id}
           className={cn(
-            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center first:pt-0 last:pb-0 sm:grid-cols-[minmax(8rem,1fr)_7rem_6rem]",
+            "grid min-h-14 min-w-0 items-center",
+            compact
+              ? "min-h-26 grid-cols-[minmax(0,1fr)_6rem] rounded-md border border-border bg-card px-3 py-3"
+              : "grid-cols-[minmax(0,1fr)_auto] first:pt-0 last:pb-0 sm:grid-cols-[minmax(8rem,1fr)_7rem_6rem]",
             "gap-x-3 gap-y-2 py-2.5",
             daysUntilExpiry < 0
               ? "text-destructive"
@@ -63,9 +66,18 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               logoContrast={false}
             />
             {compact ? (
-              <p className="mt-0.5 truncate pl-13 text-xs text-muted-foreground">
-                <span>{seat.memberName}</span><span aria-hidden="true"> · </span><span>{t("sharing.seatNumber")} #{seat.seatNumber} · {t("upcoming.expiresOn", { date: formatDateOnlyMonthDay(seat.expiresAt!, locale) })}</span>
-              </p>
+              <>
+                <p className="mt-0.5 truncate pl-13 text-xs text-muted-foreground">
+                  <span>{seat.memberName}</span> · {t("sharing.seatNumber")} #{seat.seatNumber}
+                </p>
+                <p data-renewal-details className="mt-1 truncate pl-13 text-xs tabular-nums text-muted-foreground">
+                  {formatDateOnlyMonthDay(seat.expiresAt!, locale)} · {seat.currentReceivable
+                    ? formatCurrency(seat.currentReceivable.amount, seat.currentReceivable.currency)
+                    : seat.monthlyPrice && seat.currency
+                      ? formatCurrency(Number(seat.monthlyPrice) * (seat.billingMonths ?? 1), seat.currency)
+                      : "-"}
+                </p>
+              </>
             ) : (
               <>
                 <p className="mt-1 truncate pl-11 text-xs text-foreground">{seat.memberName}</p>
@@ -75,7 +87,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
               </>
             )}
           </div>
-          <div className="order-3 col-span-2 min-w-0 rounded-md bg-muted/30 px-2 py-1.5 text-right sm:order-0 sm:col-span-1 sm:bg-transparent sm:p-0">
+          {!compact && <div className="order-3 col-span-2 min-w-0 rounded-md bg-muted/30 px-2 py-1.5 text-right sm:order-0 sm:col-span-1 sm:bg-transparent sm:p-0">
             <div className="text-right">
               <p className="text-[11px] text-muted-foreground">{t("subscription.field.price")}</p>
               <p className="mt-0.5 truncate whitespace-nowrap text-right text-sm font-semibold tabular-nums text-foreground">
@@ -86,7 +98,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                     : "-"}
               </p>
             </div>
-          </div>
+          </div>}
           <div className="flex min-w-24 flex-col items-end gap-1">
             <span className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 3 ? "text-warning" : "text-muted-foreground")}>
               {daysUntilExpiry < 0
@@ -95,7 +107,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   ? t("upcoming.todayShort")
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
             </span>
-            <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => onManageAccount?.(account)}>
+            <Button type="button" variant="outline" size="sm" className={cn("shrink-0 gap-1.5", compact && "h-11 w-full px-2")} onClick={() => onManageAccount?.(account)}>
               <Users className="h-4 w-4" />{t("sharing.manageAccount")}
             </Button>
           </div>

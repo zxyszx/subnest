@@ -70,19 +70,20 @@ export function UpcomingRenewals({
 
   if (upcoming.length === 0) {
     return (
-      <p className="py-4 text-center text-sm leading-6 text-muted-foreground">
+      <p className="flex min-h-40 flex-1 items-center justify-center py-4 text-center text-sm leading-6 text-muted-foreground">
         {t("upcoming.noneNextTwoWeeks")}
       </p>
     );
   }
 
   return (
-    <div className="min-w-0 divide-y divide-border">
+    <div className={cn("min-w-0", compact ? "grid gap-2" : "divide-y divide-border")}>
       {upcoming.map((item) => (
         <div
           key={item.subscription.id}
           className={cn(
-            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center last:pb-0",
+            "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center",
+            compact ? "min-h-26 rounded-md border border-border bg-card px-3 py-3" : "last:pb-0",
             !compact && "sm:grid-cols-[minmax(0,1fr)_minmax(12rem,14rem)_6rem]",
             "gap-x-3 gap-y-2 py-2.5",
             item.daysUntil < 0
@@ -122,7 +123,7 @@ export function UpcomingRenewals({
               </div>
             ) : null}
             {compact && (
-              <p className="mt-1 truncate text-xs tabular-nums text-muted-foreground">
+              <p data-renewal-details className="mt-1 truncate pl-13 text-xs tabular-nums text-muted-foreground">
                 {formatDateOnlyMonthDay(
                   item.subscription.nextBillingDate,
                   locale,

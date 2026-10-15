@@ -41,6 +41,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     notes: null,
     createdAt: "2026-10-12T08:00:00Z",
   }));
+  let memberDueSoon = false;
   await page.route("**/api/app/sharing/accounts**", async (route) => {
     const account = accounts.find((item) =>
       new URL(route.request().url()).pathname.endsWith("/" + item.id),
@@ -61,7 +62,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
                 currency: "CNY",
                 billingMonths: 3,
                 startDate: "2026-09-01",
-                expiresAt: "2026-12-01",
+                expiresAt: memberDueSoon && seatNumber === 1 ? "2026-10-16" : "2026-12-01",
                 status: seatNumber < 5 ? "active" : "vacant",
                 notes: null,
                 currentReceivable: null,
@@ -113,6 +114,39 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   const output = "artifacts/dashboard";
   await mkdir(output, { recursive: true });
   const sidebar = page.getByTestId("workspace-sidebar");
+  const renewalWorkspace = page.getByTestId("dashboard-renewal-workspace");
+  await expect(renewalWorkspace).toBeVisible();
+  await expect(renewalWorkspace).toHaveCSS("border-top-width", "1px");
+  for (const selector of ["#dashboard-subscription-renewals", "#dashboard-member-renewals"]) {
+    await expect(page.locator(selector).locator("h2")).toBeVisible();
+    await expect(page.locator(selector).locator("h2").locator("..")).toHaveCSS("border-bottom-width", "1px");
+  }
+  if (testInfo.project.name === "mobile") {
+    await page.setViewportSize({ width: 320, height: 740 });
+    for (const path of ["/sharing", "/subscriptions"]) {
+      await page.goto(path);
+      const filters = page.getByRole("button", { name: "筛选", exact: true });
+      await filters.click();
+      const nav = page.getByRole("navigation", { name: /平台筛选/ });
+      await expect(nav).toBeVisible();
+      for (const button of await nav.getByRole("button").all()) {
+        const box = (await button.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      }
+      const netflix = nav.getByRole("button", { name: "Netflix", exact: true });
+      if (await netflix.count()) {
+        await netflix.click();
+      } else {
+        await nav.getByRole("button", { name: /更多/ }).click();
+        await page.getByRole("menuitem", { name: /Netflix/ }).click();
+      }
+      await expect(nav.getByRole("button", { name: "全部平台", exact: true })).toHaveAttribute("aria-pressed", "false");
+      await page.screenshot({ path: `${output}/screenshot-mobile-${path.slice(1)}-netflix.png`, fullPage: true });
+      await nav.getByRole("button", { name: "全部平台", exact: true }).click();
+    }
+    await page.goto("/");
+  }
   if (testInfo.project.name === "desktop") {
     await page.setViewportSize({ width: 1366, height: 768 });
     await expect(sidebar).toHaveCSS("width", "240px");
@@ -138,13 +172,20 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       "background-color",
       "rgb(255, 255, 255)",
     );
+    await expect(renewalWorkspace).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    expect(await renewalWorkspace.evaluate((element) => getComputedStyle(element).backgroundColor !== getComputedStyle(element.closest("main")!).backgroundColor)).toBe(true);
     await page.screenshot({
       path: `${output}/screenshot-expanded.png`,
       fullPage: true,
       animations: "disabled",
     });
-    expect(await page.evaluate(() => document.getElementById("root")!.scrollHeight <= innerHeight + 1)).toBe(true);
-    await expect(page.locator('#dashboard-subscription-renewals nav[aria-label="分页"]')).toBeVisible();
+    expect(await page.evaluate(() => document.getElementById("root")!.scrollHeight > innerHeight)).toBe(true);
+    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
+    await expect(page.locator("#dashboard-subscription-renewals [data-renewal-details]")).toHaveCount(7);
+    await page.mouse.move(900, 600);
+    await page.mouse.wheel(0, 700);
+    await expect.poll(() => page.evaluate(() => document.getElementById("root")!.scrollTop)).toBeGreaterThan(0);
+    await page.evaluate(() => document.getElementById("root")!.scrollTo(0, 0));
     const expandedWidth = (await page
       .getByTestId("workspace-content")
       .boundingBox())!.width;
@@ -190,6 +231,8 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       .getByRole("button", { name: /切换主题|主题/ })
       .click();
     await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(renewalWorkspace).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
+    expect(await renewalWorkspace.evaluate((element) => getComputedStyle(element).backgroundColor !== getComputedStyle(element.closest("main")!).backgroundColor)).toBe(true);
     await page.screenshot({
       path: `${output}/screenshot-dark.png`,
       fullPage: true,
@@ -264,11 +307,8 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       page.getByRole("combobox").filter({ hasText: "有空位" }),
     ).toBeVisible();
   if (testInfo.project.name === "desktop") {
-    await expect(page.getByRole("navigation", { name: "分页" })).toBeVisible();
-    expect(await page.evaluate(() => document.getElementById("root")!.scrollHeight <= innerHeight + 1)).toBe(true);
-    const next = page.getByRole("button", { name: "下一页", exact: true });
-    await expect(next).toBeEnabled();
-    await next.click();
+    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
+    await expect(page.locator("tbody tr")).toHaveCount(5);
     await page.keyboard.press("/");
     await page.getByRole("searchbox").fill("1");
     await page.keyboard.press("Control+Shift+S");
@@ -279,8 +319,8 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await page.screenshot({ path: `${output}/screenshot-sharing-workspace.png`, animations: "disabled" });
     await page.goto("/subscriptions");
     await expect(page.getByTestId("subscription-workspace-list")).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "分页" })).toBeVisible();
-    expect(await page.evaluate(() => document.getElementById("root")!.scrollHeight <= innerHeight + 1)).toBe(true);
+    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
+    await expect(page.locator("tbody tr")).toHaveCount(7);
     await page.getByRole("button", { name: "逾期订阅", exact: true }).click();
     await expect(page.locator("tbody tr")).toHaveCount(1);
     await expect(page.locator("tbody tr")).toContainText("Renew Overdue");
@@ -289,5 +329,32 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await expect(page.locator("tbody tr")).toContainText("Renew Today");
     await page.getByRole("button", { name: "全部状态", exact: true }).click();
     await page.screenshot({ path: `${output}/screenshot-subscriptions-workspace.png`, animations: "disabled" });
+    await page.locator("button").filter({ has: page.locator('svg[class*="lucide-grid"]') }).click();
+    await expect(page.getByTestId("virtualized-subscription-list")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
+    await page.mouse.move(900, 600);
+    await page.mouse.wheel(0, 1200);
+    await expect.poll(() => page.evaluate(() => document.getElementById("root")!.scrollTop)).toBeGreaterThan(0);
+    await page.screenshot({ path: `${output}/screenshot-subscriptions-cards-scrolled.png`, animations: "disabled" });
+    memberDueSoon = true;
+    await page.setViewportSize({ width: 1590, height: 1100 });
+    await page.goto("/");
+    await expect(page.locator("#dashboard-member-renewals [data-renewal-details]")).not.toHaveCount(0);
+    await expect(page.locator("#dashboard-subscription-renewals [data-renewal-details]")).not.toHaveCount(0);
+    for (const id of ["dashboard-subscription-renewals", "dashboard-member-renewals"]) {
+      const rows = page.locator(`#${id} [data-renewal-details]`);
+      for (const details of await rows.all()) {
+        expect(await details.evaluate((element) => {
+          const text = element.firstChild;
+          if (!text) return false;
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          const heading = element.parentElement!.firstElementChild!.lastElementChild;
+          return heading && Math.abs(range.getBoundingClientRect().x - heading.getBoundingClientRect().x) < 2;
+        })).toBe(true);
+      }
+    }
+    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
+    await page.screenshot({ path: `${output}/screenshot-renewal-cards-populated.png`, fullPage: true, animations: "disabled" });
   }
 });

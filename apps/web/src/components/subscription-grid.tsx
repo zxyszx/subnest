@@ -92,7 +92,7 @@ export function SubscriptionGrid({
 }: SubscriptionGridProps) {
   const isTwoColumnGrid = useMediaQuery("(min-width: 640px)");
   const isThreeColumnGrid = useMediaQuery("(min-width: 1024px)");
-  const isFourColumnGrid = useMediaQuery("(min-width: 1280px)");
+  const isFourColumnGrid = useMediaQuery("(min-width: 1600px)");
   const columnCount = getSubscriptionColumnCount(
     viewMode,
     isTwoColumnGrid,
@@ -209,7 +209,7 @@ export function SubscriptionGrid({
       itemClassName={cn(
         "grid gap-2 sm:gap-4",
         viewMode === "grid"
-          ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-4"
           : "grid-cols-1 items-start",
       )}
       testId="virtualized-subscription-list"
