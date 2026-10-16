@@ -163,10 +163,13 @@ describe("SubscriptionCard", () => {
     expect(paymentDetails.querySelector("img")).toHaveAttribute("src", "/icons/payment-methods/credit_card.svg");
     expect(paymentDetails).toHaveTextContent("信用卡·•••• 6109");
 
-    const renewButton = screen.getByRole("button", { name: "续费" });
+    const renewButton = screen.getAllByRole("button", { name: "续费" }).find((button) => button.classList.contains("bg-primary"))!;
     expect(renewButton).toHaveClass("bg-primary", "text-primary-foreground");
     fireEvent.click(renewButton);
     expect(onRenew).toHaveBeenCalledWith("sub-1");
+    const mobileRenewButton = screen.getAllByRole("button", { name: "续费" }).find((button) => button.classList.contains("min-h-11"))!;
+    fireEvent.click(mobileRenewButton);
+    expect(onRenew).toHaveBeenCalledTimes(2);
   });
 
   it("renders subscription logos through the unified theme-aware logo surface", () => {

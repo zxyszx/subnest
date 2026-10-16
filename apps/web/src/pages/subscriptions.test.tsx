@@ -525,7 +525,6 @@ describe("Subscriptions page sorting", () => {
     renderSubscriptionsPage();
 
     const aiButton = screen.getByRole("button", { name: "AI 识别添加" });
-    expect(aiButton).toHaveClass("h-12", "w-12", "sm:h-10", "sm:w-10", "text-primary");
     expect(aiButton).not.toHaveAttribute("title");
 
     await user.click(aiButton);

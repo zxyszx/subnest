@@ -119,11 +119,13 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await page.goto("/subscriptions");
   await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
 
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(plainName);
   await createSubscription(page, {
     name: plainName,
     price: "8",
     currencyLabel: "USD",
   });
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(taggedName);
   await createSubscription(page, {
     name: taggedName,
     price: "12",
@@ -131,6 +133,7 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
     tags: manyTags,
   });
 
+  await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).clear();
   const compactToolbar = page.getByTestId("mobile-compact-filter-toolbar");
   const search = compactToolbar.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
   const filterToggle = compactToolbar.getByRole("button", { name: "筛选" });
@@ -138,10 +141,8 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
     getRequiredLocatorBoundingBox(search, "mobile subscription search"),
     getRequiredLocatorBoundingBox(filterToggle, "mobile filter toggle"),
   ]);
-  expect(Math.abs(searchBox.y - filterBox.y), "mobile search and filter toggle should share a row").toBeLessThan(8);
-  expect(filterBox.x, "mobile filter toggle should sit to the right of search").toBeGreaterThan(
-    searchBox.x + searchBox.width - 1,
-  );
+  expect(filterBox.y, "platform and secondary filters sit below full-width search").toBeGreaterThan(searchBox.y);
+  await expect(compactToolbar.getByRole("combobox", { name: /平台筛选/ })).toBeVisible();
 
   await filterToggle.click();
   const expandedFilters = page.getByTestId("mobile-expanded-filters");
@@ -157,6 +158,7 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await expect(subscriptionCard(page, plainName)).toBeHidden();
   await expect(subscriptionCard(page, taggedName)).toBeInViewport();
   await search.clear();
+  await search.fill(plainName);
   await expect(subscriptionCard(page, plainName)).toBeVisible();
 
   const plainEditDialog = await openSubscriptionEditDialog(page, plainName);
@@ -167,6 +169,7 @@ test("mobile compact filters, tag search, and tag input layout", async ({ page }
   await plainEditDialog.getByRole("button", { name: "取消" }).click();
   await expect(plainEditDialog).toBeHidden();
 
+  await search.fill(taggedName);
   const editDialog = await openSubscriptionEditDialog(page, taggedName);
   await editDialog.getByRole("tab", { name: "网站与备注" }).click();
   const editTagInput = editDialog.getByLabel("标签", { exact: true });
@@ -202,6 +205,7 @@ test("mobile family sharing additional info stays editable without overflow", as
 
   try {
     await page.reload();
+    await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
     const dialog = await openSubscriptionEditDialog(page, subscriptionName);
     const familyTab = dialog.getByRole("tab", { name: "家庭共享" });
     await familyTab.click();

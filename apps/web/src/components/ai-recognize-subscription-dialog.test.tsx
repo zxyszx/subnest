@@ -758,7 +758,9 @@ describe("AIRecognizeSubscriptionDialog", () => {
     expect(await screen.findByRole("combobox", { name: "选择货币" })).toBeInTheDocument();
     expect(screen.queryByText("Cloud lab")).not.toBeInTheDocument();
     expect(screen.queryByText("Personal card")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     expect(screen.getByText("Apple")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "基本信息" }));
 
     const priceInput = screen.getByLabelText("价格");
     await user.clear(priceInput);

@@ -125,25 +125,14 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await page.setViewportSize({ width: 320, height: 740 });
     for (const path of ["/sharing", "/subscriptions"]) {
       await page.goto(path);
-      const filters = page.getByRole("button", { name: "筛选", exact: true });
-      await filters.click();
-      const nav = page.getByRole("navigation", { name: /平台筛选/ });
-      await expect(nav).toBeVisible();
-      for (const button of await nav.getByRole("button").all()) {
-        const box = (await button.boundingBox())!;
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-      }
-      const netflix = nav.getByRole("button", { name: "Netflix", exact: true });
-      if (await netflix.count()) {
-        await netflix.click();
-      } else {
-        await nav.getByRole("button", { name: /更多/ }).click();
-        await page.getByRole("menuitem", { name: /Netflix/ }).click();
-      }
-      await expect(nav.getByRole("button", { name: "全部平台", exact: true })).toHaveAttribute("aria-pressed", "false");
+      const platforms = page.getByRole("combobox", { name: /平台筛选/ });
+      await expect(platforms).toBeVisible();
+      await platforms.click();
+      await page.getByRole("option", { name: "Netflix", exact: true }).click();
+      await expect(platforms).toHaveText("Netflix");
       await page.screenshot({ path: `${output}/screenshot-mobile-${path.slice(1)}-netflix.png`, fullPage: true });
-      await nav.getByRole("button", { name: "全部平台", exact: true }).click();
+      await platforms.click();
+      await page.getByRole("option", { name: "全部平台", exact: true }).click();
     }
     await page.goto("/");
   }

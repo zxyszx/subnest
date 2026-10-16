@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { useSearchParams } from "@/lib/router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, KeyRound, Link as LinkIcon, Search, SlidersHorizontal, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, ChevronDown, CircleDollarSign, KeyRound, Link as LinkIcon, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
 
 import { Header } from "@/components/header";
@@ -14,11 +14,10 @@ import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
-import { PlatformFilterBar } from "@/components/platform-filter-bar";
+import { MobileListToolbar } from "@/components/mobile-list-toolbar";
 import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
 import { WorkspaceQuickFilters } from "@/components/workspace-quick-filters";
 import { sharingQueryKeys, useSharingAccountDetails, useSharingAccounts } from "@/hooks/use-sharing";
@@ -90,10 +89,8 @@ export default function Sharing() {
     return status && ["available", "full", "expiring", "overdue", "outstanding"].includes(status) ? status as SharingFilter : "all";
   });
   const [sortField, setSortField] = useState<SharingSortField>("expiry");
-  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
   const updateSubscription = useUpdateSubscription();
@@ -319,7 +316,22 @@ export default function Sharing() {
     <div className="app-page bg-background">
       <Header />
       <main className="app-main mx-auto max-w-[120rem]">
-        <section className="workspace-summary grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-6" aria-label={t("sharing.title")}>
+        <div className="mb-3 md:hidden">
+          <h1 className="text-2xl font-bold">{t("sharing.title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</p>
+          <details className="mt-2 border-b border-border pb-2">
+            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 text-sm text-muted-foreground">
+              <span>{t("sharing.monthlyRevenue")} <strong className="font-semibold text-foreground">{formatCurrency(monthlyRevenue, defaultCurrency)}</strong></span>
+              <ChevronDown className="h-4 w-4 shrink-0" />
+            </summary>
+            <dl className="grid gap-2 py-2 text-sm">
+              <div className="flex justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd>{formatCurrency(monthlyProfit, defaultCurrency)}</dd></div>
+              <div className="flex justify-between gap-2"><dt>{t("sharing.outstanding")}</dt><dd>{formatCurrency(outstanding, defaultCurrency)}</dd></div>
+            </dl>
+            <Button variant="outline" className="mb-2 min-h-11 w-full" onClick={() => setRenewalsOpen(true)}>{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>
+          </details>
+        </div>
+        <section className="workspace-summary hidden grid-cols-2 gap-3 md:grid lg:grid-cols-6" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
           <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
           <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
@@ -342,50 +354,11 @@ export default function Sharing() {
         {platformOptions.length > 0 ? (
           <div className="mt-3 shrink-0">
             {isMobile ? (
-              <div className="rounded-t-lg border border-b-0 bg-card p-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <div className="relative min-w-0 flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={t("sharing.searchPlaceholder")}
-                      aria-label={t("sharing.searchPlaceholder")}
-                      className="h-11 bg-secondary pl-9"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant={mobileFiltersExpanded ? "secondary" : "outline"}
-                    className="h-11 shrink-0 gap-2 border-border px-3"
-                    aria-label={t(mobileFiltersExpanded ? "subscriptions.mobileFilters.collapse" : "subscriptions.mobileFilters.open")}
-                    aria-expanded={mobileFiltersExpanded}
-                    aria-controls="mobile-sharing-filters"
-                    onClick={() => setMobileFiltersExpanded((expanded) => !expanded)}
-                  >
-                    {mobileFiltersExpanded ? <ChevronUp className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
-                    <span>{mobileFiltersExpanded ? t("subscriptions.mobileFilters.collapse") : t("subscriptions.mobileFilters.open")}</span>
-                    {selectedPlatform ? <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-primary-foreground">1</span> : null}
-                  </Button>
-                </div>
-                {mobileFiltersExpanded ? (
-                  <div id="mobile-sharing-filters" className="mt-2 grid gap-2 border-t border-border pt-2">
-                    <PlatformFilterBar
-                      platforms={platformOptions}
-                      value={selectedPlatform}
-                      onValueChange={setSelectedPlatform}
-                      allLabel={t("sharing.allPlatforms")}
-                      moreLabel={t("sharing.morePlatforms")}
-                      ariaLabel={t("sharing.platformFilter")}
-                      visibleLimits={{ compact: 3, regular: 5, wide: 8, spacious: 10 }}
-                      fitContainer
-                      className="rounded-lg border bg-secondary/50 px-1"
-                    />
-                    {sharingFilterControls}
-                  </div>
-                ) : null}
-              </div>
+              <MobileListToolbar platforms={platformOptions} platform={selectedPlatform} onPlatformChange={setSelectedPlatform}
+                allLabel={t("sharing.allPlatforms")} platformLabel={t("sharing.platformFilter")}
+                search={searchQuery} onSearchChange={setSearchQuery} searchPlaceholder={t("sharing.searchPlaceholder")}>
+                {sharingFilterControls}
+              </MobileListToolbar>
             ) : (
               <PlatformSearchToolbar
                 platforms={platformOptions}
@@ -405,13 +378,13 @@ export default function Sharing() {
           </div>
         ) : null}
 
-        {isDesktop && <WorkspaceQuickFilters value={accountFilter} onChange={setAccountFilter} options={[
+        <WorkspaceQuickFilters value={accountFilter} onChange={setAccountFilter} options={[
           { value: "all", label: t("sharing.allStatus") },
           { value: "available", label: t("sharing.hasVacancies") },
           { value: "full", label: t("sharing.accountFull") },
           { value: "expiring", label: t("sharing.expiringWithinSevenDays") },
           { value: "overdue", label: t("sharing.hasOverdue") },
-        ]} />}
+        ]} />
         {accountsQuery.isError ? (
           <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive sm:mt-6">{t("sharing.loadFailed")}</div>
         ) : accounts.length === 0 && !accountsQuery.isPending ? (
@@ -425,10 +398,10 @@ export default function Sharing() {
           <section className={cn(
             "overflow-hidden border border-border bg-card",
             platformOptions.length > 0
-              ? "rounded-b-lg rounded-t-none border-t-0"
+              ? "rounded-lg md:rounded-t-none md:border-t-0"
               : "mt-4 rounded-lg sm:mt-6",
           )}>
-            <div className="hidden overflow-x-auto sm:block">
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-240 text-left text-sm">
                 <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
                   <th className="px-4 py-2 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
@@ -457,7 +430,7 @@ export default function Sharing() {
                 ))}</tbody>
               </table>
             </div>
-            <div className="divide-y divide-border sm:hidden">
+            <div className="divide-y divide-border md:hidden">
               {visibleAccounts.length === 0 ? (
                 <p className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</p>
               ) : visibleAccounts.map((account) => {
@@ -508,6 +481,7 @@ export default function Sharing() {
                         <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} />
                       </Button>
                     </div>
+                    <Button type="button" className="mt-3 min-h-11 w-full" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                     {expanded ? (
                       <div className="mt-3 grid gap-3 border-t border-border pt-3" data-testid="sharing-mobile-account-details">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -521,10 +495,9 @@ export default function Sharing() {
                           <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
                           <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
                         </dl>
-                        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+                        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2">
                           <Button type="button" size="icon" variant="outline" aria-label={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} title={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} disabled={!account.hasPassword} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
                           <Button type="button" variant="outline" className="min-w-0" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
-                          <Button type="button" className="min-w-0" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
                         </div>
                       </div>
                     ) : null}

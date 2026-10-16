@@ -74,10 +74,12 @@ describe("AIDraftEditorPanel", () => {
     await user.clear(nameInput);
     await user.type(nameInput, "Apple One Family");
     await user.click(screen.getByRole("switch", { name: "自动续订" }));
+    expect(screen.getByRole("switch", { name: "自动续订" })).toBeChecked();
+    expect(nameInput).toHaveValue("Apple One Family");
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     await user.click(screen.getByRole("switch", { name: "从公开页隐藏" }));
 
     expect(nameInput).toHaveValue("Apple One Family");
-    expect(screen.getByRole("switch", { name: "自动续订" })).toBeChecked();
     expect(screen.getByRole("switch", { name: "从公开页隐藏" })).toBeChecked();
   });
 });

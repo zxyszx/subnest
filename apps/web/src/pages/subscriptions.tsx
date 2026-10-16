@@ -19,6 +19,7 @@ import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionGrid } from '@/components/subscription-grid';
 import { SubscriptionWorkspaceList } from '@/components/subscription-workspace-list';
 import { WorkspaceQuickFilters } from '@/components/workspace-quick-filters';
+import { MobileListToolbar } from '@/components/mobile-list-toolbar';
 import { daysBetweenDateOnly } from '@/lib/time/date-only';
 import { isOneTimeBuyout } from '@/lib/subscription-billing';
 import { AddToCalendarDialog } from '@/components/add-to-calendar-dialog';
@@ -33,16 +34,13 @@ import {
 } from '@/components/ai-recognize-subscription-dialog-loader';
 import { SubscriptionsPageSkeleton } from '@/components/loading-skeleton';
 import { useRouteReady } from '@/components/route-progress';
-import { SubscriptionCategoryFilter } from '@/components/subscription-category-filter';
 import { QueryErrorState } from '@/components/query-error-state';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Subscription, SubscriptionCollectionItem, SubscriptionStatus } from '@/types/subscription';
 import { DEFAULT_NOTIFICATION_REMINDER_DAYS, DEFAULT_SETTINGS } from '@/types/subscription';
-import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles, Funnel } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Search, Plus, Grid, List as ListIcon, Download, Upload, Sparkles } from 'lucide-react';
 import { PlatformSearchToolbar } from '@/components/platform-search-toolbar';
 import {
   DropdownMenu,
@@ -74,7 +72,6 @@ import { useSubscriptionCalendarDialog } from '@/hooks/use-subscription-calendar
 import { useZonedToday } from '@/hooks/use-zoned-today';
 import { syncSubscriptionCollectionBoundary } from '@/hooks/subscription-query-cache';
 
-const PlatformFilterBar = lazy(() => import('@/components/platform-filter-bar'));
 const AddSubscriptionDialog = lazy(async () => {
   const module = await import('@/components/add-subscription-dialog');
   return { default: module.AddSubscriptionDialog };
@@ -143,7 +140,6 @@ const Subscriptions = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
-  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const isMobileTagFilter = useMediaQuery("(max-width: 767px)");
   const {
     searchQuery,
@@ -171,7 +167,7 @@ const Subscriptions = () => {
     availableTags: facetsQuery.data?.tags ?? [],
   });
   const numericAccountSearch = /^\d+$/.test(searchQuery.trim());
-  const useFilteredIndex = !numericAccountSearch && (needsCollectionIndex || selectedPlatform !== null);
+  const useFilteredIndex = !numericAccountSearch && (needsCollectionIndex || selectedPlatform !== null || renewalFilter !== 'all');
   const indexQuery = useSubscriptionIndex(subscriptionListFilters, useFilteredIndex);
   const platformIndexQuery = useSubscriptionIndex(undefined, true);
   const platformOptions = useMemo(() => {
@@ -258,7 +254,7 @@ const Subscriptions = () => {
   useRouteReady(subscriptionsQuery.isPending || isDisplayPending);
   const displayError = useFilteredIndex ? indexQuery.error : isDesktop ? platformIndexQuery.error : subscriptionsQuery.error;
   const retryDisplayQuery = useFilteredIndex ? indexQuery.refetch : isDesktop ? platformIndexQuery.refetch : subscriptionsQuery.refetch;
-  const displayedTotal = isDesktop || selectedPlatform || numericAccountSearch
+  const displayedTotal = isDesktop || selectedPlatform || numericAccountSearch || renewalFilter !== 'all'
     ? filteredSubscriptions.length
     : useFilteredIndex
       ? (indexQuery.data?.total ?? 0)
@@ -356,7 +352,7 @@ const Subscriptions = () => {
           onFocus={preloadAIRecognizeSubscriptionDialog}
           onPointerEnter={preloadAIRecognizeSubscriptionDialog}
           onTouchStart={preloadAIRecognizeSubscriptionDialog}
-          className="h-12 w-12 shrink-0 text-primary sm:h-10 sm:w-10"
+          className="hidden h-10 w-10 shrink-0 text-primary md:inline-flex"
           aria-label={t("subscriptions.aiRecognizeAdd")}
         >
           <Sparkles className="h-4 w-4" />
@@ -393,7 +389,7 @@ const Subscriptions = () => {
               {unfilteredTotal !== undefined && ` ${t("subscriptions.filteredCount", { count: unfilteredTotal })}`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -442,60 +438,17 @@ const Subscriptions = () => {
         </div>
 
         {isMobileTagFilter ? (
-          <div className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-3 sm:mb-6">
-            <>
-              <div className="flex min-w-0 items-center gap-2" data-testid="mobile-compact-filter-toolbar">
-                <div className="relative min-w-0 flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    name="subscription-search"
-                    type="search"
-                    enterKeyHint="search"
-                    placeholder={t("subscriptions.searchPlaceholder")}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-11 border-border bg-secondary pl-10"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant={mobileFiltersExpanded ? "secondary" : "outline"}
-                  className="h-11 w-11 shrink-0 border-border p-0"
-                  aria-label={t(mobileFiltersExpanded ? "subscriptions.mobileFilters.collapse" : "subscriptions.mobileFilters.open")}
-                  aria-expanded={mobileFiltersExpanded}
-                  aria-controls="mobile-subscription-filters"
-                  onClick={() => setMobileFiltersExpanded((expanded) => !expanded)}
-                >
-                  <Funnel className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {mobileFiltersExpanded ? (
-                <div id="mobile-subscription-filters" className="grid gap-3 border-t border-border pt-3" data-testid="mobile-expanded-filters">
-                  {activePlatformOptions.length > 0 ? (
-                    <Suspense fallback={<div className="h-11 rounded-lg bg-secondary" />}>
-                      <PlatformFilterBar
-                        platforms={activePlatformOptions}
-                        value={selectedPlatform}
-                        onValueChange={setSelectedPlatform}
-                        allLabel={t("subscriptions.allPlatforms")}
-                        moreLabel={t("subscriptions.morePlatforms")}
-                        ariaLabel={t("subscriptions.platformFilter")}
-                        visibleLimits={{ compact: 3, regular: 4, wide: 7, spacious: 10 }}
-                        fitContainer
-                        className="rounded-lg border bg-secondary/50 px-1"
-                      />
-                    </Suspense>
-                  ) : null}
-
-                <div className="grid gap-2">
-                  {statusControls}
-                  {sortControls}
-                </div>
-                </div>
-              ) : null}
-            </>
-          </div>
+          <MobileListToolbar platforms={activePlatformOptions} platform={selectedPlatform} onPlatformChange={setSelectedPlatform}
+            allLabel={t("subscriptions.allPlatforms")} platformLabel={t("subscriptions.platformFilter")}
+            search={searchQuery} onSearchChange={setSearchQuery} searchName="subscription-search" searchPlaceholder={t("subscriptions.searchPlaceholder")}>
+            {statusControls}
+            {sortControls}
+            <Button variant="outline" className="min-h-11 gap-2" onClick={() => setAIRecognitionDialogOpen(true)}><Sparkles className="h-4 w-4" />{t("subscriptions.aiRecognizeAdd")}</Button>
+            <Button variant="outline" className="min-h-11 gap-2" onClick={() => setImportDialogOpen(true)}><Upload className="h-4 w-4" />{t("subscriptions.importData")}</Button>
+            <Button variant="outline" className="min-h-11 gap-2" disabled={exporting} onClick={exportToJSON}><Download className="h-4 w-4" />{t("subscriptions.exportJson")}</Button>
+            <Button variant="outline" className="min-h-11" disabled={exporting} onClick={exportToJSONWithSecrets}>{t("subscriptions.exportJsonWithSecrets")}</Button>
+            <Button variant="outline" className="min-h-11" disabled={exporting} onClick={exportToCSV}>{t("subscriptions.exportCsv")}</Button>
+          </MobileListToolbar>
         ) : (
           <PlatformSearchToolbar
             platforms={activePlatformOptions}
@@ -514,12 +467,12 @@ const Subscriptions = () => {
           />
         )}
 
-        {isDesktop && <WorkspaceQuickFilters value={renewalFilter} onChange={(value) => { setRenewalFilter(value); setStatusFilter('all'); }} options={[
+        <WorkspaceQuickFilters value={renewalFilter} onChange={(value) => { setRenewalFilter(value); setStatusFilter('all'); }} options={[
           { value: 'all', label: t("sharing.allStatus") },
           { value: 'today', label: t("dashboard.dueToday") },
           { value: 'upcoming', label: t("sharing.expiringWithinSevenDays") },
           { value: 'overdue', label: t("dashboard.overdue") },
-        ]} />}
+        ]} />
         <div>
         {displayError ? (
           <QueryErrorState error={displayError} onRetry={retryDisplayQuery} />

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -33,13 +34,15 @@ export function WorkspaceQuickFilters<T extends string>({
     return () => window.removeEventListener("keydown", handler);
   }, [options, onChange]);
   return (
-    <div className="mb-2 flex shrink-0 flex-wrap gap-1">
+    <div className="mb-3 flex shrink-0 flex-wrap gap-2 sm:mb-2 sm:gap-1">
       {options.map((option, index) => (
         <Button
           key={option.value}
           variant={value === option.value ? "secondary" : "ghost"}
           size="sm"
-          className="h-9 text-xs"
+          className={value === option.value
+            ? "min-h-11 border border-primary/30 bg-primary/15 px-3 text-xs font-semibold text-primary hover:bg-primary/20 sm:min-h-9"
+            : "min-h-11 border border-transparent px-3 text-xs sm:min-h-9"}
           aria-pressed={value === option.value}
           title={t("workspace.filterShortcut", {
             label: option.label,
@@ -47,6 +50,7 @@ export function WorkspaceQuickFilters<T extends string>({
           })}
           onClick={() => onChange(option.value)}
         >
+          {value === option.value ? <Check className="size-3.5" aria-hidden="true" /> : null}
           {option.label}
         </Button>
       ))}

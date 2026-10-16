@@ -43,14 +43,17 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expectNoHorizontalOverflow(page, "subscription first screen");
     await shot("01-subscriptions-first-screen");
     observations.subscriptionQuickDueFiltersVisible = await page.getByRole("button", { name: /今日续费|逾期订阅/ }).count();
+    expect(observations.subscriptionQuickDueFiltersVisible).toBe(2);
+    await page.getByRole("button", { name: "今日续费", exact: true }).click();
+    await expect(subscriptionCard(page, names[0]!)).toBeVisible();
+    await page.getByRole("button", { name: "逾期订阅", exact: true }).click();
+    await expect(subscriptionCard(page, names[0]!)).toBeHidden();
+    await page.getByRole("button", { name: "全部状态", exact: true }).click();
     await search.fill("10");
     const card = subscriptionCard(page, names[0]!);
     await expect(card).toBeVisible();
     await expect(subscriptionCard(page, names[1]!)).toBeHidden();
-    await card.getByTestId("subscription-card-primary-action").click();
-    const subscriptionDetail = page.getByRole("dialog", { name: names[0]!, exact: true });
-    await expect(subscriptionDetail).toBeVisible();
-    await subscriptionDetail.getByRole("button", { name: "续费", exact: true }).click();
+    await card.getByRole("button", { name: "续费", exact: true }).click();
     const renewal = page.getByRole("dialog", { name: /续订/ });
     await expect(renewal).toBeVisible();
     await expectNoHorizontalOverflow(page, "subscription renewal");
@@ -62,24 +65,17 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expect(mobileAccount).toBeVisible();
     observations.sharingFirstAccountTop = (await mobileAccount.boundingBox())?.y;
     observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).isVisible();
+    expect(observations.sharingManageInitiallyVisible).toBe(true);
     await expectNoHorizontalOverflow(page, "sharing first screen");
     await shot("03-sharing-first-screen");
     const sharingSearch = page.getByRole("searchbox");
     await sharingSearch.fill("10");
     await expect(page.getByTestId("sharing-mobile-account")).toHaveCount(1);
-    await page.getByRole("button", { name: "筛选", exact: true }).click();
-    const platformNav = page.getByRole("navigation", { name: /平台筛选/ });
-    const netflix = platformNav.getByRole("button", { name: names[0]!, exact: true });
-    if (await netflix.isVisible()) await netflix.click();
-    else {
-      await platformNav.getByRole("button", { name: /更多/ }).click();
-      await page.getByRole("menuitem", { name: new RegExp(names[0]!) }).click();
-    }
-    await page.getByRole("combobox", { name: /账号状态/ }).click();
-    await page.getByRole("option", { name: "有空位", exact: true }).click();
+    await page.getByRole("combobox", { name: /平台筛选/ }).click();
+    await page.getByRole("option", { name: names[0]!, exact: true }).click();
+    await page.getByRole("button", { name: "有空位", exact: true }).click();
     await expect(mobileAccount).toBeVisible();
     await shot("04-sharing-filters");
-    await page.getByRole("button", { name: "收起", exact: true }).click();
     await shot("05-sharing-filter-collapsed");
     await mobileAccount.getByRole("button", { name: "展开全部信息", exact: true }).click();
     await shot("06-sharing-account-expanded");
@@ -100,6 +96,25 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expect(page.getByRole("searchbox")).toBeVisible();
     await expectNoHorizontalOverflow(page, "small phone sharing");
     await shot("09-sharing-small-phone");
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    await page.evaluate(() => { document.documentElement.classList.add("dark"); });
+    await expectNoHorizontalOverflow(page, "small phone sharing dark");
+    await shot("10-sharing-small-phone-dark");
+    await page.getByTestId("app-header-actions").getByTestId("account-menu-trigger").click();
+    await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    for (const path of ["/subscriptions", "/sharing"]) {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto(path);
+      await expect(page.getByRole("searchbox")).toBeVisible();
+      await expect(page.getByRole("combobox", { name: /平台筛选/ })).toBeVisible();
+      await expectNoHorizontalOverflow(page, `375px light ${path}`);
+      await shot(`11-${path.slice(1)}-light`);
+      await page.setViewportSize({ width: 740, height: 375 });
+      await expect(page.getByRole("searchbox")).toBeVisible();
+      await expectNoHorizontalOverflow(page, `landscape ${path}`);
+      await shot(`12-${path.slice(1)}-landscape`);
+    }
     await writeFile(`${output}/observations.json`, JSON.stringify(observations, null, 2));
   } finally {
     await page.goto("/subscriptions");

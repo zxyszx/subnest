@@ -508,7 +508,7 @@ function SubscriptionCardComponent({
         size="icon"
         className={cn(
           "pointer-events-auto absolute right-2 z-20 h-11 w-11 rounded-full text-muted-foreground sm:hidden",
-          mobileExpanded ? "top-2" : "top-1/2 -translate-y-1/2",
+          "top-2",
         )}
         aria-label={t(mobileExpanded ? "subscription.card.collapseDetails" : "subscription.card.expandDetails")}
         aria-expanded={mobileExpanded}
@@ -750,6 +750,14 @@ function SubscriptionCardComponent({
           )}
         </div>
       </div>
+      {!mobileExpanded && canManualRenew ? (
+        <div className="relative z-20 mt-3 flex justify-end border-t border-border/60 pt-2 sm:hidden">
+          <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => onRenew?.(subscription.id)}
+            onFocus={preloadRenewSubscriptionDialog} onTouchStart={preloadRenewSubscriptionDialog}>
+            <RotateCw className="h-4 w-4" />{t("subscription.renew")}
+          </Button>
+        </div>
+      ) : null}
     </div>
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -272,6 +272,7 @@ describe("SubscriptionDialog lifecycle", () => {
     expect(screen.getByLabelText("服务名称")).toHaveValue("Cloned SaaS");
     expect(screen.getByLabelText("价格")).toHaveValue("42");
     expect(screen.getByRole("combobox", { name: "选择货币" })).toHaveTextContent("¥ 人民币 (CNY)");
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     expect(screen.getByRole("switch", { name: "从公开页隐藏" })).toBeChecked();
     expect(screen.getByLabelText("备注")).toHaveValue("Keep note");
 
@@ -283,6 +284,7 @@ describe("SubscriptionDialog lifecycle", () => {
     expect(screen.getByLabelText("服务名称")).toHaveValue("");
     expect(screen.getByLabelText("价格")).toHaveValue("");
     expect(screen.getByRole("combobox", { name: "选择货币" })).toHaveTextContent("$ 美元 (USD)");
+    await user.click(screen.getByRole("tab", { name: "网站与备注" }));
     expect(screen.getByRole("switch", { name: "从公开页隐藏" })).not.toBeChecked();
   });
 
