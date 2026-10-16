@@ -328,10 +328,10 @@ describe("Header system version entry", () => {
     expect(screen.queryByRole("button", { name: "退出登录" })).not.toBeInTheDocument();
     const trigger = screen.getByTestId("account-menu-trigger");
     await user.click(trigger);
-    expect(screen.getByRole("menuitem", { name: "设置", exact: true })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "退出登录", exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "设置" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "退出登录" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("menuitem", { name: "设置", exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "设置" })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
 
