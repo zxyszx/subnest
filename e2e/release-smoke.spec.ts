@@ -391,7 +391,8 @@ async function logoutThroughProductUI(page: Page) {
   const logoutResponsePromise = page.waitForResponse((response) =>
     response.url().includes("/api/app/auth/logout") && response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "退出登录" }).click();
+  await page.getByTestId("account-menu-trigger").locator("visible=true").click();
+  await page.getByRole("menuitem", { name: "退出登录" }).click();
   const logoutResponse = await logoutResponsePromise;
   expect(logoutResponse.ok(), await logoutResponse.text()).toBe(true);
   await expect(page).toHaveURL(/\/login(?:\?.*)?$/);

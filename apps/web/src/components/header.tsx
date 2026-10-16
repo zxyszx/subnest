@@ -3,24 +3,22 @@
  *
  * 作用：
  * - 提供全局导航（仪表盘/订阅/日历/统计/设置）
- * - 主题切换（dark/light）
+ * - 移动端账户菜单（设置、主题与退出）
  * - 可选：在支持的页面提供“新增订阅”入口
  *
- * 注意： Header 的主题切换只代表本设备即时偏好；跨设备外观同步必须在 Settings 页保存完成。
+ * 桌面账户操作统一放在侧栏底部；版本更新入口保留在顶部。
  */
 
 import Link, { NavLink } from '@/components/router-link';
 import { usePathname, useRouter } from '@/lib/router';
-import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, Sun, Moon, LogOut, UsersRound, ShieldCheck, Inbox, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, List, CalendarDays, BarChart3, Settings, UsersRound, ShieldCheck, Inbox, MoreHorizontal } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { SubscriptionFormSubmission } from '@/types/subscription';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useTheme } from '@/lib/theme-provider';
-import { toast } from '@/components/ui/sonner';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AccountMenu } from '@/components/account-menu';
 import { RenewletBrandMark } from '@/components/brand/renewlet-brand-mark';
-import { getHeaderDesktopNavLinkClass, getHeaderDesktopUtilityLinkClass, getHeaderMobileNavLinkClass, headerLayout } from '@/components/header-layout';
+import { getHeaderDesktopNavLinkClass, getHeaderMobileNavLinkClass, headerLayout } from '@/components/header-layout';
 import { authClient } from '@/lib/auth-client';
 import { SystemUpdateDialog } from '@/components/system-update-dialog';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -87,7 +85,6 @@ function renderNavIcon(icon: NavIconKey, className: string) {
 export function Header({ onAddSubscription, availableTags, platformSuggestions, subscriptionActions, pageActions }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const { t } = useI18n();
   const { data: sessionData } = authClient.useSession();
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
@@ -95,27 +92,10 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || sessionData?.user.role === "admin");
   const desktopPrimaryItems = visibleNavItems.filter((item) => desktopPrimaryPaths.has(item.path));
   const desktopMoreItems = visibleNavItems.filter((item) => !desktopPrimaryPaths.has(item.path) && item.path !== "/settings");
-  const settingsItem = visibleNavItems.find((item) => item.path === "/settings");
   const desktopMoreActive = desktopMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
   const mobilePrimaryItems = visibleNavItems.filter((item) => mobilePrimaryPaths.has(item.path));
-  const mobileMoreItems = visibleNavItems.filter((item) => !mobilePrimaryPaths.has(item.path));
+  const mobileMoreItems = visibleNavItems.filter((item) => !mobilePrimaryPaths.has(item.path) && item.path !== "/settings");
   const mobileMoreActive = mobileMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
-
-  /** Header 快捷开关只写本机偏好；账户级外观仍由设置页保存。 */
-  const handleToggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  /** 退出登录：清理本地认证会话并回到 /login。 */
-  const handleLogout = async () => {
-    try {
-      await authClient.signOut();
-      toast.success(t("header.logoutSuccessTitle"));
-      router.replace('/login');
-    } catch {
-      toast.error(t("header.logoutFailedTitle"), { description: t("error.generic") });
-    }
-  };
 
   return (
     <header className={headerLayout.shell} data-testid="app-header">
@@ -198,39 +178,7 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             />
           ) : null}
 
-          {settingsItem ? (
-            <NavLink
-              href={settingsItem.path}
-              title={t(settingsItem.labelKey)}
-              aria-label={t(settingsItem.labelKey)}
-              className={({ isActive }) => getHeaderDesktopUtilityLinkClass(isActive)}
-            >
-              {renderNavIcon(settingsItem.icon, "h-4 w-4")}
-              <span className="sr-only">{t(settingsItem.labelKey)}</span>
-            </NavLink>
-          ) : null}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleToggleTheme}
-            className="hidden h-9 w-9 lg:inline-flex"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">{t("header.toggleTheme")}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            className="hidden h-9 w-9 text-muted-foreground hover:text-destructive lg:inline-flex"
-            title={t("header.logout")}
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="sr-only">{t("header.logout")}</span>
-          </Button>
+          {isAuthenticated ? <AccountMenu compact className="lg:hidden" /> : null}
 
         </div>
       </div>
@@ -275,15 +223,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
                 <span>{t(item.labelKey)}</span>
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleToggleTheme}>
-              {theme === 'dark' ? <Sun className="mr-3 h-5 w-5" /> : <Moon className="mr-3 h-5 w-5" />}
-              <span>{t("header.toggleTheme")}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => void handleLogout()}>
-              <LogOut className="mr-3 h-5 w-5" />
-              <span>{t("header.logout")}</span>
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>

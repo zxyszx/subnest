@@ -283,7 +283,8 @@ describe("Header system version entry", () => {
 
     renderHeader();
 
-    await user.click(screen.getByRole("button", { name: "切换主题" }));
+    await user.click(screen.getByTestId("account-menu-trigger"));
+    await user.click(screen.getByRole("menuitem", { name: "切换主题" }));
 
     expect(mocks.setTheme).toHaveBeenCalledWith("light");
     expect(mocks.writeAppearancePendingToStorage).not.toHaveBeenCalled();
@@ -316,7 +317,33 @@ describe("Header system version entry", () => {
     expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
     expect(within(desktopNav).getAllByRole("link")).toHaveLength(4);
     expect(within(desktopNav).getByRole("button", { name: "更多" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "设置" })).toHaveAttribute("href", "/settings");
+    expect(screen.queryByRole("link", { name: "设置" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("account-menu-trigger")).toHaveClass("lg:hidden");
+  });
+
+  it("groups settings and logout in the account menu and supports Escape", async () => {
+    mocks.useSession.mockReturnValue(adminSession("user"));
+    const user = userEvent.setup();
+    renderHeader();
+    expect(screen.queryByRole("button", { name: "退出登录" })).not.toBeInTheDocument();
+    const trigger = screen.getByTestId("account-menu-trigger");
+    await user.click(trigger);
+    expect(screen.getByRole("menuitem", { name: "设置", exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "退出登录", exact: true })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("menuitem", { name: "设置", exact: true })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("signs out from the account menu", async () => {
+    mocks.useSession.mockReturnValue(adminSession("user"));
+    mocks.signOut.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderHeader();
+    await user.click(screen.getByTestId("account-menu-trigger"));
+    await user.click(screen.getByRole("menuitem", { name: "退出登录" }));
+    expect(mocks.signOut).toHaveBeenCalledOnce();
+    expect(mocks.toast.success).toHaveBeenCalled();
   });
 
   it("places lower-frequency admin destinations in the desktop more menu", async () => {

@@ -42,7 +42,8 @@ export async function logoutThroughCloudflareUI(page: Page) {
   const logoutResponsePromise = page.waitForResponse((response) =>
     isApiResponse(response, "/api/app/auth/logout", "POST"),
   );
-  await page.getByRole("button", { name: "退出登录" }).click();
+  await page.getByTestId("account-menu-trigger").locator("visible=true").click();
+  await page.getByRole("menuitem", { name: "退出登录" }).click();
   const logoutResponse = await logoutResponsePromise;
   expect(logoutResponse.ok(), await logoutResponse.text()).toBe(true);
   await expect(page).toHaveURL(/\/login/);

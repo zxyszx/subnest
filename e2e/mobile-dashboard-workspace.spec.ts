@@ -164,10 +164,12 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await expect(sidebar.locator('a[aria-current="page"]')).toHaveClass(
       /bg-primary/,
     );
-    await page
-      .getByTestId("app-header")
-      .getByRole("button", { name: /切换主题|主题/ })
-      .click();
+    await expect(sidebar.getByRole("link", { name: "设置", exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("app-header").getByRole("link", { name: "设置", exact: true })).toHaveCount(0);
+    await sidebar.getByTestId("account-menu-trigger").click();
+    await expect(page.getByRole("menuitem", { name: "设置", exact: true })).toHaveCount(1);
+    await page.screenshot({ path: `${output}/screenshot-account-menu-expanded.png`, animations: "disabled" });
+    await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
     await expect(page.getByTestId("dashboard-stat-monthly-spend")).toHaveCSS(
       "background-color",
       "rgb(255, 255, 255)",
@@ -226,10 +228,8 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await page.emulateMedia({ reducedMotion: "reduce" });
     expect(await sidebar.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThanOrEqual(0.001);
     await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page
-      .getByTestId("app-header")
-      .getByRole("button", { name: /切换主题|主题/ })
-      .click();
+    await sidebar.getByTestId("account-menu-trigger").click();
+    await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(renewalWorkspace).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
     expect(await renewalWorkspace.evaluate((element) => getComputedStyle(element).backgroundColor !== getComputedStyle(element.closest("main")!).backgroundColor)).toBe(true);
@@ -240,6 +240,12 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     });
   } else {
     await expect(sidebar).not.toBeVisible();
+    await page.getByTestId("app-header").getByTestId("account-menu-trigger").click();
+    await expect(page.getByRole("menuitem", { name: "设置", exact: true })).toHaveCount(1);
+    await page.screenshot({ path: `${output}/screenshot-account-menu-mobile.png`, animations: "disabled" });
+    await page.getByRole("menuitem", { name: "设置", exact: true }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await page.goto("/");
     await page.screenshot({
       path: `${output}/screenshot-mobile.png`,
       fullPage: true,

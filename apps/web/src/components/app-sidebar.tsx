@@ -6,13 +6,13 @@ import {
   LayoutDashboard,
   List,
   PanelLeft,
-  Settings,
   ShieldCheck,
   UsersRound,
 } from "lucide-react";
 import { NavLink } from "@/components/router-link";
 import { RenewletBrandMark } from "@/components/brand/renewlet-brand-mark";
 import { Button } from "@/components/ui/button";
+import { AccountMenu } from "@/components/account-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -42,7 +42,6 @@ const navigation = [
     admin: true,
   },
   { path: "/calendar", key: "nav.calendar", icon: CalendarDays, tool: true },
-  { path: "/settings", key: "nav.settings", icon: Settings },
 ] satisfies Array<{
   path: string;
   key: MessageKey;
@@ -173,9 +172,6 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
                       {!collapsed && t("workspace.tools")}
                     </div>
                   )}
-                  {item.path === "/settings" && (
-                    <div className="my-4 border-t border-border" />
-                  )}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <NavLink
@@ -213,28 +209,7 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
                 {t("workspace.private")}
               </p>
             )}
-            <NavLink
-              href="/settings"
-              aria-label={t("nav.settings")}
-              className={cn(
-                "flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-secondary",
-                collapsed && "justify-center px-0",
-              )}
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
-                {(user?.name || user?.email || "S").slice(0, 1).toUpperCase()}
-              </span>
-              {!collapsed && (
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">
-                    {user?.name || PRODUCT_NAME}
-                  </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {user?.email}
-                  </span>
-                </span>
-              )}
-            </NavLink>
+            <AccountMenu compact={collapsed} />
           </div>
         </aside>
       </TooltipProvider>
