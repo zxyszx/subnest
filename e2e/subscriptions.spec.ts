@@ -361,6 +361,28 @@ test("desktop subscription create, tag search, edit, and reload persistence", as
   await expect(subscriptionCard(page, editedName)).toBeVisible();
 });
 
+test("subscription card rows stay packed across responsive breakpoints", async ({ page }, testInfo) => {
+  const template = subscriptionCollectionContractFixtures.collectionItems[0]!;
+  const subscriptions = Array.from({ length: 12 }, (_, index) => ({ ...template, id: `grid-${index}`, name: `Grid ${index}` }));
+  await page.route("**/api/app/subscriptions/index**", (route) => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({ ok: true, data: { subscriptions, total: subscriptions.length } }),
+  }));
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/subscriptions");
+  await expect(page.getByRole("heading", { name: "订阅列表", exact: true })).toBeVisible();
+  const rows = page.getByTestId("virtualized-subscription-list").locator(":scope > [data-index]");
+  for (const [width, columns] of [[1465, 3], [1742, 4], [1599, 3], [1600, 4], [375, 1]]) {
+    await page.setViewportSize({ width: width!, height: 1000 });
+    await expect.poll(() => rows.first().getByTestId("subscription-card").count()).toBe(columns);
+    await expect.poll(() => rows.first().evaluate((row) => {
+      const cards = [...row.querySelectorAll('[data-testid="subscription-card"]')];
+      return new Set(cards.map((card) => Math.round(card.getBoundingClientRect().top))).size;
+    })).toBe(1);
+    await page.screenshot({ path: testInfo.outputPath(`packed-grid-${width}.png`) });
+  }
+});
+
 test("desktop 1000-row search uses one index request and keeps the virtual list scrollable", async ({ page }) => {
   const indexRequests: string[] = [];
   const collectionTemplate = subscriptionCollectionContractFixtures.collectionItems[0];

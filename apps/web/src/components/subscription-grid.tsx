@@ -208,9 +208,10 @@ export function SubscriptionGrid({
       getScrollElement={getRootScrollElement}
       itemClassName={cn(
         "grid gap-2 sm:gap-4",
-        viewMode === "grid"
-          ? "items-stretch sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-4"
-          : "grid-cols-1 items-start",
+        // Use the same column count for chunking and rendering. Independent
+        // CSS breakpoints can wrap the fourth item into an otherwise empty row.
+        { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[columnCount],
+        viewMode === "grid" ? "items-stretch" : "items-start",
       )}
       testId="virtualized-subscription-list"
       renderItem={renderRow}

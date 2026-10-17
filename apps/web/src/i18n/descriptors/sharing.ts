@@ -234,7 +234,7 @@ export const messages = [
   msg({ id: "sharing.copySeatShareSuccess", message: "上车信息已复制" }),
   msg({ id: "sharing.previewShare", message: "预览分享页" }),
   msg({ id: "sharing.moreLinkActions", message: "更多链接操作" }),
-  msg({ id: "sharing.seatShareTemplate", message: "【{platform} · {seat}】\n车友：{member}\n登录账号：{account}\n登录密码：{password}{additionalCredential}\n车位分享：{link}\n到期时间：{expiresAt}" }),
+  msg({ id: "sharing.seatShareTemplate", message: "【{platform} · {seat}】\n车友：{member}\n登录账号：{account}\n登录密码：{password}{additionalCredential}\n查看验证码：{link}\n到期时间：{expiresAt}" }),
   msg({ id: "sharing.seatLinkSharing", message: "车位邮箱链接共享" }),
   msg({ id: "sharing.seatLinkSharingOn", message: "已开启 · 关闭将撤销本组车位链接" }),
   msg({ id: "sharing.seatLinkSharingOff", message: "未开启 · 选择文件夹及有效期后开启" }),

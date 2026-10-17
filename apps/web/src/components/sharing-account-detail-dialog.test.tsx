@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   seats: [] as SharingSeat[],
   accounts: [] as SharingAccount[],
   details: new Map<string, SharingAccountDetail>(),
+  outstandingAmount: "0.00",
 }));
 
 const account = {
@@ -44,7 +45,7 @@ const account = {
 vi.mock("@/hooks/use-sharing", () => ({
   useSharingAccountDetail: () => ({
     data: {
-      account,
+      account: { ...account, outstandingAmount: mocks.outstandingAmount },
       seats: mocks.seats,
       totals: {
         monthlyRevenue: "45.00",
@@ -111,6 +112,19 @@ describe("SharingAccountDetailDialog account credentials", () => {
     mocks.seats = [];
     mocks.accounts = [account];
     mocks.details = new Map();
+    mocks.outstandingAmount = "0.00";
+  });
+
+  it("includes historical outstanding balances even when current seat bills are paid", () => {
+    mocks.outstandingAmount = "45";
+    mocks.seats = [{
+      id: "paid-current", seatNumber: 1, memberName: "Member", contact: null, contactType: null,
+      monthlyPrice: "15", currency: "CNY", billingMonths: 1, startDate: "2026-10-16",
+      expiresAt: "2026-11-16", status: "active", notes: null,
+      currentReceivable: { id: "current", periodStart: "2026-10-16", periodEnd: "2026-11-16", dueDate: "2026-10-16", amount: "15", paidAmount: "15", currency: "CNY", status: "paid", paidAt: null },
+    }];
+    render(<SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />);
+    expect(screen.getByText("sharing.outstandingAmount").parentElement).toHaveTextContent("45.00 CNY");
   });
 
   it("copies account, password and link independently and supports copying all", async () => {

@@ -45,7 +45,7 @@ msgstr "[{platform} · {seat}]\n"
 "Member: {member}\n"
 "Login account: {account}\n"
 "Login password: {password}{additionalCredential}\n"
-"Seat link: {link}\n"
+"View verification code: {link}\n"
 "Expires: {expiresAt}"
 
 #. js-lingui-explicit-id

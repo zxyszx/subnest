@@ -30,6 +30,7 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     const subscriptionId = await createProductSubscriptionSeed(page, { name, price: "49.9", currency: "SGD", billingCycle: "monthly", startDate: "2026-09-03", nextBillingDate: pastDate, autoCalculateNextBillingDate: false });
     const patched = await productApiFetch(page, `/api/app/subscriptions/${subscriptionId}`, { method: "PATCH", body: { platformName: "PrimeVideo", accountNumber: 3, billingCycle: "annual", familySharing: { enabled: true, loginAccount: account, password: "e2e-only-password", verificationLink: "", capacity: 2 }, extra: { familyVerification: { mode: "totp", totpAccountId: otpId } } } });
     expect(patched.ok, patched.body).toBe(true);
+    await page.setViewportSize({ width: 375, height: 900 });
     await page.goto("/subscriptions");
     const card = page.getByTestId("subscription-card").filter({ hasText: account });
     const email = card.getByTestId("subscription-card-family-account");
@@ -81,11 +82,24 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     await page.getByRole("button", { name: "分享管理", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "车位链接" });
     await expect(dialog.getByRole("heading", { name: /公共验证链接/ })).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "车位链接", exact: true })).toBeFocused();
+    await expect(dialog.getByRole("textbox", { name: "公共验证链接", exact: true })).not.toBeFocused();
     await expect(dialog.locator("[data-seat-links-table]").getByRole("button", { name: "更多链接操作", exact: true })).toHaveCount(2);
     const desktopSeatList = dialog.locator("[data-seat-links-table]");
     await expect(desktopSeatList.getByText(/车位 1/)).toBeVisible();
     await expect(desktopSeatList.getByText(/车位 2/)).toBeVisible();
     await expect(desktopSeatList.getByText("2099-01-01", { exact: true })).toHaveCount(2);
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+        writeText: async (value: string) => { document.body.dataset["copiedSeatInfo"] = value; },
+      } });
+    });
+    await desktopSeatList.getByRole("button", { name: "复制上车信息", exact: true }).first().click();
+    await expect.poll(() => page.evaluate(() => document.body.dataset["copiedSeatInfo"] ?? "")).toContain("查看验证码：http");
+    const copiedInfo = await page.evaluate(() => document.body.dataset["copiedSeatInfo"] ?? "");
+    expect(copiedInfo).not.toContain("车位分享：");
+    expect(copiedInfo).toContain(`登录账号：${account}`);
+    expect(copiedInfo).toContain("到期时间：2099-01-01");
     await page.evaluate(() => document.documentElement.classList.remove("dark"));
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await dialog.screenshot({ path: testInfo.outputPath("totp-links-desktop.png") });

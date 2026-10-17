@@ -45,7 +45,7 @@ msgstr "【{platform} · {seat}】\n"
 "车友：{member}\n"
 "登录账号：{account}\n"
 "登录密码：{password}{additionalCredential}\n"
-"车位分享：{link}\n"
+"查看验证码：{link}\n"
 "到期时间：{expiresAt}"
 
 #. js-lingui-explicit-id

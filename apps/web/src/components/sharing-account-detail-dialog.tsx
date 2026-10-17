@@ -235,10 +235,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       (total, { seat, receivable }) => total + convert(Number(receivable.paidAmount), seat.currency ?? accountCurrency, defaultCurrency),
       0,
     );
-    const outstandingAmount = receivables.reduce((total, { seat, receivable }) => {
-      const remaining = Number(receivable.amount) - Number(receivable.paidAmount);
-      return total + convert(Math.max(remaining, 0), seat.currency ?? accountCurrency, defaultCurrency);
-    }, 0);
+    // Match the list badge: account-wide unpaid balances include historical bills.
+    // Current seat charges alone can all be paid while a historical balance remains.
+    const outstandingAmount = convert(Number(detail.account.outstandingAmount), accountCurrency, defaultCurrency);
     const monthlyProfit = monthlyRevenue - convert(Number(detail.account.monthlyCost), accountCurrency, defaultCurrency);
     return { monthlyRevenue, monthlyProfit, contractedRevenue, collectedRevenue, outstandingAmount };
   }, [convert, defaultCurrency, detail]);
