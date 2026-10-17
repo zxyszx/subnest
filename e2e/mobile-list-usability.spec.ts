@@ -36,6 +36,19 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     });
     expect(assigned.ok, assigned.body).toBe(true);
 
+    // An old, longer period must not override a corrected current period.
+    const laterPeriod = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "45", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: "2026-10-16", expiresAt: "2027-01-16", status: "active", notes: "", paymentStatus: "pending" },
+    });
+    expect(laterPeriod.ok, laterPeriod.body).toBe(true);
+    const corrected = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "15", monthlyPrice: "15", currency: "CNY", billingMonths: 1, startDate: "2026-09-16", expiresAt: "2026-10-16", status: "active", notes: "", paymentStatus: "paid" },
+    });
+    expect(corrected.ok, corrected.body).toBe(true);
+    const correctedSeat = (corrected.json as { data: { seats: { id: string; currentReceivable: { amount: string; status: string } }[] } }).data.seats.find((row) => row.id === seat.id)!;
+    expect(correctedSeat.currentReceivable.amount).toBe("15");
+    expect(correctedSeat.currentReceivable.status).toBe("paid");
+
     await page.reload();
     const search = page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
     await expect(search).toBeVisible();
@@ -142,6 +155,22 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
       await expect(page.getByRole("searchbox")).toBeVisible();
       await expectNoHorizontalOverflow(page, `landscape ${path}`);
       await shot(`12-${path.slice(1)}-landscape`);
+    }
+    await page.goto("/sharing");
+    for (const width of [1280, 1536, 1920]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const summary = page.locator(".workspace-summary");
+      await expect(summary).toBeVisible();
+      await expect(summary).toHaveCSS("gap", "16px");
+      const toolbar = page.getByTestId("desktop-sharing-toolbar");
+      await expect(toolbar).toBeVisible();
+      const summaryBox = (await summary.boundingBox())!;
+      const toolbarBox = (await toolbar.boundingBox())!;
+      const headerBox = (await page.locator("header").boundingBox())!;
+      expect(Math.round(summaryBox.y - headerBox.y - headerBox.height)).toBe(16);
+      expect(Math.round(toolbarBox.y - summaryBox.y - summaryBox.height)).toBe(16);
+      await expectNoHorizontalOverflow(page, `desktop sharing ${width}`);
+      await shot(`13-sharing-desktop-${width}`);
     }
     await writeFile(`${output}/observations.json`, JSON.stringify(observations, null, 2));
   } finally {

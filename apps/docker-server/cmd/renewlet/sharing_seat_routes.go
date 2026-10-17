@@ -423,7 +423,9 @@ func sharingAccountDetailAPI(app core.App, record *core.Record) (sharingAccountD
 }
 
 func sharingSeatAPIFromRecord(app core.App, record *core.Record) (sharingSeatResponse, error) {
-	receivables, err := app.FindRecordsByFilter("sharing_receivables", "user = {:user} && seat = {:seat}", "-periodEnd,-created", 1, 0, dbx.Params{"user": record.GetString("user"), "seat": record.Id})
+	// The current charge belongs to the seat's saved period, not the furthest
+	// historical end date (which can remain after a period is corrected).
+	receivables, err := app.FindRecordsByFilter("sharing_receivables", "user = {:user} && seat = {:seat} && periodStart = {:start} && periodEnd = {:end}", "-created", 1, 0, dbx.Params{"user": record.GetString("user"), "seat": record.Id, "start": record.GetString("startDate"), "end": record.GetString("expiresAt")})
 	if err != nil {
 		return sharingSeatResponse{}, err
 	}

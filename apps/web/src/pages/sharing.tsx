@@ -315,7 +315,7 @@ export default function Sharing() {
   return (
     <div className="app-page bg-background">
       <Header />
-      <main className="app-main mx-auto max-w-[120rem]">
+      <main className="app-main sharing-main mx-auto max-w-[120rem]">
         <div className="mb-3 md:hidden">
           <h1 className="text-2xl font-bold">{t("sharing.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</p>
@@ -331,7 +331,7 @@ export default function Sharing() {
             <Button variant="outline" className="mb-2 min-h-11 w-full" onClick={() => setRenewalsOpen(true)}>{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>
           </details>
         </div>
-        <section className="workspace-summary hidden grid-cols-2 gap-3 md:grid lg:grid-cols-6" aria-label={t("sharing.title")}>
+        <section className="workspace-summary hidden grid-cols-3 gap-4 md:grid 2xl:grid-cols-6" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
           <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
           <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
@@ -352,7 +352,7 @@ export default function Sharing() {
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-3 shrink-0">
+          <div className="mt-3 shrink-0 md:mt-4">
             {isMobile ? (
               <MobileListToolbar platforms={platformOptions} platform={selectedPlatform} onPlatformChange={setSelectedPlatform}
                 allLabel={t("sharing.allPlatforms")} platformLabel={t("sharing.platformFilter")}

@@ -87,9 +87,9 @@ export async function readSharingAccountDetail(request: Request, env: Env, id: s
     SELECT * FROM sharing_seats WHERE user_id = ? AND sharing_account_id = ? AND seat_number <= ?
     ORDER BY seat_number LIMIT 100
   `).bind(auth.user.id, account.id, accountApi.capacity).all<SharingSeatRow>();
-  const receivables = await receivablesBySeat(env, auth.user.id, account.id);
-  const seats = seatsResult.results.map((seat) => seatApi(seat, receivables.get(seat.id) ?? null));
-  const allReceivables = [...receivables.values()];
+  const receivables = await receivablesBySeat(env, auth.user.id, account.id, seatsResult.results);
+  const seats = seatsResult.results.map((seat) => seatApi(seat, receivables.current.get(seat.id) ?? null));
+  const allReceivables = [...receivables.latest.values()];
   const contractedRevenue = addMoney(...allReceivables.map((row) => row.amount));
   const collectedRevenue = addMoney(...allReceivables.map((row) => row.paid_amount));
   return successJson(sharingAccountDetailPayloadSchema.parse({
@@ -314,13 +314,22 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow, today: st
   });
 }
 
-async function receivablesBySeat(env: Env, userId: string, accountId: string): Promise<Map<string, SharingReceivableRow>> {
+async function receivablesBySeat(env: Env, userId: string, accountId: string, seats: SharingSeatRow[]) {
   const result = await env.DB.prepare(`
     SELECT * FROM sharing_receivables WHERE user_id = ? AND sharing_account_id = ? ORDER BY period_end DESC, created_at DESC
   `).bind(userId, accountId).all<SharingReceivableRow>();
-  const bySeat = new Map<string, SharingReceivableRow>();
-  for (const row of result.results) if (!bySeat.has(row.seat_id)) bySeat.set(row.seat_id, row);
-  return bySeat;
+  const latest = new Map<string, SharingReceivableRow>();
+  const current = new Map<string, SharingReceivableRow>();
+  const periods = new Map(seats.map((seat) => [seat.id, seat]));
+  for (const row of result.results) {
+    // Retain existing aggregate semantics; only the editable charge uses the saved period.
+    if (!latest.has(row.seat_id)) latest.set(row.seat_id, row);
+    const seat = periods.get(row.seat_id);
+    if (seat?.start_date === row.period_start && seat.expires_at === row.period_end && !current.has(row.seat_id)) {
+      current.set(row.seat_id, row);
+    }
+  }
+  return { latest, current };
 }
 
 function seatApi(seat: SharingSeatRow, receivable: SharingReceivableRow | null) {
