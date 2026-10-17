@@ -140,7 +140,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(mocks.password).toHaveBeenCalledTimes(1);
   });
 
-  it("saves member contact and rescales a monthly charge when switching to quarterly", async () => {
+  it("preserves the entered period total when switching to quarterly", async () => {
     mocks.seats = [{
       id: "seat-2",
       seatNumber: 2,
@@ -191,8 +191,8 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(saved?.seatId).toBe("seat-2");
     expect(saved?.input).toMatchObject({
       contactType: "xianyu",
-      billingAmount: "45",
-      monthlyPrice: "15",
+      billingAmount: "15",
+      monthlyPrice: "5",
       billingMonths: 3,
     });
   });

@@ -9,7 +9,7 @@ import { useZonedToday } from "@/hooks/use-zoned-today";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MessageKey } from "@/i18n/messages";
-import { rescaleSharingBillingAmount, SHARING_BILLING_MONTH_PRESETS, sharingExpiryDate, sharingRenewalDates } from "@/lib/sharing-billing";
+import { SHARING_BILLING_MONTH_PRESETS, sharingExpiryDate, sharingRenewalDates } from "@/lib/sharing-billing";
 import { Badge } from "@/components/ui/badge";
 import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
 import { Button } from "@/components/ui/button";
@@ -579,7 +579,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
       return {
         ...current,
         billingMonths,
-        billingAmount: rescaleSharingBillingAmount(current.billingAmount, current.billingMonths, billingMonths),
+        // 本期收费是用户录入的周期总额；切换周期只更新日期和月均折算。
         expiresAt: sharingExpiryDate(current.startDate, billingMonths),
       };
     });

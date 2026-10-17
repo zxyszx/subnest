@@ -90,6 +90,34 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     observations.memberRenewalDefaultPayment = await seatRenewal.locator("#sharing-seat-payment").innerText();
     await expectNoHorizontalOverflow(page, "member renewal form");
     await shot("08-sharing-member-renewal");
+    // Diagnose the reported 15 CNY / paid round-trip against the real local backend.
+    await seatRenewal.getByRole("button", { name: "月付", exact: true }).click();
+    await seatRenewal.locator("#sharing-seat-price").fill("15");
+    await seatRenewal.getByRole("button", { name: "季付", exact: true }).click();
+    await expect(seatRenewal.locator("#sharing-seat-price")).toHaveValue("15");
+    await seatRenewal.getByRole("button", { name: "月付", exact: true }).click();
+    await expect(seatRenewal.locator("#sharing-seat-price")).toHaveValue("15");
+    await seatRenewal.locator("#sharing-seat-payment").click();
+    await page.getByRole("option", { name: "已收", exact: true }).click();
+    const savedResponse = page.waitForResponse((response) => response.url().includes(`/sharing/seats/${seat.id}`) && response.request().method() === "PUT");
+    await seatRenewal.getByRole("button", { name: "确认续费", exact: true }).click();
+    const saved = await savedResponse;
+    expect(saved.ok()).toBe(true);
+    const submitted = saved.request().postDataJSON();
+    expect(submitted.billingAmount).toBe("15");
+    expect(submitted.paymentStatus).toBe("paid");
+    const persisted = await productApiFetch(page, `/api/app/sharing/accounts/${account.id}`);
+    const persistedSeat = (persisted.json as { data: { seats: { id: string; currentReceivable: { amount: string; status: string } }[] } }).data.seats.find((row) => row.id === seat.id)!;
+    expect(persistedSeat.currentReceivable.amount).toBe("15");
+    expect(persistedSeat.currentReceivable.status).toBe("paid");
+    await seats.getByRole("button", { name: /管理车位/ }).first().click();
+    const editSeat = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /管理车位.*#1/ }) });
+    await expect(editSeat.locator("#sharing-seat-price")).toHaveValue("15");
+    await expect(editSeat.locator("#sharing-seat-payment")).toHaveText("已收");
+    await editSeat.locator("form").getByRole("button", { name: "取消", exact: true }).click();
+    await seats.getByRole("button", { name: /续费/ }).first().click();
+    // A new renewal intentionally starts a new pending period; capture it separately.
+    await expect(seatRenewal.locator("#sharing-seat-payment")).toHaveText("待收");
     await seatRenewal.locator("form").getByRole("button", { name: "取消", exact: true }).click();
     await page.goto("/sharing");
     await page.setViewportSize({ width: 320, height: 740 });
