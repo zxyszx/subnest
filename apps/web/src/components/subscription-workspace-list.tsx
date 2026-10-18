@@ -83,7 +83,7 @@ export function SubscriptionWorkspaceList({
                   />
                   <span className="min-w-0">
                     <span className="block font-medium">
-                      {subscription.name.trim() || subscription.platformName}{" "}
+                      <span>{subscription.name.trim() || subscription.platformName}</span>{" "}
                       <span className="text-xs text-muted-foreground">
                         #{subscription.accountNumber ?? 1}
                       </span>
