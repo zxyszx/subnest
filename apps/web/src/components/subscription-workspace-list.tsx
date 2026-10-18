@@ -83,14 +83,14 @@ export function SubscriptionWorkspaceList({
                   />
                   <span className="min-w-0">
                     <span className="block font-medium">
-                      {subscription.platformName || subscription.name}{" "}
+                      {subscription.name.trim() || subscription.platformName}{" "}
                       <span className="text-xs text-muted-foreground">
                         #{subscription.accountNumber ?? 1}
                       </span>
                     </span>
-                    <span className="block max-w-64 truncate text-xs text-muted-foreground">
-                      {subscription.name}
-                    </span>
+                    {subscription.platformName && subscription.platformName !== "__unbound__" && subscription.platformName !== subscription.name.trim() ? <span className="block max-w-64 truncate text-xs text-muted-foreground">
+                      {subscription.platformName}
+                    </span> : null}
                   </span>
                 </button>
               </td>

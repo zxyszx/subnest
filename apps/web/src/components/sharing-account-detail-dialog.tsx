@@ -264,10 +264,12 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           ) : detailQuery.isError || !detail ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadDetailFailed")}</div>
           ) : (
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y"
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain touch-pan-y"
               data-testid="sharing-account-scroll"
             >
-              <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden rounded-md border sm:grid-cols-2 lg:grid-cols-5">
+              <details className="group order-2 shrink-0 rounded-lg border bg-card" data-testid="sharing-financial-details">
+                <summary className="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-ring">{t("sharing.accountSummary")} · {t("sharing.nextBillingDate")}</summary>
+              <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden border-t sm:grid-cols-2 lg:grid-cols-5">
                 <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
                 <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
                 <SummaryMetric label={t("sharing.contractedRevenue")} value={formatCurrency(convertedTotals?.contractedRevenue ?? 0, defaultCurrency)} icon={<CalendarClock />} />
@@ -275,7 +277,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 <SummaryMetric label={t("sharing.outstandingAmount")} value={formatCurrency(convertedTotals?.outstandingAmount ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.outstandingAmount ?? 0) > 0 ? "negative" : undefined} />
               </section>
 
-              <section aria-label={t("sharing.accountDetails")} className="shrink-0 overflow-hidden rounded-md border">
+              <section aria-label={t("sharing.accountDetails")} className="overflow-hidden">
                 <div className="grid items-center gap-x-5 gap-y-3 border-b bg-muted/20 px-3 py-2.5 text-sm sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
                   <AccountDetail label={t("sharing.nextBillingDate")} value={detail.account.nextBillingDate} tabular />
                   <div className="min-w-0">
@@ -283,7 +285,13 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     <div className="mt-0.5 truncate font-medium text-foreground"><SharingPaymentSummary paymentMethod={detail.account.paymentMethod} cardLast4={null} />{detail.account.paymentMethod ? null : "-"}</div>
                   </div>
                   <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
-                  <Button type="button" variant="outline" className="sm:col-span-3 lg:col-span-1" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
+                </div>
+              </section>
+              </details>
+              <details className="order-3 shrink-0 rounded-lg border bg-card" data-testid="sharing-credentials-details">
+                <summary className="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-ring">{t("sharing.loginAccount")} · {t("sharing.password")} · {t("sharing.verificationLink")}</summary>
+                <div className="border-t p-3">
+                  <Button type="button" variant="outline" className="w-full" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
                     {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                     {t("sharing.copyAll")}
                   </Button>
@@ -316,9 +324,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
                   />
                 </div>
-              </section>
+              </details>
 
-              {mode === "seats" ? <section>
+              {mode === "seats" ? <section className="order-1 shrink-0">
                 <div className="mb-2 flex shrink-0 items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
                   <span className="text-xs tabular-nums text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</span>

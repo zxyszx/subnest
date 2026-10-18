@@ -186,23 +186,23 @@ describe("SubscriptionCard", () => {
     expect(logoTile?.getAttribute("style")).not.toContain("accent");
   });
 
-  it("uses the platform name and shows the account number on the logo", () => {
+  it("uses the service name and shows the account number on the logo", () => {
     renderSubscriptionCard({
       name: "Netflix-01/高级套餐",
       platformName: "Netflix",
       accountNumber: 1,
     });
 
-    expect(screen.getByRole("heading", { name: "Netflix" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Netflix-01/高级套餐" })).toBeInTheDocument();
     expect(screen.getByLabelText("账号编号 1")).toHaveTextContent("1");
-    expect(screen.queryByRole("heading", { name: "Netflix-01/高级套餐" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Netflix" })).not.toBeInTheDocument();
   });
 
   it("shows a distinct service name only when it differs from the platform", () => {
     renderSubscriptionCard({ name: "搬瓦工", platformName: "服务器" });
 
-    expect(screen.getByRole("heading", { name: "服务器" })).toBeInTheDocument();
-    expect(screen.getByText("搬瓦工")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "搬瓦工" })).toBeInTheDocument();
+    expect(screen.getByText("服务器")).toBeInTheDocument();
   });
 
   it("shows the family account only when the private collection includes its enabled summary", () => {

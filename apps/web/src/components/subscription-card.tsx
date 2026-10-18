@@ -300,8 +300,9 @@ function SubscriptionCardComponent({
   const categoryConfig = categoryByValue.get(subscription.category);
   const categoryLabel = categoryConfig ? label(categoryConfig.labels) : subscription.category;
   const categoryColor = categoryConfig?.color ?? DEFAULT_BADGE_COLOR;
-  const displayName = subscriptionPlatformName(subscription);
+  const platformName = subscriptionPlatformName(subscription);
   const serviceName = subscription.name.trim();
+  const displayName = serviceName || platformName;
   const familyAccount = subscription.familySharingLoginAccount?.trim() ?? "";
   const accountNumber = subscription.accountNumber ?? 1;
   const categoryBadgeStyle = {
@@ -555,11 +556,11 @@ function SubscriptionCardComponent({
                   </span>
                 ) : null}
               </div>
-              {serviceName && serviceName !== displayName ? (
+              {platformName && platformName !== displayName ? (
                 <TruncatedTooltipText
                   as="p"
-                  text={serviceName}
-                  className={cn("mt-0.5 min-w-0 text-xs text-muted-foreground", !mobileExpanded && "max-sm:hidden")}
+                  text={platformName}
+                  className="mt-0.5 min-w-0 text-xs text-muted-foreground"
                 />
               ) : null}
               {familyAccount ? (
@@ -751,8 +752,15 @@ function SubscriptionCardComponent({
         </div>
       </div>
       {!mobileExpanded && canManualRenew ? (
-        <div className="relative z-20 mt-3 flex justify-end border-t border-border/60 pt-2 sm:hidden">
-          <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => onRenew?.(subscription.id)}
+        <div className="relative z-20 mt-2 flex min-w-0 items-center justify-between gap-3 border-t border-border/60 pt-1.5 sm:hidden">
+          <div data-testid="subscription-card-mobile-payment" className="pointer-events-none flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            {paymentMethodLabel || subscription.cardLast4 ? <>
+              {paymentConfig?.icon ? <AuthorizedImage src={paymentConfig.icon} alt="" className="h-4 w-4 shrink-0 object-contain" /> : <CreditCard className="h-4 w-4 shrink-0" />}
+              <span className="truncate">{paymentMethodLabel}</span>
+              {subscription.cardLast4 ? <span className="shrink-0 whitespace-nowrap tabular-nums">•••• {subscription.cardLast4}</span> : null}
+            </> : null}
+          </div>
+          <Button type="button" variant="outline" className="min-h-11 shrink-0 gap-2" onClick={() => onRenew?.(subscription.id)}
             onFocus={preloadRenewSubscriptionDialog} onTouchStart={preloadRenewSubscriptionDialog}>
             <RotateCw className="h-4 w-4" />{t("subscription.renew")}
           </Button>

@@ -23,7 +23,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
         familyVerification: { mode: "none" },
       });
       const patched = await productApiFetch(page, `/api/app/subscriptions/${id}`, {
-        method: "PATCH", body: { platformName: name, accountNumber: 10 + index },
+        method: "PATCH", body: { platformName: index === 0 ? "服务器" : name, accountNumber: 10 + index, paymentMethod: "credit_card", cardLast4: "6109" },
       });
       expect(patched.ok, patched.body).toBe(true);
     }
@@ -65,6 +65,10 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await search.fill("10");
     const card = subscriptionCard(page, names[0]!);
     await expect(card).toBeVisible();
+    await expect(card.getByRole("heading", { name: names[0]!, exact: true })).toBeVisible();
+    await expect(card.getByText("服务器", { exact: true })).toBeVisible();
+    await expect(card.getByTestId("subscription-card-mobile-payment")).toContainText("信用卡");
+    await expect(card.getByTestId("subscription-card-mobile-payment")).toContainText("6109");
     await expect(subscriptionCard(page, names[1]!)).toBeHidden();
     await card.getByRole("button", { name: "续费", exact: true }).click();
     const renewal = page.getByRole("dialog", { name: /续订/ });
@@ -85,7 +89,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await sharingSearch.fill("10");
     await expect(page.getByTestId("sharing-mobile-account")).toHaveCount(1);
     await page.getByRole("combobox", { name: /平台筛选/ }).click();
-    await page.getByRole("option", { name: names[0]!, exact: true }).click();
+    await page.getByRole("option", { name: "服务器", exact: true }).click();
     await page.getByRole("button", { name: "有空位", exact: true }).click();
     await expect(mobileAccount).toBeVisible();
     await shot("04-sharing-filters");
@@ -95,6 +99,18 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).click();
     const seats = page.getByTestId("sharing-seat-mobile-list");
     await expect(seats).toBeVisible();
+    const finances = page.getByTestId("sharing-financial-details");
+    const credentials = page.getByTestId("sharing-credentials-details");
+    await expect(finances).not.toHaveAttribute("open");
+    await expect(credentials).not.toHaveAttribute("open");
+    expect((await seats.boundingBox())!.y).toBeLessThan((await finances.boundingBox())!.y);
+    await finances.locator("summary").click();
+    await expect(finances).toHaveAttribute("open");
+    await expect(finances.getByRole("region", { name: "账号经营概览" })).toBeVisible();
+    await finances.locator("summary").click();
+    await credentials.locator("summary").click();
+    await expect(credentials.getByRole("button", { name: "复制账号", exact: true })).toBeVisible();
+    await credentials.locator("summary").click();
     await shot("07-sharing-members");
     await seats.getByRole("button", { name: /续费/ }).first().click();
     const seatRenewal = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /续费.*#1/ }) });
