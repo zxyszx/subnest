@@ -6,6 +6,7 @@ import { subscriptionCard, SUBSCRIPTION_SEARCH_PLACEHOLDER } from "./support/sub
 
 test("mobile subscription and sharing everyday operation audit", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.clock.setFixedTime(new Date("2026-10-16T04:00:00Z"));
   const output = "artifacts/mobile-list-audit";
   await mkdir(output, { recursive: true });
@@ -88,6 +89,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     observations.sharingFirstAccountTop = (await mobileAccount.boundingBox())?.y;
     observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).isVisible();
     expect(observations.sharingManageInitiallyVisible).toBe(true);
+    await expect(mobileAccount.getByRole("button", { name: "分享管理", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, "sharing first screen");
     await shot("03-sharing-first-screen");
     const sharingSearch = page.getByRole("searchbox");
@@ -99,11 +101,28 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expect(mobileAccount).toBeVisible();
     await shot("04-sharing-filters");
     await shot("05-sharing-filter-collapsed");
-    await mobileAccount.getByRole("button", { name: "展开全部信息", exact: true }).click();
-    await shot("06-sharing-account-expanded");
+    await expect(mobileAccount.getByRole("button", { name: "展开全部信息", exact: true })).toHaveCount(0);
+    await shot("06-sharing-account-actions");
     await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).click();
     const seats = page.getByTestId("sharing-seat-mobile-list");
     await expect(seats).toBeVisible();
+    const vacantRow = seats.locator("article").filter({ hasText: "空闲" }).first();
+    await expect(vacantRow).toBeVisible();
+    expect((await vacantRow.boundingBox())!.height).toBeLessThanOrEqual(80);
+    await vacantRow.getByRole("button", { name: "管理车位", exact: true }).click();
+    const vacantEditor = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /管理车位.*#2/ }) });
+    await expect(vacantEditor).toBeVisible();
+    await vacantEditor.locator("form").getByRole("button", { name: "取消", exact: true }).click();
+    const mobileActions = seats.getByTestId("sharing-seat-mobile-actions").first();
+    const actionBounds = await mobileActions.getByRole("button").evaluateAll((buttons) => buttons.map((button) => {
+      const rect = button.getBoundingClientRect();
+      return { top: rect.top, height: rect.height, width: rect.width };
+    }));
+    expect(new Set(actionBounds.map((bounds) => bounds.top)).size).toBe(1);
+    for (const bounds of actionBounds) {
+      expect(bounds.height).toBeGreaterThanOrEqual(44);
+      expect(bounds.width).toBeGreaterThanOrEqual(44);
+    }
     const finances = page.getByTestId("sharing-financial-details");
     const credentials = page.getByTestId("sharing-credentials-details");
     await expect(finances).not.toHaveAttribute("open");
@@ -116,6 +135,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await credentials.locator("summary").click();
     await expect(credentials.getByRole("button", { name: "复制账号", exact: true })).toBeVisible();
     await credentials.locator("summary").click();
+    await seats.locator("article").first().scrollIntoViewIfNeeded();
     await shot("07-sharing-members");
     await seats.getByRole("button", { name: /续费/ }).first().click();
     const seatRenewal = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /续费.*#1/ }) });
@@ -154,6 +174,15 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     // A new renewal intentionally starts a new pending period; capture it separately.
     await expect(seatRenewal.locator("#sharing-seat-payment")).toHaveText("待收");
     await seatRenewal.locator("form").getByRole("button", { name: "取消", exact: true }).click();
+    await page.setViewportSize({ width: 320, height: 740 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.evaluate(() => { document.documentElement.style.fontSize = "20px"; });
+    await expectNoHorizontalOverflow(page, "large text small phone seat cards");
+    await seats.getByRole("button", { name: "换位", exact: true }).first().click();
+    const moveDialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "同平台换车位", exact: true }) });
+    await expect(moveDialog).toBeVisible();
+    await moveDialog.getByRole("button", { name: "取消", exact: true }).first().click();
+    await page.evaluate(() => { document.documentElement.style.removeProperty("font-size"); });
     await page.goto("/sharing");
     await page.setViewportSize({ width: 320, height: 740 });
     await expect(page.getByRole("searchbox")).toBeVisible();

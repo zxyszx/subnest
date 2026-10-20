@@ -380,26 +380,33 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                 </div>
                 <div className="divide-y rounded-md border sm:hidden" data-testid="sharing-seat-mobile-list">
                   {detail.seats.map((seat) => (
+                    seat.status === "vacant" && !seat.memberName ? (
+                      <article key={seat.id} className="flex min-h-16 items-center gap-3 bg-card px-4 py-2">
+                        <span aria-label={`${t("sharing.seatNumber")} ${seat.seatNumber}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted font-semibold tabular-nums text-muted-foreground">{seat.seatNumber}</span>
+                        <span className="min-w-0 flex-1 text-sm text-muted-foreground">{t("sharing.vacant")}</span>
+                        <Button type="button" className="min-h-11 shrink-0 px-3" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
+                      </article>
+                    ) : (
                     <article key={seat.id} className={seat.status === "paused" ? "space-y-3 border-l-2 border-l-amber-400 bg-amber-50/40 p-4 dark:bg-amber-950/10" : "space-y-3 border-l-2 border-l-primary/35 bg-card p-4"}>
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground shadow-sm">{seat.seatNumber}</span><span className="text-xs text-muted-foreground">{t("sharing.seatNumber")}</span></div>
-                          <div className="mt-1 truncate font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
-                          {seat.contact && <button type="button" className="mt-0.5 flex max-w-full items-center gap-1 truncate text-left text-xs text-muted-foreground hover:text-primary" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} contact={seat.contact} /><span className="truncate">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
+                        <span aria-label={`${t("sharing.seatNumber")} ${seat.seatNumber}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-semibold tabular-nums text-primary-foreground">{seat.seatNumber}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="wrap-anywhere font-medium text-foreground">{seat.memberName ?? t("sharing.noMember")}</div>
+                          {seat.contact && <button type="button" className="flex min-h-11 max-w-full items-center gap-1 text-left text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={t("sharing.copyContact")} onClick={async () => { const result = await copyTextToClipboard(seat.contact ?? ""); toast[result.ok ? "success" : "error"](result.ok ? t("sharing.copySuccess") : t("sharing.copyFailed")); }}><ContactTypeIcon type={seat.contactType} contact={seat.contact} /><span className="min-w-0 wrap-anywhere">{seat.contact}</span><Copy className="h-3 w-3 shrink-0" /></button>}
                         </div>
                         <Badge variant={statusVariant(seat.status)} className={seatStatusClassName(seat.status)}>{t(seatStatusLabelKeys[seat.status])}</Badge>
                       </div>
-                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                        <div><dt className="text-muted-foreground">{t("sharing.monthlyPrice")}</dt><dd className="mt-0.5 font-medium tabular-nums text-foreground">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}</dd></div>
+                      {seat.memberName || seat.monthlyPrice || seat.expiresAt ? <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                        <div><dt className="text-muted-foreground">{t("sharing.monthlyPrice")}</dt><dd className="mt-0.5 flex flex-wrap items-center gap-2 font-medium tabular-nums text-foreground">{seat.monthlyPrice && seat.currency ? formatCurrency(Number(seat.monthlyPrice), seat.currency) : "-"}{seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : null}</dd></div>
                         <div><dt className="text-muted-foreground">{t("sharing.expiresAt")}</dt><dd className="mt-0.5"><SeatExpiry expiresAt={seat.expiresAt} today={today} /></dd></div>
-                        <div><dt className="text-muted-foreground">{t("sharing.paymentStatus")}</dt><dd className="mt-1">{seat.currentReceivable ? <Badge variant={statusVariant(seat.currentReceivable.status === "paid" ? "paid" : "pending")}>{t(seat.currentReceivable.status === "paid" ? "sharing.paid" : "sharing.pending")}</Badge> : "-"}</dd></div>
-                      </dl>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {(seat.status === "active" || seat.status === "paused") && seat.memberName ? <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : <span />}
-                        {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" size="sm" variant="outline" onClick={() => setMovingSeat(seat)}><ArrowRightLeft />{t("sharing.moveSeat")}</Button> : <span />}
-                        <Button type="button" size="sm" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
+                      </dl> : null}
+                      <div className="flex gap-2" data-testid="sharing-seat-mobile-actions">
+                        {(seat.status === "active" || seat.status === "paused") && seat.memberName ? <Button type="button" className="min-h-11 min-w-0 flex-1 px-2" onClick={() => { setSeatDialogMode("renew"); setSelectedSeat(seat); }}><RotateCw />{t("sharing.renewSeat")}</Button> : null}
+                        <Button type="button" className="min-h-11 min-w-0 flex-1 px-2" variant="outline" onClick={() => { setSeatDialogMode("edit"); setSelectedSeat(seat); }}><Pencil />{t("sharing.editSeat")}</Button>
+                        {seat.memberName && seat.status !== "vacant" && seat.status !== "archived" ? <Button type="button" className="h-11 w-11 shrink-0" size="icon" variant="outline" aria-label={t("sharing.moveSeat")} title={t("sharing.moveSeat")} onClick={() => setMovingSeat(seat)}><ArrowRightLeft /></Button> : null}
                       </div>
                     </article>
+                    )
                   ))}
                 </div>
               </section> : null}

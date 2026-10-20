@@ -89,7 +89,6 @@ export default function Sharing() {
     return status && ["available", "full", "expiring", "overdue", "outstanding"].includes(status) ? status as SharingFilter : "all";
   });
   const [sortField, setSortField] = useState<SharingSortField>("expiry");
-  const [expandedMobileAccountId, setExpandedMobileAccountId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [renewalsOpen, setRenewalsOpen] = useState(false);
   const editingSubscriptionQuery = useSubscriptionDetail(editingSubscriptionId, Boolean(editingSubscriptionId));
@@ -436,13 +435,10 @@ export default function Sharing() {
               ) : visibleAccounts.map((account) => {
                 const platformName = subscriptionPlatformName(account.subscription);
                 const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
-                const expanded = expandedMobileAccountId === account.id;
-                const accountDays = sharingSubscriptionExpiryDays(account, today);
                 return (
                   <article
                     key={account.id}
                     data-testid="sharing-mobile-account"
-                    data-expanded={expanded ? "true" : "false"}
                     className={cn("p-3", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}
                   >
                     <div className="flex min-h-16 min-w-0 items-center gap-3">
@@ -474,33 +470,16 @@ export default function Sharing() {
                         variant="ghost"
                         size="icon"
                         className="h-11 w-11 shrink-0 rounded-full text-muted-foreground"
-                        aria-label={t(expanded ? "subscription.card.collapseDetails" : "subscription.card.expandDetails")}
-                        aria-expanded={expanded}
-                        onClick={() => setExpandedMobileAccountId((current) => current === account.id ? null : account.id)}
+                        aria-label={t("sharing.accountDetails")}
+                        onClick={() => setViewingAccount(account)}
                       >
-                        <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} />
+                        <ChevronDown className="h-5 w-5 -rotate-90" />
                       </Button>
                     </div>
-                    <Button type="button" className="mt-3 min-h-11 w-full" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
-                    {expanded ? (
-                      <div className="mt-3 grid gap-3 border-t border-border pt-3" data-testid="sharing-mobile-account-details">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <SubscriptionStatusBadge status={accountDays !== null && accountDays < 0 ? "expired" : account.subscription.status} className="h-5 px-1.5 text-[10px]" />
-                          <Badge variant="outline" className="h-5 px-1.5 text-[10px]">{account.occupiedSeats} / {account.capacity} {t("sharing.seats")}</Badge>
-                        </div>
-                        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                          <div><dt className="text-muted-foreground">{t("sharing.seats")}</dt><dd className="mt-1"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatStates={seatStates(account)} showStateSummary={false} /></dd></div>
-                          <div><dt className="text-muted-foreground">{t("sharing.nearestExpiry")}</dt><dd className="mt-1"><NearestExpiry accountId={account.id} /></dd></div>
-                          <div><dt className="text-muted-foreground">{t("sharing.monthlyCost")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
-                          <div><dt className="text-muted-foreground">{t("sharing.nextBillingDate")}</dt><dd className="mt-1 font-medium tabular-nums text-foreground"><DenseDate value={account.nextBillingDate} /></dd></div>
-                          <div className="col-span-2"><dt className="text-muted-foreground">{t("sharing.monthlyProfit")}</dt><dd className={cn("mt-1 font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-warning" : "text-primary")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
-                        </dl>
-                        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2">
-                          <Button type="button" size="icon" variant="outline" aria-label={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} title={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} disabled={!account.hasPassword} className={cn(account.hasPassword ? "bg-primary/10 text-primary" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                          <Button type="button" variant="outline" className="min-w-0" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
-                        </div>
-                      </div>
-                    ) : null}
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button type="button" className="min-h-11 min-w-0 px-2" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
+                      <Button type="button" variant="outline" className="min-h-11 min-w-0 px-2" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
+                    </div>
                   </article>
                 );
               })}

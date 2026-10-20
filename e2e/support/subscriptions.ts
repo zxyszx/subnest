@@ -30,7 +30,11 @@ export async function openSubscriptionEditDialog(page: Page, subscriptionName: s
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
   const mobileExpand = card.getByTestId("subscription-card-mobile-expand");
-  if (await mobileExpand.isVisible().catch(() => false)) {
+  const isMobileCard = (page.viewportSize()?.width ?? 1280) < 640 && await card.getAttribute("data-testid") === "subscription-card";
+  if (isMobileCard) {
+    // A visible card can precede its lazy mobile controls; wait rather than
+    // skipping expansion and looking for an action that is still collapsed.
+    await expect(mobileExpand).toBeVisible();
     if ((await mobileExpand.getAttribute("aria-expanded")) !== "true") {
       await mobileExpand.click();
     }
@@ -59,8 +63,10 @@ export async function openSubscriptionEditDialog(page: Page, subscriptionName: s
 export async function openSubscriptionDetailDialog(page: Page, subscriptionName: string) {
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
-  const trigger = card.getByTestId("subscription-card-primary-action");
-  await trigger.click();
+  const trigger = card.getByRole("button", { name: `查看 ${subscriptionName} 的详情`, exact: true });
+  // The card footer contains independent actions; tap the title region rather
+  // than the geometric center, which may land on that footer on small screens.
+  await trigger.click((page.viewportSize()?.width ?? 1280) < 640 ? { position: { x: 8, y: 8 } } : {});
   const dialog = page.getByRole("dialog", { name: subscriptionName });
   await expect(dialog).toBeVisible();
   return { dialog, trigger };

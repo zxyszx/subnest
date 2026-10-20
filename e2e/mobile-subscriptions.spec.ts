@@ -271,7 +271,7 @@ test("mobile subscription card keeps date metadata naturally on the first availa
   expect(layout.paymentMethod.right, "payment method should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
 });
 
-test("mobile sharing accounts stay compact until details are expanded", async ({ page }, testInfo) => {
+test("mobile sharing accounts keep actions visible without inline expansion", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await page.goto("/subscriptions");
   const subscriptionName = uniqueE2EName(testInfo, "Mobile Sharing");
@@ -351,7 +351,6 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
     await page.goto("/sharing");
     const account = page.getByTestId("sharing-mobile-account").filter({ hasText: loginAccount });
     await expect(account).toBeVisible();
-    await expect(account).toHaveAttribute("data-expanded", "false");
     await expect(account.getByText("ChatGPT", { exact: true })).toBeVisible();
     await expect(account.getByText(loginAccount, { exact: true })).toBeVisible();
     await expect(account.getByText(/最近到期/)).toBeVisible();
@@ -361,14 +360,11 @@ test("mobile sharing accounts stay compact until details are expanded", async ({
     await expect(account.getByTestId("sharing-mobile-account-details")).toBeHidden();
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
 
-    await account.getByRole("button", { name: "展开全部信息" }).click();
-    await expect(account).toHaveAttribute("data-expanded", "true");
-    await expect(account.getByTestId("sharing-mobile-account-details")).toBeVisible();
-    await expect(account.getByText("每月成本", { exact: true })).toBeVisible();
-    await expect(account.getByRole("button", { name: "未设置密码" })).toBeDisabled();
+    await expect(account.getByRole("button", { name: "展开全部信息" })).toHaveCount(0);
+    await expect(account.getByRole("button", { name: "分享管理" })).toBeVisible();
     await expect(account.getByRole("button", { name: "管理账号" })).toBeVisible();
     await expectNoHorizontalOverflow(page, "mobile sharing account details");
-    await account.screenshot({ path: testInfo.outputPath("mobile-sharing-expanded.png") });
+    await account.screenshot({ path: testInfo.outputPath("mobile-sharing-actions.png") });
   } finally {
     await deleteProductSubscriptionsByName(page, [subscriptionName]);
   }
