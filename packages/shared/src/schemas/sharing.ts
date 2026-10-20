@@ -43,6 +43,7 @@ export const sharingAccountSchema = z.object({
   monthlyRevenue: moneyStringSchema,
   monthlyRevenueByCurrency: z.record(z.string().regex(/^[A-Z]{3}$/), moneyStringSchema),
   outstandingAmount: moneyStringSchema,
+  outstandingAmountByCurrency: z.record(z.string().regex(/^[A-Z]{3}$/), moneyStringSchema).optional(),
   monthlyProfit: z.number().finite(),
   status: z.enum(SHARING_ACCOUNT_STATUSES),
   notes: z.string().nullable(),

@@ -30,7 +30,7 @@ import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
-import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingOutstandingAmount, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import { sharingAccountHasVacancy, sharingSeatDisplayState, type SharingSeatDisplayState } from "@/lib/sharing-seat-state";
 import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
@@ -165,7 +165,7 @@ export default function Sharing() {
   const occupiedSeats = visibleAccounts.reduce((total, account) => total + account.occupiedSeats, 0);
   const capacity = visibleAccounts.reduce((total, account) => total + account.capacity, 0);
   const outstanding = visibleAccounts.reduce(
-    (total, account) => total + convert(Number(account.outstandingAmount), account.currency, defaultCurrency),
+    (total, account) => total + sharingOutstandingAmount(account, defaultCurrency, convert),
     0,
   );
   const monthlyRevenue = visibleAccounts.reduce(

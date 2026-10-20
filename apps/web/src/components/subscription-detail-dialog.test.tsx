@@ -1,5 +1,5 @@
 // 订阅详情测试保护列表/仪表盘/日历共用的只读详情入口，避免备注和网站再次只能在编辑表单中阅读。
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { assertDateOnly } from "@/lib/time/date-only";
@@ -8,6 +8,9 @@ import type { Subscription, SubscriptionCollectionItem } from "@/types/subscript
 import { SubscriptionDetailDialog } from "./subscription-detail-dialog";
 
 const mocks = vi.hoisted(() => ({
+  copy: vi.fn(),
+  copySuccess: vi.fn(),
+  copyError: vi.fn(),
   categories: [
     {
       id: "developer-tools",
@@ -25,6 +28,9 @@ const mocks = vi.hoisted(() => ({
     },
   ],
 }));
+
+vi.mock("@/shared/browser/clipboard", () => ({ copyTextToClipboard: mocks.copy }));
+vi.mock("@/components/ui/sonner", () => ({ toast: { success: mocks.copySuccess, error: mocks.copyError } }));
 
 vi.mock("@/contexts/CustomConfigContext", () => ({
   useCustomConfigState: () => ({
@@ -162,6 +168,7 @@ function mockMobile(matches = true) {
 
 describe("SubscriptionDetailDialog", () => {
   afterEach(() => {
+    vi.clearAllMocks();
     Reflect.deleteProperty(window, "matchMedia");
   });
 
@@ -260,6 +267,17 @@ describe("SubscriptionDetailDialog", () => {
     expect(notes).not.toHaveClass("max-h-48");
     expect(notes).not.toHaveClass("overflow-y-auto");
     expect(within(dialog).getByText(/负责人：Alice/)).toBeInTheDocument();
+  });
+
+  it("copies the complete website and multiline notes and reports blocked clipboard access", async () => {
+    mocks.copy.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false });
+    renderDetailDialog();
+    fireEvent.click(screen.getByRole("button", { name: "复制 · 网站" }));
+    await waitFor(() => expect(mocks.copySuccess).toHaveBeenCalledWith("已复制"));
+    expect(mocks.copy).toHaveBeenNthCalledWith(1, baseSubscription.website);
+    fireEvent.click(screen.getByRole("button", { name: "复制 · 备注" }));
+    await waitFor(() => expect(mocks.copyError).toHaveBeenCalledWith("复制失败"));
+    expect(mocks.copy).toHaveBeenNthCalledWith(2, baseSubscription.notes);
   });
 
   it("hides the start-date row when a recurring subscription has an unknown start date", () => {

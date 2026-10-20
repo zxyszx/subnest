@@ -18,7 +18,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
   try {
     for (const [index, name] of names.entries()) {
       const id = await createProductSubscriptionSeed(page, {
-        name, price: "45", currency: "CNY", startDate: "2026-09-16", nextBillingDate: "2026-10-16", autoRenew: false,
+        name, price: "8500", currency: "NGN", startDate: "2026-09-16", nextBillingDate: "2026-10-16", autoRenew: false,
         familySharing: { enabled: true, loginAccount: `audit${index}@example.test`, capacity: 5 },
         familyVerification: { mode: "none" },
       });
@@ -38,9 +38,10 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
 
     // An old, longer period must not override a corrected current period.
     const laterPeriod = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
-      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "45", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: "2026-10-16", expiresAt: "2027-01-16", status: "active", notes: "", paymentStatus: "pending" },
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "45", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: "2026-09-16", expiresAt: "2026-12-16", status: "active", notes: "", paymentStatus: "pending" },
     });
     expect(laterPeriod.ok, laterPeriod.body).toBe(true);
+    expect((laterPeriod.json as { data: { account: { outstandingAmountByCurrency: Record<string, string> } } }).data.account.outstandingAmountByCurrency).toEqual({ CNY: "45" });
     const corrected = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
       method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "15", monthlyPrice: "15", currency: "CNY", billingMonths: 1, startDate: "2026-09-16", expiresAt: "2026-10-16", status: "active", notes: "", paymentStatus: "paid" },
     });
@@ -48,6 +49,9 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     const correctedSeat = (corrected.json as { data: { seats: { id: string; currentReceivable: { amount: string; status: string } }[] } }).data.seats.find((row) => row.id === seat.id)!;
     expect(correctedSeat.currentReceivable.amount).toBe("15");
     expect(correctedSeat.currentReceivable.status).toBe("paid");
+    const correctedAccount = (corrected.json as { data: { account: { outstandingAmount: string; outstandingAmountByCurrency: Record<string, string> } } }).data.account;
+    expect(correctedAccount.outstandingAmount).toBe("0");
+    expect(correctedAccount.outstandingAmountByCurrency).toEqual({});
 
     await page.reload();
     const search = page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
@@ -80,6 +84,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await page.goto("/sharing");
     const mobileAccount = page.getByTestId("sharing-mobile-account").filter({ hasText: "audit0@example.test" });
     await expect(mobileAccount).toBeVisible();
+    await expect(mobileAccount.getByText("存在待收款", { exact: true })).toHaveCount(0);
     observations.sharingFirstAccountTop = (await mobileAccount.boundingBox())?.y;
     observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).isVisible();
     expect(observations.sharingManageInitiallyVisible).toBe(true);
@@ -139,6 +144,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     const persistedSeat = (persisted.json as { data: { seats: { id: string; currentReceivable: { amount: string; status: string } }[] } }).data.seats.find((row) => row.id === seat.id)!;
     expect(persistedSeat.currentReceivable.amount).toBe("15");
     expect(persistedSeat.currentReceivable.status).toBe("paid");
+    expect((persisted.json as { data: { account: { outstandingAmountByCurrency: Record<string, string> } } }).data.account.outstandingAmountByCurrency).toEqual({});
     await seats.getByRole("button", { name: /管理车位/ }).first().click();
     const editSeat = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /管理车位.*#1/ }) });
     await expect(editSeat.locator("#sharing-seat-price")).toHaveValue("15");
@@ -188,6 +194,12 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
       await expectNoHorizontalOverflow(page, `desktop sharing ${width}`);
       await shot(`13-sharing-desktop-${width}`);
     }
+    await page.getByRole("searchbox").fill("audit0@example.test");
+    await expect(page.getByRole("cell", { name: "audit0@example.test", exact: true })).toBeVisible();
+    await page.getByRole("combobox", { name: "账号状态", exact: true }).click();
+    await page.getByRole("option", { name: "存在待收款", exact: true }).click();
+    await expect(page.getByRole("cell", { name: "没有找到匹配的共享账号", exact: true })).toBeVisible();
+    await shot("14-paid-account-excluded-from-outstanding-filter");
     await writeFile(`${output}/observations.json`, JSON.stringify(observations, null, 2));
   } finally {
     await page.goto("/subscriptions");

@@ -34,30 +34,31 @@ type sharingSubscriptionSummary struct {
 }
 
 type sharingAccountResponse struct {
-	ID                       string                         `json:"id"`
-	Subscription             sharingSubscriptionSummary     `json:"subscription"`
-	Name                     string                         `json:"name"`
-	AccountNumber            int                            `json:"accountNumber"`
-	LoginAccount             string                         `json:"loginAccount"`
-	HasPassword              bool                           `json:"hasPassword"`
-	AdditionalCredential     *sharingCredentialMetadataItem `json:"additionalCredential"`
-	VerificationMode         string                         `json:"verificationMode"`
-	FamilySharingEnabled     bool                           `json:"familySharingEnabled"`
-	VerificationLink         *string                        `json:"verificationLink"`
-	MonthlyCost              string                         `json:"monthlyCost"`
-	Currency                 string                         `json:"currency"`
-	NextBillingDate          string                         `json:"nextBillingDate"`
-	PaymentMethod            *string                        `json:"paymentMethod"`
-	CardLast4                *string                        `json:"cardLast4"`
-	Capacity                 int                            `json:"capacity"`
-	OccupiedSeats            int                            `json:"occupiedSeats"`
-	MonthlyRevenue           string                         `json:"monthlyRevenue"`
-	MonthlyRevenueByCurrency map[string]string              `json:"monthlyRevenueByCurrency"`
-	OutstandingAmount        string                         `json:"outstandingAmount"`
-	MonthlyProfit            float64                        `json:"monthlyProfit"`
-	Status                   string                         `json:"status"`
-	Notes                    *string                        `json:"notes"`
-	CreatedAt                string                         `json:"createdAt"`
+	ID                          string                         `json:"id"`
+	Subscription                sharingSubscriptionSummary     `json:"subscription"`
+	Name                        string                         `json:"name"`
+	AccountNumber               int                            `json:"accountNumber"`
+	LoginAccount                string                         `json:"loginAccount"`
+	HasPassword                 bool                           `json:"hasPassword"`
+	AdditionalCredential        *sharingCredentialMetadataItem `json:"additionalCredential"`
+	VerificationMode            string                         `json:"verificationMode"`
+	FamilySharingEnabled        bool                           `json:"familySharingEnabled"`
+	VerificationLink            *string                        `json:"verificationLink"`
+	MonthlyCost                 string                         `json:"monthlyCost"`
+	Currency                    string                         `json:"currency"`
+	NextBillingDate             string                         `json:"nextBillingDate"`
+	PaymentMethod               *string                        `json:"paymentMethod"`
+	CardLast4                   *string                        `json:"cardLast4"`
+	Capacity                    int                            `json:"capacity"`
+	OccupiedSeats               int                            `json:"occupiedSeats"`
+	MonthlyRevenue              string                         `json:"monthlyRevenue"`
+	MonthlyRevenueByCurrency    map[string]string              `json:"monthlyRevenueByCurrency"`
+	OutstandingAmount           string                         `json:"outstandingAmount"`
+	OutstandingAmountByCurrency map[string]string              `json:"outstandingAmountByCurrency"`
+	MonthlyProfit               float64                        `json:"monthlyProfit"`
+	Status                      string                         `json:"status"`
+	Notes                       *string                        `json:"notes"`
+	CreatedAt                   string                         `json:"createdAt"`
 }
 
 type sharingAccountsResponse struct {
@@ -598,7 +599,7 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 			occupied++
 		}
 	}
-	monthlyRevenueUnits, monthlyRevenueByCurrency, outstandingUnits, err := sharingAccountFinancialUnits(app, record)
+	monthlyRevenueUnits, monthlyRevenueByCurrency, outstandingUnits, outstandingByCurrency, err := sharingAccountFinancialUnits(app, record)
 	if err != nil {
 		return sharingAccountResponse{}, err
 	}
@@ -637,28 +638,29 @@ func sharingAccountAPIFromRecord(app core.App, record *core.Record) (sharingAcco
 			BillingCycle:     subscription.GetString("billingCycle"),
 			OneTimeTermCount: subscription.GetInt("oneTimeTermCount"),
 		},
-		Name:                     record.GetString("name"),
-		AccountNumber:            sharingSubscriptionAccountNumber(subscription, record),
-		LoginAccount:             loginAccount,
-		HasPassword:              hasPassword,
-		AdditionalCredential:     credentialMetadata.AdditionalCredential,
-		VerificationMode:         familyVerificationMode(subscription),
-		FamilySharingEnabled:     subscription.GetBool("familySharingEnabled"),
-		VerificationLink:         safeSharingVerificationLink(verificationLink),
-		MonthlyCost:              moneyUnitsToString(monthlyCostUnits),
-		Currency:                 subscription.GetString("currency"),
-		NextBillingDate:          subscription.GetString("nextBillingDate"),
-		PaymentMethod:            optionalSharingString(subscription.GetString("paymentMethod")),
-		CardLast4:                optionalSharingString(subscription.GetString("cardLast4")),
-		Capacity:                 capacity,
-		OccupiedSeats:            int(occupied),
-		MonthlyRevenue:           moneyUnitsToString(monthlyRevenueUnits),
-		MonthlyRevenueByCurrency: monthlyRevenueByCurrency,
-		OutstandingAmount:        moneyUnitsToString(outstandingUnits),
-		MonthlyProfit:            float64(monthlyRevenueUnits-monthlyCostUnits) / float64(moneyScaleFactor),
-		Status:                   record.GetString("status"),
-		Notes:                    optionalSharingString(record.GetString("notes")),
-		CreatedAt:                sharingCreatedAt(record),
+		Name:                        record.GetString("name"),
+		AccountNumber:               sharingSubscriptionAccountNumber(subscription, record),
+		LoginAccount:                loginAccount,
+		HasPassword:                 hasPassword,
+		AdditionalCredential:        credentialMetadata.AdditionalCredential,
+		VerificationMode:            familyVerificationMode(subscription),
+		FamilySharingEnabled:        subscription.GetBool("familySharingEnabled"),
+		VerificationLink:            safeSharingVerificationLink(verificationLink),
+		MonthlyCost:                 moneyUnitsToString(monthlyCostUnits),
+		Currency:                    subscription.GetString("currency"),
+		NextBillingDate:             subscription.GetString("nextBillingDate"),
+		PaymentMethod:               optionalSharingString(subscription.GetString("paymentMethod")),
+		CardLast4:                   optionalSharingString(subscription.GetString("cardLast4")),
+		Capacity:                    capacity,
+		OccupiedSeats:               int(occupied),
+		MonthlyRevenue:              moneyUnitsToString(monthlyRevenueUnits),
+		MonthlyRevenueByCurrency:    monthlyRevenueByCurrency,
+		OutstandingAmount:           moneyUnitsToString(outstandingUnits),
+		OutstandingAmountByCurrency: outstandingByCurrency,
+		MonthlyProfit:               float64(monthlyRevenueUnits-monthlyCostUnits) / float64(moneyScaleFactor),
+		Status:                      record.GetString("status"),
+		Notes:                       optionalSharingString(record.GetString("notes")),
+		CreatedAt:                   sharingCreatedAt(record),
 	}, nil
 }
 
@@ -750,7 +752,7 @@ func sharingSubscriptionMonthlyCostUnits(subscription *core.Record) (int64, erro
 	return (units + divisor/2) / divisor, nil
 }
 
-func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map[string]string, int64, error) {
+func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map[string]string, int64, map[string]string, error) {
 	seats, err := app.FindRecordsByFilter(
 		"sharing_seats",
 		"user = {:user} && sharingAccount = {:account} && (status = 'active' || status = 'paused')",
@@ -760,7 +762,7 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map
 		dbx.Params{"user": record.GetString("user"), "account": record.Id},
 	)
 	if err != nil {
-		return 0, nil, 0, err
+		return 0, nil, 0, nil, err
 	}
 	var monthlyRevenue int64
 	monthlyRevenueByCurrencyUnits := map[string]int64{}
@@ -771,7 +773,7 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map
 		}
 		units, parseErr := moneyUnits(moneyForRecord(seat.GetString("monthlyPrice")))
 		if parseErr != nil {
-			return 0, nil, 0, parseErr
+			return 0, nil, 0, nil, parseErr
 		}
 		monthlyRevenue += units
 		currency := strings.ToUpper(strings.TrimSpace(seat.GetString("currency")))
@@ -789,27 +791,67 @@ func sharingAccountFinancialUnits(app core.App, record *core.Record) (int64, map
 		dbx.Params{"user": record.GetString("user"), "account": record.Id},
 	)
 	if err != nil {
-		return 0, nil, 0, err
+		return 0, nil, 0, nil, err
 	}
 	var outstanding int64
+	outstandingByCurrencyUnits := map[string]int64{}
 	for _, receivable := range receivables {
+		paidUnits, paidParseErr := moneyUnits(moneyForRecord(receivable.GetString("paidAmount")))
+		feeUnits, feeParseErr := moneyUnits(moneyForRecord(receivable.GetString("feeAmount")))
+		refundUnits, refundParseErr := moneyUnits(moneyForRecord(receivable.GetString("refundAmount")))
+		if paidParseErr != nil || feeParseErr != nil || refundParseErr != nil {
+			return 0, nil, 0, nil, errInvalidMoney
+		}
+		// Editing a period's end date creates another bill with the same start.
+		// A settled replacement remains authoritative after the seat renews again.
+		superseded := false
+		if paidUnits == 0 && feeUnits == 0 && refundUnits == 0 {
+			replacements, lookupErr := app.FindRecordsByFilter("sharing_receivables", "user = {:user} && seat = {:seat} && periodStart = {:start} && periodEnd != {:end} && status = 'paid'", "", 1, 0, dbx.Params{"user": record.GetString("user"), "seat": receivable.GetString("seat"), "start": receivable.GetString("periodStart"), "end": receivable.GetString("periodEnd")})
+			if lookupErr != nil {
+				return 0, nil, 0, nil, lookupErr
+			}
+			superseded = len(replacements) > 0
+		}
+		for _, seat := range seats {
+			if superseded {
+				break
+			}
+			if seat.Id != receivable.GetString("seat") || seat.GetString("startDate") != receivable.GetString("periodStart") || seat.GetString("expiresAt") == receivable.GetString("periodEnd") || paidUnits != 0 || feeUnits != 0 || refundUnits != 0 {
+				continue
+			}
+			current, lookupErr := app.FindRecordsByFilter("sharing_receivables", "user = {:user} && seat = {:seat} && periodStart = {:start} && periodEnd = {:end}", "", 1, 0, dbx.Params{"user": record.GetString("user"), "seat": seat.Id, "start": seat.GetString("startDate"), "end": seat.GetString("expiresAt")})
+			if lookupErr != nil {
+				return 0, nil, 0, nil, lookupErr
+			}
+			superseded = len(current) > 0
+			break
+		}
+		if superseded {
+			continue
+		}
 		amount, amountErr := moneyUnits(moneyForRecord(receivable.GetString("amount")))
 		paid, paidErr := moneyUnits(moneyForRecord(receivable.GetString("paidAmount")))
 		fee, feeErr := moneyUnits(moneyForRecord(receivable.GetString("feeAmount")))
 		refund, refundErr := moneyUnits(moneyForRecord(receivable.GetString("refundAmount")))
 		if amountErr != nil || paidErr != nil || feeErr != nil || refundErr != nil {
-			return 0, nil, 0, errInvalidMoney
+			return 0, nil, 0, nil, errInvalidMoney
 		}
 		remaining := amount + fee - paid - refund
 		if remaining > 0 {
 			outstanding += remaining
+			currency := strings.ToUpper(strings.TrimSpace(receivable.GetString("currency")))
+			outstandingByCurrencyUnits[currency] += remaining
 		}
 	}
 	monthlyRevenueByCurrency := make(map[string]string, len(monthlyRevenueByCurrencyUnits))
 	for currency, units := range monthlyRevenueByCurrencyUnits {
 		monthlyRevenueByCurrency[currency] = moneyUnitsToString(units)
 	}
-	return monthlyRevenue, monthlyRevenueByCurrency, outstanding, nil
+	outstandingByCurrency := make(map[string]string, len(outstandingByCurrencyUnits))
+	for currency, units := range outstandingByCurrencyUnits {
+		outstandingByCurrency[currency] = moneyUnitsToString(units)
+	}
+	return monthlyRevenue, monthlyRevenueByCurrency, outstanding, outstandingByCurrency, nil
 }
 
 func sharingSeatWithinPaidPeriod(seat *core.Record, today string) bool {

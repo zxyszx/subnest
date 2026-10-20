@@ -272,9 +272,28 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow, today: st
     return totals;
   }, {})).map(([currency, amount]) => [currency, moneyFromNumber(amount)]));
   const due = await env.DB.prepare(`
-    SELECT amount, paid_amount, fee_amount, refund_amount FROM sharing_receivables
+    SELECT amount, paid_amount, fee_amount, refund_amount, currency FROM sharing_receivables AS bill
     WHERE user_id = ? AND sharing_account_id = ? AND status IN ('pending', 'partial', 'overdue')
-  `).bind(account.user_id, account.id).all<Pick<SharingReceivableRow, "amount" | "paid_amount" | "fee_amount" | "refund_amount">>();
+      AND NOT (CAST(bill.paid_amount AS REAL) = 0 AND CAST(bill.fee_amount AS REAL) = 0 AND CAST(bill.refund_amount AS REAL) = 0 AND (EXISTS (
+        SELECT 1 FROM sharing_receivables AS replacement
+        WHERE replacement.user_id = bill.user_id AND replacement.seat_id = bill.seat_id
+          AND replacement.period_start = bill.period_start AND replacement.period_end <> bill.period_end
+          AND replacement.status = 'paid'
+      ) OR EXISTS (
+        SELECT 1 FROM sharing_seats AS seat JOIN sharing_receivables AS current
+          ON current.seat_id = seat.id AND current.user_id = seat.user_id
+          AND current.period_start = seat.start_date AND current.period_end = seat.expires_at
+        WHERE seat.id = bill.seat_id AND seat.user_id = bill.user_id
+          AND seat.status IN ('active', 'paused')
+          AND seat.start_date = bill.period_start AND seat.expires_at <> bill.period_end
+      )))
+  `).bind(account.user_id, account.id).all<Pick<SharingReceivableRow, "amount" | "paid_amount" | "fee_amount" | "refund_amount" | "currency">>();
+  const outstandingAmountByCurrency = Object.fromEntries(Object.entries(due.results.reduce<Record<string, number>>((totals, item) => {
+    const remaining = Math.max(0, moneyToNumber(item.amount) + moneyToNumber(item.fee_amount) - moneyToNumber(item.paid_amount) - moneyToNumber(item.refund_amount));
+    const currency = item.currency.toUpperCase();
+    totals[currency] = (totals[currency] ?? 0) + remaining;
+    return totals;
+  }, {})).map(([currency, amount]) => [currency, moneyFromNumber(amount)]));
   const outstanding = due.results.reduce((total, item) => total + Math.max(0,
     moneyToNumber(item.amount) + moneyToNumber(item.fee_amount) - moneyToNumber(item.paid_amount) - moneyToNumber(item.refund_amount)), 0);
   const monthlyCost = toMonthlyAmount(subscription.price, subscription.billing_cycle as Parameters<typeof toMonthlyAmount>[1], subscription.custom_days, subscription.custom_cycle_unit, subscription.one_time_term_count, subscription.one_time_term_unit);
@@ -307,6 +326,7 @@ async function sharingAccountApi(env: Env, account: SharingAccountRow, today: st
     monthlyRevenue,
     monthlyRevenueByCurrency,
     outstandingAmount: moneyFromNumber(outstanding),
+    outstandingAmountByCurrency,
     monthlyProfit: subtractMoney(monthlyRevenue, monthlyCost),
     status: account.status,
     notes: account.notes,

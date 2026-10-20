@@ -48,6 +48,26 @@ it("reads the saved seat period instead of a longer historical pending charge", 
     const response = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
     const body = await response.json() as { data: { seats: { currentReceivable: { amount: string; status: string } | null }[] } };
     expect(body.data.seats[0]?.currentReceivable).toMatchObject({ amount: "15", status: "paid" });
+    database.exec("UPDATE subscriptions SET currency='NGN' WHERE id='sub'");
+    const foreignCost = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
+    const foreignBody = await foreignCost.json() as { data: { account: { outstandingAmountByCurrency: Record<string, string> } } };
+    expect(foreignBody.data.account.outstandingAmountByCurrency).toEqual({});
+    database.exec("UPDATE sharing_seats SET start_date='2026-11-16', expires_at='2026-12-16' WHERE id='seat'");
+    const renewed = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
+    expect((await renewed.json() as typeof foreignBody).data.account.outstandingAmountByCurrency).toEqual({});
+    database.exec("UPDATE sharing_receivables SET paid_amount='5', status='partial' WHERE id='old'");
+    const partial = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
+    expect((await partial.json() as typeof foreignBody).data.account.outstandingAmountByCurrency).toEqual({ CNY: "40" });
+    database.exec("UPDATE sharing_receivables SET paid_amount='0', status='pending', fee_amount='1' WHERE id='old'");
+    const fee = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
+    expect((await fee.json() as typeof foreignBody).data.account.outstandingAmountByCurrency).toEqual({ CNY: "46" });
+    database.exec("UPDATE sharing_receivables SET fee_amount='0' WHERE id='old'");
+    database.exec("UPDATE sharing_seats SET start_date='2026-10-16', expires_at='2026-11-16' WHERE id='seat'");
+    // A separate historical debt is still payable, in its original currency.
+    database.exec("UPDATE sharing_receivables SET period_start='2026-07-16' WHERE id='old'");
+    const historical = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");
+    const historicalBody = await historical.json() as typeof foreignBody;
+    expect(historicalBody.data.account.outstandingAmountByCurrency).toEqual({ CNY: "45" });
     // History is retained, and a seat without a matching period must not inherit it.
     database.exec("UPDATE sharing_seats SET expires_at='2026-12-16' WHERE id='seat'");
     const unmatched = await readSharingAccountDetail(new Request("https://example.test/api/app/sharing/accounts/account"), env, "account");

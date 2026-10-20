@@ -267,6 +267,9 @@ func TestSharingAccountCreateListAndCredentialAccess(t *testing.T) {
 	if len(detailEnvelope.Data.Seats) != 5 || detailEnvelope.Data.Seats[0].CurrentReceivable == nil || detailEnvelope.Data.Seats[0].CurrentReceivable.Amount != "45" || detailEnvelope.Data.Seats[0].CurrentReceivable.Status != "paid" {
 		t.Fatalf("unexpected seat detail: %#v", detailEnvelope.Data.Seats)
 	}
+	if detailEnvelope.Data.Account.OutstandingAmountByCurrency["CNY"] != "45" {
+		t.Fatalf("outstanding bills must retain their currency: %#v", detailEnvelope.Data.Account.OutstandingAmountByCurrency)
+	}
 	moveSeat := serveTestRequest(t, app, http.MethodPost, "/api/app/sharing/seats/"+seats[1].Id+"/move", `{"targetSeatId":"`+seats[2].Id+`"}`, token)
 	if moveSeat.Code != http.StatusOK {
 		t.Fatalf("move seat status = %d body=%s", moveSeat.Code, moveSeat.Body.String())

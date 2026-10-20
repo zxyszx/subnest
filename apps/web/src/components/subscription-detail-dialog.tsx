@@ -5,7 +5,7 @@
  * 注意：金额、周期、状态和提醒标签必须继续复用订阅 domain 常量，避免不同入口展示口径分叉。
  */
 import { useRef, useState, type ReactNode } from "react";
-import { CalendarPlus, Edit2, ExternalLink, RotateCw } from "lucide-react";
+import { CalendarPlus, Copy, Edit2, ExternalLink, RotateCw } from "lucide-react";
 import type { Subscription, SubscriptionCollectionItem } from "@/types/subscription";
 import {
   DEFAULT_NOTIFICATION_REMINDER_DAYS,
@@ -45,6 +45,8 @@ import {
 import { getEffectiveSubscriptionStatus } from "@/modules/subscriptions/domain/subscription-status";
 import { isManualRenewEligible } from "@renewlet/shared/subscription-renewal";
 import { calculateCostSharingSummary } from "@renewlet/shared/cost-sharing";
+import { copyTextToClipboard } from "@/shared/browser/clipboard";
+import { toast } from "@/components/ui/sonner";
 
 const DEFAULT_LOGO_FALLBACK_COLOR = "hsl(var(--primary))";
 
@@ -128,6 +130,10 @@ function SubscriptionDetailContent({
 }: SubscriptionDetailContentProps) {
   const { data: settings } = useSettings();
   const { t, locale, formatDateOnly, formatCurrency } = useI18n();
+  const copyValue = async (value: string) => {
+    const result = await copyTextToClipboard(value);
+    toast[result.ok ? "success" : "error"](t(result.ok ? "rawErrorResponse.copied" : "rawErrorResponse.copyFailed"));
+  };
   if (loading) {
     const loadingSlots = createSubscriptionDetailLoadingSlots({
       structure: resolveDetailLoadingStructure(loadingPreview, today),
@@ -306,24 +312,31 @@ function SubscriptionDetailContent({
             </DetailRow>
           ) : null}
           {subscription.website ? (
-            <DetailRow label={t("subscription.field.website")}>
-              <a
-                href={subscription.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex max-w-full items-center justify-end gap-1 text-primary hover:underline"
-              >
-                <span className="truncate">{subscription.website}</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              </a>
-            </DetailRow>
+            <div className="grid min-w-0 gap-2 border-t border-border pt-3 sm:col-span-2">
+              <p className="text-sm text-muted-foreground">{t("subscription.field.website")}</p>
+              <div className="flex min-w-0 items-start gap-2 rounded-lg border border-border bg-secondary/40 p-2">
+                <a
+                  href={subscription.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-11 min-w-0 flex-1 items-start gap-2 rounded-md p-2 text-sm leading-6 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="min-w-0 wrap-anywhere">{subscription.website}</span>
+                  <ExternalLink className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                </a>
+                <Button type="button" variant="ghost" className="min-h-11 shrink-0 px-3" aria-label={`${t("subscription.copy")} · ${t("subscription.field.website")}`} onClick={() => void copyValue(subscription.website!)}>
+                  <Copy className="h-4 w-4" aria-hidden="true" />{t("subscription.copy")}
+                </Button>
+              </div>
+            </div>
           ) : null}
           {subscription.notes ? (
             <div className="grid gap-2 border-t border-border pt-3 sm:col-span-2">
               <p className="text-sm text-muted-foreground">{t("subscription.field.notes")}</p>
-              <div className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-secondary/40 p-3 text-sm leading-6 text-foreground">
-                {subscription.notes}
-              </div>
+              <button type="button" aria-label={`${t("subscription.copy")} · ${t("subscription.field.notes")}`} onClick={() => void copyValue(subscription.notes!)} className="flex min-h-11 w-full min-w-0 items-start gap-3 rounded-lg border border-border bg-secondary/40 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="min-w-0 flex-1 whitespace-pre-wrap wrap-break-word wrap-anywhere">{subscription.notes}</span>
+                <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"><Copy className="h-4 w-4" aria-hidden="true" />{t("subscription.copy")}</span>
+              </button>
             </div>
           ) : null}
         </>

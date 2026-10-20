@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { assertDateOnly } from "@/lib/time/date-only";
-import { sharingSubscriptionExpiryDays, sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
+import { sharingSubscriptionExpiryDays, sharingOutstandingAmount, sharingNearestSeatExpiry, sharingUpcomingRenewalCount, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/schemas/sharing";
+
+describe("outstanding bill currencies", () => {
+  it("converts each bill currency instead of the subscription purchase currency", () => {
+    const account = { currency: "NGN", outstandingAmount: "60", outstandingAmountByCurrency: { CNY: "45", USD: "15" } } as SharingAccount;
+    const convert = (amount: number | string, from: string) => Number(amount) * ({ CNY: 1, USD: 7, NGN: 0.005 }[from] ?? 1);
+    expect(sharingOutstandingAmount(account, "CNY", convert)).toBe(150);
+    expect(sharingOutstandingAmount({ ...account, outstandingAmountByCurrency: {} }, "CNY", convert)).toBe(0);
+  });
+});
 
 describe("subscription expiry is independent of seat expiry", () => {
   const account = { nextBillingDate: "2026-10-03", subscription: { status: "active", billingCycle: "yearly" } } as SharingAccount;

@@ -29,6 +29,7 @@ import { divideMoney } from "@renewlet/shared/money";
 import { getDisplayErrorMessage } from "@/lib/display-error";
 import { daysBetweenDateOnly, type DateOnly } from "@/lib/time/date-only";
 import { matchesSearchableOption } from "@/lib/searchable-options";
+import { sharingOutstandingAmount } from "@/lib/sharing-financials";
 
 const inboxCopy = { copy: "复制验证码链接", copied: "验证码链接已复制", failed: "复制验证码链接失败" };
 
@@ -225,19 +226,19 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       0,
     );
     const receivables = detail.seats.map((seat) => ({ seat, receivable: seat.currentReceivable })).filter(
-      (item): item is { seat: SharingSeat; receivable: NonNullable<SharingSeat["currentReceivable"]> } => Boolean(item.receivable && item.seat.currency),
+      (item): item is { seat: SharingSeat; receivable: NonNullable<SharingSeat["currentReceivable"]> } => Boolean(item.receivable),
     );
     const contractedRevenue = receivables.reduce(
-      (total, { seat, receivable }) => total + convert(Number(receivable.amount), seat.currency ?? accountCurrency, defaultCurrency),
+      (total, { receivable }) => total + convert(Number(receivable.amount), receivable.currency, defaultCurrency),
       0,
     );
     const collectedRevenue = receivables.reduce(
-      (total, { seat, receivable }) => total + convert(Number(receivable.paidAmount), seat.currency ?? accountCurrency, defaultCurrency),
+      (total, { receivable }) => total + convert(Number(receivable.paidAmount), receivable.currency, defaultCurrency),
       0,
     );
     // Match the list badge: account-wide unpaid balances include historical bills.
     // Current seat charges alone can all be paid while a historical balance remains.
-    const outstandingAmount = convert(Number(detail.account.outstandingAmount), accountCurrency, defaultCurrency);
+    const outstandingAmount = sharingOutstandingAmount(detail.account, defaultCurrency, convert);
     const monthlyProfit = monthlyRevenue - convert(Number(detail.account.monthlyCost), accountCurrency, defaultCurrency);
     return { monthlyRevenue, monthlyProfit, contractedRevenue, collectedRevenue, outstandingAmount };
   }, [convert, defaultCurrency, detail]);

@@ -29,6 +29,18 @@ export function sharingMonthlyProfit(
     - convert(account.monthlyCost, account.currency, targetCurrency);
 }
 
+export function sharingOutstandingAmount(
+  account: SharingAccount,
+  targetCurrency: string,
+  convert: CurrencyConvert,
+): number {
+  return account.outstandingAmountByCurrency
+    ? Object.entries(account.outstandingAmountByCurrency).reduce(
+        (total, [currency, amount]) => total + convert(amount, currency, targetCurrency), 0,
+      )
+    : convert(account.outstandingAmount, account.currency, targetCurrency);
+}
+
 export function sharingUpcomingRenewalCount(
   accounts: readonly Pick<SharingAccount, "nextBillingDate">[],
   today: DateOnly,

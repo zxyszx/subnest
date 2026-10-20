@@ -99,6 +99,8 @@ test("installed mobile app exposes standalone PWA chrome and compact navigation"
   await expect(page.getByRole("menuitem", { name: "退出登录" })).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("mobile-more-menu.png"), fullPage: false });
   await page.getByRole("menuitem", { name: "共享收件箱" }).click();
+  await expect(page).toHaveURL(/\/shared-inboxes$/);
+  await expect(page.getByRole("heading", { name: "共享收件箱", level: 1 })).toBeVisible();
   await page.getByTestId("app-header").getByTestId("account-menu-trigger").click();
   await expect(page.getByRole("menuitem", { name: "设置", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "退出登录" })).toBeVisible();
