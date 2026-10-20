@@ -30,7 +30,7 @@ export function sharingMonthlyProfit(
 }
 
 export function sharingOutstandingAmount(
-  account: SharingAccount,
+  account: Pick<SharingAccount, "currency" | "outstandingAmount" | "outstandingAmountByCurrency">,
   targetCurrency: string,
   convert: CurrencyConvert,
 ): number {

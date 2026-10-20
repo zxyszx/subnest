@@ -6,7 +6,7 @@ import type { SharingAccount, SharingAccountDetail } from "@renewlet/shared/sche
 
 describe("outstanding bill currencies", () => {
   it("converts each bill currency instead of the subscription purchase currency", () => {
-    const account = { currency: "NGN", outstandingAmount: "60", outstandingAmountByCurrency: { CNY: "45", USD: "15" } } as SharingAccount;
+    const account = { currency: "NGN", outstandingAmount: "60", outstandingAmountByCurrency: { CNY: "45", USD: "15" } };
     const convert = (amount: number | string, from: string) => Number(amount) * ({ CNY: 1, USD: 7, NGN: 0.005 }[from] ?? 1);
     expect(sharingOutstandingAmount(account, "CNY", convert)).toBe(150);
     expect(sharingOutstandingAmount({ ...account, outstandingAmountByCurrency: {} }, "CNY", convert)).toBe(0);
