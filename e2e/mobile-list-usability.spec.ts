@@ -7,7 +7,14 @@ import { subscriptionCard, SUBSCRIPTION_SEARCH_PLACEHOLDER } from "./support/sub
 test("mobile subscription and sharing everyday operation audit", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.clock.setFixedTime(new Date("2026-10-16T04:00:00Z"));
+  const now = new Date();
+  await page.clock.setFixedTime(now);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
+  const dateAtOffset = (days: number) => {
+    const date = new Date(`${today}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  };
   const output = "artifacts/mobile-list-audit";
   await mkdir(output, { recursive: true });
   const names = ["Mobile Audit Netflix", "Mobile Audit YouTube"];
@@ -19,7 +26,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
   try {
     for (const [index, name] of names.entries()) {
       const id = await createProductSubscriptionSeed(page, {
-        name, price: "8500", currency: "NGN", startDate: "2026-09-16", nextBillingDate: "2026-10-16", autoRenew: false,
+        name, price: "8500", currency: "NGN", startDate: dateAtOffset(-30), nextBillingDate: today, autoRenew: false,
         familySharing: { enabled: true, loginAccount: `audit${index}@example.test`, capacity: 5 },
         familyVerification: { mode: "none" },
       });
@@ -33,18 +40,18 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     const detail = await productApiFetch(page, `/api/app/sharing/accounts/${account.id}`);
     const seat = (detail.json as { data: { seats: { id: string }[] } }).data.seats[0]!;
     const assigned = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
-      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: "2026-07-16", expiresAt: "2026-10-16", status: "active", notes: "", paymentStatus: "paid" },
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: dateAtOffset(-90), expiresAt: today, status: "active", notes: "", paymentStatus: "paid" },
     });
     expect(assigned.ok, assigned.body).toBe(true);
 
     // An old, longer period must not override a corrected current period.
     const laterPeriod = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
-      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "45", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: "2026-09-16", expiresAt: "2026-12-16", status: "active", notes: "", paymentStatus: "pending" },
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "45", monthlyPrice: "15", currency: "CNY", billingMonths: 3, startDate: dateAtOffset(-30), expiresAt: dateAtOffset(60), status: "active", notes: "", paymentStatus: "pending" },
     });
     expect(laterPeriod.ok, laterPeriod.body).toBe(true);
     expect((laterPeriod.json as { data: { account: { outstandingAmountByCurrency: Record<string, string> } } }).data.account.outstandingAmountByCurrency).toEqual({ CNY: "45" });
     const corrected = await productApiFetch(page, `/api/app/sharing/seats/${seat.id}`, {
-      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "15", monthlyPrice: "15", currency: "CNY", billingMonths: 1, startDate: "2026-09-16", expiresAt: "2026-10-16", status: "active", notes: "", paymentStatus: "paid" },
+      method: "PUT", body: { memberName: "Audit Member", contact: "", contactType: "", billingAmount: "15", monthlyPrice: "15", currency: "CNY", billingMonths: 1, startDate: dateAtOffset(-30), expiresAt: today, status: "active", notes: "", paymentStatus: "paid" },
     });
     expect(corrected.ok, corrected.body).toBe(true);
     const correctedSeat = (corrected.json as { data: { seats: { id: string; currentReceivable: { amount: string; status: string } }[] } }).data.seats.find((row) => row.id === seat.id)!;
@@ -125,16 +132,13 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     }
     const finances = page.getByTestId("sharing-financial-details");
     const credentials = page.getByTestId("sharing-credentials-details");
-    await expect(finances).not.toHaveAttribute("open");
-    await expect(credentials).not.toHaveAttribute("open");
-    expect((await seats.boundingBox())!.y).toBeLessThan((await finances.boundingBox())!.y);
-    await finances.locator("summary").click();
-    await expect(finances).toHaveAttribute("open");
+    await expect(finances).toBeHidden();
+    await expect(credentials).toBeHidden();
+    await page.getByRole("tab", { name: "账号经营概览", exact: true }).click();
     await expect(finances.getByRole("region", { name: "账号经营概览" })).toBeVisible();
-    await finances.locator("summary").click();
-    await credentials.locator("summary").click();
+    await page.getByRole("tab", { name: "账号资料", exact: true }).click();
     await expect(credentials.getByRole("button", { name: "复制账号", exact: true })).toBeVisible();
-    await credentials.locator("summary").click();
+    await page.getByRole("tab", { name: /^车位/ }).click();
     await seats.locator("article").first().scrollIntoViewIfNeeded();
     await shot("07-sharing-members");
     await seats.getByRole("button", { name: /续费/ }).first().click();
@@ -212,22 +216,17 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
       await page.setViewportSize({ width, height: 1000 });
       const summary = page.locator(".workspace-summary");
       await expect(summary).toBeVisible();
-      await expect(summary).toHaveCSS("gap", "16px");
       const toolbar = page.getByTestId("desktop-sharing-toolbar");
       await expect(toolbar).toBeVisible();
-      const summaryBox = (await summary.boundingBox())!;
-      const toolbarBox = (await toolbar.boundingBox())!;
-      const headerBox = (await page.locator("header").boundingBox())!;
-      expect(Math.round(summaryBox.y - headerBox.y - headerBox.height)).toBe(16);
-      expect(Math.round(toolbarBox.y - summaryBox.y - summaryBox.height)).toBe(16);
+      await expect(mobileAccount.getByRole("button", { name: "管理账号", exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page, `desktop sharing ${width}`);
       await shot(`13-sharing-desktop-${width}`);
     }
     await page.getByRole("searchbox").fill("audit0@example.test");
-    await expect(page.getByRole("cell", { name: "audit0@example.test", exact: true })).toBeVisible();
+    await expect(mobileAccount).toBeVisible();
     await page.getByRole("combobox", { name: "账号状态", exact: true }).click();
     await page.getByRole("option", { name: "存在待收款", exact: true }).click();
-    await expect(page.getByRole("cell", { name: "没有找到匹配的共享账号", exact: true })).toBeVisible();
+    await expect(page.getByText("没有找到匹配的共享账号", { exact: true })).toBeVisible();
     await shot("14-paid-account-excluded-from-outstanding-filter");
     await writeFile(`${output}/observations.json`, JSON.stringify(observations, null, 2));
   } finally {

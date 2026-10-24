@@ -115,7 +115,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     mocks.outstandingAmount = "0.00";
   });
 
-  it("includes historical outstanding balances even when current seat bills are paid", () => {
+  it("includes historical outstanding balances even when current seat bills are paid", async () => {
     mocks.outstandingAmount = "45";
     mocks.seats = [{
       id: "paid-current", seatNumber: 1, memberName: "Member", contact: null, contactType: null,
@@ -124,6 +124,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
       currentReceivable: { id: "current", periodStart: "2026-10-16", periodEnd: "2026-11-16", dueDate: "2026-10-16", amount: "15", paidAmount: "15", currency: "CNY", status: "paid", paidAt: null },
     }];
     render(<SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />);
+    await userEvent.setup().click(screen.getByRole("tab", { name: "sharing.accountSummary" }));
     expect(screen.getByText("sharing.outstandingAmount").parentElement).toHaveTextContent("45.00 CNY");
   });
 

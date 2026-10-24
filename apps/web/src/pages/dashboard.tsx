@@ -11,6 +11,7 @@
 import type { SubscriptionCollectionItem } from "@/types/subscription";
 import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 import { Header } from "@/components/header";
+import { WorkspacePageHeading } from "@/components/workspace-page-heading";
 import { StatCard } from "@/components/ui/stat-card";
 import { UpcomingRenewals } from "@/components/upcoming-renewals";
 import { SharingUpcomingRenewals } from "@/components/sharing-upcoming-renewals";
@@ -206,25 +207,24 @@ export default function Index() {
         className="app-main mx-auto max-w-[120rem]"
         data-testid="operations-dashboard"
       >
-        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">
-              {t("dashboard.overview")}
-            </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              {t("dashboard.overviewHint")}
-            </p>
-          </div>
-          <span className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm">
-            <CalendarClock className="h-4 w-4 text-muted-foreground" />
-            {formatDateTime(new Date(`${today}T12:00:00`), {
-              year: "numeric",
-              month: "long",
-            })}
-          </span>
+        <WorkspacePageHeading title={t("dashboard.overview")} description={t("dashboard.overviewHint")}
+          actions={<span className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{formatDateTime(new Date(today + "T12:00:00"), { year: "numeric", month: "long" })}</span>} />
+        <div className="mb-6 shrink-0">
+          <OperationsPanel
+            todayCount={
+              subscriptionRenewals.filter((item) => item.daysUntil === 0).length
+            }
+            upcomingCount={subscriptionRenewals.length}
+            overdueCount={
+              subscriptionRenewals.filter((item) => item.daysUntil < 0).length
+            }
+            memberCount={sharingRenewals.length}
+            onSubscriptions={openSubscriptionRenewals}
+            onMembers={() => setMemberRenewalsOpen(true)}
+          />
         </div>
         <div
-          className="workspace-summary grid grid-cols-2 gap-3 lg:grid-cols-4"
+          className="workspace-summary mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"
           data-testid="dashboard-stat-grid"
         >
           <StatCard
@@ -278,26 +278,12 @@ export default function Index() {
             {t("dashboard.detailsIncomplete")}
           </p>
         )}
-        <div className="mt-4 shrink-0 border-t border-border py-3">
-          <OperationsPanel
-            todayCount={
-              subscriptionRenewals.filter((item) => item.daysUntil === 0).length
-            }
-            upcomingCount={subscriptionRenewals.length}
-            overdueCount={
-              subscriptionRenewals.filter((item) => item.daysUntil < 0).length
-            }
-            memberCount={sharingRenewals.length}
-            onSubscriptions={openSubscriptionRenewals}
-            onMembers={() => setMemberRenewalsOpen(true)}
-          />
-        </div>
         <div
           data-testid="dashboard-renewal-workspace"
-          className="grid min-h-0 min-w-0 divide-y divide-border border border-border bg-card text-card-foreground lg:flex-1 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+          className="grid min-h-0 min-w-0 gap-4 rounded-2xl border border-border bg-card p-3 text-card-foreground sm:p-5 lg:grid-cols-2"
         >
           <section
-            className="flex min-h-0 min-w-0 flex-col"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border"
             id="dashboard-subscription-renewals"
           >
             <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
@@ -314,7 +300,7 @@ export default function Index() {
                 {t("dashboard.viewAll", { count: subscriptionRenewals.length })}
               </Button>
             </div>
-            <div className="flex flex-1 flex-col bg-muted/20 px-4 py-3">
+            <div className="flex flex-1 flex-col bg-card px-4 py-3">
               <UpcomingRenewals
                 subscriptions={
                   subscriptions
@@ -323,7 +309,7 @@ export default function Index() {
                 notificationReminderDays={inheritedReminderDays}
                 includeExpired
                 windowDays={7}
-                limit={subscriptionRenewals.length}
+                limit={5}
                 onRenew={handleRenewSubscription}
                 density="compact"
               />
@@ -331,7 +317,7 @@ export default function Index() {
           </section>
           <section
             id="dashboard-member-renewals"
-            className="flex min-h-0 min-w-0 flex-col"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border"
           >
             <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
@@ -347,11 +333,11 @@ export default function Index() {
                 {t("dashboard.viewAll", { count: sharingRenewals.length })}
               </Button>
             </div>
-            <div className="flex flex-1 flex-col bg-muted/20 px-4 py-3">
+            <div className="flex flex-1 flex-col bg-card px-4 py-3">
               <SharingUpcomingRenewals
                 items={sharingRenewals}
                 pending={sharingRenewalsPending}
-                limit={sharingRenewals.length}
+                limit={5}
                 showFooter={false}
                 density="compact"
                 onManageAccount={setSelectedSharingAccount}

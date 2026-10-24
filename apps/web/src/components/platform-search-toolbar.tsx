@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type ChangeEventHandler, type ReactNode } from "react";
+import { useEffect, useRef, type ChangeEventHandler, type ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import { PlatformFilterBar, type PlatformFilterOption } from "@/components/platform-filter-bar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +36,7 @@ export function PlatformSearchToolbar({
   className,
   testId,
 }: PlatformSearchToolbarProps) {
-  const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchExpanded = searchFocused || searchValue.length > 0;
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -54,76 +51,22 @@ export function PlatformSearchToolbar({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const expandSearch = () => {
-    searchInputRef.current?.focus();
-  };
 
   return (
-    <div
-      className={cn("flex min-w-0 flex-col rounded-lg border border-border bg-card md:flex-row md:items-center", className)}
-      data-testid={testId}
-    >
-      <PlatformFilterBar
-        platforms={platforms}
-        value={selectedPlatform}
-        onValueChange={onPlatformChange}
-        allLabel={allLabel}
-        moreLabel={moreLabel}
-        ariaLabel={platformAriaLabel}
-        visibleLimits={{ compact: 3, regular: 5, wide: 5, spacious: 8 }}
-        moreIconOnly
-        dense
-        fitContainer
-        className="min-w-0 flex-1 border-0 px-2"
-      />
-      <div className="flex min-w-0 shrink-0 items-center gap-1.5 p-1.5 md:pl-0">
-        <div
-          className={cn(
-            "relative h-9 w-56 min-w-0 flex-none overflow-hidden transition-[max-width] duration-200 ease-out motion-reduce:transition-none xl:w-64",
-            searchExpanded ? "max-w-56 xl:max-w-64" : "max-w-9",
-          )}
-          data-search-expanded={searchExpanded}
-        >
-          <Search
-            className={cn(
-              "pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-opacity duration-150 motion-reduce:transition-none",
-              searchExpanded ? "opacity-100" : "opacity-0",
-            )}
-            aria-hidden="true"
-          />
-          <Input
-            ref={searchInputRef}
-            name={searchName}
-            type="search"
-            enterKeyHint="search"
-            value={searchValue}
-            onChange={onSearchChange}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            tabIndex={searchExpanded ? 0 : -1}
-            className={cn(
-              "h-9 border-border bg-secondary pl-8 focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 transition-opacity duration-150 motion-reduce:transition-none",
-              searchExpanded ? "opacity-100" : "pointer-events-none opacity-0",
-            )}
-          />
-          {!searchExpanded ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="absolute inset-0 h-9 w-9 border-border bg-secondary p-0"
-              aria-label={searchPlaceholder}
-              title={searchPlaceholder}
-              onClick={expandSearch}
-            >
-              <Search className="h-3.5 w-3.5" />
-            </Button>
-          ) : null}
+    <div className={cn("grid min-w-0 gap-3 rounded-2xl border border-border bg-card p-3", className)} data-testid={testId}>
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <div className="relative min-w-48 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input ref={searchInputRef} name={searchName} type="search" enterKeyHint="search" value={searchValue}
+            onChange={onSearchChange} placeholder={searchPlaceholder} aria-label={searchPlaceholder}
+            className="h-11 border-border bg-background pl-10" />
         </div>
-        <div className="contents **:[[role=combobox]]:h-9 **:[[role=combobox]]:px-2.5">{controls}</div>
+        {controls ? <div className="flex min-w-0 flex-wrap items-center gap-2 **:[[role=combobox]]:h-11">{controls}</div> : null}
       </div>
+      <PlatformFilterBar platforms={platforms} value={selectedPlatform} onValueChange={onPlatformChange}
+        allLabel={allLabel} moreLabel={moreLabel} ariaLabel={platformAriaLabel}
+        visibleLimits={{ compact: 3, regular: 5, wide: 5, spacious: 8 }} moreIconOnly dense fitContainer
+        className="min-w-0 border-0 p-0" />
     </div>
   );
 }

@@ -1,9 +1,29 @@
 .workspace-sidebar {
   display: none;
 }
+.workspace-shell .app-main {
+  max-width: 1600px;
+}
+.workspace-page-heading {
+  margin-bottom: 24px;
+}
+@media (max-width: 767px) {
+  .workspace-detail-panel {
+    top: calc(var(--app-visual-viewport-offset-top) + env(safe-area-inset-top));
+    width: 100%;
+    height: calc(var(--app-viewport-height) - env(safe-area-inset-top));
+    max-height: calc(var(--app-viewport-height) - env(safe-area-inset-top));
+    border-radius: 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+.workspace-shell .app-main > section,
+.workspace-shell .app-main > div {
+  min-width: 0;
+}
 @media (min-width: 768px) {
-  .app-main.sharing-main {
-    padding-top: 16px;
+  .workspace-shell .app-main {
+    padding: 28px 32px 40px;
   }
 }
 @media (min-width: 1024px) {

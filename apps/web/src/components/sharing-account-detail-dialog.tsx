@@ -13,6 +13,7 @@ import { SHARING_BILLING_MONTH_PRESETS, sharingExpiryDate, sharingRenewalDates }
 import { Badge } from "@/components/ui/badge";
 import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -147,7 +148,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
   const samePlatformAccounts = (accountsQuery.data?.accounts ?? []).filter((candidate) => (
     candidate.subscription.platformName.toLocaleLowerCase() === account?.subscription.platformName.toLocaleLowerCase()
   ));
-  const candidateDetailQueries = useSharingAccountDetails(open && mode === "seats" ? samePlatformAccounts.map((candidate) => candidate.id) : []);
+  const candidateDetailQueries = useSharingAccountDetails(open && movingSeat ? samePlatformAccounts.map((candidate) => candidate.id) : []);
   const moveSeat = useMoveSharingSeat();
   const candidateDetailsPending = candidateDetailQueries.some((query) => query.isPending);
   const targetAccountOptions = samePlatformAccounts.flatMap((candidate, index) => {
@@ -249,8 +250,8 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
         <DialogContent
           layout="frame"
           className={mode === "seats"
-            ? "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"
-            : "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-2xl gap-3 overflow-hidden p-4 sm:p-5"}
+            ? "workspace-detail-panel h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"
+            : "workspace-detail-panel h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"}
           dismissMode="explicit"
           closeLabel={t("sharing.cancel")}
         >
@@ -265,11 +266,15 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           ) : detailQuery.isError || !detail ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{t("sharing.loadDetailFailed")}</div>
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain touch-pan-y"
+            <Tabs defaultValue={mode === "seats" ? "seats" : "credentials"} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain touch-pan-y"
               data-testid="sharing-account-scroll"
             >
-              <details className="group order-2 shrink-0 rounded-lg border bg-card" data-testid="sharing-financial-details">
-                <summary className="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-ring">{t("sharing.accountSummary")} · {t("sharing.nextBillingDate")}</summary>
+              <TabsList className="sticky top-0 z-10 grid h-auto shrink-0 grid-cols-3 bg-secondary" aria-label={t("sharing.accountDetails")}>
+                <TabsTrigger value="seats" className="min-h-11 px-2 text-xs sm:text-sm">{t("sharing.seats")} · {detail.account.occupiedSeats}/{detail.account.capacity}</TabsTrigger>
+                <TabsTrigger value="credentials" className="min-h-11 px-2 text-xs sm:text-sm">{t("sharing.accountDetails")}</TabsTrigger>
+                <TabsTrigger value="financial" className="min-h-11 px-2 text-xs sm:text-sm">{t("sharing.accountSummary")}</TabsTrigger>
+              </TabsList>
+              <TabsContent value="financial" className="m-0 shrink-0 rounded-xl border bg-card" data-testid="sharing-financial-details">
               <section aria-label={t("sharing.accountSummary")} className="grid overflow-hidden border-t sm:grid-cols-2 lg:grid-cols-5">
                 <SummaryMetric label={t("sharing.monthlyRevenue")} value={formatCurrency(convertedTotals?.monthlyRevenue ?? 0, defaultCurrency)} icon={<CircleDollarSign />} />
                 <SummaryMetric label={t("sharing.monthlyProfit")} value={formatCurrency(convertedTotals?.monthlyProfit ?? 0, defaultCurrency)} icon={<ReceiptText />} emphasis={(convertedTotals?.monthlyProfit ?? 0) >= 0 ? "positive" : "negative"} />
@@ -288,9 +293,8 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                   <AccountDetail label={t("sharing.cardLast4")} value={detail.account.cardLast4 ? `•••• ${detail.account.cardLast4}` : "-"} tabular />
                 </div>
               </section>
-              </details>
-              <details className="order-3 shrink-0 rounded-lg border bg-card" data-testid="sharing-credentials-details">
-                <summary className="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-ring">{t("sharing.loginAccount")} · {t("sharing.password")} · {t("sharing.verificationLink")}</summary>
+              </TabsContent>
+              <TabsContent value="credentials" className="m-0 shrink-0 rounded-xl border bg-card" data-testid="sharing-credentials-details">
                 <div className="border-t p-3">
                   <Button type="button" variant="outline" className="w-full" disabled={passwordLoading || !detail.account.hasPassword} onClick={() => void copyAll()}>
                     {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
@@ -325,9 +329,9 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
                   />
                 </div>
-              </details>
+              </TabsContent>
 
-              {mode === "seats" ? <section className="order-1 shrink-0">
+              <TabsContent value="seats" className="m-0 shrink-0">
                 <div className="mb-2 flex shrink-0 items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">{t("sharing.seats")}</h3>
                   <span className="text-xs tabular-nums text-muted-foreground">{detail.account.occupiedSeats} / {detail.account.capacity}</span>
@@ -409,13 +413,13 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     )
                   ))}
                 </div>
-              </section> : null}
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
 
-      {mode === "seats" && account ? <SharingSeatDialog account={account} seat={selectedSeat} mode={seatDialogMode} open={Boolean(selectedSeat)} onOpenChange={(nextOpen) => !nextOpen && setSelectedSeat(null)} /> : null}
+      {account ? <SharingSeatDialog account={account} seat={selectedSeat} mode={seatDialogMode} open={Boolean(selectedSeat)} onOpenChange={(nextOpen) => !nextOpen && setSelectedSeat(null)} /> : null}
       <Dialog open={Boolean(movingSeat)} onOpenChange={(nextOpen) => !nextOpen && setMovingSeat(null)}>
         <DialogContent className="max-w-lg" closeLabel={t("sharing.cancel")} dismissMode="explicit">
           <DialogHeader>

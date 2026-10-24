@@ -41,9 +41,10 @@ describe("SharingInboxLinksDialog", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("尚未匹配到邮箱"));
     expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
   });
-  it("does not open or load links when family sharing is disabled", () => {
+  it("explains unavailable sharing without loading links when family sharing is disabled", () => {
     render(<SharingInboxLinksDialog account={{ ...account, familySharingEnabled: false }} onClose={vi.fn()} />);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/请先在共享收件箱/)).toBeInTheDocument();
     expect(mocks.links).not.toHaveBeenCalled();
   });
   it("opens the seat link manager only when a configured generic link exists", async () => {

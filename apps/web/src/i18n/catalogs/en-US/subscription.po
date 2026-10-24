@@ -4015,3 +4015,11 @@ msgstr "Default reminder: {days} days before"
 #: src/i18n/descriptors/subscription.ts:332
 msgid "subscriptions.sort.default"
 msgstr "Default order"
+
+#. js-lingui-explicit-id
+msgid "subscriptions.showList"
+msgstr "Switch to list"
+
+#. js-lingui-explicit-id
+msgid "subscriptions.showCards"
+msgstr "Switch to cards"

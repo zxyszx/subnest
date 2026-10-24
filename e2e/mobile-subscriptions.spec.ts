@@ -45,32 +45,6 @@ async function createSubscriptionLayoutRecord(
   });
 }
 
-async function captureSubscriptionCardLayout(card: Locator) {
-  return card.evaluate((element) => {
-    const query = (testId: string) => {
-      const target = element.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
-      if (!target) {
-        throw new Error(`Missing ${testId}`);
-      }
-      const rect = target.getBoundingClientRect();
-      return {
-        left: Math.round(rect.left * 100) / 100,
-        right: Math.round(rect.right * 100) / 100,
-        top: Math.round(rect.top * 100) / 100,
-      };
-    };
-
-    const cardRect = element.getBoundingClientRect();
-    return {
-      cardRight: Math.round(cardRect.right * 100) / 100,
-      billingDate: query("subscription-card-meta-billing-date"),
-      paymentMethod: query("subscription-card-meta-payment-method"),
-      relativeBilling: query("subscription-card-meta-relative-billing"),
-      startDate: query("subscription-card-meta-start-date"),
-    };
-  });
-}
-
 async function dateOnlyFromLocalToday(page: Page, days: number) {
   return page.evaluate((offset) => {
     const date = new Date();
@@ -232,7 +206,7 @@ test("mobile family sharing additional info stays editable without overflow", as
   }
 });
 
-test("mobile subscription card keeps date metadata naturally on the first available row", async ({ page }, testInfo) => {
+test("mobile subscription card exposes renewal and payment before opening details directly", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await page.goto("/subscriptions");
   await expect(page.getByRole("heading", { name: "订阅列表" })).toBeVisible();
@@ -253,22 +227,16 @@ test("mobile subscription card keeps date metadata naturally on the first availa
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
   await expect(card).toBeInViewport();
-  await expect(card).toHaveAttribute("data-mobile-expanded", "false");
   await expect(card.getByTestId("subscription-card-mobile-expiry")).toBeVisible();
-  await expect(card.getByTestId("subscription-card-meta-flow")).toBeHidden();
+  await expect(card.getByTestId("subscription-card-mobile-payment")).toContainText("Google Pay");
+  await expect(card.getByRole("button", { name: "续费", exact: true })).toBeVisible();
   await card.screenshot({ path: testInfo.outputPath("mobile-subscription-compact.png") });
-  await card.getByRole("button", { name: "展开全部信息" }).click();
-  await expect(card).toHaveAttribute("data-mobile-expanded", "true");
-  await expect(card.getByTestId("subscription-card-meta-flow")).toBeVisible();
+  const { dialog } = await openSubscriptionDetailDialog(page, subscriptionName);
+  await expect(dialog.getByText("Google Pay", { exact: true })).toBeVisible();
+  await dialog.getByRole("contentinfo").getByRole("button", { name: "关闭", exact: true }).click();
+  await expect(card).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile subscription card metadata");
-
-  const layout = await captureSubscriptionCardLayout(card);
-
-  expect(Math.abs(layout.relativeBilling.top - layout.billingDate.top), "relative and absolute renewal dates should share the reminder row").toBeLessThanOrEqual(4);
-  expect(Math.abs(layout.startDate.top - layout.paymentMethod.top), "start date and payment method should share the detail row").toBeLessThanOrEqual(4);
-  expect(layout.startDate.top, "detail row should follow the renewal reminder").toBeGreaterThan(layout.billingDate.top);
-  expect(layout.billingDate.right, "renewal date should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
-  expect(layout.paymentMethod.right, "payment method should stay inside card").toBeLessThanOrEqual(layout.cardRight + 1);
+  await deleteProductSubscriptionsByName(page, [subscriptionName]);
 });
 
 test("mobile sharing accounts keep actions visible without inline expansion", async ({ page }, testInfo) => {
@@ -351,13 +319,12 @@ test("mobile sharing accounts keep actions visible without inline expansion", as
     await page.goto("/sharing");
     const account = page.getByTestId("sharing-mobile-account").filter({ hasText: loginAccount });
     await expect(account).toBeVisible();
-    await expect(account.getByText("ChatGPT", { exact: true })).toBeVisible();
+    await expect(account.getByRole("heading", { name: subscriptionName, exact: true })).toBeVisible();
     await expect(account.getByText(loginAccount, { exact: true })).toBeVisible();
     await expect(account.getByText(/最近到期/)).toBeVisible();
     await expect(account.getByText("使用中 1", { exact: true })).toBeVisible();
     await expect(account.getByText("停用 1", { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, "mobile sharing status summary");
-    await expect(account.getByTestId("sharing-mobile-account-details")).toBeHidden();
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
 
     await expect(account.getByRole("button", { name: "展开全部信息" })).toHaveCount(0);

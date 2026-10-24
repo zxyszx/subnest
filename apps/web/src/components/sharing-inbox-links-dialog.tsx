@@ -12,10 +12,14 @@ import type { MessageKey } from "@/i18n/messages";
 import { newszxcnService, type NewSzxcnMailbox, type SharedInboxLink } from "@/services/newszxcn-service";
 
 export function SharingInboxLinksDialog({ account, onClose }: { account: SharingAccount; onClose: () => void }) {
-  if (!account.familySharingEnabled || account.status !== "active") return null;
+  if (!account.familySharingEnabled || account.status !== "active" || account.verificationMode === "none") return <UnconfiguredSharingLinks account={account} onClose={onClose} />;
   if (account.verificationMode === "totp") return <SharingTotpLinksDialog account={account} onClose={onClose} />;
-  if (account.verificationMode === "none") return null;
   return <MailboxLinksDialog account={account} onClose={onClose} />;
+}
+
+function UnconfiguredSharingLinks({ account, onClose }: { account: SharingAccount; onClose: () => void }) {
+  const { t } = useI18n();
+  return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent><DialogHeader><DialogTitle>{t("sharing.viewLinks")}</DialogTitle><DialogDescription>{account.subscription.name} #{account.accountNumber}</DialogDescription></DialogHeader><p className="text-sm leading-6 text-muted-foreground">{t("sharing.configureGenericMailbox")}</p><Button variant="outline" className="min-h-11" onClick={onClose}>{t("common.close")}</Button></DialogContent></Dialog>;
 }
 
 function MailboxLinksDialog({ account, onClose }: { account: SharingAccount; onClose: () => void }) {

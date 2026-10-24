@@ -1,18 +1,18 @@
 import { lazy, Suspense, useState } from "react";
 import { useSearchParams } from "@/lib/router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronDown, CircleDollarSign, KeyRound, Link as LinkIcon, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, CircleDollarSign, TrendingUp, UsersRound, WalletCards } from "lucide-react";
 import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
 
+import { WorkspacePageHeading } from "@/components/workspace-page-heading";
+import { SharingAccountCard } from "@/components/sharing-account-card";
 import { Header } from "@/components/header";
-import { SharingSeatOccupancy, sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
+import { sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
-import { SubscriptionStatusBadge } from "@/components/subscription-status-badge";
 import Link from "@/components/router-link";
 import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
@@ -29,7 +29,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
-import { daysBetweenDateOnly, toPlainDate } from "@/lib/time/date-only";
+import { daysBetweenDateOnly } from "@/lib/time/date-only";
 import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyRevenue, sharingOutstandingAmount, sharingNearestSeatExpiry, sharingUpcomingSeatRenewals, sortSharingAccountsByNearestSeatExpiry } from "@/lib/sharing-financials";
 import { sharingAccountHasVacancy, sharingSeatDisplayState, type SharingSeatDisplayState } from "@/lib/sharing-seat-state";
 import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
@@ -40,11 +40,6 @@ import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 const SharingAccountDetailDialog = lazy(() => import("@/components/sharing-account-detail-dialog").then((module) => ({
   default: module.SharingAccountDetailDialog,
 })));
-
-function DenseDate({ value }: { value: string }) {
-  const date = toPlainDate(value);
-  return <>{`${date.year}.${String(date.month).padStart(2, "0")}.${String(date.day).padStart(2, "0")}`}</>;
-}
 
 function currencyMetric(formatted: string, currency: string) {
   const suffix = ` ${currency}`;
@@ -126,7 +121,8 @@ export default function Sharing() {
     if (/^\d+$/.test(normalizedSearch)) return String(account.accountNumber) === normalizedSearch;
     const platformName = subscriptionPlatformName(account.subscription).toLocaleLowerCase();
     const detail = accountDetails.get(account.id);
-    return platformName.includes(normalizedSearch)
+    return account.subscription.name.toLocaleLowerCase().includes(normalizedSearch)
+      || platformName.includes(normalizedSearch)
       || account.loginAccount.toLocaleLowerCase().includes(normalizedSearch)
       || `${platformName}${account.accountNumber}`.includes(normalizedSearch.replaceAll(" ", ""))
       || Boolean(detail?.seats.some((seat) => seat.memberName?.toLocaleLowerCase().includes(normalizedSearch) || seat.contact?.toLocaleLowerCase().includes(normalizedSearch)));
@@ -176,20 +172,11 @@ export default function Sharing() {
     0,
   );
   const upcomingRenewals = upcomingSeatRenewals.length;
-  const pageAccounts = visibleAccounts;
 
   const copy = async (value: string) => {
     const result = await copyTextToClipboard(value);
     if (result.ok) toast.success(t("sharing.copySuccess"));
     else toast.error(t("sharing.copyFailed"));
-  };
-
-  const copyPassword = async (account: SharingAccount) => {
-    try {
-      await copy(await sharingService.password(account.id));
-    } catch {
-      toast.error(t("sharing.passwordUnavailable"));
-    }
   };
 
   const saveFamilySharing = (changes: Parameters<typeof updateSubscription.mutate>[0]["changes"]) => {
@@ -205,72 +192,8 @@ export default function Sharing() {
     );
   };
 
-  const AccountIdentity = ({ account }: { account: SharingAccount }) => {
-    const platformName = subscriptionPlatformName(account.subscription);
-    const accountDays = sharingSubscriptionExpiryDays(account, today);
-    const accountExpired = accountDays !== null && accountDays < 0;
-    const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
-    const detail = accountDetails.get(account.id);
-    const hasVacancy = detail ? sharingAccountHasVacancy(detail.seats, today) : account.occupiedSeats < account.capacity;
-    const health = nearest && nearest.daysUntilExpiry < 0
-      ? { label: "存在逾期", variant: "destructive" as const }
-      : Number(account.outstandingAmount) > 0
-        ? { label: "存在待收款", variant: "destructive" as const }
-        : nearest && nearest.daysUntilExpiry <= 7
-          ? { label: "即将到期", variant: "secondary" as const }
-          : hasVacancy
-            ? { label: "有空位", variant: "outline" as const }
-            : { label: "已满", variant: "secondary" as const };
-    return (
-      <div className="flex min-w-0 items-center gap-3">
-        <button
-          type="button"
-          className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label={t("sharing.accountDetails")}
-          title={t("sharing.accountDetails")}
-          onClick={() => setViewingAccount(account)}
-        >
-          <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
-            {account.accountNumber}
-          </span>
-        </button>
-        <div className="min-w-0">
-          <span className="block truncate font-medium text-foreground">{platformName}</span>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            <SubscriptionStatusBadge status={accountExpired ? "expired" : account.subscription.status} className="h-5 px-1.5 text-[10px]" />
-            {accountExpired ? <Badge variant="destructive" className="h-auto min-h-5 px-1.5 text-[10px]">{t("sharing.subscriptionExpired", { days: Math.abs(accountDays!) })}</Badge> : null}
-            <Badge variant={health.variant} className="h-5 px-1.5 text-[10px]">{health.label}</Badge>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const NearestExpiry = ({ accountId }: { accountId: string }) => {
-    const nearest = sharingNearestSeatExpiry(accountDetails.get(accountId), today);
-    if (!nearest) return <span className="whitespace-nowrap text-xs text-muted-foreground">{t("sharing.noMember")}</span>;
-    const status = nearest.daysUntilExpiry < 0
-      ? t("subscription.card.expiredDays", { days: Math.abs(nearest.daysUntilExpiry) })
-      : nearest.daysUntilExpiry === 0
-        ? t("common.today")
-        : t("upcoming.daysShort", { days: nearest.daysUntilExpiry });
-    return (
-      <div className="grid gap-1">
-        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-foreground"><DenseDate value={nearest.expiresAt} /></span>
-        <span className={cn(
-          "w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums",
-          sharingSeatExpiryTone(nearest.daysUntilExpiry) === "danger"
-            ? "bg-destructive/10 text-destructive"
-            : sharingSeatExpiryTone(nearest.daysUntilExpiry) === "warning"
-              ? "bg-warning/10 text-warning"
-              : "bg-primary/10 text-primary",
-        )}>{status}</span>
-      </div>
-    );
-  };
-
   const seatTones = (account: SharingAccount): SharingSeatTone[] => {
+    if (!accountDetails.has(account.id)) return Array.from({ length: account.capacity }, (_, index) => index < account.occupiedSeats ? "normal" : "vacant");
     const seatsByNumber = new Map(accountDetails.get(account.id)?.seats.map((seat) => [seat.seatNumber, seat]));
     return Array.from({ length: account.capacity }, (_, index) => {
       const seat = seatsByNumber.get(index + 1);
@@ -281,6 +204,7 @@ export default function Sharing() {
   };
 
   const seatStates = (account: SharingAccount): SharingSeatDisplayState[] => {
+    if (!accountDetails.has(account.id)) return Array.from({ length: account.capacity }, (_, index) => index < account.occupiedSeats ? "active" : "vacant");
     const seatsByNumber = new Map(accountDetails.get(account.id)?.seats.map((seat) => [seat.seatNumber, seat]));
     return Array.from({ length: account.capacity }, (_, index) => sharingSeatDisplayState(seatsByNumber.get(index + 1), today));
   };
@@ -315,22 +239,10 @@ export default function Sharing() {
     <div className="app-page bg-background">
       <Header />
       <main className="app-main sharing-main mx-auto max-w-[120rem]">
-        <div className="mb-3 md:hidden">
-          <h1 className="text-2xl font-bold">{t("sharing.title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</p>
-          <details className="mt-2 border-b border-border pb-2">
-            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 text-sm text-muted-foreground">
-              <span>{t("sharing.monthlyRevenue")} <strong className="font-semibold text-foreground">{formatCurrency(monthlyRevenue, defaultCurrency)}</strong></span>
-              <ChevronDown className="h-4 w-4 shrink-0" />
-            </summary>
-            <dl className="grid gap-2 py-2 text-sm">
-              <div className="flex justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd>{formatCurrency(monthlyProfit, defaultCurrency)}</dd></div>
-              <div className="flex justify-between gap-2"><dt>{t("sharing.outstanding")}</dt><dd>{formatCurrency(outstanding, defaultCurrency)}</dd></div>
-            </dl>
-            <Button variant="outline" className="mb-2 min-h-11 w-full" onClick={() => setRenewalsOpen(true)}>{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>
-          </details>
-        </div>
-        <section className="workspace-summary hidden grid-cols-3 gap-4 md:grid 2xl:grid-cols-6" aria-label={t("sharing.title")}>
+        <WorkspacePageHeading title={t("sharing.title")} description={
+          <span>{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</span>
+        } actions={<Button variant="outline" className="min-h-11" onClick={() => setRenewalsOpen(true)}><CalendarClock className="h-4 w-4" />{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>} />
+        <section className="workspace-summary mb-6 hidden grid-cols-3 gap-3 md:grid" aria-label={t("sharing.title")}>
           <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
           <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
           <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
@@ -370,7 +282,7 @@ export default function Sharing() {
                 onSearchChange={(event) => setSearchQuery(event.target.value)}
                 searchPlaceholder={t("sharing.searchPlaceholder")}
                 controls={<div className="w-56 shrink-0">{sharingFilterControls}</div>}
-                className="rounded-b-none border-b-0"
+                className="mb-3"
                 testId="desktop-sharing-toolbar"
               />
             )}
@@ -381,6 +293,7 @@ export default function Sharing() {
           { value: "all", label: t("sharing.allStatus") },
           { value: "available", label: t("sharing.hasVacancies") },
           { value: "full", label: t("sharing.accountFull") },
+          { value: "outstanding", label: t("sharing.hasOutstanding") },
           { value: "expiring", label: t("sharing.expiringWithinSevenDays") },
           { value: "overdue", label: t("sharing.hasOverdue") },
         ]} />
@@ -394,96 +307,22 @@ export default function Sharing() {
             <Button asChild variant="outline" className="mt-5"><Link href="/subscriptions">{t("sharing.goToSubscriptions")}</Link></Button>
           </section>
         ) : (
-          <section className={cn(
-            "overflow-hidden border border-border bg-card",
-            platformOptions.length > 0
-              ? "rounded-lg md:rounded-t-none md:border-t-0"
-              : "mt-4 rounded-lg sm:mt-6",
-          )}>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-240 text-left text-sm">
-                <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground"><tr>
-                  <th className="px-4 py-2 font-medium">{t("subscription.field.platformName")}</th><th className="px-4 py-3 font-medium">{t("sharing.loginAccount")}</th><th className="px-3 py-3 font-medium">{t("sharing.seats")}</th><th className="w-36 px-3 py-3 font-medium">{t("sharing.nearestExpiry")}</th><th className="w-48 px-3 py-3 font-medium">{t("sharing.costAndRenewal")}</th><th className="px-4 py-3 text-right font-medium">{t("sharing.actions")}</th>
-                </tr></thead>
-                <tbody className="divide-y divide-border">{visibleAccounts.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</td></tr>
-                ) : pageAccounts.map((account) => (
-                  <tr key={account.id} className={cn("transition-colors duration-200 hover:bg-muted/20", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}>
-                    <td className="px-4 py-3"><AccountIdentity account={account} /></td>
-                    <td className="px-4 py-3"><button type="button" className="max-w-72 truncate text-primary hover:underline" title={t("sharing.copyAccount")} onClick={() => void copy(account.loginAccount)}>{account.loginAccount}</button></td>
-                    <td className="px-3 py-3"><SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatTones={seatTones(account)} seatStates={seatStates(account)} /></td>
-                    <td className="px-3 py-3"><NearestExpiry accountId={account.id} /></td>
-                    <td className="px-3 py-3">
-                      <dl className="grid min-w-44 gap-1 rounded-md border border-border/70 bg-muted/45 px-2.5 py-2 text-xs leading-4 text-muted-foreground">
-                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyCost")}</dt><dd className="font-semibold tabular-nums text-foreground">{formatCurrency(convert(Number(account.monthlyCost), account.currency, defaultCurrency), defaultCurrency)}</dd></div>
-                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.monthlyProfit")}</dt><dd className={cn("font-medium tabular-nums", sharingMonthlyProfit(account, defaultCurrency, convert) < 0 ? "text-amber-400" : "text-emerald-400")}>{formatCurrency(sharingMonthlyProfit(account, defaultCurrency, convert), defaultCurrency)}</dd></div>
-                        <div className="flex items-center justify-between gap-2"><dt>{t("sharing.nextBillingDate")}</dt><dd className="tabular-nums text-foreground/85"><DenseDate value={account.nextBillingDate} /></dd></div>
-                      </dl>
-                    </td>
-                    <td className="px-4 py-3"><div className="flex justify-end gap-1.5">
-                      <Button type="button" size="icon" variant="outline" title={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} aria-label={t(account.hasPassword ? "sharing.copyPassword" : "sharing.passwordNotSet")} disabled={!account.hasPassword} className={cn("border-border", account.hasPassword ? "bg-primary/10 text-primary hover:bg-primary/15" : "opacity-45")} onClick={() => void copyPassword(account)}><KeyRound /></Button>
-                      <Button type="button" size="sm" variant="outline" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
-                      <Button type="button" size="sm" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
-                    </div></td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-            <div className="divide-y divide-border md:hidden">
-              {visibleAccounts.length === 0 ? (
-                <p className="px-4 py-12 text-center text-sm text-muted-foreground">{t("sharing.noSearchResults")}</p>
-              ) : visibleAccounts.map((account) => {
-                const platformName = subscriptionPlatformName(account.subscription);
-                const nearest = sharingNearestSeatExpiry(accountDetails.get(account.id), today);
-                return (
-                  <article
-                    key={account.id}
-                    data-testid="sharing-mobile-account"
-                    className={cn("p-3", (account.subscription.status === "cancelled" || account.subscription.status === "expired") && "bg-muted/15")}
-                  >
-                    <div className="flex min-h-16 min-w-0 items-center gap-3">
-                      <button
-                        type="button"
-                        className="relative shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        aria-label={t("sharing.accountDetails")}
-                        onClick={() => setViewingAccount(account)}
-                      >
-                        <SubscriptionLogo name={platformName} logo={account.subscription.logo ?? undefined} size="sm" />
-                        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
-                          {account.accountNumber}
-                        </span>
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-foreground">{platformName}</p>
-                        <button type="button" className="mt-0.5 block max-w-full truncate text-left text-xs text-muted-foreground" onClick={() => void copy(account.loginAccount)}>
-                          {account.loginAccount}
-                        </button>
-                        <p className="mt-1 truncate text-xs font-medium tabular-nums text-foreground/80">
-                          {nearest ? <>{t("sharing.nearestExpiry")} · <DenseDate value={nearest.expiresAt} /></> : <>{t("sharing.noMember")}</>}
-                        </p>
-                        <div className="mt-1.5">
-                          <SharingSeatOccupancy occupied={account.occupiedSeats} capacity={account.capacity} seatStates={seatStates(account)} />
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-11 w-11 shrink-0 rounded-full text-muted-foreground"
-                        aria-label={t("sharing.accountDetails")}
-                        onClick={() => setViewingAccount(account)}
-                      >
-                        <ChevronDown className="h-5 w-5 -rotate-90" />
-                      </Button>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <Button type="button" className="min-h-11 min-w-0 px-2" onClick={() => setSelectedAccount(account)}>{t("sharing.manageAccount")}</Button>
-                      <Button type="button" variant="outline" className="min-h-11 min-w-0 px-2" disabled={!linkSharingReady(account)} title={!linkSharingReady(account) ? t("sharing.configureGenericMailbox") : undefined} onClick={() => setLinksAccount(account)}><LinkIcon />{t("sharing.viewLinks")}</Button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+          <section className="grid min-w-0 items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label={t("sharing.accounts")}>
+            {accountsQuery.isPending ? <div className="col-span-full rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground" role="status">{t("common.loading")}</div> : visibleAccounts.length === 0 ? (
+              <div className="col-span-full rounded-2xl border border-dashed bg-card p-10 text-center">
+                <p className="text-sm text-muted-foreground">{t("sharing.noSearchResults")}</p>
+                <Button variant="outline" className="mt-4 min-h-11" onClick={() => { setSearchQuery(""); setSelectedPlatform(null); setAccountFilter("all"); }}>{t("subscriptions.clearFilters")}</Button>
+              </div>
+            ) : visibleAccounts.map((account) => (
+              <SharingAccountCard key={account.id} account={account}
+                nearest={sharingNearestSeatExpiry(accountDetails.get(account.id), today)}
+                seatStates={seatStates(account)} seatTones={seatTones(account)}
+                vacancy={accountDetails.has(account.id) ? sharingAccountHasVacancy(accountDetails.get(account.id)!.seats, today) : account.occupiedSeats < account.capacity}
+                sharingReady={Boolean(linkSharingReady(account))}
+                subscriptionExpiryDays={sharingSubscriptionExpiryDays(account, today)}
+                onManage={() => setSelectedAccount(account)} onDetails={() => setViewingAccount(account)}
+                onLinks={() => setLinksAccount(account)} onCopyAccount={() => void copy(account.loginAccount)} />
+            ))}
           </section>
         )}
         {linksAccount ? <SharingInboxLinksDialog key={linksAccount.id} account={linksAccount} onClose={() => setLinksAccount(null)} /> : null}

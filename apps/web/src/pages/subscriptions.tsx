@@ -13,6 +13,7 @@
  */
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { WorkspacePageHeading } from '@/components/workspace-page-heading';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/header';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
@@ -136,7 +137,7 @@ const Subscriptions = () => {
   const currencyRatesReady = Boolean(ratesSourceDate) && !ratesLoading;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [renewalFilter, setRenewalFilter] = useState<'all' | 'today' | 'upcoming' | 'overdue'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => isDesktop ? 'list' : 'grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [aiRecognitionDialogOpen, setAIRecognitionDialogOpen] = useState(false);
@@ -381,14 +382,9 @@ const Subscriptions = () => {
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <div className="mb-5 flex items-center justify-between sm:mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("subscriptions.title")}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("subscriptions.count", { count: displayedTotal })}
-              {unfilteredTotal !== undefined && ` ${t("subscriptions.filteredCount", { count: unfilteredTotal })}`}
-            </p>
-          </div>
+        <WorkspacePageHeading title={t("subscriptions.title")} description={
+          <>{t("subscriptions.count", { count: displayedTotal })}{unfilteredTotal !== undefined && " " + t("subscriptions.filteredCount", { count: unfilteredTotal })}</>
+        } actions={
           <div className="hidden items-center gap-2 md:flex">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -430,12 +426,13 @@ const Subscriptions = () => {
               variant="outline"
               size="icon"
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              aria-label={t(viewMode === 'grid' ? 'subscriptions.showList' : 'subscriptions.showCards')}
               className="border-border"
             >
               {viewMode === 'grid' ? <ListIcon className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
             </Button>
           </div>
-        </div>
+        } />
 
         {isMobileTagFilter ? (
           <MobileListToolbar platforms={activePlatformOptions} platform={selectedPlatform} onPlatformChange={setSelectedPlatform}

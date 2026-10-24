@@ -114,7 +114,7 @@ describe("PlatformSearchToolbar", () => {
     }
   });
 
-  it("expands the compact search control and keeps it open while it has a value", async () => {
+  it("keeps search immediately available and preserves its value after blur", async () => {
     const user = userEvent.setup();
     const handleSearchChange = vi.fn();
     const { rerender } = render(
@@ -131,13 +131,11 @@ describe("PlatformSearchToolbar", () => {
       />,
     );
 
-    const searchButton = screen.getByRole("button", { name: "搜索平台" });
-    expect(searchButton.closest("[data-search-expanded]")).toHaveAttribute("data-search-expanded", "false");
-    await user.click(searchButton);
-
     const input = screen.getByRole("searchbox", { name: "搜索平台" });
+    await user.click(input);
     expect(input).toHaveFocus();
-    expect(input.closest("[data-search-expanded]")).toHaveAttribute("data-search-expanded", "true");
+    await user.type(input, "s");
+    expect(handleSearchChange).toHaveBeenCalledOnce();
 
     rerender(
       <PlatformSearchToolbar
@@ -153,6 +151,7 @@ describe("PlatformSearchToolbar", () => {
       />,
     );
     input.blur();
-    expect(input.closest("[data-search-expanded]")).toHaveAttribute("data-search-expanded", "true");
+    expect(input).toHaveValue("spo");
+    expect(input).toBeVisible();
   });
 });

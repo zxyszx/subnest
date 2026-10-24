@@ -78,7 +78,10 @@ test("general inbox links require folders and provide seat-scoped member links",
   enabled = false;
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();
-  await expect(page.getByRole("button", { name: "分享管理", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "分享管理", exact: true }).click();
+  const unavailable = page.getByRole("dialog", { name: "分享管理" });
+  await expect(unavailable).toContainText("请先在共享收件箱选择可查看的文件夹并开启通用分享");
+  await unavailable.getByRole("button", { name: "关闭", exact: true }).click();
 });
 
 test.describe("release smoke", () => {

@@ -4015,3 +4015,11 @@ msgstr "默认提醒：提前 {days} 天"
 #: src/i18n/descriptors/subscription.ts:332
 msgid "subscriptions.sort.default"
 msgstr "默认顺序"
+
+#. js-lingui-explicit-id
+msgid "subscriptions.showList"
+msgstr "切换到列表"
+
+#. js-lingui-explicit-id
+msgid "subscriptions.showCards"
+msgstr "切换到卡片"

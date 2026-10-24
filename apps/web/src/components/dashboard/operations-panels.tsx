@@ -39,28 +39,28 @@ export function OperationsPanel({
       label: t("dashboard.dueToday"),
       count: todayCount,
       icon: Clock,
-      style: "bg-rose-500/8 text-rose-600 dark:text-rose-400",
+      style: "border-destructive/20 bg-destructive/5 text-destructive",
       action: () => onSubscriptions("today"),
     },
     {
       label: t("dashboard.subscriptionRenewals"),
       count: upcomingCount,
       icon: CalendarClock,
-      style: "bg-amber-500/8 text-amber-700 dark:text-amber-400",
+      style: "border-warning/25 bg-warning/5 text-foreground",
       action: () => onSubscriptions("all"),
     },
     {
       label: t("dashboard.memberRenewals"),
       count: memberCount,
       icon: UsersRound,
-      style: "bg-emerald-500/8 text-emerald-700 dark:text-emerald-400",
+      style: "border-primary/20 bg-primary/5 text-foreground",
       action: onMembers,
     },
     {
       label: t("dashboard.overdue"),
       count: overdueCount,
       icon: TriangleAlert,
-      style: "bg-blue-500/8 text-blue-700 dark:text-blue-400",
+      style: "border-destructive/20 bg-destructive/5 text-destructive",
       action: () => onSubscriptions("overdue"),
     },
   ];
@@ -69,25 +69,25 @@ export function OperationsPanel({
       <h2 className="mb-4 text-sm font-semibold">
         {t("dashboard.operations")}
       </h2>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tasks.map((task) => (
           <button
             key={task.label}
             type="button"
             onClick={task.action}
             className={cn(
-              "flex min-h-16 items-center gap-3 rounded-md p-3 text-left transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring",
-              task.style,
+              "flex min-h-24 items-center gap-3 rounded-2xl border p-3 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4",
+              task.count > 0 ? task.style : "border-border bg-card text-muted-foreground",
             )}
           >
-            <task.icon className="h-5 w-5 shrink-0" />
+            <task.icon className="hidden h-5 w-5 shrink-0 sm:block" />
             <span className="min-w-0 flex-1">
               <span className="block text-xs">{task.label}</span>
               <span className="mt-1 block text-xl font-semibold tabular-nums">
                 {task.count}
               </span>
             </span>
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 shrink-0" />
           </button>
         ))}
       </div>

@@ -748,10 +748,11 @@ describe("Subscriptions desktop workspace", () => {
     mockSubscriptionsPageSettings();
     mocks.useInfiniteSubscriptions.mockReturnValue({ subscriptions: manySubscriptions(30), isPending: false });
     renderSubscriptionsPage();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "切换到列表" }));
     expect(screen.getByTestId("subscription-workspace-list")).toBeInTheDocument();
     expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(30);
     expect(screen.queryByRole("navigation", { name: "分页" })).not.toBeInTheDocument();
-    const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText("搜索序号、订阅、标签或备注..."), "30");
     expect(screen.getAllByTestId("subscription-workspace-row")).toHaveLength(1);
     expect(screen.getByTestId("subscription-workspace-row")).toHaveTextContent("Service 029");

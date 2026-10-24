@@ -34,15 +34,15 @@ export function WorkspaceQuickFilters<T extends string>({
     return () => window.removeEventListener("keydown", handler);
   }, [options, onChange]);
   return (
-    <div className="mb-3 flex shrink-0 flex-wrap gap-2 sm:mb-2 sm:gap-1">
+    <div className="my-4 flex shrink-0 flex-wrap gap-2" role="group" aria-label={t("sharing.allStatus")}>
       {options.map((option, index) => (
         <Button
           key={option.value}
           variant={value === option.value ? "secondary" : "ghost"}
           size="sm"
           className={value === option.value
-            ? "min-h-11 border border-primary/30 bg-primary/15 px-3 text-xs font-semibold text-primary hover:bg-primary/20 sm:min-h-9"
-            : "min-h-11 border border-transparent px-3 text-xs sm:min-h-9"}
+            ? "min-h-11 rounded-full border border-primary/30 bg-primary/10 px-4 text-xs font-semibold text-primary hover:bg-primary/15"
+            : "min-h-11 rounded-full border border-border bg-card px-4 text-xs text-muted-foreground hover:text-foreground"}
           aria-pressed={value === option.value}
           title={t("workspace.filterShortcut", {
             label: option.label,

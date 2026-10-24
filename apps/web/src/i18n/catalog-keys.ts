@@ -2560,6 +2560,8 @@ export const MESSAGE_KEYS = [
   "subscriptions.paymentTypeFilter.manual",
   "subscriptions.platformFilter",
   "subscriptions.searchPlaceholder",
+  "subscriptions.showCards",
+  "subscriptions.showList",
   "subscriptions.sort.accountAsc",
   "subscriptions.sort.accountDesc",
   "subscriptions.sort.default",

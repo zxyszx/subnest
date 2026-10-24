@@ -76,24 +76,17 @@ vi.mock("@/hooks/use-settings", () => ({
 }));
 
 describe("SubscriptionCard", () => {
-  it("uses a compact mobile summary with an explicit expandable detail control", () => {
+  it("opens details directly from the compact summary without inline expansion", () => {
+    const onViewDetails = vi.fn();
     renderSubscriptionCard({
       familySharingLoginAccount: "chatgpt@example.com",
       accountNumber: 3,
       nextBillingDate: assertDateOnly("2026-06-15"),
-    });
-
-    const card = screen.getByTestId("subscription-card");
-    const toggle = screen.getByTestId("subscription-card-mobile-expand");
-    expect(card).toHaveAttribute("data-mobile-expanded", "false");
+    }, { onViewDetails });
     expect(screen.getByTestId("subscription-card-mobile-expiry")).toHaveTextContent("2026/6/15");
     expect(screen.getByTestId("subscription-card-family-account")).toHaveTextContent("chatgpt@example.com");
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-
-    fireEvent.click(toggle);
-    expect(card).toHaveAttribute("data-mobile-expanded", "true");
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(screen.queryByTestId("subscription-card-mobile-expiry")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("subscription-card-primary-action"));
+    expect(onViewDetails).toHaveBeenCalledOnce();
   });
 
   beforeEach(() => {
@@ -229,8 +222,8 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-23") });
 
     const card = screen.getByTestId("subscription-card");
-    expect(card).toHaveClass("border-warning/50", "animate-renewal-warning");
-    expect(card).not.toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(card).toHaveClass("border-warning/40");
+    expect(card).not.toHaveClass("animate-renewal-warning");
     expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-warning");
   });
 
@@ -238,7 +231,7 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-21") });
 
     const card = screen.getByTestId("subscription-card");
-    expect(card).toHaveClass("border-destructive/50", "animate-renewal-danger");
+    expect(card).toHaveClass("border-destructive/35");
     expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-destructive");
   });
 
@@ -674,7 +667,7 @@ describe("SubscriptionCard", () => {
 
     expect(statusBadge).toHaveClass("bg-destructive/10", "text-destructive", "border-destructive/25");
     expect(expiredDateText).toHaveClass("text-destructive");
-    expect(card).toHaveClass("border-destructive/45", "bg-linear-to-br");
+    expect(card).toHaveClass("border-destructive/35");
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("已过期 3 天·2026/5/15");
   });

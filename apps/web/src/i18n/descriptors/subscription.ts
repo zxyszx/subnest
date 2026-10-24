@@ -4,6 +4,8 @@ import { msg } from "@lingui/core/macro";
 export const messages = [
   msg({ id: "subscription.add", message: "添加订阅" }),
   msg({ id: "subscriptions.allPlatforms", message: "全部平台" }),
+  msg({ id: "subscriptions.showList", message: "切换到列表" }),
+  msg({ id: "subscriptions.showCards", message: "切换到卡片" }),
   msg({ id: "subscriptions.morePlatforms", message: "更多" }),
   msg({ id: "subscriptions.platformFilter", message: "按平台筛选订阅" }),
   msg({ id: "subscription.addToCalendar", message: "添加到日历" }),

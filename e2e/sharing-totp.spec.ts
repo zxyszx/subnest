@@ -46,7 +46,7 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     }
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/sharing");
-    await expect(page.getByRole("table").getByText(/订阅已过期/)).toBeVisible();
+    await expect(page.getByTestId("sharing-mobile-account").filter({ hasText: account }).getByText(/订阅已过期/)).toBeVisible();
     const accountsResult = await productApiFetch(page, "/api/app/sharing/accounts");
     const family = (accountsResult.json as { data: { accounts: { id: string; subscription: { id: string } }[] } }).data.accounts.find((item) => item.subscription.id === subscriptionId)!;
     const detailResult = await productApiFetch(page, `/api/app/sharing/accounts/${family.id}`);
@@ -66,7 +66,7 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     expect(generatedLinks).toHaveLength(3);
     expect(generatedLinks.every((link) => link.expiresAt === null)).toBe(true);
     await page.goto("/sharing");
-    const sharingRow = page.getByRole("row").filter({ hasText: account });
+    const sharingRow = page.getByTestId("sharing-mobile-account").filter({ hasText: account });
     await expect(sharingRow.getByText("1 / 2", { exact: true })).toBeVisible();
     await expect(sharingRow.getByText("使用中 1", { exact: true })).toBeVisible();
     await expect(sharingRow.getByText("停用 1", { exact: true })).toBeVisible();
