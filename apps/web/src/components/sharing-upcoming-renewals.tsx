@@ -5,7 +5,6 @@ import { formatDateOnlyMonthDay } from "@/lib/time/date-only";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Users } from "lucide-react";
 import { CalendarAccountIdentity } from "@/components/calendar-account-identity";
-import { subscriptionPlatformName } from "@/lib/subscription-platform";
 
 interface SharingUpcomingRenewalsProps {
   items: readonly SharingUpcomingSeatRenewal[];
@@ -42,14 +41,14 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
   }
 
   return (
-    <div className={cn("min-w-0", compact ? "grid gap-2" : "divide-y divide-border")}>
+    <div className="min-w-0 divide-y divide-border/60">
       {visibleItems.map(({ account, seat, daysUntilExpiry }) => (
         <div
           key={seat.id}
           className={cn(
             "grid min-h-14 min-w-0 items-center",
             compact
-              ? "min-h-26 grid-cols-[minmax(0,1fr)_6rem] rounded-md border border-border bg-card px-3 py-3"
+              ? "min-h-26 grid-cols-[minmax(0,1fr)_6rem] py-3"
               : "grid-cols-[minmax(0,1fr)_auto] first:pt-0 last:pb-0 sm:grid-cols-[minmax(8rem,1fr)_7rem_6rem]",
             "gap-x-3 gap-y-2 py-2.5",
             daysUntilExpiry < 0
@@ -59,11 +58,12 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
         >
           <div className="min-w-0">
             <CalendarAccountIdentity
-              platformName={subscriptionPlatformName(account.subscription)}
+              platformName={account.subscription.name}
               logo={account.subscription.logo ?? undefined}
               accountNumber={account.accountNumber}
               size="sm"
               logoContrast={false}
+              secondaryText={account.loginAccount}
             />
             {compact ? (
               <>
@@ -108,7 +108,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
                   : t("upcoming.daysShort", { days: daysUntilExpiry })}
             </span>
             <Button type="button" variant="outline" size="sm" className={cn("shrink-0 gap-1.5", compact && "h-11 w-full px-2")} onClick={() => onManageAccount?.(account)}>
-              <Users className="h-4 w-4" />{t("sharing.manageAccount")}
+              <Users className="h-4 w-4" />{t("sharing.manageMembers")}
             </Button>
           </div>
         </div>

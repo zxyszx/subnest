@@ -2,15 +2,18 @@ import { useEffect } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cn } from "@/lib/utils";
 
 export function WorkspaceQuickFilters<T extends string>({
   value,
   options,
   onChange,
+  className,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  className?: string;
 }) {
   const { t } = useI18n();
   useEffect(() => {
@@ -34,7 +37,7 @@ export function WorkspaceQuickFilters<T extends string>({
     return () => window.removeEventListener("keydown", handler);
   }, [options, onChange]);
   return (
-    <div className="my-4 flex shrink-0 flex-wrap gap-2" role="group" aria-label={t("sharing.allStatus")}>
+    <div className={cn("my-4 flex shrink-0 flex-wrap gap-2", className)} role="group" aria-label={t("sharing.allStatus")}>
       {options.map((option, index) => (
         <Button
           key={option.value}

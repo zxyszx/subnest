@@ -29,16 +29,14 @@ export async function openAddSubscriptionDialog(page: Page) {
 export async function openSubscriptionEditDialog(page: Page, subscriptionName: string) {
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
-  const mobileExpand = card.getByTestId("subscription-card-mobile-expand");
   const isMobileCard = (page.viewportSize()?.width ?? 1280) < 640 && await card.getAttribute("data-testid") === "subscription-card";
   if (isMobileCard) {
-    // A visible card can precede its lazy mobile controls; wait rather than
-    // skipping expansion and looking for an action that is still collapsed.
-    await expect(mobileExpand).toBeVisible();
-    if ((await mobileExpand.getAttribute("aria-expanded")) !== "true") {
-      await mobileExpand.click();
-    }
-    await expect(mobileExpand).toHaveAttribute("aria-expanded", "true");
+    // Compact cards now open details directly; edit is a persistent footer action.
+    const detail = await openSubscriptionDetailDialog(page, subscriptionName);
+    await detail.dialog.locator("[data-subscription-dialog-footer]").getByRole("button", { name: "编辑", exact: true }).click();
+    const editor = page.getByRole("dialog", { name: "编辑订阅" });
+    await expect(editor).toBeVisible();
+    return editor;
   }
   const moreActions = card.getByRole("button", { name: "更多操作" });
   await expect(moreActions).toBeVisible();
@@ -76,8 +74,13 @@ export async function openSubscriptionCalendarDialog(page: Page, subscriptionNam
   await page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER).fill(subscriptionName);
   const card = subscriptionCard(page, subscriptionName);
   await expect(card).toBeVisible();
-  const mobileExpand = card.getByRole("button", { name: "展开全部信息" });
-  if (await mobileExpand.isVisible().catch(() => false)) await mobileExpand.click();
+  if ((page.viewportSize()?.width ?? 1280) < 640) {
+    const detail = await openSubscriptionDetailDialog(page, subscriptionName);
+    await detail.dialog.locator("[data-subscription-dialog-footer]").getByRole("button", { name: "添加到日历", exact: true }).click();
+    const calendar = page.getByRole("dialog", { name: "添加到日历" });
+    await expect(calendar).toBeVisible();
+    return calendar;
+  }
   await card.getByRole("button", { name: "更多操作" }).click();
   await page.getByRole("menuitem", { name: "添加到日历" }).click();
   const dialog = page.getByRole("dialog", { name: "添加到日历" });

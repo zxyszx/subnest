@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
 
-import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "./subscription-platform";
+import { platformAccountNumbers, subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "./subscription-platform";
+
+describe("platformAccountNumbers", () => {
+  const platforms = [
+    { name: "Spotify", accounts: [{ id: "a", accountNumber: 1 }, { id: "b", accountNumber: 8 }] },
+    { name: "Netflix", accounts: [{ id: "c", accountNumber: 9 }] },
+  ];
+  it("recommends the next number on the selected platform even when cloning an earlier account", () => {
+    expect(platformAccountNumbers(platforms, " spotify ")).toEqual({ used: [1, 8], suggested: 9 });
+    expect(platformAccountNumbers(platforms, "Netflix")).toEqual({ used: [9], suggested: 10 });
+  });
+  it("excludes the current subscription during edits and starts new platforms at one", () => {
+    expect(platformAccountNumbers(platforms, "Spotify", "b")).toEqual({ used: [1], suggested: 2 });
+    expect(platformAccountNumbers(platforms, "New platform")).toEqual({ used: [], suggested: 1 });
+  });
+  it("reuses a gap when the highest supported number is occupied", () => {
+    expect(platformAccountNumbers([{ name: "Spotify", accounts: [{ id: "a", accountNumber: 100000 }] }], "Spotify")).toEqual({ used: [100000], suggested: 1 });
+  });
+});
 
 describe("subscriptionPlatformName", () => {
   it("preserves an explicitly managed platform name", () => {

@@ -55,7 +55,7 @@ export function SubscriptionDetailScaffold({
         </div>
       </div>
       <footer
-        className="flex shrink-0 flex-col gap-2 border-t border-border bg-card px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:px-5 sm:pb-3"
+        className="grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-card px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] [&_button]:min-h-11 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:px-5 sm:pb-3"
         data-dialog-region="subscription-actions"
         data-subscription-dialog-footer=""
       >

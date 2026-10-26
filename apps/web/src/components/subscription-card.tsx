@@ -230,7 +230,7 @@ function SubscriptionCardGridMeta({
 
       <div
         data-testid="subscription-card-meta-date-group"
-        className="grid min-w-0 grid-cols-2 divide-x divide-border/60 rounded-md border border-border/60 bg-muted/15"
+        className="grid min-h-18 min-w-0 grid-cols-2 divide-x divide-border/60 rounded-md border border-border/60 bg-muted/15"
       >
         <div data-testid="subscription-card-meta-start-date" className="flex min-w-0 items-center gap-2.5 px-3 py-2.5">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -244,10 +244,9 @@ function SubscriptionCardGridMeta({
           <div className="min-w-0 flex-1">
             <p className="text-[11px] leading-4 text-muted-foreground">{paymentMethodLabel}</p>
             {paymentMethod ? (
-              <span className="flex min-w-0 flex-wrap items-baseline gap-x-1 text-xs leading-4 text-foreground">
-                {paymentMethodName ? <span className="min-w-0 wrap-break-word">{paymentMethodName}</span> : null}
-                {paymentMethodName && cardLast4 ? <span aria-hidden="true" className="text-muted-foreground">·</span> : null}
-                {cardLast4 ? <span className="shrink-0 whitespace-nowrap tabular-nums">•••• {cardLast4}</span> : null}
+              <span className="block min-w-0 text-xs leading-4 text-foreground">
+                {paymentMethodName ? <TruncatedTooltipText text={paymentMethodName} className="block min-w-0 truncate" /> : null}
+                {cardLast4 ? <span className="block whitespace-nowrap tabular-nums text-muted-foreground">•••• {cardLast4}</span> : null}
               </span>
             ) : (
               <span className="block truncate text-xs text-muted-foreground">{paymentMethodFallback}</span>

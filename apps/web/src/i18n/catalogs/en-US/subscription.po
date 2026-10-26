@@ -1547,6 +1547,22 @@ msgid "subscription.platformAccountAdded"
 msgstr "Already added"
 
 #. js-lingui-explicit-id
+msgid "subscription.accountNumberOccupied"
+msgstr "Number {number} is used by another subscription on this platform"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumberUseSuggested"
+msgstr "Use available number {number}"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumberAvailable"
+msgstr "Number {number} is available for a new subscription"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumbersUsed"
+msgstr "Numbers used on this platform: {numbers}"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:142
 msgid "subscription.familySharing.passwordGenerated"
 msgstr "Random password generated"

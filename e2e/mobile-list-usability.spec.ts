@@ -9,7 +9,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
   await page.emulateMedia({ reducedMotion: "reduce" });
   const now = new Date();
   await page.clock.setFixedTime(now);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
+  let today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
   const dateAtOffset = (days: number) => {
     const date = new Date(`${today}T12:00:00Z`);
     date.setUTCDate(date.getUTCDate() + days);
@@ -23,6 +23,10 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await page.screenshot({ path: `${output}/${name}.png`, animations: "disabled" });
   };
   await page.goto("/subscriptions");
+  const settingsResult = await productApiFetch(page, "/api/app/settings");
+  expect(settingsResult.ok, settingsResult.body).toBe(true);
+  const zone = (settingsResult.json as { data: { settings: { timezone: string } } }).data.settings.timezone;
+  today = new Intl.DateTimeFormat("en-CA", { timeZone: zone }).format(now);
   try {
     for (const [index, name] of names.entries()) {
       const id = await createProductSubscriptionSeed(page, {
@@ -64,11 +68,14 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await page.reload();
     const search = page.getByPlaceholder(SUBSCRIPTION_SEARCH_PLACEHOLDER);
     await expect(search).toBeVisible();
+    // Other suites may leave accounts before this fixture in the virtualized list.
+    await search.fill(names[0]!);
     await expect(subscriptionCard(page, names[0]!)).toBeVisible();
     await expectNoHorizontalOverflow(page, "subscription first screen");
     await shot("01-subscriptions-first-screen");
     observations.subscriptionQuickDueFiltersVisible = await page.getByRole("button", { name: /今日续费|逾期订阅/ }).count();
     expect(observations.subscriptionQuickDueFiltersVisible).toBe(2);
+    await search.fill("");
     await page.getByRole("button", { name: "今日续费", exact: true }).click();
     await expect(subscriptionCard(page, names[0]!)).toBeVisible();
     await page.getByRole("button", { name: "逾期订阅", exact: true }).click();
@@ -94,9 +101,9 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expect(mobileAccount).toBeVisible();
     await expect(mobileAccount.getByText("存在待收款", { exact: true })).toHaveCount(0);
     observations.sharingFirstAccountTop = (await mobileAccount.boundingBox())?.y;
-    observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).isVisible();
+    observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).isVisible();
     expect(observations.sharingManageInitiallyVisible).toBe(true);
-    await expect(mobileAccount.getByRole("button", { name: "分享管理", exact: true })).toBeVisible();
+    await expect(mobileAccount.getByRole("button", { name: "验证码链接", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, "sharing first screen");
     await shot("03-sharing-first-screen");
     const sharingSearch = page.getByRole("searchbox");
@@ -110,7 +117,10 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await shot("05-sharing-filter-collapsed");
     await expect(mobileAccount.getByRole("button", { name: "展开全部信息", exact: true })).toHaveCount(0);
     await shot("06-sharing-account-actions");
-    await mobileAccount.getByRole("button", { name: "管理账号", exact: true }).click();
+    await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).click();
+    const accountPanel = page.getByRole("dialog", { name: "管理车友", exact: true });
+    await expect(accountPanel).toHaveCSS("width", "390px");
+    await expect(accountPanel).toHaveCSS("height", "844px");
     const seats = page.getByTestId("sharing-seat-mobile-list");
     await expect(seats).toBeVisible();
     const vacantRow = seats.locator("article").filter({ hasText: "空闲" }).first();
@@ -218,14 +228,31 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
       await expect(summary).toBeVisible();
       const toolbar = page.getByTestId("desktop-sharing-toolbar");
       await expect(toolbar).toBeVisible();
-      await expect(mobileAccount.getByRole("button", { name: "管理账号", exact: true })).toBeVisible();
+      await expect(summary.locator(":scope > *")).toHaveCount(4);
+      expect(Math.round((await toolbar.boundingBox())!.y - ((await summary.boundingBox())!.y + (await summary.boundingBox())!.height))).toBe(16);
+      await expect(page.getByRole("combobox", { name: "账号状态", exact: true })).toHaveCount(0);
+      await expect(mobileAccount.getByRole("button", { name: "管理车友", exact: true })).toBeVisible();
+      const seatRows = await page.getByTestId("sharing-card-seats").evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().top));
+      expect(Math.abs(seatRows[0]! - seatRows[1]!)).toBeLessThanOrEqual(1);
       await expectNoHorizontalOverflow(page, `desktop sharing ${width}`);
       await shot(`13-sharing-desktop-${width}`);
+      if (width === 1536) {
+        const scrollTop = await page.evaluate(() => document.getElementById("root")!.scrollTop);
+        await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).click();
+        await expect(accountPanel).toBeVisible();
+        const panelBox = (await accountPanel.boundingBox())!;
+        expect(panelBox.x).toBeGreaterThan(0);
+        expect(Math.round(panelBox.x + panelBox.width)).toBe(width);
+        expect(Math.round(panelBox.height)).toBe(1000);
+        await shot("13-sharing-desktop-members-panel");
+        await accountPanel.getByRole("button", { name: "取消", exact: true }).click();
+        await expect(accountPanel).toBeHidden();
+        expect(await page.evaluate(() => document.getElementById("root")!.scrollTop)).toBe(scrollTop);
+      }
     }
     await page.getByRole("searchbox").fill("audit0@example.test");
     await expect(mobileAccount).toBeVisible();
-    await page.getByRole("combobox", { name: "账号状态", exact: true }).click();
-    await page.getByRole("option", { name: "存在待收款", exact: true }).click();
+    await page.getByRole("button", { name: "存在待收款", exact: true }).click();
     await expect(page.getByText("没有找到匹配的共享账号", { exact: true })).toBeVisible();
     await shot("14-paid-account-excluded-from-outstanding-filter");
     await writeFile(`${output}/observations.json`, JSON.stringify(observations, null, 2));

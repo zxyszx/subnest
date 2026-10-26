@@ -238,10 +238,15 @@ describe("SubscriptionDialog", () => {
 
     await user.click(screen.getByRole("combobox", { name: "平台名称" }));
     await user.click(await screen.findByRole("option", { name: "Netflix" }));
-    expect(screen.getByText("已添加")).toBeInTheDocument();
+    expect(screen.getByText("编号 1 已被此平台的其他订阅使用")).toBeInTheDocument();
+    expect(screen.getByText("此平台已用编号：1")).toBeInTheDocument();
     expect(screen.getByLabelText("账号编号")).toHaveAttribute("aria-invalid", "true");
     expect(document.querySelector("datalist")).toBeNull();
     expect(screen.getByLabelText("服务名称")).toHaveValue("Netflix");
+    await user.click(screen.getByRole("button", { name: "使用可用编号 2" }));
+    expect(screen.getByLabelText("账号编号")).toHaveValue("2");
+    expect(screen.getByLabelText("账号编号")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByText("编号 2 可用，可创建订阅")).toBeInTheDocument();
   });
 
   it("uses the selected platform Logo for a new subscription", async () => {
@@ -354,7 +359,7 @@ describe("SubscriptionDialog", () => {
     const header = document.querySelector("[data-subscription-dialog-header]");
     const scrollRegion = form?.firstElementChild;
     const footer = screen.getByRole("button", { name: "添加订阅" }).closest("div");
-    expect(dialog).toHaveClass("h5-dialog-frame", "h5-subscription-dialog-panel");
+    expect(dialog).toHaveClass("workspace-detail-panel", "h5-subscription-dialog-panel");
     expect(dialog).not.toHaveClass("h-fit");
     expect(header).toHaveClass("shrink-0");
     expect(form).toHaveClass("h5-subscription-dialog-form");

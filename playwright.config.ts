@@ -136,6 +136,7 @@ export default defineConfig({
       testMatch: previousDist ? ["**/version-upgrade.spec.ts"] : performanceMode ? ["**/performance.spec.ts"] : [
         "**/calendar-feed-management.spec.ts",
         "**/subscriptions.spec.ts",
+        "**/subscription-clone-number.spec.ts",
         "**/settings.spec.ts",
         "**/statistics.spec.ts",
         "**/release-smoke.spec.ts",

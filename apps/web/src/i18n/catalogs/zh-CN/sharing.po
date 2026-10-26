@@ -1009,6 +1009,18 @@ msgid "sharing.noMember"
 msgstr "等待分配车友"
 
 #. js-lingui-explicit-id
+msgid "sharing.manageMembers"
+msgstr "管理车友"
+
+#. js-lingui-explicit-id
+msgid "sharing.verificationLinks"
+msgstr "验证码链接"
+
+#. js-lingui-explicit-id
+msgid "sharing.vacantSeatsCount"
+msgstr "空闲 {count} 位"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:54
 msgid "sharing.subtitle"
 msgstr "管理共享账号、车位、车友、应收与收款"

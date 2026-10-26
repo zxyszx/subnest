@@ -77,13 +77,13 @@ export function UpcomingRenewals({
   }
 
   return (
-    <div className={cn("min-w-0", compact ? "grid gap-2" : "divide-y divide-border")}>
+    <div className="min-w-0 divide-y divide-border/60">
       {upcoming.map((item) => (
         <div
           key={item.subscription.id}
           className={cn(
             "grid min-h-14 min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center",
-            compact ? "min-h-26 rounded-md border border-border bg-card px-3 py-3" : "last:pb-0",
+            compact ? "min-h-26 py-3" : "last:pb-0",
             !compact && "sm:grid-cols-[minmax(0,1fr)_minmax(12rem,14rem)_6rem]",
             "gap-x-3 gap-y-2 py-2.5",
             item.daysUntil < 0
@@ -94,24 +94,17 @@ export function UpcomingRenewals({
           <div className="min-w-0">
             <CalendarAccountIdentity
               platformName={
-                item.subscription.platformName || item.subscription.name
+                item.subscription.name
               }
               logo={item.subscription.logo}
               accountNumber={item.subscription.accountNumber ?? 1}
               size="sm"
               logoContrast={false}
+              secondaryText={item.subscription.familySharingLoginAccount?.trim() || undefined}
             />
-            {(item.subscription.platformName &&
-              item.subscription.platformName !== item.subscription.name) ||
-            item.subscription.paymentMethod ||
+            {item.subscription.paymentMethod ||
             item.subscription.cardLast4 ? (
               <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 pl-13 text-xs text-muted-foreground">
-                {item.subscription.platformName &&
-                item.subscription.platformName !== item.subscription.name ? (
-                  <span className="min-w-0 truncate">
-                    {item.subscription.name}
-                  </span>
-                ) : null}
                 {item.subscription.paymentMethod ||
                 item.subscription.cardLast4 ? (
                   <SharingPaymentSummary

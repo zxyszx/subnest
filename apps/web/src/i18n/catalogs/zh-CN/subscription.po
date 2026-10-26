@@ -1547,6 +1547,22 @@ msgid "subscription.platformAccountAdded"
 msgstr "已添加"
 
 #. js-lingui-explicit-id
+msgid "subscription.accountNumberOccupied"
+msgstr "编号 {number} 已被此平台的其他订阅使用"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumberUseSuggested"
+msgstr "使用可用编号 {number}"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumberAvailable"
+msgstr "编号 {number} 可用，可创建订阅"
+
+#. js-lingui-explicit-id
+msgid "subscription.accountNumbersUsed"
+msgstr "此平台已用编号：{numbers}"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/subscription.ts:142
 msgid "subscription.familySharing.passwordGenerated"
 msgstr "已生成随机密码"

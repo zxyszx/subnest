@@ -322,14 +322,14 @@ test("mobile sharing accounts keep actions visible without inline expansion", as
     await expect(account.getByRole("heading", { name: subscriptionName, exact: true })).toBeVisible();
     await expect(account.getByText(loginAccount, { exact: true })).toBeVisible();
     await expect(account.getByText(/最近到期/)).toBeVisible();
-    await expect(account.getByText("使用中 1", { exact: true })).toBeVisible();
-    await expect(account.getByText("停用 1", { exact: true })).toBeVisible();
+    await expect(account.getByText("1/2", { exact: true })).toBeVisible();
+    await expect(account.getByTitle("车位 2 · 停用")).toBeVisible();
     await expectNoHorizontalOverflow(page, "mobile sharing status summary");
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
 
     await expect(account.getByRole("button", { name: "展开全部信息" })).toHaveCount(0);
-    await expect(account.getByRole("button", { name: "分享管理" })).toBeVisible();
-    await expect(account.getByRole("button", { name: "管理账号" })).toBeVisible();
+    await expect(account.getByRole("button", { name: "验证码链接" })).toBeVisible();
+    await expect(account.getByRole("button", { name: "管理车友" })).toBeVisible();
     await expectNoHorizontalOverflow(page, "mobile sharing account details");
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-actions.png") });
   } finally {
@@ -528,8 +528,8 @@ test("mobile calendar and long detail preserve scroll, title, breakpoint, and fo
     await expect(reopenedMobileDetail.trigger).toBeFocused();
 
     for (const boundary of [
-      { width: 639, panelClass: /h5-drawer-panel/ },
-      { width: 640, panelClass: /h5-dialog-auto-frame/ },
+      { width: 639, panelClass: /workspace-detail-panel/ },
+      { width: 640, panelClass: /workspace-detail-panel/ },
     ]) {
       await page.setViewportSize({ width: boundary.width, height: 720 });
       const detail = await openSubscriptionDetailDialog(page, subscriptionName);

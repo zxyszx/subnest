@@ -59,7 +59,7 @@ test("general inbox links require folders and provide seat-scoped member links",
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/sharing");
-  await page.getByRole("button", { name: "分享管理", exact: true }).click();
+  await page.getByRole("button", { name: "验证码链接", exact: true }).click();
   const view = page.getByRole("dialog", { name: /车位链接/ });
   await expect(view.locator("input").first()).toHaveValue(links[0]!.shortUrl);
   await expect(view.getByRole("button", { name: "生成链接", exact: true })).toHaveCount(2);
@@ -78,7 +78,7 @@ test("general inbox links require folders and provide seat-scoped member links",
   enabled = false;
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();
-  await page.getByRole("button", { name: "分享管理", exact: true }).click();
+  await page.getByRole("button", { name: "验证码链接", exact: true }).click();
   const unavailable = page.getByRole("dialog", { name: "分享管理" });
   await expect(unavailable).toContainText("请先在共享收件箱选择可查看的文件夹并开启通用分享");
   await unavailable.getByRole("button", { name: "关闭", exact: true }).click();

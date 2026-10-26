@@ -1,12 +1,12 @@
 import { lazy, Suspense, useState } from "react";
 import { useSearchParams } from "@/lib/router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CircleDollarSign, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { CalendarClock, CircleDollarSign, TrendingUp, UsersRound } from "lucide-react";
 import { SharingInboxLinksDialog } from "@/components/sharing-inbox-links-dialog";
 
-import { WorkspacePageHeading } from "@/components/workspace-page-heading";
 import { SharingAccountCard } from "@/components/sharing-account-card";
 import { Header } from "@/components/header";
+import { WorkspacePageHeading } from "@/components/workspace-page-heading";
 import { sharingSeatExpiryTone, type SharingSeatTone } from "@/components/sharing-seat-occupancy";
 import { EditSubscriptionDialog } from "@/components/edit-subscription-dialog";
 import { SubscriptionLogo } from "@/components/subscription-logo";
@@ -15,7 +15,6 @@ import { useRouteReady } from "@/components/route-progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/sonner";
 import { StatCard } from "@/components/ui/stat-card";
 import { MobileListToolbar } from "@/components/mobile-list-toolbar";
 import { PlatformSearchToolbar } from "@/components/platform-search-toolbar";
@@ -34,7 +33,6 @@ import { sharingSubscriptionExpiryDays, sharingMonthlyProfit, sharingMonthlyReve
 import { sharingAccountHasVacancy, sharingSeatDisplayState, type SharingSeatDisplayState } from "@/lib/sharing-seat-state";
 import { subscriptionPlatformName, UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 import { sharingService } from "@/services/sharing-service";
-import { copyTextToClipboard } from "@/shared/browser/clipboard";
 import type { SharingAccount } from "@renewlet/shared/schemas/sharing";
 
 const SharingAccountDetailDialog = lazy(() => import("@/components/sharing-account-detail-dialog").then((module) => ({
@@ -173,11 +171,6 @@ export default function Sharing() {
   );
   const upcomingRenewals = upcomingSeatRenewals.length;
 
-  const copy = async (value: string) => {
-    const result = await copyTextToClipboard(value);
-    if (result.ok) toast.success(t("sharing.copySuccess"));
-    else toast.error(t("sharing.copyFailed"));
-  };
 
   const saveFamilySharing = (changes: Parameters<typeof updateSubscription.mutate>[0]["changes"]) => {
     if (!editingSubscriptionId) return;
@@ -210,8 +203,8 @@ export default function Sharing() {
   };
 
   const sharingFilterControls = (
-    <div className="grid min-w-0 grid-cols-2 gap-2">
-      <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
+    <div className={cn("grid min-w-0 gap-2", isMobile && "grid-cols-2")}>
+      {isMobile ? <Select value={accountFilter} onValueChange={(value) => setAccountFilter(value as SharingFilter)}>
         <SelectTrigger className="h-11 border-border bg-secondary sm:h-10" aria-label={t("sharing.accountStatusFilter")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("sharing.accountStatusFilter")}>
           <SelectItem value="all">{t("sharing.allStatus")}</SelectItem>
@@ -221,7 +214,7 @@ export default function Sharing() {
           <SelectItem value="overdue">{t("sharing.hasOverdue")}</SelectItem>
           <SelectItem value="outstanding">{t("sharing.hasOutstanding")}</SelectItem>
         </SelectContent>
-      </Select>
+      </Select> : null}
       <Select value={sortField} onValueChange={(value) => setSortField(value as SharingSortField)}>
         <SelectTrigger className="h-11 border-border bg-secondary sm:h-10" aria-label={t("subscriptions.sort.label")}><SelectValue /></SelectTrigger>
         <SelectContent mobileTitle={t("subscriptions.sort.label")}>
@@ -238,16 +231,14 @@ export default function Sharing() {
   return (
     <div className="app-page bg-background">
       <Header />
-      <main className="app-main sharing-main mx-auto max-w-[120rem]">
-        <WorkspacePageHeading title={t("sharing.title")} description={
-          <span>{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</span>
-        } actions={<Button variant="outline" className="min-h-11" onClick={() => setRenewalsOpen(true)}><CalendarClock className="h-4 w-4" />{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>} />
-        <section className="workspace-summary mb-6 hidden grid-cols-3 gap-3 md:grid" aria-label={t("sharing.title")}>
-          <StatCard title={t("sharing.accounts")} value={visibleAccounts.length} icon={<WalletCards />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in" />
-          <StatCard title={t("sharing.occupiedSeats")} value={`${occupiedSeats} / ${capacity}`} icon={<UsersRound />} density="dashboard" valueClassName="text-base 2xl:text-lg" className="animate-fade-in [animation-delay:100ms]" />
-          <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:200ms]" />
-          <StatCard title={t("sharing.outstanding")} value={currencyMetric(formatCurrency(outstanding, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:300ms]" />
-          <StatCard title={t("sharing.monthlyProfit")} value={currencyMetric(formatCurrency(monthlyProfit, defaultCurrency), defaultCurrency)} icon={<TrendingUp />} density="dashboard" variant={monthlyProfit < 0 ? "warning" : "primary"} valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" className="animate-fade-in [animation-delay:400ms]" />
+      <main className="app-main sharing-main mx-auto grid max-w-[120rem] content-start gap-4">
+        <WorkspacePageHeading hideDesktopTitle className="mb-0" title={t("sharing.title")} description={<>{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</>} actions={
+          <Button variant="outline" className="min-h-11 md:hidden" onClick={() => setRenewalsOpen(true)}><CalendarClock className="h-4 w-4" />{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>
+        } />
+        <section className="workspace-summary hidden grid-cols-4 gap-3 md:grid" aria-label={t("sharing.accountSummary")}>
+          <StatCard title={t("sharing.monthlyRevenue")} value={currencyMetric(formatCurrency(monthlyRevenue, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" variant="primary" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" />
+          <StatCard title={t("sharing.outstanding")} value={currencyMetric(formatCurrency(outstanding, defaultCurrency), defaultCurrency)} icon={<CircleDollarSign />} density="dashboard" valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" />
+          <StatCard title={t("sharing.monthlyProfit")} value={currencyMetric(formatCurrency(monthlyProfit, defaultCurrency), defaultCurrency)} icon={<TrendingUp />} density="dashboard" variant={monthlyProfit < 0 ? "warning" : "primary"} valueClassName="flex items-baseline gap-1 whitespace-nowrap text-base xl:text-lg 2xl:text-xl" />
           <StatCard
             title={t("sharing.upcomingRenewals")}
             value={upcomingRenewals}
@@ -256,14 +247,13 @@ export default function Sharing() {
             density="dashboard"
             variant={upcomingRenewals > 0 ? "warning" : "default"}
             valueClassName="text-base 2xl:text-lg"
-            className="animate-fade-in [animation-delay:500ms]"
             aria-label={t("sharing.openUpcomingRenewals")}
             onClick={() => setRenewalsOpen(true)}
           />
         </section>
 
         {platformOptions.length > 0 ? (
-          <div className="mt-3 shrink-0 md:mt-4">
+          <div className="shrink-0">
             {isMobile ? (
               <MobileListToolbar platforms={platformOptions} platform={selectedPlatform} onPlatformChange={setSelectedPlatform}
                 allLabel={t("sharing.allPlatforms")} platformLabel={t("sharing.platformFilter")}
@@ -281,15 +271,14 @@ export default function Sharing() {
                 searchValue={searchQuery}
                 onSearchChange={(event) => setSearchQuery(event.target.value)}
                 searchPlaceholder={t("sharing.searchPlaceholder")}
-                controls={<div className="w-56 shrink-0">{sharingFilterControls}</div>}
-                className="mb-3"
+                controls={<div className="w-36 shrink-0">{sharingFilterControls}</div>}
                 testId="desktop-sharing-toolbar"
               />
             )}
           </div>
         ) : null}
 
-        <WorkspaceQuickFilters value={accountFilter} onChange={setAccountFilter} options={[
+        <WorkspaceQuickFilters className="my-0" value={accountFilter} onChange={setAccountFilter} options={[
           { value: "all", label: t("sharing.allStatus") },
           { value: "available", label: t("sharing.hasVacancies") },
           { value: "full", label: t("sharing.accountFull") },
@@ -321,7 +310,7 @@ export default function Sharing() {
                 sharingReady={Boolean(linkSharingReady(account))}
                 subscriptionExpiryDays={sharingSubscriptionExpiryDays(account, today)}
                 onManage={() => setSelectedAccount(account)} onDetails={() => setViewingAccount(account)}
-                onLinks={() => setLinksAccount(account)} onCopyAccount={() => void copy(account.loginAccount)} />
+                onLinks={() => setLinksAccount(account)} />
             ))}
           </section>
         )}

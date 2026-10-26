@@ -19,6 +19,7 @@ import type { Subscription, SubscriptionCollectionItem } from '@/types/subscript
 import { EditSubscriptionDialog } from '@/components/edit-subscription-dialog';
 import { DeferredRenewSubscriptionDialog } from '@/components/renew-subscription-dialog-loader';
 import { Header } from '@/components/header';
+import { WorkspacePageHeading } from '@/components/workspace-page-heading';
 import { StatisticsPageSkeleton } from '@/components/loading-skeleton';
 import { useRouteReady } from '@/components/route-progress';
 import { QueryErrorState } from '@/components/query-error-state';
@@ -200,22 +201,14 @@ const Statistics = () => {
       <Header />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-foreground">{t("statistics.title")}</h1>
-            {lastUpdated && !ratesLoading ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("statistics.ratesUpdatedAt", { date: formatDateTime(lastUpdated, { year: "numeric", month: "2-digit", day: "2-digit" }) })}
-              </p>
-            ) : null}
-          </div>
+        <WorkspacePageHeading hideDesktopTitle title={t("statistics.title")} description={lastUpdated && !ratesLoading ? t("statistics.ratesUpdatedAt", { date: formatDateTime(lastUpdated, { year: "numeric", month: "2-digit", day: "2-digit" }) }) : undefined} actions={
           <ExchangeRateRefreshButton
             label={t("statistics.refreshRates")}
             pending={ratesRefreshPending}
             onRefresh={handleRefreshRates}
             className="w-full sm:w-auto"
           />
-        </div>
+        } />
 
         {ratesError ? (
           <ExchangeRateErrorFeedback error={ratesError} details={ratesErrorDetails} />

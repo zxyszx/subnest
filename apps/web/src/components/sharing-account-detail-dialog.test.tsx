@@ -178,7 +178,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
       </TooltipProvider>,
     );
 
-    expect(screen.getByRole("dialog", { name: "sharing.editAccount" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "sharing.manageMembers" })).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "sharing.editSeat" })[0]!);
     expect(screen.getByRole("button", { name: "sharing.monthly" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "sharing.quarterly" })).toBeInTheDocument();
@@ -268,15 +268,15 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(screen.getByTestId("sharing-seat-mobile-list")).not.toHaveClass("overflow-y-auto");
   });
 
-  it("keeps the seat manager content-sized with a bounded desktop list", () => {
+  it("uses the responsive account panel with a bounded desktop seat list", () => {
     render(
       <TooltipProvider>
         <SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} />
       </TooltipProvider>,
     );
 
-    const dialog = screen.getByRole("dialog", { name: "sharing.editAccount" });
-    expect(dialog).toHaveClass("h5-dialog-auto-frame", "max-w-5xl");
+    const dialog = screen.getByRole("dialog", { name: "sharing.manageMembers" });
+    expect(dialog).toHaveClass("workspace-detail-panel", "max-w-5xl");
     expect(dialog).not.toHaveClass("h-[calc(100dvh-1rem)]");
     expect(screen.getByRole("table").parentElement).toHaveClass("max-h-[min(24rem,45vh)]");
   });
@@ -416,7 +416,7 @@ describe("SharingAccountDetailDialog account credentials", () => {
     );
     await user.click(screen.getAllByRole("button", { name: "sharing.moveSeat" })[0]!);
     await user.click(screen.getByRole("combobox", { name: "sharing.targetAccount" }));
-    await user.click(screen.getByText("Netflix #17 · netflix17@newszxcn.com"));
+    await user.click(screen.getByRole("option", { name: "Netflix #17 · netflix17@newszxcn.com" }));
 
     await user.click(screen.getByRole("combobox", { name: "sharing.targetSeat" }));
     expect(screen.getByText("sharing.seatNumber 3 · Bob")).toBeInTheDocument();

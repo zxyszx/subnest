@@ -140,7 +140,7 @@ export function SettingsScreen() {
                 <p className="text-xs font-semibold text-muted-foreground">
                   {activeSectionGroup ? t(activeSectionGroup.labelKey) : t("settings.title")}
                 </p>
-                <h1 className="mt-1 text-2xl font-bold text-foreground">
+                <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                   {activeSection ? t(activeSection.labelKey) : t("settings.title")}
                 </h1>
               </div>

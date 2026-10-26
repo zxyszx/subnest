@@ -1009,6 +1009,18 @@ msgid "sharing.noMember"
 msgstr "Waiting for a member"
 
 #. js-lingui-explicit-id
+msgid "sharing.manageMembers"
+msgstr "Manage members"
+
+#. js-lingui-explicit-id
+msgid "sharing.verificationLinks"
+msgstr "Verification links"
+
+#. js-lingui-explicit-id
+msgid "sharing.vacantSeatsCount"
+msgstr "{count} vacant seats"
+
+#. js-lingui-explicit-id
 #: src/i18n/descriptors/sharing.ts:54
 msgid "sharing.subtitle"
 msgstr "Manage shared accounts, seats, members, receivables, and payments"

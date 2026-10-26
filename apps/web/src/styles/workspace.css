@@ -4,8 +4,19 @@
 .workspace-shell .app-main {
   max-width: 1600px;
 }
-.workspace-page-heading {
-  margin-bottom: 24px;
+/* Long account and link tasks keep the list in place behind one responsive panel. */
+.workspace-detail-panel {
+  inset: var(--app-visual-viewport-offset-top, 0px) 0 auto auto;
+  margin: 0;
+  width: min(64rem, calc(100vw - 3rem));
+  max-width: none;
+  height: var(--app-viewport-height);
+  max-height: var(--app-viewport-height);
+  border-radius: 16px 0 0 16px;
+  animation: none;
+}
+.workspace-detail-panel-compact {
+  width: min(40rem, calc(100vw - 3rem));
 }
 @media (max-width: 767px) {
   .workspace-detail-panel {

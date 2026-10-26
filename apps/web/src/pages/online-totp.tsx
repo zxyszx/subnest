@@ -7,6 +7,7 @@ import { QueryErrorState } from "@/components/query-error-state";
 import { SubscriptionLogo } from "@/components/subscription-logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspacePageHeading } from "@/components/workspace-page-heading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
@@ -72,6 +73,7 @@ export default function OnlineTotpPage() {
     <div className="app-page bg-background">
       <Header pageActions={headerAction} />
       <main className="app-main mx-auto max-w-[120rem]">
+        <WorkspacePageHeading hideDesktopTitle className="md:mb-0" title={t("nav.online2fa")} />
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <PlatformSearchToolbar

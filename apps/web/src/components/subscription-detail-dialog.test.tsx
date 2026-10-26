@@ -384,7 +384,7 @@ describe("SubscriptionDetailDialog", () => {
     const actions = editButton.parentElement;
     if (!actions) throw new Error("Missing subscription detail action footer");
 
-    expect(actions).toHaveClass("flex", "flex-col", "border-t", "sm:flex-row", "sm:justify-end");
+    expect(actions).toHaveClass("grid", "grid-cols-2", "border-t", "sm:flex", "sm:justify-end");
     expect(actions).not.toHaveClass("sm:grid-cols-2");
     expect(within(actions).getAllByRole("button").map((button) => button.textContent)).toEqual([
       "关闭",
@@ -406,7 +406,7 @@ describe("SubscriptionDetailDialog", () => {
     if (!title.parentElement) throw new Error("Missing desktop subscription detail title stack");
     const category = within(title.parentElement).getByText("开发工具");
 
-    expect(dialog).toHaveClass("h5-dialog-auto-frame", "overflow-hidden");
+    expect(dialog).toHaveClass("workspace-detail-panel", "overflow-hidden");
     expect(header).toHaveClass("shrink-0");
     expect(scrollRegions).toHaveLength(1);
     expect(scrollRegions[0]?.parentElement?.parentElement).toBe(dialog);
@@ -445,7 +445,7 @@ describe("SubscriptionDetailDialog", () => {
     expect(within(screen.getByRole("dialog", { name: "Fastmail" })).getByText("不提醒")).toBeInTheDocument();
   });
 
-  it("uses a mobile drawer for small screens", () => {
+  it("uses the same accessible detail panel on small screens", () => {
     mockMobile(true);
     renderDetailDialog();
 
@@ -459,8 +459,8 @@ describe("SubscriptionDetailDialog", () => {
     const header = title.parentElement.parentElement?.parentElement;
 
     expect(drawer).toHaveClass(
-      "h5-drawer-panel",
-      "h-[calc(var(--app-viewport-height)-1rem)]",
+      "workspace-detail-panel",
+      "workspace-detail-panel-compact",
       "overflow-hidden",
     );
     expect(header).toHaveClass("shrink-0");

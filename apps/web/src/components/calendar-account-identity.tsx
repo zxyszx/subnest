@@ -11,6 +11,7 @@ interface CalendarAccountIdentityProps {
   className?: string | undefined;
   nameClassName?: string | undefined;
   logoContrast?: boolean;
+  secondaryText?: string | undefined;
 }
 
 export function CalendarAccountIdentity({
@@ -22,9 +23,11 @@ export function CalendarAccountIdentity({
   className,
   nameClassName,
   logoContrast = true,
+  secondaryText,
 }: CalendarAccountIdentityProps) {
   const { t } = useI18n();
   const compact = size === "xs";
+  const name = <span className={cn("min-w-0 truncate font-medium text-foreground", compact ? "text-xs" : "text-sm", nameClassName)}>{platformName}</span>;
 
   return (
     <div
@@ -61,15 +64,10 @@ export function CalendarAccountIdentity({
           </span>
         ) : null}
       </span>
-      <span
-        className={cn(
-          "min-w-0 truncate font-medium text-foreground",
-          compact ? "text-xs" : "text-sm",
-          nameClassName,
-        )}
-      >
-        {platformName}
-      </span>
+      {secondaryText ? <span className="grid min-w-0 gap-0.5">
+        {name}
+        <span title={secondaryText} className="line-clamp-2 text-xs font-normal text-muted-foreground wrap-anywhere md:block md:truncate" data-testid="renewal-login-account">{secondaryText}</span>
+      </span> : name}
     </div>
   );
 }

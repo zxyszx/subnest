@@ -9,6 +9,7 @@
 import { useMemo, useState } from 'react';
 import type { SubscriptionCollectionItem } from '@/types/subscription';
 import { Header } from '@/components/header';
+import { WorkspacePageHeading } from '@/components/workspace-page-heading';
 import { BackToTopFloatButton } from '@/components/back-to-top-float-button';
 import { SubscriptionCalendar } from '@/components/subscription-calendar';
 import { EditSubscriptionDialog } from '@/components/edit-subscription-dialog';
@@ -86,10 +87,7 @@ const Calendar = () => {
         className="app-main mx-auto max-w-[120rem]"
         aria-busy={subscriptionsQuery.isFetching ? true : undefined}
       >
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl font-bold text-foreground">{t("calendar.title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("calendar.pageSubtitle")}</p>
-        </div>
+        <WorkspacePageHeading hideDesktopTitle title={t("calendar.title")} description={t("calendar.pageSubtitle")} />
 
         <SubscriptionCalendar 
           subscriptions={subscriptions} 

@@ -5,7 +5,8 @@
  * 注意：金额、周期、状态和提醒标签必须继续复用订阅 domain 常量，避免不同入口展示口径分叉。
  */
 import { useRef, useState, type ReactNode } from "react";
-import { CalendarPlus, Copy, Edit2, ExternalLink, RotateCw } from "lucide-react";
+import { CalendarPlus, Edit2, ExternalLink, RotateCw } from "lucide-react";
+import { CopyButton } from "@/components/copy-button";
 import type { Subscription, SubscriptionCollectionItem } from "@/types/subscription";
 import {
   DEFAULT_NOTIFICATION_REMINDER_DAYS,
@@ -24,9 +25,7 @@ import { SubscriptionStatusBadge } from "@/components/subscription-status-badge"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MobileBottomDrawerContent, MobileDrawerRoot } from "@/components/ui/mobile-drawer";
 import { useCustomConfigState } from "@/contexts/CustomConfigContext";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSettings } from "@/hooks/use-settings";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
@@ -45,8 +44,6 @@ import {
 import { getEffectiveSubscriptionStatus } from "@/modules/subscriptions/domain/subscription-status";
 import { isManualRenewEligible } from "@renewlet/shared/subscription-renewal";
 import { calculateCostSharingSummary } from "@renewlet/shared/cost-sharing";
-import { copyTextToClipboard } from "@/shared/browser/clipboard";
-import { toast } from "@/components/ui/sonner";
 
 const DEFAULT_LOGO_FALLBACK_COLOR = "hsl(var(--primary))";
 
@@ -130,10 +127,6 @@ function SubscriptionDetailContent({
 }: SubscriptionDetailContentProps) {
   const { data: settings } = useSettings();
   const { t, locale, formatDateOnly, formatCurrency } = useI18n();
-  const copyValue = async (value: string) => {
-    const result = await copyTextToClipboard(value);
-    toast[result.ok ? "success" : "error"](t(result.ok ? "rawErrorResponse.copied" : "rawErrorResponse.copyFailed"));
-  };
   if (loading) {
     const loadingSlots = createSubscriptionDetailLoadingSlots({
       structure: resolveDetailLoadingStructure(loadingPreview, today),
@@ -324,19 +317,16 @@ function SubscriptionDetailContent({
                   <span className="min-w-0 wrap-anywhere">{subscription.website}</span>
                   <ExternalLink className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" />
                 </a>
-                <Button type="button" variant="ghost" className="min-h-11 shrink-0 px-3" aria-label={`${t("subscription.copy")} · ${t("subscription.field.website")}`} onClick={() => void copyValue(subscription.website!)}>
-                  <Copy className="h-4 w-4" aria-hidden="true" />{t("subscription.copy")}
-                </Button>
+                <CopyButton value={subscription.website} label={`${t("subscription.copy")} · ${t("subscription.field.website")}`} showLabel />
               </div>
             </div>
           ) : null}
           {subscription.notes ? (
             <div className="grid gap-2 border-t border-border pt-3 sm:col-span-2">
               <p className="text-sm text-muted-foreground">{t("subscription.field.notes")}</p>
-              <button type="button" aria-label={`${t("subscription.copy")} · ${t("subscription.field.notes")}`} onClick={() => void copyValue(subscription.notes!)} className="flex min-h-11 w-full min-w-0 items-start gap-3 rounded-lg border border-border bg-secondary/40 p-3 text-left text-sm leading-6 text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <CopyButton value={subscription.notes} label={`${t("subscription.copy")} · ${t("subscription.field.notes")}`} className="h-auto w-full min-w-0 items-start rounded-lg border border-border bg-secondary/40 p-3 text-left text-sm font-normal whitespace-normal hover:bg-secondary" showLabel>
                 <span className="min-w-0 flex-1 whitespace-pre-wrap wrap-break-word wrap-anywhere">{subscription.notes}</span>
-                <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"><Copy className="h-4 w-4" aria-hidden="true" />{t("subscription.copy")}</span>
-              </button>
+              </CopyButton>
             </div>
           ) : null}
         </>
@@ -390,7 +380,6 @@ export function SubscriptionDetailDialog({
   priceReferenceCurrency,
   loading,
 }: SubscriptionDetailDialogProps) {
-  const isMobile = useMediaQuery("(max-width: 639px)");
   const { config } = useCustomConfigState();
   const { t, label } = useI18n();
   const detailTitleRef = useRef<HTMLHeadingElement>(null);
@@ -504,32 +493,12 @@ export function SubscriptionDetailDialog({
 
   return (
     <>
-      {isMobile ? (
-        <MobileDrawerRoot open={open} onOpenChange={handleDetailOpenChange} shouldScaleBackground={false}>
-          {open ? (
-            <MobileBottomDrawerContent
-              title={title}
-              description={headerDescription}
-              descriptionMode={categoryLabel ? "visible" : "sr-only"}
-              closeLabel={t("common.close")}
-              icon={headerLogo}
-              className="h-[calc(var(--app-viewport-height)-1rem)]"
-              headerClassName="shrink-0 border-b border-border pb-4"
-              bodyClassName={null}
-              onOpenAutoFocus={captureDetailRestoreFocus}
-              onCloseAutoFocus={handleCloseAutoFocus}
-              aria-busy={loading ? true : undefined}
-            >
-              {detailContent}
-            </MobileBottomDrawerContent>
-          ) : null}
-        </MobileDrawerRoot>
-      ) : (
         <Dialog open={open} onOpenChange={handleDetailOpenChange}>
           <DialogContent
             layout="frame"
             closeLabel={t("common.close")}
-            className="h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg"
+            overlayClassName="bg-black/40"
+            className="workspace-detail-panel workspace-detail-panel-compact flex flex-col gap-0 overflow-hidden border-border bg-card p-0"
             onOpenAutoFocus={handleOpenAutoFocus}
             onCloseAutoFocus={handleCloseAutoFocus}
             aria-busy={loading ? true : undefined}
@@ -550,7 +519,6 @@ export function SubscriptionDetailDialog({
             {detailContent}
           </DialogContent>
         </Dialog>
-      )}
       {showAddToCalendarDialog ? (
         <AddToCalendarDialog
           open={showAddToCalendarDialog}

@@ -232,7 +232,7 @@ export function SubscriptionDialogContent(props: SubscriptionDialogContentProps)
         ))
       ));
     if (platformAccountAlreadyAdded) {
-      nextErrors.accountNumber = t("subscription.platformAccountAdded");
+      nextErrors.accountNumber = t("subscription.accountNumberOccupied", { number: accountNumber });
     }
     if (Object.keys(nextErrors).length > 0) {
       setFormErrors(nextErrors);

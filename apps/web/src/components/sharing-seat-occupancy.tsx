@@ -8,6 +8,7 @@ interface SharingSeatOccupancyProps {
   seatTones?: readonly SharingSeatTone[];
   seatStates?: readonly SharingSeatDisplayState[];
   showStateSummary?: boolean;
+  showCount?: boolean;
 }
 
 export type SharingSeatTone = "vacant" | "normal" | "warning" | "danger";
@@ -32,7 +33,7 @@ const stateClasses: Record<SharingSeatDisplayState, string> = {
   vacant: "bg-muted-foreground/20",
 };
 
-export function SharingSeatOccupancy({ occupied, capacity, seatTones, seatStates, showStateSummary = true }: SharingSeatOccupancyProps) {
+export function SharingSeatOccupancy({ occupied, capacity, seatTones, seatStates, showStateSummary = true, showCount = true }: SharingSeatOccupancyProps) {
   const { t } = useI18n();
   const safeCapacity = Math.max(0, capacity);
   const safeOccupied = Math.min(Math.max(0, occupied), safeCapacity);
@@ -62,7 +63,7 @@ export function SharingSeatOccupancy({ occupied, capacity, seatTones, seatStates
 
   return (
     <div className="grid min-w-32 gap-1.5" aria-label={`${safeOccupied} / ${safeCapacity}`}>
-      <span className="text-xs font-semibold tabular-nums text-foreground">{safeOccupied} / {safeCapacity}</span>
+      {showCount ? <span className="text-xs font-semibold tabular-nums text-foreground">{safeOccupied} / {safeCapacity}</span> : null}
       {segmented ? (
         <span className="flex gap-1" data-testid="sharing-seat-segments" aria-hidden="true">
           {normalizedStates.map((state, index) => (

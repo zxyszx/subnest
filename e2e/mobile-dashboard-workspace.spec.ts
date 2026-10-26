@@ -4,6 +4,7 @@ import {
   deleteProductSubscriptionsByName,
 } from "./support/product-api";
 import { mkdir } from "node:fs/promises";
+import { expectNoHorizontalOverflow } from "./support/layout";
 
 test("dashboard supports persistent desktop sidebar, manual renewal and mobile navigation", async ({
   page,
@@ -92,6 +93,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       startDate: "2026-10-01",
       nextBillingDate: "2026-10-16",
       autoRenew: false,
+      familySharing: { enabled: true, loginAccount: `dashboard-${name.toLowerCase()}@example.test`, capacity: 5 },
     });
   await createProductSubscriptionSeed(page, {
     name: "Renew Today",
@@ -116,7 +118,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   const sidebar = page.getByTestId("workspace-sidebar");
   const renewalWorkspace = page.getByTestId("dashboard-renewal-workspace");
   await expect(renewalWorkspace).toBeVisible();
-  await expect(renewalWorkspace).toHaveCSS("border-top-width", "1px");
+  await expect(renewalWorkspace).toHaveCSS("border-top-width", "0px");
   for (const selector of ["#dashboard-subscription-renewals", "#dashboard-member-renewals"]) {
     await expect(page.locator(selector).locator("h2")).toBeVisible();
     await expect(page.locator(selector).locator("h2").locator("..")).toHaveCSS("border-bottom-width", "1px");
@@ -163,8 +165,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
       "background-color",
       "rgb(255, 255, 255)",
     );
-    await expect(renewalWorkspace).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    expect(await renewalWorkspace.evaluate((element) => getComputedStyle(element).backgroundColor !== getComputedStyle(element.closest("main")!).backgroundColor)).toBe(true);
+    await expect(page.locator("#dashboard-subscription-renewals")).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await page.screenshot({
       path: `${output}/screenshot-expanded.png`,
       fullPage: true,
@@ -221,7 +222,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(renewalWorkspace).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
-    expect(await renewalWorkspace.evaluate((element) => getComputedStyle(element).backgroundColor !== getComputedStyle(element.closest("main")!).backgroundColor)).toBe(true);
+    await expect(page.locator("#dashboard-subscription-renewals")).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
     await page.screenshot({
       path: `${output}/screenshot-dark.png`,
       fullPage: true,
@@ -299,7 +300,7 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   await expect(page).toHaveURL(/\/sharing\?status=available/);
   if (testInfo.project.name === "desktop")
     await expect(
-      page.getByRole("combobox").filter({ hasText: "有空位" }),
+      page.getByRole("button", { name: "有空位", exact: true }),
     ).toBeVisible();
   if (testInfo.project.name === "desktop") {
     await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
@@ -335,9 +336,15 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     await page.goto("/");
     await expect(page.locator("#dashboard-member-renewals [data-renewal-details]")).not.toHaveCount(0);
     await expect(page.locator("#dashboard-subscription-renewals [data-renewal-details]")).not.toHaveCount(0);
+    await expect(page.locator("#dashboard-subscription-renewals [data-testid=renewal-login-account]").first()).toBeVisible();
+    await expect(page.locator("#dashboard-member-renewals [data-testid=renewal-login-account]").first()).toHaveText("member0@example.test");
     for (const id of ["dashboard-subscription-renewals", "dashboard-member-renewals"]) {
       const rows = page.locator(`#${id} [data-renewal-details]`);
       for (const details of await rows.all()) {
+        const row = details.locator("..").locator("..");
+        await expect(row).toHaveCSS("border-left-width", "0px");
+        await expect(row).toHaveCSS("border-right-width", "0px");
+        await expect(row).toHaveCSS("border-radius", "0px");
         expect(await details.evaluate((element) => {
           const text = element.firstChild;
           if (!text) return false;
@@ -350,5 +357,20 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
     }
     await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
     await page.screenshot({ path: `${output}/screenshot-renewal-cards-populated.png`, fullPage: true, animations: "disabled" });
+    await sidebar.getByTestId("account-menu-trigger").click();
+    await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await page.screenshot({ path: `${output}/screenshot-renewal-lists-light.png`, fullPage: true, animations: "disabled" });
+    await page.setViewportSize({ width: 375, height: 844 });
+    for (const id of ["dashboard-subscription-renewals", "dashboard-member-renewals"]) {
+      const account = page.locator(`#${id} [data-testid=renewal-login-account]`).first();
+      await account.scrollIntoViewIfNeeded();
+      await expect(account).toBeVisible();
+      expect(await account.evaluate((element) => element.getBoundingClientRect().right)).toBeLessThanOrEqual(375);
+    }
+    await expectNoHorizontalOverflow(page, "dashboard renewal accounts");
+    await page.screenshot({ path: `${output}/screenshot-renewal-accounts-mobile.png`, fullPage: true, animations: "disabled" });
+    await page.setViewportSize({ width: 844, height: 375 });
+    await expectNoHorizontalOverflow(page, "dashboard renewal landscape");
   }
 });

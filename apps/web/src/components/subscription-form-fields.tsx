@@ -45,7 +45,7 @@ import {
   type SubscriptionFormErrors,
   type SubscriptionFormFieldsProps,
 } from "@/components/subscription-form-fields-model";
-import { UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
+import { platformAccountNumbers, UNBOUND_PLATFORM_VALUE } from "@/lib/subscription-platform";
 
 export type { SubscriptionFormReminderType };
 export type { SubscriptionFormState };
@@ -172,14 +172,10 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
   const categoryId = id("category");
   const normalizedPlatformName = formData.platformName.trim().toLocaleLowerCase();
   const parsedAccountNumber = Number.parseInt(formData.accountNumber, 10);
-  const platformAccountAlreadyAdded = normalizedPlatformName !== "" && Number.isInteger(parsedAccountNumber)
-    ? platformSuggestions.some((platform) => (
-        platform.name.trim().toLocaleLowerCase() === normalizedPlatformName
-        && platform.accounts?.some((account) => (
-          account.accountNumber === parsedAccountNumber && account.id !== subscriptionId
-        ))
-      ))
-    : false;
+  const accountNumbers = platformAccountNumbers(platformSuggestions, formData.platformName, subscriptionId);
+  const platformAccountAlreadyAdded = accountNumbers.used.includes(parsedAccountNumber);
+  const accountNumberAvailable = normalizedPlatformName !== "" && /^\d+$/.test(formData.accountNumber)
+    && parsedAccountNumber > 0 && parsedAccountNumber <= 100000 && !platformAccountAlreadyAdded;
 
   const statusLabel = config.statuses.find((status) => status.value === formData.status)?.labels;
   const categoryLabel = config.categories.find((category) => category.value === formData.category)?.labels;
@@ -298,7 +294,7 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
               }}
               placeholder={t("subscription.platformSelectPlaceholder")}
               searchPlaceholder={t("subscription.platformSearchPlaceholder")}
-              aria-invalid={field.invalid || platformAccountAlreadyAdded}
+              aria-invalid={field.invalid}
               aria-describedby={field.describedBy}
               className="border-border bg-secondary"
             />
@@ -345,14 +341,20 @@ export const SubscriptionFormFields = memo(function SubscriptionFormFields({
                 min={1}
                 required
                 aria-invalid={field.invalid || platformAccountAlreadyAdded}
-                aria-describedby={platformAccountAlreadyAdded ? id("accountNumber-added") : field.describedBy}
+                aria-describedby={[field.describedBy, id("accountNumber-hint"), accountNumbers.used.length > 0 ? id("accountNumber-used") : null].filter(Boolean).join(" ")}
                 className="border-border bg-secondary"
               />
-              {platformAccountAlreadyAdded ? (
-                <p id={id("accountNumber-added")} className="text-xs font-medium text-warning">
-                  {t("subscription.platformAccountAdded")}
-                </p>
-              ) : null}
+              <div id={id("accountNumber-hint")} aria-live="polite" className="space-y-1 text-xs">
+                {platformAccountAlreadyAdded ? <>
+                  <p className="font-medium text-destructive">{t("subscription.accountNumberOccupied", { number: parsedAccountNumber })}</p>
+                  {accountNumbers.suggested !== null ? <button type="button" className="min-h-11 text-left font-medium text-primary underline underline-offset-4" onClick={() => update("accountNumber", String(accountNumbers.suggested))}>
+                    {t("subscription.accountNumberUseSuggested", { number: accountNumbers.suggested })}
+                  </button> : null}
+                </> : accountNumberAvailable ? <p className="font-medium text-primary">{t("subscription.accountNumberAvailable", { number: parsedAccountNumber })}</p> : null}
+              </div>
+              {accountNumbers.used.length > 0 ? <p id={id("accountNumber-used")} className="wrap-anywhere text-xs text-muted-foreground" title={accountNumbers.used.join("、")}>
+                {t("subscription.accountNumbersUsed", { numbers: accountNumbers.used.slice(0, 12).join("、") + (accountNumbers.used.length > 12 ? "…" : "") })}
+              </p> : null}
             </div>
           )}
         </FormField>

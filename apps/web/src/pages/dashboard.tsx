@@ -280,10 +280,10 @@ export default function Index() {
         )}
         <div
           data-testid="dashboard-renewal-workspace"
-          className="grid min-h-0 min-w-0 gap-4 rounded-2xl border border-border bg-card p-3 text-card-foreground sm:p-5 lg:grid-cols-2"
+          className="grid min-h-0 min-w-0 gap-4 text-card-foreground lg:grid-cols-2"
         >
           <section
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card"
             id="dashboard-subscription-renewals"
           >
             <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
@@ -300,7 +300,7 @@ export default function Index() {
                 {t("dashboard.viewAll", { count: subscriptionRenewals.length })}
               </Button>
             </div>
-            <div className="flex flex-1 flex-col bg-card px-4 py-3">
+            <div className="flex flex-1 flex-col px-4">
               <UpcomingRenewals
                 subscriptions={
                   subscriptions
@@ -317,7 +317,7 @@ export default function Index() {
           </section>
           <section
             id="dashboard-member-renewals"
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card"
           >
             <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/30 px-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
@@ -333,7 +333,7 @@ export default function Index() {
                 {t("dashboard.viewAll", { count: sharingRenewals.length })}
               </Button>
             </div>
-            <div className="flex flex-1 flex-col bg-card px-4 py-3">
+            <div className="flex flex-1 flex-col px-4">
               <SharingUpcomingRenewals
                 items={sharingRenewals}
                 pending={sharingRenewalsPending}

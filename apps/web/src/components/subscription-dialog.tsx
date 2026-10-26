@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import { DialogModulePending } from "@/components/ui/dialog-module-pending";
 import { createLazyDialogResource, useLazyDialogSession } from "@/hooks/use-lazy-dialog-session";
 import { useNestedDialogCloseGuard } from "@/hooks/use-nested-dialog-close-guard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { cn } from "@/lib/utils";
 import type {
   SubscriptionDialogContentProps,
   SubscriptionDialogProps,
@@ -32,6 +31,7 @@ function handleSubscriptionDialogIntent(): void {
 /** 表单代码按 intent 加载；同步 shell 在单次 open session 内持续拥有 Portal、焦点域和退出动画。 */
 export function SubscriptionDialog(props: SubscriptionDialogProps) {
   const { t } = useI18n();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const { handleNestedDialogOpenChange, handleParentOpenChange } = useNestedDialogCloseGuard(
     props.open,
     props.onOpenChange,
@@ -69,16 +69,13 @@ export function SubscriptionDialog(props: SubscriptionDialogProps) {
         closeLabel={t("common.close")}
         dismissMode="explicit"
         layout="frame"
-        className={cn(
-          "h5-subscription-dialog-panel border-border bg-card p-0",
-          props.mode === "edit" && props.scope === "family-sharing"
-            ? "h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:max-w-lg"
-            : "h5-dialog-frame sm:max-w-2xl",
-        )}
+        overlayClassName="bg-black/40"
+        className="workspace-detail-panel workspace-detail-panel-compact h5-subscription-dialog-panel border-border bg-card p-0"
+        onOpenAutoFocus={(event) => { event.preventDefault(); titleRef.current?.focus(); }}
         aria-busy={modulePending || props.loading ? true : undefined}
       >
         <DialogHeader data-subscription-dialog-header="" className="shrink-0 px-5 py-4 pb-0">
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle ref={titleRef} tabIndex={-1} className="text-xl font-semibold outline-none">
             {props.mode === "create"
               ? isCloneCreateMode
                 ? t("subscription.cloneDialogTitle")

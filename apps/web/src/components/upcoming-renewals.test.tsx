@@ -83,6 +83,12 @@ function subscription(
 }
 
 describe("UpcomingRenewals", () => {
+  it("shows the service and configured login account together in renewal rows", () => {
+    render(<UpcomingRenewals subscriptions={[{ ...subscription({ name: "Japan VPS", platformName: "服务器" }), familySharingLoginAccount: "owner@example.test" }]} today="2026-06-15" notificationReminderDays={30} density="compact" />);
+    expect(screen.getByText("Japan VPS")).toBeInTheDocument();
+    expect(screen.getByTestId("renewal-login-account")).toHaveTextContent("owner@example.test");
+    expect(screen.getByTestId("renewal-login-account")).toHaveAttribute("title", "owner@example.test");
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-15T00:00:00.000Z"));
@@ -150,7 +156,7 @@ describe("UpcomingRenewals", () => {
     }
 
     const price = screen.getByText("USD 10");
-    expect(list).toHaveClass("min-w-0", "divide-y", "divide-border");
+    expect(list).toHaveClass("min-w-0", "divide-y", "divide-border/60");
     expect(row).toHaveClass(
       "grid",
       "min-w-0",

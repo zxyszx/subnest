@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRightLeft, CalendarClock, CircleDollarSign, Copy, Eye, EyeOff, KeyRound, Link2, Loader2, MessageCircle, MessageSquare, Pencil, ReceiptText, RotateCw, Send, ShoppingBag, TriangleAlert, UserRound } from "lucide-react";
 
 import { useMoveSharingSeat, useSharingAccountDetail, useSharingAccountDetails, useSharingAccounts, useUpdateSharingSeat } from "@/hooks/use-sharing";
@@ -15,6 +15,7 @@ import { SharingPaymentSummary } from "@/components/sharing-payment-summary";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CopyButton } from "@/components/copy-button";
 import { FormField, FormFieldRow } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,10 +198,6 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       setPasswordLoading(false);
     }
   };
-  const copyPassword = async () => {
-    const value = await readPassword();
-    if (value !== null) await copyValue(value);
-  };
   const togglePassword = async () => {
     if (!passwordVisible && password === null) {
       const value = await readPassword();
@@ -249,15 +246,14 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           layout="frame"
-          className={mode === "seats"
-            ? "workspace-detail-panel h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"
-            : "workspace-detail-panel h5-dialog-auto-frame max-h-[calc(var(--app-viewport-height)-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"}
+          className="workspace-detail-panel max-w-5xl gap-3 overflow-hidden p-4 sm:p-5"
+          overlayClassName="bg-black/40"
           dismissMode="explicit"
           closeLabel={t("sharing.cancel")}
         >
           <DialogHeader className="shrink-0 pr-10">
-            <DialogTitle>{t("sharing.editAccount")}</DialogTitle>
-            <DialogDescription>{account ? `${account.subscription.name} #${account.accountNumber}` : t("sharing.accountSummary")}</DialogDescription>
+            <DialogTitle>{t(mode === "seats" ? "sharing.manageMembers" : "sharing.accountDetails")}</DialogTitle>
+            <DialogDescription className="break-all">{account ? `${account.subscription.name} #${account.accountNumber} · ${account.loginAccount}` : t("sharing.accountSummary")}</DialogDescription>
             {onEditAccount ? <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onEditAccount}>{t("sharing.editAccount")}</Button> : null}
           </DialogHeader>
 
@@ -307,16 +303,16 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     label={t("sharing.loginAccount")}
                     value={detail.account.loginAccount}
                     copyLabel={t("sharing.copyAccount")}
-                    onCopy={() => void copyValue(detail.account.loginAccount)}
+                    copyValue={detail.account.loginAccount}
                   />
                   <AccountCopyRow
                     icon={<KeyRound />}
                     label={t("sharing.password")}
                     value={detail.account.hasPassword ? (passwordVisible && password !== null ? password : "••••••••") : t("sharing.passwordNotSet")}
                     copyLabel={t("sharing.copyPassword")}
-                    onCopy={detail.account.hasPassword ? () => void copyPassword() : undefined}
+                    getCopyValue={detail.account.hasPassword ? readPassword : undefined}
                     trailing={detail.account.hasPassword ? (
-                      <Button type="button" size="icon" variant="ghost" disabled={passwordLoading} aria-label={t(passwordVisible ? "subscription.familySharing.hidePassword" : "subscription.familySharing.showPassword")} onClick={() => void togglePassword()}>
+                      <Button type="button" size="icon" variant="ghost" className="min-h-11 min-w-11" disabled={passwordLoading} aria-label={t(passwordVisible ? "subscription.familySharing.hidePassword" : "subscription.familySharing.showPassword")} onClick={() => void togglePassword()}>
                         {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     ) : undefined}
@@ -326,7 +322,7 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
                     label={t("sharing.verificationLink")}
                     value={detail.account.verificationLink ?? "-"}
                     copyLabel={inboxCopy.copy}
-                    onCopy={detail.account.verificationLink ? () => void copyValue(detail.account.verificationLink ?? "") : undefined}
+                    copyValue={detail.account.verificationLink ?? undefined}
                   />
                 </div>
               </TabsContent>
@@ -510,14 +506,16 @@ function AccountCopyRow({
   label,
   value,
   copyLabel,
-  onCopy,
+  copyValue,
+  getCopyValue,
   trailing,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   copyLabel: string;
-  onCopy?: (() => void) | undefined;
+  copyValue?: string | undefined;
+  getCopyValue?: (() => Promise<string | null>) | undefined;
   trailing?: ReactNode;
 }) {
   return (
@@ -529,11 +527,7 @@ function AccountCopyRow({
       </div>
       <div className="flex items-center gap-1">
         {trailing}
-        {onCopy ? (
-          <Button type="button" size="icon" variant="ghost" aria-label={copyLabel} title={copyLabel} onClick={onCopy}>
-            <Copy className="h-4 w-4" />
-          </Button>
-        ) : null}
+        {copyValue || getCopyValue ? <CopyButton value={copyValue} getValue={getCopyValue} label={copyLabel} /> : null}
       </div>
     </div>
   );
@@ -569,6 +563,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
   const { t, formatCurrency, locale } = useI18n();
   const { config } = useCustomConfigState();
   const updateSeat = useUpdateSharingSeat(account.id);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [draft, setDraft] = useState<SharingSeatDraft | null>(null);
   const [customBillingOpen, setCustomBillingOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<Record<"member" | "amount" | "dates", string>>>({});
@@ -635,30 +630,30 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] max-w-lg overflow-y-auto bg-card" dismissMode="explicit" closeLabel={t("sharing.cancel")}>
-        <form onSubmit={submit} className="space-y-4" autoComplete="off">
-          <DialogHeader>
-            <DialogTitle>{t(mode === "renew" ? "sharing.renewSeat" : "sharing.editSeat")} #{seat.seatNumber}</DialogTitle>
+      <DialogContent layout="frame" overlayClassName="bg-black/40" className="workspace-detail-panel workspace-detail-panel-compact gap-0 overflow-hidden bg-card p-0" dismissMode="explicit" closeLabel={t("sharing.cancel")} onOpenAutoFocus={(event) => { event.preventDefault(); titleRef.current?.focus(); }}>
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden" autoComplete="off">
+          <DialogHeader className="shrink-0 border-b px-4 py-4 pr-14 text-left sm:px-5">
+            <DialogTitle ref={titleRef} tabIndex={-1} className="outline-none">{t(mode === "renew" ? "sharing.renewSeat" : "sharing.editSeat")} #{seat.seatNumber}</DialogTitle>
             <DialogDescription>{mode === "renew" ? t("sharing.renewSeatDescription") : account.name}</DialogDescription>
           </DialogHeader>
-
-          <FormField id="sharing-seat-status" label={t("sharing.status")} description={draft.status === "vacant" ? t("sharing.vacantClearsSeat") : undefined}>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          {mode === "edit" ? <FormField id="sharing-seat-status" label={t("sharing.status")} description={draft.status === "vacant" ? t("sharing.vacantClearsSeat") : undefined}>
             {(field) => <div id={field.id} aria-describedby={field.describedBy} className="grid grid-cols-3 gap-2">
               {seatStatuses.map((status) => <Button key={status} type="button" variant={draft.status === status ? "default" : "outline"} aria-pressed={draft.status === status} onClick={() => update("status", status)}>{t(seatStatusLabelKeys[status])}</Button>)}
             </div>}
-          </FormField>
+          </FormField> : <p className="text-sm font-medium">{seat.memberName || `${t("sharing.seatNumber")} #${seat.seatNumber}`}</p>}
 
           {draft.status !== "vacant" ? <>
-          <section className="space-y-3 rounded-lg border border-border/80 p-4">
+          {mode === "edit" ? <section className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold"><UserRound className="h-4 w-4" />{t("sharing.memberDetails")}</div>
             <FormField id="sharing-seat-member" label={t("sharing.memberName")} error={validationErrors.member}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-alias" aria-describedby={field.describedBy} aria-invalid={field.invalid} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.memberName} onChange={(event) => update("memberName", event.target.value)} />}</FormField>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
               <FormField id="sharing-seat-contact-type" label={t("sharing.contactType")}>{(field) => <Select value={draft.contactType || "wechat"} onValueChange={(value) => update("contactType", value as SharingSeatUpdate["contactType"])}><SelectTrigger className="bg-secondary" id={field.id} aria-describedby={field.describedBy}><SelectValue /></SelectTrigger><SelectContent>{contactTypes.map((type) => <SelectItem key={type} value={type}><span className="flex items-center gap-2"><ContactTypeIcon type={type} />{t(contactTypeLabelKeys[type])}</span></SelectItem>)}</SelectContent></Select>}</FormField>
               <FormField id="sharing-seat-contact" label={t("sharing.contact")}>{(field) => <Input className="bg-secondary" id={field.id} name="sharing-member-contact" aria-describedby={field.describedBy} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" value={draft.contact} onChange={(event) => update("contact", event.target.value)} />}</FormField>
             </FormFieldRow>
-          </section>
+          </section> : null}
 
-          <section className="space-y-3 rounded-lg border border-border/80 p-4">
+          <section className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold"><ReceiptText className="h-4 w-4" />{t("sharing.billingDetails")}</div>
             <FormFieldRow alignAt="sm" rowClassName="sm:grid-cols-2">
               <FormField id="sharing-seat-price" label={t("sharing.periodCharge")} error={validationErrors.amount} description={draft.billingAmount ? `${t("sharing.monthlyEquivalent")} ${formatCurrency(Number(divideMoney(draft.billingAmount, draft.billingMonths)), draft.currency)}` : undefined}>{(field) => <Input className="bg-secondary" id={field.id} aria-describedby={field.describedBy} aria-invalid={field.invalid} type="text" inputMode="decimal" value={draft.billingAmount} placeholder={t("sharing.periodChargePlaceholder")} onChange={(event) => update("billingAmount", event.target.value)} />}</FormField>
@@ -666,7 +661,7 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
             </FormFieldRow>
             <FormField id="sharing-seat-cycle" label={t("sharing.billingCycle")}>
               {(field) => <div id={field.id} aria-describedby={field.describedBy} className="space-y-2">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2 min-[390px]:grid-cols-5">
                   {SHARING_BILLING_MONTH_PRESETS.map((months) => (
                     <Button
                       key={months}
@@ -716,9 +711,9 @@ function SharingSeatDialog({ account, seat, mode, open, onOpenChange }: { accoun
           </section>
           </> : null}
 
-          <FormField id="sharing-seat-notes" label={t("sharing.notes")}>{(field) => <Textarea className="bg-secondary" id={field.id} aria-describedby={field.describedBy} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />}</FormField>
-
-          <DialogFooter>
+          {mode === "edit" ? <FormField id="sharing-seat-notes" label={t("sharing.notes")}>{(field) => <Textarea className="bg-secondary" id={field.id} aria-describedby={field.describedBy} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />}</FormField> : null}
+          </div>
+          <DialogFooter className="grid shrink-0 grid-cols-2 border-t px-4 py-3 [&_button]:min-h-11 sm:flex sm:px-5">
             <DialogClose asChild><Button type="button" variant="outline">{t("sharing.cancel")}</Button></DialogClose>
             <Button type="submit" disabled={updateSeat.isPending}>{updateSeat.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{updateSeat.isPending ? t("sharing.saving") : t(mode === "renew" ? "sharing.confirmRenewal" : "sharing.saveSeat")}</Button>
           </DialogFooter>

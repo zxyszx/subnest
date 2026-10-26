@@ -22,10 +22,10 @@ export function ShareLinkManager({ account, seats, busy, onClose, children }: {
   const occupied = seats.filter((seat) => sharingSeatDisplayState(seat, today) === "active").length;
   const nearestExpiry = seats.map((seat) => seat.expiresAt).filter((value): value is string => value !== null && value >= today).sort()[0];
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
-    <DialogContent onOpenAutoFocus={(event) => {
+    <DialogContent layout="frame" overlayClassName="bg-black/40" onOpenAutoFocus={(event) => {
       event.preventDefault();
       titleRef.current?.focus({ preventScroll: true });
-    }} className="flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-6xl flex-col gap-0 overflow-hidden p-0 max-sm:left-0 max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-screen max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0">
+    }} className="workspace-detail-panel flex max-w-5xl flex-col gap-0 overflow-hidden p-0">
       <DialogHeader className="shrink-0 border-b border-border px-4 py-3 pr-12 text-left sm:px-5 sm:py-4">
         <DialogTitle ref={titleRef} tabIndex={-1} className="flex items-center gap-2 outline-none"><UsersRound className="h-5 w-5 text-primary" />{t("sharing.inboxLinks")}</DialogTitle>
         <DialogDescription className="break-all">{account.loginAccount}</DialogDescription>

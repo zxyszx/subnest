@@ -442,7 +442,7 @@ describe("Dashboard operations overview", () => {
     expect(screen.getByText("已过期 1 天")).toBeInTheDocument();
     await userEvent
       .setup()
-      .click(screen.getByRole("button", { name: "管理账号" }));
+      .click(screen.getByRole("button", { name: "管理车友" }));
     expect(
       await screen.findByRole("dialog", { name: "家庭共享 2" }),
     ).toHaveTextContent("netflix@example.com");

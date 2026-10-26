@@ -67,11 +67,9 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     expect(generatedLinks.every((link) => link.expiresAt === null)).toBe(true);
     await page.goto("/sharing");
     const sharingRow = page.getByTestId("sharing-mobile-account").filter({ hasText: account });
-    await expect(sharingRow.getByText("1 / 2", { exact: true })).toBeVisible();
-    await expect(sharingRow.getByText("使用中 1", { exact: true })).toBeVisible();
-    await expect(sharingRow.getByText("停用 1", { exact: true })).toBeVisible();
-    await page.getByRole("combobox", { name: "账号状态" }).click();
-    await page.getByRole("option", { name: "有空位", exact: true }).click();
+    await expect(sharingRow.getByText("1/2", { exact: true })).toBeVisible();
+    await expect(sharingRow.getByText("空闲 1 位", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "有空位", exact: true }).click();
     await expect(sharingRow).toBeVisible();
     const publicLink = generatedLinks.find((link) => !link.seatId)!;
     await page.goto(publicLink.path);
@@ -79,7 +77,7 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     await page.getByRole("button", { name: "显示密码", exact: true }).click();
     await expect(page.getByText("e2e-only-password", { exact: true })).toBeVisible();
     await page.goto("/sharing");
-    await page.getByRole("button", { name: "分享管理", exact: true }).click();
+    await sharingRow.getByRole("button", { name: "验证码链接", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "车位链接" });
     await expect(dialog.getByRole("heading", { name: /公共验证链接/ })).toBeVisible();
     await expect(dialog.getByRole("heading", { name: "车位链接", exact: true })).toBeFocused();
