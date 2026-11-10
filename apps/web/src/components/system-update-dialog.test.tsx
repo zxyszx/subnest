@@ -709,7 +709,7 @@ describe("SystemUpdateDialog", () => {
     await user.click(await screen.findByRole("button", { name: "查看更新日志" }));
     const notes = screen.getByRole("dialog", { name: /查看更新日志/ });
     expect(within(notes).getByTestId("release-notes-body")).toHaveTextContent("更新日志");
-    await user.click(within(notes).getByRole("button", { name: "关闭", exact: true }));
+    await user.click(within(notes).getByRole("button", { name: "关闭" }));
     expect(screen.queryByRole("dialog", { name: /查看更新日志/ })).not.toBeInTheDocument();
   });
 
