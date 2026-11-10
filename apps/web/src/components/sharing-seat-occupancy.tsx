@@ -14,7 +14,7 @@ interface SharingSeatOccupancyProps {
 export type SharingSeatTone = "vacant" | "normal" | "warning" | "danger";
 
 export function sharingSeatExpiryTone(daysUntilExpiry: number): Exclude<SharingSeatTone, "vacant"> {
-  if (daysUntilExpiry <= 3) return "danger";
+  if (daysUntilExpiry < 0) return "danger";
   if (daysUntilExpiry <= 7) return "warning";
   return "normal";
 }

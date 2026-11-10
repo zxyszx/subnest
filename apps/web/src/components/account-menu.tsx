@@ -13,7 +13,7 @@ export function AccountMenu({ compact = false, className }: { compact?: boolean;
   const { data } = authClient.useSession();
   const { t } = useI18n();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
   const user = data?.user;
   const name = user?.name || user?.email || PRODUCT_NAME;
@@ -53,7 +53,7 @@ export function AccountMenu({ compact = false, className }: { compact?: boolean;
           </>}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-64 max-w-[calc(100vw-24px)] rounded-lg p-2" mobileTitle={t("nav.settings")}>
+      <DropdownMenuContent side={compact ? "bottom" : "top"} align={compact ? "end" : "start"} sideOffset={8} className="w-64 max-w-[calc(100vw-24px)] rounded-lg p-2" mobileTitle={t("nav.settings")}>
         <DropdownMenuLabel className="min-w-0 px-2 py-3">
           <span className="block truncate">{name}</span>
           <span className="block truncate text-xs font-normal text-muted-foreground">{user?.email}</span>
@@ -62,8 +62,8 @@ export function AccountMenu({ compact = false, className }: { compact?: boolean;
         <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => router.push("/settings")}>
           <Settings className="h-4 w-4" />{t("nav.settings")}
         </DropdownMenuItem>
-        <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setTheme(theme === "dark" ? "light" : "dark")}>
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{t("header.toggleTheme")}
+        <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+          {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{t("header.toggleTheme")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={signingOut} className="min-h-11 gap-3 text-destructive focus:text-destructive" onSelect={() => void logout()}>

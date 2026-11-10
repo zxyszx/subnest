@@ -73,7 +73,7 @@ export default function OnlineTotpPage() {
     <div className="app-page bg-background">
       <Header pageActions={headerAction} />
       <main className="app-main mx-auto max-w-[120rem]">
-        <WorkspacePageHeading hideDesktopTitle className="md:mb-0" title={t("nav.online2fa")} />
+        <WorkspacePageHeading className="md:mb-0" title={t("nav.online2fa")} />
         {query.error ? <QueryErrorState error={query.error} onRetry={query.refetch} /> : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <PlatformSearchToolbar

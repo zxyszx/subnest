@@ -77,7 +77,8 @@ test("family 2FA matches accounts, wraps long emails and shows general and seat 
     await page.getByRole("button", { name: "显示密码", exact: true }).click();
     await expect(page.getByText("e2e-only-password", { exact: true })).toBeVisible();
     await page.goto("/sharing");
-    await sharingRow.getByRole("button", { name: "验证码链接", exact: true }).click();
+    await sharingRow.getByRole("button", { name: /^账号资料 ·/ }).click();
+    await page.getByRole("dialog", { name: "管理车友", exact: true }).getByRole("button", { name: "验证码链接", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "车位链接" });
     await expect(dialog.getByRole("heading", { name: /公共验证链接/ })).toBeVisible();
     await expect(dialog.getByRole("heading", { name: "车位链接", exact: true })).toBeFocused();

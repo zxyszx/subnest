@@ -6,7 +6,7 @@
  * - 移动端账户菜单（设置、主题与退出）
  * - 可选：在支持的页面提供“新增订阅”入口
  *
- * 桌面账户操作统一放在侧栏底部；版本更新入口保留在顶部。
+ * 桌面使用横向导航；账户、主题与版本更新统一放在顶部。
  */
 
 import Link, { NavLink } from '@/components/router-link';
@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
   { path: '/settings', labelKey: 'nav.settings', icon: "settings" },
 ];
 const mobilePrimaryPaths = new Set(["/", "/subscriptions", "/sharing", "/online-2fa"]);
-const desktopPrimaryPaths = mobilePrimaryPaths;
+const desktopPrimaryPaths = new Set(["/", "/subscriptions", "/sharing", "/statistics"]);
 
 function renderNavIcon(icon: NavIconKey, className: string) {
   switch (icon) {
@@ -98,18 +98,19 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
   const mobileMoreActive = mobileMoreItems.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
 
   return (
+    <>
     <header className={headerLayout.shell} data-testid="app-header">
       <RouteProgress />
       <div className={headerLayout.inner} data-testid="app-header-inner">
         <div className={headerLayout.primaryCluster}>
           <div className={headerLayout.brandCluster} data-header-brand>
             <RenewletBrandMark size="sm" href="/" data-testid="app-header-brand-mark" />
-            <div className={headerLayout.brandTextGroup}>
+            <div className={headerLayout.brandTextGroup} data-header-brand-text>
               <Link
                 href="/"
                 className={headerLayout.brandTitleLink}
               >
-                <h1 className={headerLayout.brandTitle}>{PRODUCT_NAME}</h1>
+                <span className={headerLayout.brandTitle}>{PRODUCT_NAME}</span>
               </Link>
             </div>
           </div>
@@ -178,12 +179,13 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
             />
           ) : null}
 
-          {isAuthenticated ? <AccountMenu compact className="lg:hidden" /> : null}
+          {isAuthenticated ? <AccountMenu compact /> : null}
 
         </div>
       </div>
 
-      {/* 移动端导航 */}
+    </header>
+      {/* Keep fixed navigation outside the blurred header: backdrop-filter creates a fixed containing block. */}
       <nav className={headerLayout.mobileNav} data-testid="app-header-mobile-nav">
         {mobilePrimaryItems.map((item) => (
           <NavLink
@@ -226,6 +228,6 @@ export function Header({ onAddSubscription, availableTags, platformSuggestions, 
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>
-    </header>
+    </>
   );
 }

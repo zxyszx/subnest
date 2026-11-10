@@ -50,11 +50,7 @@ function currencyMetric(formatted: string, currency: string) {
   );
 }
 
-function linkSharingReady(account: SharingAccount) {
-  return account.familySharingEnabled
-    && account.status === "active"
-    && (account.verificationMode === "totp" || Boolean(account.verificationLink));
-}
+
 
 type SharingFilter = "all" | "available" | "full" | "expiring" | "overdue" | "outstanding";
 type SharingSortField = "expiry" | "account" | "vacancies" | "revenue" | "profit";
@@ -70,7 +66,6 @@ export default function Sharing() {
   const { convert } = useExchangeRates(settingsQuery.data?.settings.exchangeRateProvider);
   const [selectedAccount, setSelectedAccount] = useState<SharingAccount | null>(null);
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
-  const [viewingAccount, setViewingAccount] = useState<SharingAccount | null>(null);
   const [linksAccount, setLinksAccount] = useState<SharingAccount | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(() => {
     const platform = searchParams.get("platform");
@@ -232,7 +227,7 @@ export default function Sharing() {
     <div className="app-page bg-background">
       <Header />
       <main className="app-main sharing-main mx-auto grid max-w-[120rem] content-start gap-4">
-        <WorkspacePageHeading hideDesktopTitle className="mb-0" title={t("sharing.title")} description={<>{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</>} actions={
+        <WorkspacePageHeading className="mb-0" title={t("sharing.title")} description={<>{t("sharing.accounts")} {visibleAccounts.length} · {t("sharing.occupiedSeats")} {occupiedSeats}/{capacity}</>} actions={
           <Button variant="outline" className="min-h-11 md:hidden" onClick={() => setRenewalsOpen(true)}><CalendarClock className="h-4 w-4" />{t("sharing.upcomingRenewals")} · {upcomingRenewals}</Button>
         } />
         <section className="workspace-summary hidden grid-cols-4 gap-3 md:grid" aria-label={t("sharing.accountSummary")}>
@@ -307,18 +302,15 @@ export default function Sharing() {
                 nearest={sharingNearestSeatExpiry(accountDetails.get(account.id), today)}
                 seatStates={seatStates(account)} seatTones={seatTones(account)}
                 vacancy={accountDetails.has(account.id) ? sharingAccountHasVacancy(accountDetails.get(account.id)!.seats, today) : account.occupiedSeats < account.capacity}
-                sharingReady={Boolean(linkSharingReady(account))}
                 subscriptionExpiryDays={sharingSubscriptionExpiryDays(account, today)}
-                onManage={() => setSelectedAccount(account)} onDetails={() => setViewingAccount(account)}
-                onLinks={() => setLinksAccount(account)} />
+                onDetails={() => setSelectedAccount(account)} />
             ))}
           </section>
         )}
         {linksAccount ? <SharingInboxLinksDialog key={linksAccount.id} account={linksAccount} onClose={() => setLinksAccount(null)} /> : null}
-        {viewingAccount ? <Suspense fallback={null}><SharingAccountDetailDialog account={viewingAccount} mode="account" open onOpenChange={(open) => !open && setViewingAccount(null)} onEditAccount={() => { setEditingSubscriptionId(viewingAccount.subscription.id); setViewingAccount(null); }} /></Suspense> : null}
         {selectedAccount ? (
           <Suspense fallback={null}>
-            <SharingAccountDetailDialog account={selectedAccount} mode="seats" open onOpenChange={(open) => !open && setSelectedAccount(null)} />
+            <SharingAccountDetailDialog account={selectedAccount} mode="seats" open onOpenChange={(open) => !open && setSelectedAccount(null)} onLinks={() => { setLinksAccount(selectedAccount); setSelectedAccount(null); }} onEditAccount={() => { setEditingSubscriptionId(selectedAccount.subscription.id); setSelectedAccount(null); }} />
           </Suspense>
         ) : null}
         <EditSubscriptionDialog

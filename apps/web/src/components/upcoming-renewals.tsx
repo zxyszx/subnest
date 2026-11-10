@@ -88,7 +88,7 @@ export function UpcomingRenewals({
             "gap-x-3 gap-y-2 py-2.5",
             item.daysUntil < 0
               ? "text-destructive"
-              : item.daysUntil <= 3 && "text-warning",
+              : item.daysUntil <= 7 && "text-warning",
           )}
         >
           <div className="min-w-0">
@@ -161,7 +161,7 @@ export function UpcomingRenewals({
                 "whitespace-nowrap text-xs font-semibold tabular-nums",
                 item.daysUntil < 0
                   ? "text-destructive"
-                  : item.daysUntil <= 3
+                  : item.daysUntil <= 7
                     ? "text-warning"
                     : "text-muted-foreground",
               )}

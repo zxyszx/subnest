@@ -881,3 +881,19 @@ msgstr "Month"
 #: src/i18n/descriptors/common.ts:151
 msgid "workspace.sidebarShortcut"
 msgstr "Ctrl / ⌘ ⇧ S"
+
+#. js-lingui-explicit-id
+msgid "system.changelogUnavailable"
+msgstr "Release notes are not available yet. Open the release page for details."
+
+#. js-lingui-explicit-id
+msgid "system.restartCountdown"
+msgstr "Restarting; checking service in {seconds}s"
+
+#. js-lingui-explicit-id
+msgid "system.waitingForService"
+msgstr "Waiting for the new version to start…"
+
+#. js-lingui-explicit-id
+msgid "system.restartTimeout"
+msgstr "The new version has not responded yet. Refresh later or check the service."

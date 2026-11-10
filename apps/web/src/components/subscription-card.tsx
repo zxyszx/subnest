@@ -202,14 +202,14 @@ function SubscriptionCardGridMeta({
         <div
           data-testid="subscription-card-renewal-banner"
           className={cn(
-            "flex min-h-10 min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium tabular-nums",
+            "flex min-h-11 min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium tabular-nums",
             reminderTone === "danger" && "border-destructive/20 bg-destructive/8 text-destructive",
             reminderTone === "warning" && "border-warning/25 bg-warning/10 text-warning",
             reminderTone === "normal" && "border-primary/15 bg-primary/8 text-primary",
           )}
         >
           <CalendarClock className="h-4 w-4 shrink-0" />
-          <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             <span
               data-testid="subscription-card-meta-relative-billing"
               className={cn(
@@ -349,9 +349,7 @@ function SubscriptionCardComponent({
   const isRenewingSoon = !isInactive && !isBuyout && daysUntilRenewal <= 7 && daysUntilRenewal >= 0;
   const renewalTone: "normal" | "warning" | "danger" = !isRenewingSoon
     ? "normal"
-    : daysUntilRenewal <= 3
-      ? "danger"
-      : "warning";
+    : "warning";
   const isTrialEndingSoon = !isExpired && subscription.status === 'trial' && daysUntilTrialEnd !== null &&
     daysUntilTrialEnd <= 3 && daysUntilTrialEnd >= 0;
   const billingDateText = isBuyout && subscription.startDate
@@ -382,7 +380,7 @@ function SubscriptionCardComponent({
       ? t("subscription.card.renewsToday")
       : t("subscription.card.renewsInDays", { days: daysUntilRenewal });
   })();
-  const billingStatusTone: SubscriptionCardMetaTone = renewalTone === "danger"
+  const billingStatusTone: SubscriptionCardMetaTone = isExpired
     ? "danger"
     : renewalTone === "warning"
       ? "warning"
@@ -482,9 +480,9 @@ function SubscriptionCardComponent({
           : cn("rounded-2xl shadow-card sm:p-5", "p-4"),
         onViewDetails && "cursor-pointer",
         isInactive && "border-muted bg-muted/20 hover:bg-muted/30",
-        isExpired && "border-destructive/35",
-        renewalTone === "warning" && "border-warning/40",
-        renewalTone === "danger" && "border-destructive/35",
+
+
+
         isTrialEndingSoon && "border-warning/40"
       )}
     >

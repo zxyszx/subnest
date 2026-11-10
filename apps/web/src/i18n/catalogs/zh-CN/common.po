@@ -881,3 +881,19 @@ msgstr "月份"
 #: src/i18n/descriptors/common.ts:151
 msgid "workspace.sidebarShortcut"
 msgstr "Ctrl / ⌘ ⇧ S"
+
+#. js-lingui-explicit-id
+msgid "system.changelogUnavailable"
+msgstr "本版本暂未提供更新说明，可打开发布页查看。"
+
+#. js-lingui-explicit-id
+msgid "system.restartCountdown"
+msgstr "正在重启，{seconds} 秒后检查服务"
+
+#. js-lingui-explicit-id
+msgid "system.waitingForService"
+msgstr "正在等待新版本启动…"
+
+#. js-lingui-explicit-id
+msgid "system.restartTimeout"
+msgstr "暂未确认新版本启动，请稍后刷新页面或检查服务状态。"

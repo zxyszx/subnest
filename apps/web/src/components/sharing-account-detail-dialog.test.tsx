@@ -155,6 +155,22 @@ describe("SharingAccountDetailDialog account credentials", () => {
     expect(mocks.password).toHaveBeenCalledTimes(1);
   });
 
+  it("preserves a zero charge when reopening a paid seat", async () => {
+    mocks.seats = [{
+      id: "free-seat", seatNumber: 1, memberName: "Member", contact: null, contactType: null,
+      monthlyPrice: "0", currency: "CNY", billingMonths: 1, startDate: "2026-10-16",
+      expiresAt: "2026-11-16", status: "active", notes: null,
+      currentReceivable: { id: "free-bill", periodStart: "2026-10-16", periodEnd: "2026-11-16", dueDate: "2026-10-16", amount: "0", paidAmount: "0", currency: "CNY", status: "paid", paidAt: null },
+    }];
+    const user = userEvent.setup();
+    render(<TooltipProvider><SharingAccountDetailDialog account={account} mode="seats" open onOpenChange={vi.fn()} /></TooltipProvider>);
+    await user.click(screen.getAllByRole("button", { name: "sharing.editSeat" })[0]!);
+    expect(screen.getByRole("textbox", { name: "sharing.periodCharge" })).toHaveValue("0");
+    await user.click(screen.getByRole("button", { name: "sharing.saveSeat" }));
+    await waitFor(() => expect(mocks.updateSeat).toHaveBeenCalledTimes(1));
+    expect(mocks.updateSeat.mock.calls[0]?.[0]?.input).toMatchObject({ billingAmount: "0", monthlyPrice: "0", paymentStatus: "paid" });
+  });
+
   it("preserves the entered period total when switching to quarterly", async () => {
     mocks.seats = [{
       id: "seat-2",
@@ -426,8 +442,8 @@ describe("SharingAccountDetailDialog account credentials", () => {
 describe("getSeatExpiryUrgency", () => {
   it.each([
     ["2026-09-30", "danger", -1],
-    ["2026-10-01", "danger", 0],
-    ["2026-10-04", "danger", 3],
+    ["2026-10-01", "warning", 0],
+    ["2026-10-04", "warning", 3],
     ["2026-10-05", "warning", 4],
     ["2026-10-08", "warning", 7],
     ["2026-10-09", "default", 8],

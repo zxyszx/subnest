@@ -53,7 +53,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
             "gap-x-3 gap-y-2 py-2.5",
             daysUntilExpiry < 0
               ? "text-destructive"
-              : daysUntilExpiry <= 3 && "text-warning",
+              : daysUntilExpiry <= 7 && "text-warning",
           )}
         >
           <div className="min-w-0">
@@ -100,7 +100,7 @@ export function SharingUpcomingRenewals({ items, pending = false, limit = 5, sho
             </div>
           </div>}
           <div className="flex min-w-24 flex-col items-end gap-1">
-            <span className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 3 ? "text-warning" : "text-muted-foreground")}>
+            <span className={cn("whitespace-nowrap text-xs font-semibold tabular-nums", daysUntilExpiry < 0 ? "text-destructive" : daysUntilExpiry <= 7 ? "text-warning" : "text-muted-foreground")}>
               {daysUntilExpiry < 0
                 ? t("subscription.card.expiredDays", { days: Math.abs(daysUntilExpiry) })
                 : daysUntilExpiry === 0

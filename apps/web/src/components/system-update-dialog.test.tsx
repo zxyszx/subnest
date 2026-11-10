@@ -45,6 +45,10 @@ vi.mock("@/i18n/I18nProvider", () => ({
         "system.restartNow": "立即重启",
         "system.restartRequired": "请重启服务以应用更新",
         "system.restarting": "正在重启...",
+        "system.restartCountdown": "正在重启，{seconds} 秒后检查服务",
+        "system.waitingForService": "正在等待新版本启动…",
+        "system.restartTimeout": "暂未确认新版本启动",
+        "system.changelogUnavailable": "本版本暂未提供更新说明",
         "system.retry": "重试",
         "system.runtime": "运行面",
         "system.runtime.docker": "Docker",
@@ -697,13 +701,26 @@ describe("SystemUpdateDialog", () => {
     expect(detailsDialog).not.toHaveTextContent("old upstream response");
   });
 
+  it("opens readable release notes without leaving the application", async () => {
+    mockVersionEndpoint();
+    const user = userEvent.setup();
+    renderWithQuery(<SystemUpdateHarness />);
+    await user.click(await screen.findByRole("button", { name: "打开系统更新" }));
+    await user.click(await screen.findByRole("button", { name: "查看更新日志" }));
+    const notes = screen.getByRole("dialog", { name: /查看更新日志/ });
+    expect(within(notes).getByTestId("release-notes-body")).toHaveTextContent("更新日志");
+    await user.click(within(notes).getByRole("button", { name: "关闭", exact: true }));
+    expect(screen.queryByRole("dialog", { name: /查看更新日志/ })).not.toBeInTheDocument();
+  });
+
   it("restarts and reloads after health check recovers", async () => {
     const reload = vi.fn();
     vi.spyOn(systemRestartBrowser, "reload").mockImplementation(reload);
     const fetchMock = vi.spyOn(window, "fetch").mockResolvedValue({ ok: true } as Response);
     let updateStarted = false;
+    let restarted = false;
     mocks.apiFetch.mockImplementation((input: string, _schema: unknown, init?: RequestInit) => {
-      if (input.startsWith("/api/app/system/version")) return Promise.resolve(versionFixture());
+      if (input.startsWith("/api/app/system/version")) return Promise.resolve(versionFixture({ currentVersion: restarted ? "1.1.0" : "1.0.0" }));
       if (input === "/api/app/admin/system/update/status") {
         return Promise.resolve({
           operation: updateStarted ? operationFixture({
@@ -719,7 +736,7 @@ describe("SystemUpdateDialog", () => {
         updateStarted = true;
         return Promise.resolve({ operation: operationFixture() });
       }
-      if (input === "/api/app/admin/system/restart" && init?.method === "POST") return Promise.resolve({});
+      if (input === "/api/app/admin/system/restart" && init?.method === "POST") { restarted = true; return Promise.resolve({}); }
       return Promise.reject(new Error(`Unexpected request ${input}`));
     });
 
@@ -742,7 +759,7 @@ describe("SystemUpdateDialog", () => {
       await Promise.resolve();
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/app/health", { cache: "no-cache" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/app/health", expect.objectContaining({ cache: "no-cache", signal: expect.any(AbortSignal) as AbortSignal }));
     expect(reload).toHaveBeenCalled();
   });
 

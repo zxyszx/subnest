@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RawErrorResponseDialog } from "@/components/raw-error-response-dialog";
 import { useSystemRestart, useSystemUpdate, useSystemUpdateStatus, useSystemVersion } from "@/hooks/use-system-version";
+import { ReleaseNotesDialog } from "@/components/release-notes-dialog";
+import { useRestartRecovery } from "@/hooks/use-restart-recovery";
 import { useI18n } from "@/i18n/I18nProvider";
 import { ApiError } from "@/lib/api-client";
 import { clientBuildVersion } from "@/lib/client-build-info";
@@ -27,9 +29,6 @@ const deploymentLabelKeys: Record<SystemDeployment, MessageKey> = {
   source: "system.runtime.source",
 };
 
-const RESTART_COUNTDOWN_SECONDS = 8;
-const HEALTH_RETRY_COUNT = 5;
-const HEALTH_RETRY_DELAY_MS = 1_000;
 const CLOUDFLARE_DEPLOY_GUIDE_URL = "https://github.com/zxyszx/subnest/blob/main/docs/cloudflare-workers-deploy.md";
 const GITHUB_COMMIT_URL_PREFIX = "https://github.com/zxyszx/subnest/commit/";
 const GITHUB_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
@@ -70,10 +69,11 @@ export function SystemUpdateDialog({
   const [updateError, setUpdateError] = useState("");
   const [requestErrorDetails, setRequestErrorDetails] = useState<RawErrorResponseDetails | null>(null);
   const [errorDetailsOpen, setErrorDetailsOpen] = useState(false);
-  const [restartCountdown, setRestartCountdown] = useState(0);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const recovery = useRestartRecovery(systemRestartBrowser.reload);
 
   const isUpdating = updateMutation.isPending || operation?.status === "running";
-  const isRestarting = restartMutation.isPending || restartCountdown > 0;
+  const isRestarting = restartMutation.isPending || recovery.busy;
   const showCompletedRestart = operation?.status === "succeeded" && operation.stage === "restart-pending" && operation.needsRestart;
   const operationError = operation?.status === "failed" ? operation.error : null;
   const operationRawResponseText = operationError?.details?.rawResponseText?.trim();
@@ -100,7 +100,6 @@ export function SystemUpdateDialog({
     setUpdateError("");
     setRequestErrorDetails(null);
     setErrorDetailsOpen(false);
-    setRestartCountdown(0);
     updateMutation.reset();
     restartMutation.reset();
   }, [restartMutation, updateMutation]);
@@ -135,43 +134,10 @@ export function SystemUpdateDialog({
     }
   }, [canUpdate, t, updateMutation]);
 
-  const checkServiceAndReload = useCallback(async () => {
-    for (let index = 0; index < HEALTH_RETRY_COUNT; index += 1) {
-      try {
-        const response = await fetch("/api/app/health", { cache: "no-cache" });
-        if (response.ok) {
-          systemRestartBrowser.reload();
-          return;
-        }
-      } catch {
-        // 旧进程退出到新进程拉起之间会短暂断连；这里静默等待下一轮健康检查。
-      }
-      if (index < HEALTH_RETRY_COUNT - 1) {
-        await new Promise((resolve) => setTimeout(resolve, HEALTH_RETRY_DELAY_MS));
-      }
-    }
-    systemRestartBrowser.reload();
-  }, []);
-
-  const handleRestart = useCallback(async () => {
+  const handleRestart = useCallback(() => {
     if (isRestarting) return;
-    setRestartCountdown(RESTART_COUNTDOWN_SECONDS);
-    try {
-      await restartMutation.mutateAsync();
-    } catch {
-      // restart 请求可能在服务退出时被浏览器标记为失败；前端仍继续等待 health 恢复。
-    }
-    const interval = window.setInterval(() => {
-      setRestartCountdown((current) => {
-        if (current <= 1) {
-          window.clearInterval(interval);
-          void checkServiceAndReload();
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1_000);
-  }, [checkServiceAndReload, isRestarting, restartMutation]);
+    recovery.start(operation?.targetVersion ?? version?.latestVersion ?? null, () => restartMutation.mutateAsync());
+  }, [isRestarting, operation?.targetVersion, recovery, restartMutation, version?.latestVersion]);
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -185,6 +151,7 @@ export function SystemUpdateDialog({
           <SystemVersionBadge className={badgeClassName} />
         </button>
       </PopoverTrigger>
+      {version ? <ReleaseNotesDialog version={version} open={notesOpen} onOpenChange={setNotesOpen} /> : null}
       <PopoverContent
         align={contentAlign}
         sideOffset={10}
@@ -242,13 +209,13 @@ export function SystemUpdateDialog({
                     <RotateCw className={cn("h-4 w-4", isRestarting ? "animate-spin" : "")} />
                     {isRestarting ? (
                       <>
-                        <span>{t("system.restarting")}</span>
-                        {restartCountdown > 0 ? <span className="tabular-nums">({restartCountdown}s)</span> : null}
+                        <span role="status" aria-live="polite">{recovery.phase === "waiting" ? t("system.waitingForService") : t("system.restartCountdown", { seconds: recovery.seconds })}</span>
                       </>
                     ) : (
                       t("system.restartNow")
                     )}
                   </Button>
+                  {recovery.phase === "timeout" ? <p className="text-sm text-destructive" role="alert">{t("system.restartTimeout")}</p> : null}
                 </div>
               ) : !version.checkSucceeded ? (
                 <div className="space-y-3">
@@ -262,7 +229,6 @@ export function SystemUpdateDialog({
                     {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {isUpdating ? t("system.updating") : t("system.updateNow")}
                   </Button>
-                  {version.releaseInfo?.htmlUrl ? <ReleaseLink href={version.releaseInfo.htmlUrl} label={t("system.viewChangelog")} /> : null}
                 </div>
               ) : isDeployOnlyUpdate ? (
                 <div className="space-y-3">
@@ -290,6 +256,8 @@ export function SystemUpdateDialog({
                   <SystemLinks version={version} commitLink={commitLink} />
                 </div>
               )}
+
+              <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => setNotesOpen(true)}>{t("system.viewChangelog")}</Button>
 
               <InfoList
                 items={[

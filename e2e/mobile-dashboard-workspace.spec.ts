@@ -6,7 +6,7 @@ import {
 import { mkdir } from "node:fs/promises";
 import { expectNoHorizontalOverflow } from "./support/layout";
 
-test("dashboard supports persistent desktop sidebar, manual renewal and mobile navigation", async ({
+test("dashboard supports horizontal desktop navigation, manual renewal and mobile navigation", async ({
   page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date("2026-10-15T04:00:00Z"));
@@ -140,94 +140,27 @@ test("dashboard supports persistent desktop sidebar, manual renewal and mobile n
   }
   if (testInfo.project.name === "desktop") {
     await page.setViewportSize({ width: 1366, height: 768 });
-    await expect(sidebar).toHaveCSS("width", "240px");
-    const sidebarHeader = page.getByTestId("workspace-sidebar-header");
-    const collapseToggle = sidebarHeader.getByRole("button", { name: "收起导航", exact: true });
-    await expect(collapseToggle).toBeVisible();
-    expect((await collapseToggle.boundingBox())!.y).toBeLessThan(72);
-    expect((await sidebar.getByRole("link", { name: "仪表盘", exact: true }).boundingBox())!.y).toBeLessThan(90);
-    const updateEntry = page.getByRole("button", { name: "打开系统更新", exact: true });
-    await expect(updateEntry).toBeVisible();
-    await updateEntry.click();
+    await expect(sidebar).toHaveCount(0);
+    const nav = page.getByTestId("app-header-desktop-nav");
+    await expect(nav).toBeVisible();
+    await expect(nav.getByRole("link", { name: "仪表盘", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link", { name: "订阅列表", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole("button", { name: "打开系统更新", exact: true }).click();
     await expect(page.getByText("当前版本", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(sidebar.locator('a[aria-current="page"]')).toHaveCount(1);
-    await expect(sidebar.locator('a[aria-current="page"]')).toHaveClass(
-      /bg-primary/,
-    );
-    await expect(sidebar.getByRole("link", { name: "设置", exact: true })).toHaveCount(0);
-    await expect(page.getByTestId("app-header").getByRole("link", { name: "设置", exact: true })).toHaveCount(0);
-    await sidebar.getByTestId("account-menu-trigger").click();
+    await page.getByTestId("account-menu-trigger").click();
     await expect(page.getByRole("menuitem", { name: "设置", exact: true })).toHaveCount(1);
-    await page.screenshot({ path: `${output}/screenshot-account-menu-expanded.png`, animations: "disabled" });
     await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
-    await expect(page.getByTestId("dashboard-stat-monthly-spend")).toHaveCSS(
-      "background-color",
-      "rgb(255, 255, 255)",
-    );
-    await expect(page.locator("#dashboard-subscription-renewals")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await page.screenshot({
-      path: `${output}/screenshot-expanded.png`,
-      fullPage: true,
-      animations: "disabled",
-    });
-    expect(await page.evaluate(() => document.getElementById("root")!.scrollHeight > innerHeight)).toBe(true);
-    await expect(page.getByRole("navigation", { name: "分页" })).toHaveCount(0);
-    await expect(page.locator("#dashboard-subscription-renewals [data-renewal-details]")).toHaveCount(5);
-    await page.mouse.move(900, 600);
-    await page.mouse.wheel(0, 700);
-    await expect.poll(() => page.evaluate(() => document.getElementById("root")!.scrollTop)).toBeGreaterThan(0);
-    await page.evaluate(() => document.getElementById("root")!.scrollTo(0, 0));
-    const expandedWidth = (await page
-      .getByTestId("workspace-content")
-      .boundingBox())!.width;
-    await page.getByRole("button", { name: "收起导航", exact: true }).click();
-    await expect(sidebar).toHaveCSS("width", "72px");
-    await expect(updateEntry).toBeVisible();
-    expect(
-      (await page.getByTestId("workspace-content").boundingBox())!.width,
-    ).toBeGreaterThan(expandedWidth);
-    await sidebar.getByRole("link", { name: "统计", exact: true }).hover();
-    await expect(page.getByRole("tooltip")).toBeVisible();
-    await page.mouse.move(800, 30);
-    await expect(page.getByRole("tooltip")).not.toBeVisible();
-    await page.getByRole("button", { name: "展开导航", exact: true }).blur();
-    await expect(page.getByTestId("workspace-sidebar-toggle-logo")).toHaveCSS("opacity", "1");
-    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "0");
-    await page.screenshot({
-      path: `${output}/screenshot-collapsed.png`,
-      fullPage: true,
-      animations: "disabled",
-    });
-    await page.getByRole("button", { name: "展开导航", exact: true }).hover();
-    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "1");
-    await expect(page.getByTestId("workspace-sidebar-toggle-logo")).toHaveCSS("opacity", "0");
-    await expect(page.getByRole("tooltip")).toContainText("展开导航");
-    await page.screenshot({ path: `${output}/screenshot-sidebar-hover.png`, animations: "disabled" });
-    await page.reload();
-    await expect(sidebar).toHaveCSS("width", "72px");
-    await page.getByRole("button", { name: "展开导航", exact: true }).click();
-    await expect(sidebar).toHaveCSS("width", "240px");
-    await page.keyboard.press("Control+Shift+S");
-    await expect(sidebar).toHaveCSS("width", "72px");
-    const expandToggle = page.getByRole("button", { name: "展开导航", exact: true });
-    await expandToggle.focus();
-    await expect(page.getByTestId("workspace-sidebar-toggle-icon")).toHaveCSS("opacity", "1");
-    await page.keyboard.press("Enter");
-    await expect(sidebar).toHaveCSS("width", "240px");
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    expect(await sidebar.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThanOrEqual(0.001);
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await sidebar.getByTestId("account-menu-trigger").click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await page.screenshot({ path: `${output}/screenshot-desktop-light.png`, fullPage: true, animations: "disabled" });
+    await page.getByTestId("account-menu-trigger").click();
     await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
-    await expect(renewalWorkspace).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(page.locator("#dashboard-subscription-renewals")).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await page.screenshot({
-      path: `${output}/screenshot-dark.png`,
-      fullPage: true,
-      animations: "disabled",
-    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: `${output}/screenshot-desktop-dark.png`, fullPage: true, animations: "disabled" });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
   } else {
     await expect(sidebar).not.toBeVisible();
     await page.getByTestId("app-header").getByTestId("account-menu-trigger").click();

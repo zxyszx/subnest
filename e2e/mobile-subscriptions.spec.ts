@@ -328,8 +328,8 @@ test("mobile sharing accounts keep actions visible without inline expansion", as
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-compact.png") });
 
     await expect(account.getByRole("button", { name: "展开全部信息" })).toHaveCount(0);
-    await expect(account.getByRole("button", { name: "验证码链接" })).toBeVisible();
-    await expect(account.getByRole("button", { name: "管理车友" })).toBeVisible();
+    await expect(account.getByRole("button", { name: "验证码链接" })).toHaveCount(0);
+    await expect(account.getByRole("button", { name: /^账号资料 ·/ })).toBeVisible();
     await expectNoHorizontalOverflow(page, "mobile sharing account details");
     await account.screenshot({ path: testInfo.outputPath("mobile-sharing-actions.png") });
   } finally {

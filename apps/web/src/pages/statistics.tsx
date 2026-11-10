@@ -201,7 +201,7 @@ const Statistics = () => {
       <Header />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <WorkspacePageHeading hideDesktopTitle title={t("statistics.title")} description={lastUpdated && !ratesLoading ? t("statistics.ratesUpdatedAt", { date: formatDateTime(lastUpdated, { year: "numeric", month: "2-digit", day: "2-digit" }) }) : undefined} actions={
+        <WorkspacePageHeading title={t("statistics.title")} description={lastUpdated && !ratesLoading ? t("statistics.ratesUpdatedAt", { date: formatDateTime(lastUpdated, { year: "numeric", month: "2-digit", day: "2-digit" }) }) : undefined} actions={
           <ExchangeRateRefreshButton
             label={t("statistics.refreshRates")}
             pending={ratesRefreshPending}

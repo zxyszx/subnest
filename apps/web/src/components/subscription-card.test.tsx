@@ -221,17 +221,17 @@ describe("SubscriptionCard", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-23") });
 
     const card = screen.getByTestId("subscription-card");
-    expect(card).toHaveClass("border-warning/40");
+    expect(card).not.toHaveClass("border-warning/40");
     expect(card).not.toHaveClass("animate-renewal-warning");
     expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-warning");
   });
 
-  it("uses a red renewal treatment within three days", () => {
+  it("keeps upcoming renewal warnings amber within three days", () => {
     renderSubscriptionCard({ nextBillingDate: assertDateOnly("2026-05-21") });
 
     const card = screen.getByTestId("subscription-card");
-    expect(card).toHaveClass("border-destructive/35");
-    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-destructive");
+    expect(card).not.toHaveClass("border-destructive/35");
+    expect(screen.getByTestId("subscription-card-meta-relative-billing")).toHaveClass("text-warning");
   });
 
   it("keeps real subscription logo styling as one plate without an inner pseudo-element", () => {
@@ -665,7 +665,7 @@ describe("SubscriptionCard", () => {
 
     expect(statusBadge).toHaveClass("bg-destructive/10", "text-destructive", "border-destructive/25");
     expect(expiredDateText).toHaveClass("text-destructive");
-    expect(card).toHaveClass("border-destructive/35");
+    expect(card).not.toHaveClass("border-destructive/35");
     expect(screen.getByTestId("subscription-card-meta-start-date")).toHaveTextContent("2026/5/15");
     expect(screen.getByTestId("subscription-card-renewal-banner")).toHaveTextContent("已过期 3 天·2026/5/15");
   });

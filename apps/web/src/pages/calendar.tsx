@@ -87,7 +87,7 @@ const Calendar = () => {
         className="app-main mx-auto max-w-[120rem]"
         aria-busy={subscriptionsQuery.isFetching ? true : undefined}
       >
-        <WorkspacePageHeading hideDesktopTitle title={t("calendar.title")} description={t("calendar.pageSubtitle")} />
+        <WorkspacePageHeading title={t("calendar.title")} description={t("calendar.pageSubtitle")} />
 
         <SubscriptionCalendar 
           subscriptions={subscriptions} 

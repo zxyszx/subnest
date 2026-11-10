@@ -43,6 +43,7 @@ vi.mock("@/components/ui/sonner", () => ({
 vi.mock("@/lib/theme-provider", () => ({
   useTheme: () => ({
     theme: mocks.theme,
+    resolvedTheme: mocks.theme === "system" ? "dark" : mocks.theme,
     setTheme: mocks.setTheme,
   }),
 }));
@@ -290,6 +291,16 @@ describe("Header system version entry", () => {
     expect(mocks.writeAppearancePendingToStorage).not.toHaveBeenCalled();
   });
 
+  it("switches away from the resolved system theme", async () => {
+    mocks.useSession.mockReturnValue(adminSession("user"));
+    mocks.theme = "system";
+    const user = userEvent.setup();
+    renderHeader();
+    await user.click(screen.getByTestId("account-menu-trigger"));
+    await user.click(screen.getByRole("menuitem", { name: "切换主题" }));
+    expect(mocks.setTheme).toHaveBeenCalledWith("light");
+  });
+
   it("uses the shared responsive header layout contract", () => {
     mocks.useSession.mockReturnValue(adminSession("user"));
 
@@ -309,16 +320,16 @@ describe("Header system version entry", () => {
 
     const subscriptionLink = within(desktopNav).getByRole("link", { name: "订阅" });
     expect(subscriptionLink).toHaveAttribute("title", "订阅");
-    expect(subscriptionLink).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-3", "xl:px-4");
+    expect(subscriptionLink).toHaveClass("h-10", "w-auto", "justify-start", "gap-2", "px-2.5", "xl:px-3");
     const subscriptionLabel = within(subscriptionLink).getByText("订阅");
     expect(subscriptionLabel).toHaveClass("whitespace-nowrap");
     expect(subscriptionLabel).not.toHaveClass("sr-only", "xl:not-sr-only");
 
-    expect(within(desktopNav).getByRole("link", { name: "在线 2FA" })).toBeInTheDocument();
+    expect(within(desktopNav).getByRole("link", { name: "统计" })).toBeInTheDocument();
     expect(within(desktopNav).getAllByRole("link")).toHaveLength(4);
     expect(within(desktopNav).getByRole("button", { name: "更多" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "设置" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("account-menu-trigger")).toHaveClass("lg:hidden");
+    expect(screen.getByTestId("account-menu-trigger")).not.toHaveClass("lg:hidden");
   });
 
   it("groups settings and logout in the account menu and supports Escape", async () => {
@@ -357,7 +368,7 @@ describe("Header system version entry", () => {
     await user.click(within(desktopNav).getByRole("button", { name: "更多" }));
     expect(await screen.findByRole("menuitem", { name: "共享收件箱" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "日历" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "统计" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "在线 2FA" })).toBeInTheDocument();
   });
 
   it("uses the shared brand mark contract in the header", () => {

@@ -66,7 +66,7 @@ export function OperationsPanel({
   ];
   return (
     <section className="min-w-0">
-      <h2 className="mb-4 text-sm font-semibold">
+      <h2 className="sr-only">
         {t("dashboard.operations")}
       </h2>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -76,7 +76,7 @@ export function OperationsPanel({
             type="button"
             onClick={task.action}
             className={cn(
-              "flex min-h-24 items-center gap-3 rounded-2xl border p-3 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4",
+              "flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4",
               task.count > 0 ? task.style : "border-border bg-card text-muted-foreground",
             )}
           >

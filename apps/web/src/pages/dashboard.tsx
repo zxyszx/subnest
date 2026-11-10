@@ -209,20 +209,6 @@ export default function Index() {
       >
         <WorkspacePageHeading title={t("dashboard.overview")} description={t("dashboard.overviewHint")}
           actions={<span className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{formatDateTime(new Date(today + "T12:00:00"), { year: "numeric", month: "long" })}</span>} />
-        <div className="mb-6 shrink-0">
-          <OperationsPanel
-            todayCount={
-              subscriptionRenewals.filter((item) => item.daysUntil === 0).length
-            }
-            upcomingCount={subscriptionRenewals.length}
-            overdueCount={
-              subscriptionRenewals.filter((item) => item.daysUntil < 0).length
-            }
-            memberCount={sharingRenewals.length}
-            onSubscriptions={openSubscriptionRenewals}
-            onMembers={() => setMemberRenewalsOpen(true)}
-          />
-        </div>
         <div
           className="workspace-summary mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"
           data-testid="dashboard-stat-grid"
@@ -272,6 +258,20 @@ export default function Index() {
               density="dashboard"
             />
           </Link>
+        </div>
+        <div className="mb-5 shrink-0">
+          <OperationsPanel
+            todayCount={
+              subscriptionRenewals.filter((item) => item.daysUntil === 0).length
+            }
+            upcomingCount={subscriptionRenewals.length}
+            overdueCount={
+              subscriptionRenewals.filter((item) => item.daysUntil < 0).length
+            }
+            memberCount={sharingRenewals.length}
+            onSubscriptions={openSubscriptionRenewals}
+            onMembers={() => setMemberRenewalsOpen(true)}
+          />
         </div>
         {detailsIncomplete && (
           <p className="mt-3 text-sm text-destructive" role="status">

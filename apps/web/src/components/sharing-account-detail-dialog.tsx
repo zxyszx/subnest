@@ -43,6 +43,7 @@ interface SharingAccountDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   mode?: SharingAccountDetailMode;
   onEditAccount?: () => void;
+  onLinks?: () => void;
 }
 
 const contactTypes = ["wechat", "telegram", "ns", "xianyu"] as const;
@@ -99,7 +100,7 @@ function matchesTargetAccountOption(option: SearchableSelectOption, search: stri
 export function getSeatExpiryUrgency(today: DateOnly | string, expiresAt: DateOnly | string | null | undefined) {
   if (!expiresAt) return { daysUntilExpiry: null, tone: "default" as const };
   const daysUntilExpiry = daysBetweenDateOnly(today, expiresAt);
-  if (daysUntilExpiry <= 3) return { daysUntilExpiry, tone: "danger" as const };
+  if (daysUntilExpiry < 0) return { daysUntilExpiry, tone: "danger" as const };
   if (daysUntilExpiry <= 7) return { daysUntilExpiry, tone: "warning" as const };
   return { daysUntilExpiry, tone: "default" as const };
 }
@@ -128,7 +129,7 @@ function SeatExpiry({ expiresAt, today }: { expiresAt: SharingSeat["expiresAt"];
   );
 }
 
-export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account", onEditAccount }: SharingAccountDetailDialogProps) {
+export function SharingAccountDetailDialog({ account, open, onOpenChange, mode = "account", onEditAccount, onLinks }: SharingAccountDetailDialogProps) {
   const { t, formatCurrency } = useI18n();
   const detailQuery = useSharingAccountDetail(open ? account?.id ?? null : null);
   const settingsQuery = useSettingsEnvelope();
@@ -254,7 +255,8 @@ export function SharingAccountDetailDialog({ account, open, onOpenChange, mode =
           <DialogHeader className="shrink-0 pr-10">
             <DialogTitle>{t(mode === "seats" ? "sharing.manageMembers" : "sharing.accountDetails")}</DialogTitle>
             <DialogDescription className="break-all">{account ? `${account.subscription.name} #${account.accountNumber} · ${account.loginAccount}` : t("sharing.accountSummary")}</DialogDescription>
-            {onEditAccount ? <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onEditAccount}>{t("sharing.editAccount")}</Button> : null}
+            <div className="flex flex-wrap gap-2">{onLinks ? <Button type="button" variant="outline" size="sm" onClick={onLinks}><Link2 className="h-4 w-4" />{t("sharing.verificationLinks")}</Button> : null}
+            {onEditAccount ? <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onEditAccount}>{t("sharing.editAccount")}</Button> : null}</div>
           </DialogHeader>
 
           {detailQuery.isPending ? (
@@ -546,7 +548,7 @@ function emptySeatDraft(seat: SharingSeat, mode: "edit" | "renew"): SharingSeatD
     contactType: contactTypes.includes(seat.contactType as (typeof contactTypes)[number]) ? seat.contactType ?? "" : inferLegacyContactType(seat.contact) ?? "",
     monthlyPrice: seat.monthlyPrice ?? "",
     // 本期收费是用户本次实际收款的总额，留空便于直接录入；历史应收仍然回显。
-    billingAmount: seat.currentReceivable && Number(seat.currentReceivable.amount) > 0
+    billingAmount: seat.currentReceivable
       ? seat.currentReceivable.amount
       : "",
     currency: seat.currency ?? "CNY",

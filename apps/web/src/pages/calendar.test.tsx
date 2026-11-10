@@ -119,7 +119,7 @@ describe("Calendar page", () => {
             logo: "https://example.com/netflix.svg",
           },
         },
-        seats: [{ id: "seat-1", status: "active", expiresAt: "2026-09-30", memberName: "Zhao" }],
+        seats: [{ id: "seat-1", status: "active", expiresAt: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-15`, memberName: "Zhao" }],
       },
     }]);
 

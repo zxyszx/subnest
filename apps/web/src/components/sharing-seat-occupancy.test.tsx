@@ -60,7 +60,7 @@ describe("SharingSeatOccupancy", () => {
     expect(sharingSeatExpiryTone(8)).toBe("normal");
     expect(sharingSeatExpiryTone(7)).toBe("warning");
     expect(sharingSeatExpiryTone(4)).toBe("warning");
-    expect(sharingSeatExpiryTone(3)).toBe("danger");
+    expect(sharingSeatExpiryTone(3)).toBe("warning");
     expect(sharingSeatExpiryTone(-1)).toBe("danger");
   });
 

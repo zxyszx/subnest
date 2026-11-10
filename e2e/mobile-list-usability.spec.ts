@@ -71,6 +71,12 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     // Other suites may leave accounts before this fixture in the virtualized list.
     await search.fill(names[0]!);
     await expect(subscriptionCard(page, names[0]!)).toBeVisible();
+    const bottomNav = await page.getByTestId("app-header-mobile-nav").boundingBox();
+    expect(bottomNav).not.toBeNull();
+    expect(Math.round(bottomNav!.y + bottomNav!.height)).toBe(844);
+    const addButton = page.getByRole("button", { name: "添加订阅", exact: true });
+    await expect(addButton).toBeVisible();
+    await addButton.click({ trial: true });
     await expectNoHorizontalOverflow(page, "subscription first screen");
     await shot("01-subscriptions-first-screen");
     observations.subscriptionQuickDueFiltersVisible = await page.getByRole("button", { name: /今日续费|逾期订阅/ }).count();
@@ -101,9 +107,10 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await expect(mobileAccount).toBeVisible();
     await expect(mobileAccount.getByText("存在待收款", { exact: true })).toHaveCount(0);
     observations.sharingFirstAccountTop = (await mobileAccount.boundingBox())?.y;
-    observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).isVisible();
+    await expect(mobileAccount.getByRole("button", { name: /^账号资料 ·/ })).toBeVisible();
+    observations.sharingManageInitiallyVisible = await mobileAccount.getByRole("button", { name: /^账号资料 ·/ }).isVisible();
     expect(observations.sharingManageInitiallyVisible).toBe(true);
-    await expect(mobileAccount.getByRole("button", { name: "验证码链接", exact: true })).toBeVisible();
+    await expect(mobileAccount.getByRole("button", { name: "验证码链接", exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, "sharing first screen");
     await shot("03-sharing-first-screen");
     const sharingSearch = page.getByRole("searchbox");
@@ -117,7 +124,7 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
     await shot("05-sharing-filter-collapsed");
     await expect(mobileAccount.getByRole("button", { name: "展开全部信息", exact: true })).toHaveCount(0);
     await shot("06-sharing-account-actions");
-    await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).click();
+    await mobileAccount.getByRole("button", { name: /^账号资料 ·/ }).click();
     const accountPanel = page.getByRole("dialog", { name: "管理车友", exact: true });
     await expect(accountPanel).toHaveCSS("width", "390px");
     await expect(accountPanel).toHaveCSS("height", "844px");
@@ -229,16 +236,17 @@ test("mobile subscription and sharing everyday operation audit", async ({ page }
       const toolbar = page.getByTestId("desktop-sharing-toolbar");
       await expect(toolbar).toBeVisible();
       await expect(summary.locator(":scope > *")).toHaveCount(4);
-      expect(Math.round((await toolbar.boundingBox())!.y - ((await summary.boundingBox())!.y + (await summary.boundingBox())!.height))).toBe(16);
+      const sectionGap = await page.locator(".sharing-main").evaluate((element) => parseFloat(getComputedStyle(element).rowGap));
+      expect(Math.round((await toolbar.boundingBox())!.y - ((await summary.boundingBox())!.y + (await summary.boundingBox())!.height))).toBe(Math.round(sectionGap));
       await expect(page.getByRole("combobox", { name: "账号状态", exact: true })).toHaveCount(0);
-      await expect(mobileAccount.getByRole("button", { name: "管理车友", exact: true })).toBeVisible();
+      await expect(mobileAccount.getByRole("button", { name: /^账号资料 ·/ })).toBeVisible();
       const seatRows = await page.getByTestId("sharing-card-seats").evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().top));
       expect(Math.abs(seatRows[0]! - seatRows[1]!)).toBeLessThanOrEqual(1);
       await expectNoHorizontalOverflow(page, `desktop sharing ${width}`);
       await shot(`13-sharing-desktop-${width}`);
       if (width === 1536) {
         const scrollTop = await page.evaluate(() => document.getElementById("root")!.scrollTop);
-        await mobileAccount.getByRole("button", { name: "管理车友", exact: true }).click();
+        await mobileAccount.getByRole("button", { name: /^账号资料 ·/ }).click();
         await expect(accountPanel).toBeVisible();
         const panelBox = (await accountPanel.boundingBox())!;
         expect(panelBox.x).toBeGreaterThan(0);

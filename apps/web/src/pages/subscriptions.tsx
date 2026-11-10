@@ -382,7 +382,7 @@ const Subscriptions = () => {
       <Header onAddSubscription={handleAddSubscription} availableTags={allTags} platformSuggestions={platformOptions} subscriptionActions={aiRecognitionAction} />
 
       <main className="app-main mx-auto max-w-[120rem]">
-        <WorkspacePageHeading hideDesktopTitle title={t("subscriptions.title")} description={
+        <WorkspacePageHeading title={t("subscriptions.title")} description={
           <>{t("subscriptions.count", { count: displayedTotal })}{unfilteredTotal !== undefined && " " + t("subscriptions.filteredCount", { count: unfilteredTotal })}</>
         } actions={
           <div className="hidden items-center gap-2 md:flex">
