@@ -145,7 +145,7 @@ test("dashboard supports horizontal desktop navigation, manual renewal and mobil
     await expect(nav).toBeVisible();
     await expect(nav.getByRole("link", { name: "仪表盘", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav.getByRole("link", { name: "订阅列表", exact: true })).toBeVisible();
-    await expectNoHorizontalOverflow(page);
+    await expectNoHorizontalOverflow(page, "dashboard desktop");
     await page.getByRole("button", { name: "打开系统更新", exact: true }).click();
     await expect(page.getByText("当前版本", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
@@ -158,7 +158,7 @@ test("dashboard supports horizontal desktop navigation, manual renewal and mobil
     await page.getByRole("menuitem", { name: "切换主题", exact: true }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expectNoHorizontalOverflow(page);
+    await expectNoHorizontalOverflow(page, "dashboard desktop");
     await page.screenshot({ path: `${output}/screenshot-desktop-dark.png`, fullPage: true, animations: "disabled" });
     await page.emulateMedia({ reducedMotion: "no-preference" });
   } else {
