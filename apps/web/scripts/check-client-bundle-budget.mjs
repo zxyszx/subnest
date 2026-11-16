@@ -136,7 +136,7 @@ function assertLazyDialogShellDependencies(routeKey, files) {
 }
 
 const manifestEntries = Object.entries(manifest);
-const appEntry = manifestEntries.find(([, entry]) => entry.isEntry && entry.file.endsWith(".js"));
+const appEntry = manifestEntries.find(([key, entry]) => key === "index.html" && entry.isEntry && entry.file.endsWith(".js"));
 if (!appEntry) throw new Error("Client bundle manifest has no JavaScript application entry");
 const appClosure = collectStaticClosure(appEntry[0]);
 const privateShellKey = "src/components/private-app-shell.tsx";

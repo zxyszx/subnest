@@ -897,3 +897,699 @@ msgstr "Waiting for the new version to start…"
 #. js-lingui-explicit-id
 msgid "system.restartTimeout"
 msgstr "The new version has not responded yet. Refresh later or check the service."
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text1"
+msgstr "仪表盘"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text2"
+msgstr "车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text3"
+msgstr "合租"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text4"
+msgstr "订阅服务"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text5"
+msgstr "小林"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text6"
+msgstr "阿月"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text7"
+msgstr "小陈"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text8"
+msgstr "阿青"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text9"
+msgstr "影音家庭车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text10"
+msgstr "音乐家庭车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text11"
+msgstr "云盘共享车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text12"
+msgstr "工具合租车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text13"
+msgstr "影音订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text14"
+msgstr "音乐订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text15"
+msgstr "云盘订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text16"
+msgstr "工具订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text17"
+msgstr "示例趋势图"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text18"
+msgstr "600"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text19"
+msgstr "450"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text20"
+msgstr "300"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text21"
+msgstr "150"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text22"
+msgstr "0"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text23"
+msgstr "10-19 10-26 11-02 11-09 11-17"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text24"
+msgstr "示例分布环形图"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text25"
+msgstr "%"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text26"
+msgstr "¥"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text27"
+msgstr ".00"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text28"
+msgstr "费用信息"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text29"
+msgstr "合租管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text30"
+msgstr "订阅链接"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text31"
+msgstr "订阅管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text32"
+msgstr "套餐管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text33"
+msgstr "用户管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text34"
+msgstr "转发管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text35"
+msgstr "规则集"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text37"
+msgstr "本月"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text38"
+msgstr "全部"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text39"
+msgstr "计入 4 项订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text40"
+msgstr "收入与支出分别统计"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text41"
+msgstr "在车车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text42"
+msgstr "4 人"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text43"
+msgstr "4 辆车 · 12 个车位"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text44"
+msgstr "有效订阅"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text45"
+msgstr "1 项已到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text46"
+msgstr "车位使用率"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text47"
+msgstr "12 / 16 个车位"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text48"
+msgstr "待付款车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text49"
+msgstr "2 人"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text50"
+msgstr "待收 ¥180.00"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text51"
+msgstr "车友总数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text52"
+msgstr "2 人上了多辆车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text53"
+msgstr "在车人数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text54"
+msgstr "当前有效关联"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text55"
+msgstr "人均当期应收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text56"
+msgstr "待付 / 部分付款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text57"
+msgstr "按应收核对"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text58"
+msgstr "7 天内到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text59"
+msgstr "1 人已到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text60"
+msgstr "车辆总数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text61"
+msgstr "4 辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text62"
+msgstr "4 项订阅服务"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text63"
+msgstr "有车友的车辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text64"
+msgstr "空车 0 辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text65"
+msgstr "收入最高车辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text66"
+msgstr "已用车位"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text67"
+msgstr "12 个"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text68"
+msgstr "共 16 个车位"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text69"
+msgstr "实际付款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text70"
+msgstr "已收款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text71"
+msgstr "2 项"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text72"
+msgstr "进入订阅管理续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text73"
+msgstr "未来 30 天续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text74"
+msgstr "3 笔预计续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text75"
+msgstr "在车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text76"
+msgstr "待付款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text77"
+msgstr "部分付款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text78"
+msgstr "已到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text79"
+msgstr "有车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text80"
+msgstr "空车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text81"
+msgstr "已暂停"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text82"
+msgstr "有效"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text83"
+msgstr "妙妙屋首页"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text84"
+msgstr "妙妙屋"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text85"
+msgstr "X"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text86"
+msgstr "顶部功能栏"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text87"
+msgstr "更多功能"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text88"
+msgstr "切换导航显示"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text89"
+msgstr "切换明暗主题"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text90"
+msgstr "管理员 · 布局预览账号，不连接正式账户。"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text91"
+msgstr "管理员头像"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text92"
+msgstr "预览账号"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text93"
+msgstr "ADMIN"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text94"
+msgstr "系统设置"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text95"
+msgstr "日志管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text96"
+msgstr "证书管理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text97"
+msgstr "费用信息导航"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text98"
+msgstr "今天"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text99"
+msgstr "本周"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text100"
+msgstr "示例金额仅供核对布局。时间切换展示选中状态，真实账务与历史数据尚未接入。"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text101"
+msgstr "近 30 天每日支出"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text102"
+msgstr "每日已付费用 · 保留原柱状图位置"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text103"
+msgstr "收入与支出趋势"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text104"
+msgstr "紫色支出 · 绿色收入"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text105"
+msgstr "车友付款排行"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text106"
+msgstr "合租收入排行"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text107"
+msgstr "订阅费用分布"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text108"
+msgstr "需要处理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text109"
+msgstr "按严重程度排序"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text110"
+msgstr "工具订阅已到期，请续费或暂停"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text111"
+msgstr "阿月尚有 ¥120.00 待收款"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text112"
+msgstr "影音订阅将在 3 天后续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text113"
+msgstr "小陈的音乐车位将在 7 天后到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text114"
+msgstr "待处理"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text115"
+msgstr "即将到期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text116"
+msgstr "查看 →"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text117"
+msgstr "服务状态"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text118"
+msgstr "订阅业务状态 · 条形表示周期进度"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text119"
+msgstr "还剩 16 天"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text120"
+msgstr "还剩 3 天"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text121"
+msgstr "还剩 11 天"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text122"
+msgstr "已到期 2 天"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text123"
+msgstr "收款进度分布"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text124"
+msgstr "未收／部分付款／已收齐"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text125"
+msgstr "上车服务分布"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text126"
+msgstr "人数与当期应收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text127"
+msgstr "每日在车人数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text128"
+msgstr "近 30 天 · 示例历史"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text129"
+msgstr "合租收入分布"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text130"
+msgstr "面积代表收入 · 按订阅服务分组"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text131"
+msgstr "服务构成"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text132"
+msgstr "车辆数与合租收入"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text133"
+msgstr "合租收款进度"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text134"
+msgstr "横轴周期进度 · 纵轴当期实收／应收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text135"
+msgstr "示例收款散点图"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text136"
+msgstr "续费日历"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text137"
+msgstr "未来 60 天 · 30 天内预计 ¥698.00"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text138"
+msgstr "天后 · ¥"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text139"
+msgstr "按周期预计"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text140"
+msgstr "待续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text141"
+msgstr "本月剩余待续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text142"
+msgstr "¥226.00"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text143"
+msgstr "下月预估"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text144"
+msgstr "¥472.00"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text145"
+msgstr "全部车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text146"
+msgstr "全部合租"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text147"
+msgstr "全部订阅服务"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text148"
+msgstr "点条目查看明细；修改进入顶部管理栏目"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text149"
+msgstr "搜索名称"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text150"
+msgstr "天后续费"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text151"
+msgstr "周期已过"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text152"
+msgstr "每月续费 · 示例周期"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text153"
+msgstr "1 辆车"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text154"
+msgstr "3 位车友"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text155"
+msgstr "当期已付 ¥"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text156"
+msgstr "已上车辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text157"
+msgstr "当期应收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text158"
+msgstr "已收 / 应收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text159"
+msgstr "待收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text160"
+msgstr "车位数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text161"
+msgstr "到期状态"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text162"
+msgstr "车辆"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text163"
+msgstr "服务类型"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text164"
+msgstr "当期实收"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text165"
+msgstr "当期成本"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text166"
+msgstr "已用 / 总车位"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text167"
+msgstr "车友数"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text168"
+msgstr "→"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text169"
+msgstr "家庭共享"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text170"
+msgstr "3 人"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text171"
+msgstr "没有匹配的记录，请调整搜索或筛选。"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text172"
+msgstr "只读明细"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text173"
+msgstr "查看明细"
+
+#. js-lingui-explicit-id
+msgid "expensePreview.text174"
+msgstr "关闭"
+
+#. js-lingui-explicit-id
+msgid "dashboard.expensePreview"
+msgstr "Miaomiaowu expenses · Preview"
