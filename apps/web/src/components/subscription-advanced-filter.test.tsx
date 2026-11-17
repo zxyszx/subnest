@@ -505,10 +505,9 @@ describe("SubscriptionAdvancedFilter", () => {
     const startPicker = within(dialog).getByTestId("advanced-next-billing-from-picker");
     await user.click(within(startPicker).getByRole("button", { name: /2026\/8\/1/ }));
 
-    const sheet = await screen.findByRole("dialog", { name: /Select|请选择/ });
-    expect(sheet).toHaveClass("h5-mobile-sheet-content");
-    expect(dialog).toContainElement(sheet);
     const calendar = await screen.findByRole("grid");
+    expect(dialog).toContainElement(calendar);
+    expect(dialog.querySelector("[data-mobile-overlay-backdrop]")).toBeNull();
     await user.click(within(calendar).getByRole("button", { name: /2026年8月2日|August 2, 2026/ }));
     expect(onChange).not.toHaveBeenCalled();
 

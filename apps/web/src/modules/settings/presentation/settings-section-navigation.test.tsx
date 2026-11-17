@@ -143,7 +143,7 @@ describe("SettingsScreen section navigation", () => {
     expect(SETTINGS_SECTION_IDS.map((id) => container.querySelector(`section#${id}`)?.id)).toEqual([...SETTINGS_SECTION_IDS]);
   });
 
-  it("opens mobile section navigation as a left drawer", async () => {
+  it("opens mobile section navigation as a centered window", async () => {
     const user = userEvent.setup();
     renderSettingsScreen();
 
@@ -152,12 +152,10 @@ describe("SettingsScreen section navigation", () => {
     const drawer = await screen.findByTestId("settings-section-nav-drawer");
     expect(drawer).toHaveClass(
       "fixed",
-      "left-0",
-      "top-(--app-visual-viewport-offset-top)",
-      "h-(--app-viewport-height)",
-      "max-h-(--app-viewport-height)",
+      "inset-0",
+      "m-auto",
       "z-80",
-      "rounded-r-xl",
+      "rounded-xl",
       "bg-card",
     );
     const notificationLink = within(drawer).getByRole("link", { name: "通知设置" });

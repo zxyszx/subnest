@@ -144,7 +144,6 @@ export default defineConfig(async ({ command, mode }) => {
       target: "es2022",
       manifest: true,
       rolldownOptions: {
-        input: { main: path.resolve(rootDir, "index.html"), expensePreview: path.resolve(rootDir, "expense-preview.html") },
         output: {
           // Workers Static Assets 直接下发前端产物；按依赖边界拆主包，避免首屏 JS 重新越过 Vite 500KB 预警线。
           codeSplitting: {

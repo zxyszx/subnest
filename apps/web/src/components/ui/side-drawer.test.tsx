@@ -53,16 +53,7 @@ function finishExitAnimation(element: Element) {
 }
 
 describe("SideDrawer", () => {
-  it.each([
-    ["left", "left-0", "data-[state=open]:slide-in-from-left-4", "data-[state=closed]:slide-out-to-left-4", "border-r"],
-    ["right", "right-0", "data-[state=open]:slide-in-from-right-4", "data-[state=closed]:slide-out-to-right-4", "border-l"],
-  ] as const)("maps the %s side to matching placement and motion", async (
-    side,
-    placementClass,
-    enterClass,
-    exitClass,
-    borderClass,
-  ) => {
+  it.each(["left", "right"] as const)("centers the %s legacy panel with zoom motion", async (side) => {
     const user = userEvent.setup();
     render(<SideDrawerHarness side={side} />);
 
@@ -73,7 +64,8 @@ describe("SideDrawer", () => {
     expect(content).toHaveAttribute("data-side", side);
     expect(content).toHaveAttribute("data-state", "open");
     expect(content).toHaveAttribute("role", "dialog");
-    expect(content).toHaveClass(placementClass, enterClass, exitClass, borderClass, "duration-200");
+    expect(content).toHaveClass("inset-0", "m-auto", "rounded-xl", "data-[state=open]:zoom-in-95", "data-[state=closed]:zoom-out-95");
+    expect(content).not.toHaveClass("left-0", "right-0", "h-(--app-viewport-height)");
     expect(overlay).toHaveAttribute("data-state", "open");
     expect(overlay).toHaveClass(
       "data-[state=open]:animate-in",

@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, installE2EPageGuards, test } from "./support/test";
 import { loginThroughProductUI } from "./support/auth";
-import { createAdminManagedUser, deleteProductSubscriptionsByName, updateProductSettings } from "./support/product-api";
+import { createProductSubscriptionSeed, createAdminManagedUser, deleteProductSubscriptionsByName, updateProductSettings } from "./support/product-api";
 import { subscriptionCard, uniqueE2EName } from "./support/subscriptions";
 import { createStoredZip } from "./support/zip";
 
@@ -402,3 +402,49 @@ async function logoutThroughProductUI(page: Page) {
   expect(logoutResponse.ok(), await logoutResponse.text()).toBe(true);
   await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
 }
+
+
+test("release smoke @release task windows stay centered and do not stack", async ({ page }, testInfo) => {
+  const name = uniqueE2EName(testInfo, "task-window");
+  await page.goto("/subscriptions");
+  await createProductSubscriptionSeed(page, {
+    name, price: "10", currency: "CNY", billingCycle: "monthly",
+    startDate: "2026-11-01", nextBillingDate: "2099-01-01",
+    autoCalculateNextBillingDate: false,
+    familySharing: { enabled: true, loginAccount: `${name}@example.test`, capacity: 2 },
+  });
+  try {
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/sharing");
+      const account = page.getByTestId("sharing-mobile-account").filter({ hasText: name });
+      await account.getByRole("button", { name: /^账号资料 ·/ }).click();
+      const parent = page.getByRole("dialog", { name: "管理车友", exact: true });
+      await expect(parent).toBeVisible();
+      const rect = await parent.boundingBox();
+      expect(rect).not.toBeNull();
+      expect(Math.abs(rect!.x + rect!.width / 2 - width / 2)).toBeLessThan(3);
+      await parent.getByRole("button", { name: "管理车位", exact: true }).first().click();
+      const editor = page.getByRole("dialog", { name: /^管理车位/ });
+      await expect(editor).toBeVisible();
+      await expect(parent).toBeHidden();
+      await expect(page.locator("[data-modal-content][data-modal-front]:visible")).toHaveCount(1);
+      await expect(page.locator("[data-modal-overlay][data-modal-front]:visible")).toHaveCount(1);
+      await editor.getByRole("combobox").first().click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+      await expect(editor.locator("[data-mobile-overlay-backdrop]")).toHaveCount(0);
+      await page.getByRole("option").first().click();
+      await expect(page.getByRole("listbox")).toBeHidden();
+      await expect(editor.getByRole("heading", { name: /^管理车位/ })).toBeVisible();
+      await expect(editor).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`task-window-${width}.png`) });
+      await editor.getByRole("button", { name: "取消", exact: true }).first().click();
+      await expect(parent).toBeVisible();
+      await expect(page.locator("[data-modal-content][data-modal-front]:visible")).toHaveCount(1);
+      await parent.getByRole("button", { name: "取消", exact: true }).click();
+      await expect(page.locator("[data-modal-content]:visible")).toHaveCount(0);
+    }
+  } finally {
+    await deleteProductSubscriptionsByName(page, [name]);
+  }
+});

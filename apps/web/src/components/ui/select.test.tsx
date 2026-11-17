@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 // Select primitive 测试保护桌面/移动端分流和滚动按钮隐藏策略，避免 Radix 默认行为破坏 H5 布局。
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -98,7 +99,7 @@ describe("Select mobile sheet", () => {
     expect(sheet).toHaveClass("h5-mobile-sheet-large");
   });
 
-  it("closes only the nested select when tapping the mobile backdrop inside a dialog", async () => {
+  it("keeps a form select anchored and returns to the form after choosing", async () => {
     const underlayClick = vi.fn();
 
     function Harness() {
@@ -112,7 +113,7 @@ describe("Select mobile sheet", () => {
             <button type="button" onClick={underlayClick}>
               支付方式
             </button>
-            <Select open={selectOpen} onOpenChange={setSelectOpen} value="alipay">
+            <Select open={selectOpen} onOpenChange={setSelectOpen} defaultValue="alipay">
               <SelectTrigger aria-label="支付方式">
                 <SelectValue />
               </SelectTrigger>
@@ -129,25 +130,13 @@ describe("Select mobile sheet", () => {
     render(<Harness />);
 
     const sheet = await screen.findByTestId("payment-select-sheet");
-    const backdrop = sheet.closest("[data-mobile-overlay-portal]")?.querySelector("[data-mobile-overlay-backdrop]");
-    expect(backdrop).not.toBeNull();
-    expect(backdrop).toHaveStyle({ pointerEvents: "auto" });
-    await waitFor(() => {
-      expect(document.body).toHaveAttribute("data-mobile-overlay-open");
-    });
-    expect(document.querySelector("[data-dialog-overlay]")).not.toHaveClass("pointer-events-none");
-
-    vi.useFakeTimers();
-    fireEvent.pointerDown(backdrop as Element);
-    expect(screen.getByTestId("payment-select-sheet")).toBeInTheDocument();
-    fireEvent.click(backdrop as Element);
-
-    expect(screen.getByTestId("payment-select-sheet")).toHaveAttribute("data-state", "closed");
-    expect(document.body).toHaveAttribute("data-mobile-overlay-open");
-    await finishMobileSheetExit();
-    expect(screen.queryByTestId("payment-select-sheet")).not.toBeInTheDocument();
-    expect(document.body).not.toHaveAttribute("data-mobile-overlay-open");
+    expect(sheet.closest("[data-mobile-overlay-portal]")).toBeNull();
+    expect(sheet).not.toHaveAttribute("data-vaul-drawer");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("option", { name: "微信支付" }));
+    await waitFor(() => expect(screen.queryByTestId("payment-select-sheet")).not.toBeInTheDocument());
     expect(screen.getByRole("dialog", { name: "添加新订阅" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "支付方式" })).toHaveTextContent("微信支付");
     expect(underlayClick).not.toHaveBeenCalled();
   });
 

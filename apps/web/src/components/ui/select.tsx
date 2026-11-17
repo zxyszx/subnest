@@ -296,6 +296,8 @@ const SelectContent = React.forwardRef<
   const content = (
     <SelectPrimitive.Content
       ref={ref}
+      data-task-picker={portalContainer ? "" : undefined}
+      {...(portalContainer ? { collisionBoundary: portalContainer, collisionPadding: 8 } : {})}
       className={cn(
         "h5-floating-content relative z-50 min-w-32 overflow-hidden border bg-popover text-popover-foreground shadow-md",
         !isMobileOverlay &&

@@ -1,29 +1,20 @@
 .workspace-shell .app-main {
   max-width: 1600px;
 }
-/* Long account and link tasks keep the list in place behind one responsive panel. */
+/* Task windows stay centered, with scrolling owned by their content area. */
 .workspace-detail-panel {
-  inset: var(--app-visual-viewport-offset-top, 0px) 0 auto auto;
-  margin: 0;
-  width: min(64rem, calc(100vw - 3rem));
-  max-width: none;
-  height: var(--app-viewport-height);
-  max-height: var(--app-viewport-height);
-  border-radius: 16px 0 0 16px;
-  animation: none;
+  inset: var(--app-visual-viewport-offset-top, 0px) 0 calc(100% - var(--app-visual-viewport-offset-top, 0px) - var(--app-viewport-height));
+  margin: auto;
+  width: min(64rem, calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-width: 64rem;
+  height: min(48rem, calc(var(--app-viewport-height) - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+  max-height: calc(var(--app-viewport-height) - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  border-radius: 16px;
 }
 .workspace-detail-panel-compact {
-  width: min(40rem, calc(100vw - 3rem));
-}
-@media (max-width: 767px) {
-  .workspace-detail-panel {
-    top: calc(var(--app-visual-viewport-offset-top) + env(safe-area-inset-top));
-    width: 100%;
-    height: calc(var(--app-viewport-height) - env(safe-area-inset-top));
-    max-height: calc(var(--app-viewport-height) - env(safe-area-inset-top));
-    border-radius: 0;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  }
+  width: min(40rem, calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-width: 40rem;
 }
 .workspace-shell .app-main > section,
 .workspace-shell .app-main > div {
@@ -162,4 +153,16 @@
 .dark .workspace-shell {
   --app-shadow-card: 0 10px 30px -18px hsl(0 0% 0% / 0.65), inset 0 1px 0 hsl(0 0% 100% / 0.04);
   background: radial-gradient(ellipse at 10% 0%, hsl(var(--primary) / 0.06), transparent 48%), hsl(var(--background));
+}
+
+/* A task replaces the previous window; suspended forms retain their draft and scroll. */
+[data-modal-suspended] {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+[data-modal-overlay][data-modal-front] { z-index: 90; }
+[data-modal-content][data-modal-front] { z-index: 91; }
+
+[data-task-picker] {
+  max-height: min(24rem, var(--radix-popover-content-available-height, var(--radix-select-content-available-height, var(--radix-dropdown-menu-content-available-height, 24rem))));
 }

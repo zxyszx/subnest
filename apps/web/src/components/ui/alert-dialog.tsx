@@ -8,6 +8,7 @@
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
+import { useModalSurface } from "@/components/ui/use-modal-surface";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -35,11 +36,19 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, ref) => {
+  const { contentRef, overlayRef } = useModalSurface();
+  const setRefs = React.useCallback((node: HTMLDivElement | null) => {
+    contentRef(node);
+    if (typeof ref === "function") ref(node);
+    else if (ref) ref.current = node;
+  }, [ref, contentRef]);
+  return (
   <AlertDialogPortal>
-    <AlertDialogOverlay />
+    <AlertDialogOverlay ref={overlayRef} data-modal-overlay="" />
     <AlertDialogPrimitive.Content
-      ref={ref}
+      ref={setRefs}
+      data-modal-content=""
       className={cn(
         "h5-dialog-panel fixed left-[50%] top-[50%] z-50 grid max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-hidden rounded-lg border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className,
@@ -47,7 +56,8 @@ const AlertDialogContent = React.forwardRef<
       {...props}
     />
   </AlertDialogPortal>
-));
+  );
+});
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

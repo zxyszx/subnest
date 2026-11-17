@@ -208,7 +208,7 @@ export default function Index() {
         data-testid="operations-dashboard"
       >
         <WorkspacePageHeading title={t("dashboard.overview")} description={t("dashboard.overviewHint")}
-          actions={<><a href="/expense-preview.html" className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-4 text-sm text-foreground hover:bg-accent">{t("dashboard.expensePreview")}</a><span className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{formatDateTime(new Date(today + "T12:00:00"), { year: "numeric", month: "long" })}</span></>} />
+          actions={<><span className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{formatDateTime(new Date(today + "T12:00:00"), { year: "numeric", month: "long" })}</span></>} />
         <div
           className="workspace-summary mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"
           data-testid="dashboard-stat-grid"

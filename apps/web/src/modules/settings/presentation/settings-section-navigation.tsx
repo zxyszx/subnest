@@ -525,7 +525,7 @@ export function MobileSettingsSectionDrawer({
       <MobileSettingsPageHeader sections={sections} activeSectionId={activeSectionId} />
       <SideDrawerContent
         side="left"
-        className="w-[min(18rem,calc(100vw-3.5rem))] rounded-r-xl bg-card"
+        className="w-[min(18rem,calc(100vw-3.5rem))] bg-card"
         data-testid="settings-section-nav-drawer"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-4 pb-3 pt-[calc(1rem+env(safe-area-inset-top))]">

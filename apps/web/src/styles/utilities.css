@@ -383,11 +383,10 @@
       transform-origin: bottom center !important;
     }
 
-    /* Drawer 也吃 visual viewport 偏移，不然软键盘出现时它会留在旧世界线底部。 */
+    /* Center the task window in the visible area above the mobile keyboard. */
     .h5-drawer-panel {
-      translate:
-        0
-        calc(var(--app-visual-viewport-offset-top) + var(--app-viewport-height) - var(--app-layout-viewport-height));
+      top: var(--app-visual-viewport-offset-top);
+      bottom: calc(100% - var(--app-visual-viewport-offset-top) - var(--app-viewport-height));
     }
 
     /* compact 给短菜单，56dvh 留出父 Dialog 上下文；全屏菜单别装成系统设置页。 */

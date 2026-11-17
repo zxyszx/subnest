@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MobileBottomDrawerContent, MobileDrawerRoot } from "@/components/ui/mobile-drawer";
 
 describe("MobileBottomDrawerContent", () => {
-  it("renders the shared bottom drawer frame with a larger mobile close target", () => {
+  it("renders a centered task window with a larger mobile close target", () => {
     render(
       <MobileDrawerRoot open onOpenChange={vi.fn()} shouldScaleBackground={false}>
         <MobileBottomDrawerContent
@@ -22,7 +22,9 @@ describe("MobileBottomDrawerContent", () => {
     const drawer = screen.getByTestId("mobile-drawer");
     expect(drawer).toHaveAttribute("role", "dialog");
     expect(drawer).toHaveClass("h5-drawer-panel", "overflow-hidden", "z-50");
-    expect(drawer.querySelector("[data-vaul-handle]")).not.toBeNull();
+    expect(drawer.querySelector("[data-vaul-handle]")).toBeNull();
+    expect(drawer).toHaveClass("inset-0", "m-auto", "rounded-xl");
+    expect(drawer).not.toHaveAttribute("data-vaul-drawer");
     expect(within(drawer).getByText("抽屉内容").parentElement).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
     expect(within(drawer).getByRole("button", { name: "关闭" })).toHaveClass("touch-target", "h-10", "w-10");
 

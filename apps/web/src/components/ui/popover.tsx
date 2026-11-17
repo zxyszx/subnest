@@ -153,6 +153,8 @@ const PopoverContent = React.forwardRef<
   const content = (
     <PopoverPrimitive.Content
       ref={ref}
+      data-task-picker={container ? "" : undefined}
+      {...(container ? { collisionBoundary: container, collisionPadding: 8 } : {})}
       align={align}
       sideOffset={sideOffset}
       className={cn(

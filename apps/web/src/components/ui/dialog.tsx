@@ -11,6 +11,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { FloatingPortalContainerProvider } from "@/components/ui/floating-portal-container";
+import { useModalSurface } from "@/components/ui/use-modal-surface";
 import { cn } from "@/lib/utils";
 
 const Dialog = DialogPrimitive.Root;
@@ -59,9 +60,11 @@ const DialogContent = React.forwardRef<
   onPointerDownOutside,
   ...props
 }, ref) => {
+  const { contentRef, overlayRef } = useModalSurface();
   const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(null);
   const setRefs = React.useCallback(
     (node: React.ElementRef<typeof DialogPrimitive.Content> | null) => {
+      contentRef(node);
       setPortalContainer(node);
       if (typeof ref === "function") {
         ref(node);
@@ -69,14 +72,15 @@ const DialogContent = React.forwardRef<
         ref.current = node;
       }
     },
-    [ref],
+    [ref, contentRef],
   );
 
   return (
     <DialogPortal>
-      <DialogOverlay className={overlayClassName} />
+      <DialogOverlay ref={overlayRef} data-modal-overlay="" className={overlayClassName} />
       <DialogPrimitive.Content
         ref={setRefs}
+        data-modal-content=""
         className={cn(
           "h5-dialog-panel fixed inset-0 z-50 m-auto flex max-w-lg flex-col gap-4 overflow-hidden rounded-lg border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           layout === "content" && "h-fit",

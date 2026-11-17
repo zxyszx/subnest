@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Drawer } from "vaul";
 
 import { Button } from "@/components/ui/button";
+import { useFloatingPortalContainer } from "@/components/ui/floating-portal-container";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +53,10 @@ function registerMobileOverlay() {
 }
 
 export function useIsMobileOverlay() {
-  return useMediaQuery(MOBILE_OVERLAY_QUERY);
+  const mobile = useMediaQuery(MOBILE_OVERLAY_QUERY);
+  const parentWindow = useFloatingPortalContainer();
+  // Fields inside a task stay anchored to that task instead of opening a second sheet.
+  return mobile && parentWindow === undefined;
 }
 
 export function useMobileOverlayOpenLifecycle({

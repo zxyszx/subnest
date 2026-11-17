@@ -1,11 +1,13 @@
 import * as React from "react";
 import { X } from "lucide-react";
-import { Drawer } from "vaul";
+import * as Drawer from "@radix-ui/react-dialog";
+import { FloatingPortalContainerProvider } from "@/components/ui/floating-portal-container";
+import { useModalSurface } from "@/components/ui/use-modal-surface";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// 底部抽屉统一承载 h5-drawer-panel 高度链、safe-area 底部预算和 44px 关闭触控目标，业务 Drawer 不再复制 H5 平台约束。
+// 移动端任务窗口统一使用居中弹窗，业务内容只负责自己的滚动链和操作区。
 const DEFAULT_MOBILE_DRAWER_BODY_CLASSNAME =
   "min-h-0 flex-1 overflow-y-auto px-5 pb-[calc(1rem+env(safe-area-inset-bottom))]";
 
@@ -26,7 +28,11 @@ type MobileBottomDrawerContentProps = Omit<React.ComponentPropsWithoutRef<typeof
   children?: React.ReactNode;
 };
 
-const MobileDrawerRoot = Drawer.Root;
+function MobileDrawerRoot({ shouldScaleBackground, ...props }: React.ComponentProps<typeof Drawer.Root> & { shouldScaleBackground?: boolean }) {
+  // Compatibility for existing callers; centered windows never scale or drag the page.
+  void shouldScaleBackground;
+  return <Drawer.Root {...props} />;
+}
 const MobileDrawerTrigger = Drawer.Trigger;
 const MobileDrawerClose = Drawer.Close;
 
@@ -47,6 +53,12 @@ function MobileBottomDrawerContent({
   zIndexClassName = "z-50",
   ...props
 }: MobileBottomDrawerContentProps) {
+  const { contentRef, overlayRef } = useModalSurface();
+  const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(null);
+  const setContentRef = React.useCallback((node: HTMLDivElement | null) => {
+    contentRef(node);
+    setPortalContainer(node);
+  }, [contentRef]);
   const descriptionClass = descriptionMode === "sr-only"
     ? "sr-only"
     : cn("mt-1 text-left leading-5 text-muted-foreground", descriptionClassName ?? "text-sm");
@@ -54,6 +66,8 @@ function MobileBottomDrawerContent({
   return (
     <Drawer.Portal>
       <Drawer.Overlay
+        ref={overlayRef}
+        data-modal-overlay=""
         className={cn(
           "fixed inset-0 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0",
           zIndexClassName,
@@ -61,14 +75,16 @@ function MobileBottomDrawerContent({
         )}
       />
       <Drawer.Content
+        ref={setContentRef}
+        data-modal-content=""
         className={cn(
-          "h5-drawer-panel fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-lg flex-col overflow-hidden rounded-t-lg border border-border bg-card text-card-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4",
+          "h5-dialog-panel h5-drawer-panel fixed inset-0 m-auto flex h-[min(40rem,calc(var(--app-viewport-height)-2rem))] max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           zIndexClassName,
           className,
         )}
         {...props}
       >
-        <Drawer.Handle className="h5-mobile-sheet-handle" />
+        <FloatingPortalContainerProvider container={portalContainer}>
         <div className={cn("flex items-start justify-between gap-4 px-5 pb-3 pt-4", headerClassName)}>
           <div className="flex min-w-0 flex-1 items-start gap-2">
             {icon ? (
@@ -102,6 +118,7 @@ function MobileBottomDrawerContent({
             {children}
           </div>
         )}
+        </FloatingPortalContainerProvider>
       </Drawer.Content>
     </Drawer.Portal>
   );

@@ -204,6 +204,8 @@ const DropdownMenuContent = React.forwardRef<
   const content = (
     <DropdownMenuPrimitive.Content
       ref={ref}
+      data-task-picker={portalContainer ? "" : undefined}
+      {...(portalContainer ? { collisionBoundary: portalContainer, collisionPadding: 8 } : {})}
       sideOffset={sideOffset}
       className={cn(
         "h5-floating-content z-50 min-w-32 overflow-hidden border bg-popover p-1 text-popover-foreground shadow-md",
