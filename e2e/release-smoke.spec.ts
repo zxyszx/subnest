@@ -448,3 +448,43 @@ test("release smoke @release task windows stay centered and do not stack", async
     await deleteProductSubscriptionsByName(page, [name]);
   }
 });
+
+test("release smoke @release expense information uses the original theme with live services", async ({page},testInfo) => {
+  const name=uniqueE2EName(testInfo,"expense-service");
+  await page.goto("/subscriptions");
+  await createProductSubscriptionSeed(page,{name,price:"18",currency:"CNY",billingCycle:"monthly",startDate:"2026-11-01",nextBillingDate:"2099-01-01",autoCalculateNextBillingDate:false});
+  try {
+    for (const width of [1440,390]) {
+      await page.setViewportSize({width,height:1000});
+      await page.goto("/");
+      await expect(page.getByRole("link",{name:"费用信息",exact:true})).toBeVisible();
+      await expect(page.getByText("月均支出",{exact:true})).toBeVisible();
+      await expect(page.getByText("需要处理",{exact:true})).toBeVisible();
+      await expect(page.locator("html")).toHaveClass(/theme-anime/);
+      await expect(page.getByRole("tab",{name:/仪表盘/})).toHaveAttribute("aria-selected","true");
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
+      await page.screenshot({path:testInfo.outputPath(`expense-dashboard-${width}.png`),fullPage:true});
+      await page.getByRole("tab",{name:/服务器/}).click();
+      await expect(page.getByText("续费日历",{exact:true})).toBeVisible();
+      const cards=page.locator("article.subscription");
+      await expect(cards.filter({hasText:name})).toHaveCount(1);
+      await expect.poll(()=>cards.filter({hasText:name}).locator("img").evaluate((img: HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);
+      await page.getByRole("button",{name:"已暂停",exact:true}).click();
+      await expect(cards.filter({hasText:name})).toHaveCount(0);
+      await page.getByRole("button",{name:"全部",exact:true}).click();
+      await expect(cards.filter({hasText:name})).toHaveCount(1);
+      await page.getByRole("textbox").fill("no-matching-service-record");
+      await expect(cards).toHaveCount(0);
+      await page.getByRole("textbox").fill("");
+      await page.screenshot({path:testInfo.outputPath(`expense-servers-${width}.png`),fullPage:true});
+      await page.getByRole("tab",{name:/车友/}).click();
+      await expect(page.getByRole("table")).toBeVisible();
+      await page.getByRole("tab",{name:/合租/}).click();
+      await expect(page.getByRole("table")).toBeVisible();
+      if(width===390) await page.getByRole("button",{name:"更多功能",exact:true}).click();
+      await page.getByRole("link",{name:"订阅管理",exact:true}).last().click();
+      await expect(page.getByRole("heading",{name:"订阅列表",exact:true})).toBeVisible();
+      await expect(page.locator("html")).not.toHaveClass(/theme-anime/);
+    }
+  } finally { await deleteProductSubscriptionsByName(page,[name]); }
+});

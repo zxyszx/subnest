@@ -1593,3 +1593,427 @@ msgstr "关闭"
 #. js-lingui-explicit-id
 msgid "dashboard.expensePreview"
 msgstr "妙妙屋费用信息 · 预览"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text1"
+msgstr "仪表盘"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text2"
+msgstr "车友"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text3"
+msgstr "合租"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text4"
+msgstr "服务器"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text5"
+msgstr "费用信息"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text6"
+msgstr "合租管理"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text7"
+msgstr "订阅管理"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text8"
+msgstr "车友与车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text9"
+msgstr "服务状态"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text10"
+msgstr "系统设置"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text11"
+msgstr "月均费用"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text12"
+msgstr "按订阅周期折算"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text13"
+msgstr "月均合租收入"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text14"
+msgstr "按车位合同折算"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text15"
+msgstr "车位记录"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text16"
+msgstr "每条记录对应一个车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text17"
+msgstr "有效订阅"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text18"
+msgstr "当前状态"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text19"
+msgstr "车位使用率"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text20"
+msgstr "待收款"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text21"
+msgstr "按现有应收记录"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text22"
+msgstr "使用中车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text23"
+msgstr "7 天内到期"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text24"
+msgstr "含已到期车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text25"
+msgstr "合租车辆"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text26"
+msgstr "已有合租账号"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text27"
+msgstr "有车友的车辆"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text28"
+msgstr "当前占用"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text29"
+msgstr "已用车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text30"
+msgstr "含已到期订阅"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text31"
+msgstr "订阅总数"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text32"
+msgstr "现有订阅记录"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text33"
+msgstr "尚无可用的每日账务统计，暂不绘制历史曲线。"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text34"
+msgstr "下次续费"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text35"
+msgstr "账户设置"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text36"
+msgstr "正在加载费用信息"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text37"
+msgstr "正在读取订阅与合租数据…"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text38"
+msgstr "数据加载失败"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text39"
+msgstr "重试"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text40"
+msgstr "费用按现有订阅及合租数据计算；月均金额为周期折算，不代表本月已付款。"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text41"
+msgstr "汇率加载中…"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text42"
+msgstr "正在读取车位明细…"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text43"
+msgstr "部分车位明细加载失败，人数与明细暂不完整。"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text44"
+msgstr "近 30 天每日支出"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text45"
+msgstr "收入与支出趋势"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text46"
+msgstr "车友待收款"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text47"
+msgstr "按车位应收记录"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text48"
+msgstr "合租月收入排行"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text49"
+msgstr "服务成本分布"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text50"
+msgstr "月均合租成本"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text51"
+msgstr "需要处理"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text52"
+msgstr "已到期与 7 天内到期"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text53"
+msgstr "去处理 →"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text54"
+msgstr "暂无待处理记录"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text55"
+msgstr "订阅业务状态与续费日期"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text56"
+msgstr "收款进度分布"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text57"
+msgstr "上车服务分布"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text58"
+msgstr "每日在车人数"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text59"
+msgstr "合租月收入分布"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text60"
+msgstr "服务构成"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text61"
+msgstr "合租收款进度"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text62"
+msgstr "续费日历"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text63"
+msgstr "未来 60 天"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text64"
+msgstr "详情与修改请进入顶部管理栏目"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text65"
+msgstr "全部"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text66"
+msgstr "车辆"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text67"
+msgstr "车位"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text68"
+msgstr "月费"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text69"
+msgstr "收款状态"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text70"
+msgstr "到期"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text71"
+msgstr "管理"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text72"
+msgstr "未命名"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text73"
+msgstr "管理车位 →"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text74"
+msgstr "月收入"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text75"
+msgstr "月成本"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text76"
+msgstr "管理合租 →"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text77"
+msgstr "关联车辆"
+
+#. js-lingui-explicit-id
+msgid "expenseLive.text78"
+msgstr "管理订阅 →"
+
+#. js-lingui-explicit-id
+msgid "expenseService.scatterHint"
+msgstr "横轴：账期已过 · 纵轴：已收 / 应收；对角线表示同步进度"
+
+#. js-lingui-explicit-id
+msgid "expenseService.noReceivables"
+msgstr "暂无可绘制的应收记录"
+
+#. js-lingui-explicit-id
+msgid "expenseService.calendarHint"
+msgstr "未来 60 天 · 仅列下次续费，不含后续周期预测"
+
+#. js-lingui-explicit-id
+msgid "expenseService.days"
+msgstr "剩 {days} 天"
+
+#. js-lingui-explicit-id
+msgid "expenseService.overdue"
+msgstr "已到期 {days} 天"
+
+#. js-lingui-explicit-id
+msgid "expenseService.noRenewals"
+msgstr "未来 60 天暂无续费"
+
+#. js-lingui-explicit-id
+msgid "expenseService.thisMonth"
+msgstr "本月剩余下次续费"
+
+#. js-lingui-explicit-id
+msgid "expenseService.nextMonth"
+msgstr "下月已知续费"
+
+#. js-lingui-explicit-id
+msgid "expenseService.all"
+msgstr "全部服务器 / 订阅服务"
+
+#. js-lingui-explicit-id
+msgid "expenseService.expired"
+msgstr "已到期"
+
+#. js-lingui-explicit-id
+msgid "expenseService.due30"
+msgstr "30 天内续费"
+
+#. js-lingui-explicit-id
+msgid "expenseService.paused"
+msgstr "已暂停"
+
+#. js-lingui-explicit-id
+msgid "expenseService.sort"
+msgstr "排序"
+
+#. js-lingui-explicit-id
+msgid "expenseService.price"
+msgstr "单次费用"
+
+#. js-lingui-explicit-id
+msgid "expenseService.name"
+msgstr "名称"
+
+#. js-lingui-explicit-id
+msgid "expenseService.noTerm"
+msgstr "长期有效"
+
+#. js-lingui-explicit-id
+msgid "expenseService.progress"
+msgstr "已记录服务期进度"
+
+#. js-lingui-explicit-id
+msgid "expenseService.nextRenewals"
+msgstr "按下次续费金额汇总"
+
+#. js-lingui-explicit-id
+msgid "expenseService.pending"
+msgstr "待收款"
+
+#. js-lingui-explicit-id
+msgid "expenseService.partial"
+msgstr "部分收款"
+
+#. js-lingui-explicit-id
+msgid "expenseService.paid"
+msgstr "已收齐"
+
+#. js-lingui-explicit-id
+msgid "expenseService.overduePayment"
+msgstr "已逾期"
+
+#. js-lingui-explicit-id
+msgid "expenseService.waived"
+msgstr "已减免"
+
+#. js-lingui-explicit-id
+msgid "expenseService.forecastTitle"
+msgstr "未来 30 天续费费用"
+
+#. js-lingui-explicit-id
+msgid "expenseService.forecastHint"
+msgstr "按下次续费日期汇总，预计费用，不代表已付款"
+
+#. js-lingui-explicit-id
+msgid "expenseService.forecastTotal"
+msgstr "待续费合计"
+
+#. js-lingui-explicit-id
+msgid "expenseService.comparisonTitle"
+msgstr "合租月均收支"
+
+#. js-lingui-explicit-id
+msgid "expenseService.noPools"
+msgstr "暂无合租车辆"
