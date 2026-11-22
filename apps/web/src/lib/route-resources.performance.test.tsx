@@ -16,7 +16,7 @@ vi.mock("@/components/private-app-shell", () => {
   mocks.privateShellModuleLoads += 1;
   return { default: () => null };
 });
-vi.mock("@/expense-preview/expense-dashboard", () => {
+vi.mock("@/pages/dashboard", () => {
   mocks.loadedPrivateRoutes.push("/");
   return { default: () => null };
 });

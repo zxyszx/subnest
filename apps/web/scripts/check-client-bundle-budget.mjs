@@ -16,7 +16,7 @@ const moduleGraph = JSON.parse(readFileSync(join(distRoot, ".vite/module-graph.j
 const locales = JSON.parse(readFileSync(resolve(workspaceRoot, "../../packages/shared/data/i18n-config.json"), "utf8")).supportedLocales;
 const catalogEntryKey = (locale) => `src/i18n/catalog-loaders/${locale}.ts`;
 const privateRouteKeys = new Set([
-  "src/expense-preview/expense-dashboard.tsx",
+  "src/pages/dashboard.tsx",
   "src/pages/subscriptions.tsx",
   "src/pages/sharing.tsx",
   "src/pages/online-totp.tsx",

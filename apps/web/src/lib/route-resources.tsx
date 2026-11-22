@@ -32,7 +32,7 @@ interface RouteResource {
 }
 
 const loadPrivateAppShell = () => import("@/components/private-app-shell");
-const loadDashboard = () => import("@/expense-preview/expense-dashboard");
+const loadDashboard = () => import("@/pages/dashboard");
 const loadSubscriptions = () => import("@/pages/subscriptions");
 const loadSharing = () => import("@/pages/sharing");
 const loadOnlineTotp = () => import("@/pages/online-totp");
